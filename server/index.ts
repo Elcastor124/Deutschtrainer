@@ -6,10 +6,11 @@ import { networkInterfaces } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { WebSocketServer, type WebSocket } from 'ws';
-import type { BlockId, ClientMsg, CtlAction, ItemId, ServerMsg, Topic } from '../shared/types.ts';
-import { PLAN, TOPICS, ITEMS } from '../shared/rules.ts';
+import type { BlockId, ChestTier, ClientMsg, CtlAction, ItemId, ServerMsg, Topic } from '../shared/types.ts';
+import { CHESTS, PLAN, TOPICS, ITEMS } from '../shared/rules.ts';
 import { loadBank } from './bank/index.ts';
 import { Room, newCode, type Deps, type Result, type RoomState } from './room.ts';
+import { jengaPull, taskCtl, taskPick, taskText } from './tasks.ts';
 import { Store, type Profile } from './store.ts';
 
 const PORT = Number(process.env.PORT) || 4747;
@@ -42,14 +43,23 @@ function recordResult(profile: string, qid: string, ok: boolean) {
   s.at = Date.now();
 }
 
-const deps: Deps = { bank, now: () => Date.now(), rand: Math.random, onResult: recordResult, profileCode: profileCodeFor };
+/** Preguntas que ya han visto estos perfiles (en clase o en práctica): id → última vez. */
+function seenBy(profiles: string[]): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const id of profiles) {
+    for (const [qid, st] of Object.entries(store.data.profiles[id]?.stats ?? {})) out.set(qid, Math.max(out.get(qid) ?? 0, st.at));
+  }
+  return out;
+}
+
+const deps: Deps = { bank, now: () => Date.now(), rand: Math.random, onResult: recordResult, profileCode: profileCodeFor, seen: seenBy };
 
 // ───────────── salas ─────────────
 const rooms = new Map<string, Room>();
 for (const [code, s] of Object.entries(store.data.rooms)) {
   if (Date.now() - s.updatedAt > ROOM_TTL) continue;
   for (const p of s.players) p.connected = false;
-  rooms.set(code, new Room(s, deps));
+  rooms.set(code, Room.restore(s, deps));
 }
 console.log(`[store] ${rooms.size} sala(s) restaurada(s) · banco: ${bank.size} preguntas`);
 
@@ -93,6 +103,8 @@ function ctl(room: Room, a: CtlAction): Result {
     case 'points': return room.points(String(a.pid), Number(a.delta) || 0);
     case 'items': return room.setItems(!!a.on, a.item);
     case 'give': return room.give(String(a.pid), a.item);
+    case 'chest': return a.tier in CHESTS ? room.giveChest(String(a.pid), a.tier as ChestTier) : { ok: false, error: 'Cofre desconocido.' };
+    case 'task': return taskCtl(room, String(a.op), a.pid ? String(a.pid) : undefined, Number.isFinite(Number(a.n)) ? Number(a.n) : undefined, !!a.ok);
     case 'kick': return room.kick(String(a.pid));
     default: return { ok: false, error: 'Acción desconocida.' };
   }
@@ -173,6 +185,10 @@ function handle(c: Client, raw: string) {
   else if (m.t === 'item') r = (m.item in ITEMS) ? room.useItem(c.pid, m.item as ItemId, m.target ? String(m.target) : undefined) : { ok: false, error: 'Objeto desconocido.' };
   else if (m.t === 'wild') r = room.pickWild(c.pid, m.topic);
   else if (m.t === 'pickup') r = room.resolvePickup(c.pid, Number(m.discard));
+  else if (m.t === 'open') r = room.openChest(c.pid, String(m.chest));
+  else if (m.t === 'text') r = taskText(room, c.pid, typeof m.text === 'string' ? m.text : '', !!m.done);
+  else if (m.t === 'pick') r = taskPick(room, c.pid, Number(m.n));
+  else if (m.t === 'pull') r = jengaPull(room, c.pid, Number(m.level), Number(m.slot));
   else if (m.t === 'pnext') r = room.practiceNext();
   else r = { ok: false, error: 'Mensaje desconocido.' };
   send(c.ws, r.ok ? { t: 'ack', id, ok: true, ...(r.retry ? { retry: true } : {}) } : { t: 'ack', id, ok: false, error: r.error });

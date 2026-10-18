@@ -1,19 +1,18 @@
 // Preguntas de vocabulario generadas a partir de shared/vocab.ts (todas las presentaciones).
 import type { Question } from '../../shared/types.ts';
+import { READINGS } from '../../shared/reading.ts';
 import { VOCAB, articleOf, isNoun, type Voc } from '../../shared/vocab.ts';
 import { mc, mt, rng, wr, type Meta } from './h.ts';
 
-// Palabras que aparecen en la lectura «Ein verrückter Samstag»: sus preguntas llevan la etiqueta 'reading'.
-const READING_VOC = new Set([
-  'die Bank', 'das Geld', 'Geld abheben', 'die Karte', 'funktionieren', 'der Bankangestellte', 'das Formular', 'unterschreiben',
-  'eine Karte beantragen', 'der Bus', 'das Fahrrad', 'der Arm', 'die Notaufnahme', 'die Ärztin', 'gebrochen', 'wehtun',
-  'die Tablette', 'müde', 'deshalb', 'obwohl', 'dass', 'wenn', 'aufstehen', 'der Freund', 'nett', 'ausfüllen', 'plötzlich',
-  'glücklich', 'regnen', 'bringen', 'schnell',
-]);
+/** Etiquetas «reading:<texto>» de las palabras que aparecen en cada lectura: esas preguntas vuelven a salir en el juego. */
+const readingTags = (words: string[]) => {
+  const t = READINGS.filter((r) => words.some((w) => r.vocab.includes(w))).map((r) => `reading:${r.id}`);
+  return t.length ? t : undefined;
+};
 
 // Categorías que se preguntan desde otros módulos (gramática, día a día).
 const SKIP = new Set(['conn', 'prep', 'wo', 'greet', 'q4', 'lang', 'color', 'bank-phr', 'symptom-phr']);
-const CONCRETE = new Set(['body', 'transport', 'family', 'hospital', 'bank', 'places', 'home']);
+const CONCRETE = new Set(['body', 'transport', 'family', 'hospital', 'bank', 'places', 'home', 'food', 'meal', 'clothes', 'house', 'furniture', 'weather', 'days', 'free', 'jobs', 'city2']);
 
 const core = (s: string) => s.toLowerCase().replace(/\(.*?\)/g, '').replace(/^(el|la|los|las|un|una|der|die|das|ein|eine) /, '').replace(/[¿?¡!.]/g, '').trim();
 const similar = (a: string, b: string) => {
@@ -23,8 +22,10 @@ const similar = (a: string, b: string) => {
 
 function distractors(v: Voc, field: 'de' | 'es', pool: Voc[], n: number): string[] {
   const r = rng(v.de + field);
-  const same = pool.filter((w) => w !== v && w.cat === v.cat && !similar(w[field], v[field]));
-  const wider = pool.filter((w) => w !== v && w.src === v.src && w.cat !== v.cat && !similar(w[field], v[field]) && isNoun(w.de) === isNoun(v.de));
+  // Ningún distractor puede significar lo mismo que la respuesta (öffnen / aufmachen = «abrir»).
+  const clash = (w: Voc) => similar(w.de, v.de) || similar(w.es, v.es);
+  const same = pool.filter((w) => w !== v && w.cat === v.cat && !clash(w));
+  const wider = pool.filter((w) => w !== v && w.src === v.src && w.cat !== v.cat && !clash(w) && isNoun(w.de) === isNoun(v.de));
   const pick = (list: Voc[], k: number) => list.map((w) => ({ w, k: r() })).sort((a, b) => a.k - b.k).slice(0, k).map((o) => o.w[field]);
   const out = pick(same, n);
   if (out.length < n) out.push(...pick(wider, n - out.length));
@@ -45,7 +46,7 @@ export function vocabQuestions(): Question[] {
   for (const v of VOCAB) {
     if (SKIP.has(v.cat)) continue;
     const noun = isNoun(v.de);
-    const tags = READING_VOC.has(v.de) ? ['reading'] : undefined;
+    const tags = readingTags([v.de]);
     const plural = v.pl && v.pl !== 'only' ? ` Plural: ${v.pl}.` : v.pl === 'only' ? ' (solo en plural)' : '';
     const m = (d: Meta['d'], x: string): Meta => ({ t: 'vocab', d, s: v.src, x, tags });
 
@@ -74,7 +75,7 @@ export function vocabQuestions(): Question[] {
       const g = list.slice(i, i + 4);
       const meta: Meta = {
         t: 'vocab', d: CONCRETE.has(cat) ? 'easy' : 'medium', s: g[0].src, x: g.map((v) => `${v.de} = ${v.es}`).join(' · '),
-        tags: g.some((v) => READING_VOC.has(v.de)) ? ['reading'] : undefined,
+        tags: readingTags(g.map((v) => v.de)),
       };
       out.push(mt(meta, 'Relaciona cada palabra con su traducción', g.map((v) => [v.de, v.es] as [string, string])));
     }

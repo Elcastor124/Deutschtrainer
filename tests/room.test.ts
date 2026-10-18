@@ -18,9 +18,12 @@ const ans = (room: Room, p: Player, good: boolean) => {
 /** Entra en un bloque con objetos y deja inventarios vacíos (para controlar qué tiene cada uno). */
 function intoItemsBlock(env: ReturnType<typeof classRoom>) {
   env.room.startBlock('r2');
-  env.a.inv = [];
-  env.b.inv = [];
+  env.room.s.chestQs = [];
+  env.a.inv = []; env.a.chests = [];
+  env.b.inv = []; env.b.chests = [];
 }
+/** Abre todos los cofres de un alumno. */
+const openAll = (room: Room, p: Player) => { for (const c of [...p.chests]) expect(room.openChest(p.id, c.id).ok).toBe(true); };
 const mcEasy = find((q) => q.type === 'mc' && q.diff === 'easy' && q.options.length >= 3);
 const mcMedium = find((q) => q.type === 'mc' && q.diff === 'medium' && q.options.length >= 3);
 const mcMedium2 = find((q) => q.type === 'mc' && q.diff === 'medium' && q.options.length >= 3 && q.id !== mcMedium.id);
@@ -109,7 +112,7 @@ describe('flujo completo de clase', () => {
       expect(room.s.queue.some((id) => bank.get(id)!.unlock), blk).toBe(true);
     }
     room.startBlock('boss');
-    expect(room.s.queue.length).toBe(5);
+    expect(room.s.queue.length).toBe(4);
     for (const id of room.s.queue) {
       const q = bank.get(id)!;
       expect(['hard', 'special']).toContain(q.diff);
@@ -120,9 +123,10 @@ describe('flujo completo de clase', () => {
   it('la lectura reaparece: el calentamiento y la ronda 1 incluyen vocabulario del texto', () => {
     const { room } = classRoom();
     room.startBlock('warmup');
-    expect(room.s.queue.filter((id) => bank.get(id)!.tags?.includes('reading')).length).toBeGreaterThanOrEqual(4);
+    const tag = `reading:${room.s.reading}`;
+    expect(room.s.queue.filter((id) => bank.get(id)!.tags?.includes(tag)).length).toBeGreaterThanOrEqual(3);
     room.startBlock('r1');
-    expect(room.s.queue.filter((id) => bank.get(id)!.tags?.includes('reading')).length).toBeGreaterThanOrEqual(3);
+    expect(room.s.queue.filter((id) => bank.get(id)!.tags?.includes(tag)).length).toBeGreaterThanOrEqual(2);
   });
 
   it('reconexión: el token devuelve el mismo jugador con su puntuación', () => {
@@ -146,11 +150,17 @@ describe('flujo completo de clase', () => {
 });
 
 describe('objetos', () => {
-  it('cada alumno recibe 1 objeto al empezar la Ronda 1 (igualdad de oportunidades)', () => {
+  it('cada alumno recibe un cofre de bronce al empezar la Ronda 1 y al abrirlo sale un objeto', () => {
     const { room, a, b } = classRoom();
     room.startBlock('r1');
+    expect(a.chests.map((c) => c.tier)).toEqual(['bronze']);
+    expect(b.chests.map((c) => c.tier)).toEqual(['bronze']);
+    expect(a.inv.length).toBe(0);
+    const id = a.chests[0].id;
+    expect(room.openChest(a.id, id).ok).toBe(true);
     expect(a.inv.length).toBe(1);
-    expect(b.inv.length).toBe(1);
+    expect(a.inv[0]).not.toBe('blackcard');
+    expect(room.openChest(a.id, id).ok).toBe(false); // no se abre dos veces
   });
 
   it('BLACKCARD: solo en preguntas difíciles; +10 si acierta, −10 si falla; se consume', () => {
@@ -324,6 +334,9 @@ describe('objetos', () => {
     intoItemsBlock(env);
     force(room, unlockQ.id);
     ans(room, a, true); ans(room, b, false);
+    expect(a.chests.map((c) => c.tier)).toEqual(['black']);
+    expect(b.chests).toEqual([]);
+    openAll(room, a);
     expect(a.inv).toContain('blackcard');
     expect(b.inv).not.toContain('blackcard');
   });
@@ -345,8 +358,8 @@ describe('objetos', () => {
     intoItemsBlock(env);
     const ids = all.filter((q) => q.type === 'mc' && q.diff === 'easy' && !q.unlock).slice(0, 3).map((q) => q.id);
     for (const id of ids) { force(room, id); ans(room, a, true); ans(room, b, false); }
-    expect(a.inv.length).toBe(1);
-    expect(b.inv.length).toBe(0);
+    expect(a.chests.map((c) => c.tier)).toEqual(['bronze']);
+    expect(b.chests).toEqual([]);
   });
 
   it('WILDCARD: el alumno elige entre dos categorías para la siguiente pregunta', () => {
@@ -378,17 +391,21 @@ describe('objetos', () => {
     expect(a.inv).toEqual(['double']);
   });
 
-  it('fin de ronda: todos reciben un objeto y caducan los escudos', () => {
+  it('fin de ronda: todos reciben un cofre (plata para quien va último) y caducan los escudos', () => {
     const env = classRoom();
     const { room, a, b } = env;
     intoItemsBlock(env);
     a.shield = true;
+    a.score = 20; b.score = 5;
     room.s.queue = [];
     room.next();
     expect(room.s.phase).toBe('roundEnd');
-    expect(a.inv.length).toBe(1);
-    expect(b.inv.length).toBe(1);
+    expect(a.chests.map((c) => c.tier)).toEqual(['bronze']);
+    expect(b.chests.map((c) => c.tier)).toEqual(['silver']);
     expect(a.shield).toBe(false);
+    openAll(room, b);
+    expect(b.score).toBe(7); // la plata trae 2 puntos
+    expect(b.inv.length).toBe(1);
   });
 });
 

@@ -1,14 +1,16 @@
 // Motor autoritativo de una sala. Toda la lógica de puntos, objetos y fases vive aquí.
 // Es una clase pura (reloj y azar inyectados) para poder probarla sin red.
 import { randomBytes } from 'node:crypto';
+import { READINGS } from '../shared/reading.ts';
 import {
-  BC_BONUS, COMMON_ITEMS, DIFF_LABEL, ITEMS, MAX_INV, PLAN, POINTS, STREAK_REWARD, THIEF_MAX, TOPICS, blockDef, checkUse, type UseCtx,
+  BC_BONUS, CHESTS, COMMON_ITEMS, DIFF_LABEL, GOLD_ITEMS, ITEMS, MAX_INV, PLAN, POINTS, STREAK_REWARD, THIEF_MAX, TOPICS, blockDef, checkUse, type UseCtx,
 } from '../shared/rules.ts';
 import type {
-  Answer, BlockId, ErrorEntry, FinalView, Fx, ItemId, Phase, PlayerResult, Question, RevealView, RoomView, Status, Topic,
+  Answer, BlockId, ChestTier, ErrorEntry, FinalView, Fx, ItemId, Phase, PlayerResult, Question, RevealView, RoomView, Status, TaskKind, Topic,
 } from '../shared/types.ts';
 import { grade, makeInstance, publicView, solution, type Instance } from './grade.ts';
-import { buildQueue, drawTopic, practiceQueue, wildTopics, type Stat } from './select.ts';
+import { buildQueue, drawTopic, practiceQueue, wildTopics, type SelCtx, type Stat } from './select.ts';
+import { endTask, jengaAnswer, pendingStars, removeFromTask, startTask, taskNext, taskTick, taskView, type TaskState } from './tasks.ts';
 
 export interface Player {
   id: string;
@@ -32,7 +34,12 @@ export interface Player {
   itemsUsed: number;
   stolen: number;
   errors: { qid: string; given: string }[];
+  /** Cofres sin abrir: el contenido se decide al ganarlos (servidor) y se revela al abrirlos. */
+  chests: ChestRec[];
+  stars: number;
 }
+
+export interface ChestRec { id: string; tier: ChestTier; reason: string; item: ItemId; coins: number }
 
 interface AnswerRec { a: Answer; given: string; status: Status; note?: string; attempt: number; final: boolean; at: number }
 interface Timer { endsAt: number | null; left: number | null; total: number }
@@ -61,7 +68,13 @@ export interface RoomState {
   itemsOn: boolean;
   itemsOff: ItemId[];
   starterGiven: boolean;
-  roundEnd: { block: BlockId; rewards: { pid: string; item: ItemId }[] } | null;
+  roundEnd: { block: BlockId; rewards: { pid: string; tier: ChestTier }[]; stars?: { pid: string; n: number }[] } | null;
+  /** Truhenfragen del bloque: acertarlas da un cofre de plata. */
+  chestQs: string[];
+  /** Lectura de la sesión (id de shared/reading.ts). */
+  reading: string;
+  task: TaskState | null;
+  scenesUsed: number[];
   players: Player[];
   log: Fx[];
   fxSeq: number;
@@ -74,6 +87,8 @@ export interface Deps {
   rand: () => number;
   onResult?: (profile: string, qid: string, ok: boolean) => void;
   profileCode?: (profile: string) => string;
+  /** Preguntas que ya vieron estos perfiles en otras partidas (id → última vez). */
+  seen?: (profiles: string[]) => Map<string, number>;
 }
 
 export type Result = { ok: true; retry?: boolean } | { ok: false; error: string };
@@ -125,8 +140,19 @@ export class Room {
     return new Room({
       code, mode, teacherToken: newToken(), createdAt: now, updatedAt: now, phase: 'lobby', block: null, blockStartedAt: null, startedAt: null,
       queue: [], used: [], qNo: 0, qTotal: 0, q: null, timer: null, answers: {}, uses: {}, reveal: null, wildPending: null, wild: null,
-      itemsOn: true, itemsOff: [], starterGiven: false, roundEnd: null, players: [], log: [], fxSeq: 0,
+      itemsOn: true, itemsOff: [], starterGiven: false, roundEnd: null, chestQs: [], reading: READINGS[0].id, task: null, scenesUsed: [],
+      players: [], log: [], fxSeq: 0,
     }, d);
+  }
+
+  /** Completa salas guardadas con versiones anteriores del servidor. */
+  static restore(s: RoomState, d: Deps): Room {
+    s.chestQs ??= [];
+    s.reading ??= READINGS[0].id;
+    s.task ??= null;
+    s.scenesUsed ??= [];
+    for (const p of s.players) { p.chests ??= []; p.stars ??= 0; }
+    return new Room(s, d);
   }
 
   // ───────────── utilidades ─────────────
@@ -138,12 +164,26 @@ export class Room {
   private get practice() { return this.s.mode === 'practice'; }
   private get blockItems() { return !this.practice && !!blockDef(this.s.block)?.items; }
 
-  private fx(kind: Fx['kind'], text: string, extra: Partial<Fx> = {}) {
+  fx(kind: Fx['kind'], text: string, extra: Partial<Fx> = {}) {
     this.s.log.push({ id: ++this.s.fxSeq, kind, text, at: this.now, ...extra });
     if (this.s.log.length > 40) this.s.log.splice(0, this.s.log.length - 40);
   }
 
-  private touch() { this.s.updatedAt = this.now; }
+  touch() { this.s.updatedAt = this.now; }
+
+  /** Historial de estos alumnos en otras partidas: se prefieren preguntas nuevas para ellos. */
+  selCtx(): SelCtx {
+    return { reading: this.s.reading, seen: this.d.seen?.(this.s.players.map((p) => p.profile)) };
+  }
+
+  /** Lectura que estos alumnos han visto hace más tiempo (o nunca). */
+  private chooseReading(): string {
+    const seen = this.d.seen?.(this.s.players.map((p) => p.profile));
+    if (!seen?.size) return READINGS[Math.floor(this.d.rand() * READINGS.length)].id;
+    const last = (id: string) => Math.max(0, ...[...this.d.bank.values()].filter((q) => q.tags?.includes(`text:${id}`)).map((q) => seen.get(q.id) ?? 0));
+    const ranked = READINGS.map((r) => ({ id: r.id, at: last(r.id), k: this.d.rand() })).sort((a, b) => a.at - b.at || a.k - b.k);
+    return ranked[0].id;
+  }
 
   private draw(p: Player): ItemId {
     const allowed = COMMON_ITEMS.filter((i) => !this.s.itemsOff.includes(i));
@@ -164,6 +204,42 @@ export class Room {
     this.fx(item === 'blackcard' ? 'unlock' : 'reward', `${p.name} recibe ${ITEMS[item].name} · ${reason}`, { by: p.id, item });
   }
 
+  /** Da un cofre. El contenido se decide ahora (servidor) y se revela al abrirlo. La BlackCard solo viene en el cofre negro. */
+  grant(p: Player, tier: ChestTier, reason: string) {
+    if (tier === 'black' && (p.inv.includes('blackcard') || p.pickups.includes('blackcard') || p.chests.some((c) => c.tier === 'black'))) tier = 'silver';
+    let item: ItemId;
+    if (tier === 'black') item = 'blackcard';
+    else if (tier === 'gold') {
+      const strong = GOLD_ITEMS.filter((i) => !this.s.itemsOff.includes(i));
+      item = strong.length ? strong[Math.floor(this.d.rand() * strong.length)] : this.draw(p);
+    } else item = this.draw(p);
+    p.chests.push({ id: newId(), tier, reason, item, coins: CHESTS[tier].coins });
+    this.fx(tier === 'black' ? 'unlock' : 'chest', `${p.name} gana un ${CHESTS[tier].name.toLowerCase()} · ${reason}`, { by: p.id, tier });
+  }
+
+  openChest(pid: string, chestId: string): Result {
+    const p = this.player(pid);
+    if (!p) return fail('Jugador desconocido.');
+    const i = p.chests.findIndex((c) => c.id === chestId);
+    if (i < 0) return fail('Ese cofre ya está abierto.');
+    const [c] = p.chests.splice(i, 1);
+    if (p.inv.length < MAX_INV) p.inv.push(c.item);
+    else p.pickups.push(c.item);
+    if (c.coins) p.score += c.coins;
+    this.fx('chest-open', `${p.name} abre un ${CHESTS[c.tier].name.toLowerCase()}: ${ITEMS[c.item].name}${c.coins ? ` y +${c.coins} puntos` : ''}`,
+      { by: pid, item: c.item, tier: c.tier, amount: c.coins });
+    this.touch();
+    return OK;
+  }
+
+  giveChest(pid: string, tier: ChestTier): Result {
+    const p = this.player(pid);
+    if (!p || !(tier in CHESTS)) return fail('Datos no válidos.');
+    this.grant(p, tier, 'regalo del profesor');
+    this.touch();
+    return OK;
+  }
+
   // ───────────── jugadores ─────────────
   join(rawName: string, profile: string): Player | Result {
     if (this.s.players.length >= 8) return fail('La sala está llena (máx. 8).');
@@ -172,11 +248,11 @@ export class Room {
     for (let k = 2; this.s.players.some((p) => p.name.toLowerCase() === name.toLowerCase()); k++) name = `${base} ${k}`;
     const p: Player = {
       id: newId(), token: newToken(), profile, name, score: 0, streak: 0, best: 0, correct: 0, total: 0, inv: [], bag: [], pickups: [],
-      shield: false, sabot: null, connected: true, bcWon: 0, bcLost: 0, itemsUsed: 0, stolen: 0, errors: [],
+      shield: false, sabot: null, connected: true, bcWon: 0, bcLost: 0, itemsUsed: 0, stolen: 0, errors: [], chests: [], stars: 0,
     };
     this.s.players.push(p);
     this.fx('join', `${name} entra en la sala`, { by: p.id });
-    if (this.s.starterGiven && !this.practice) this.award(p, this.draw(p), 'Objeto inicial');
+    if (this.s.starterGiven && !this.practice) this.grant(p, 'bronze', 'cofre inicial');
     this.touch();
     return p;
   }
@@ -197,6 +273,7 @@ export class Room {
     delete this.s.answers[pid];
     delete this.s.uses[pid];
     for (const u of Object.values(this.s.uses)) if (u.target === pid) u.target = undefined;
+    removeFromTask(this, pid);
     this.fx('info', `${p.name} ha salido de la sala`);
     return OK;
   }
@@ -207,21 +284,32 @@ export class Room {
     if (!blockDef(id)) return fail('Bloque desconocido.');
     if (this.s.phase === 'question' || this.s.phase === 'review' || this.s.phase === 'wild') this.cancelQuestion();
     if (this.s.wildPending) this.refundWild();
+    if (this.s.task) endTask(this);
     this.expireRoundEffects();
-    Object.assign(this.s, { block: id, blockStartedAt: this.now, roundEnd: null, reveal: null, wild: null, q: null, timer: null, answers: {}, uses: {} });
+    if (!this.s.startedAt) this.s.reading = this.chooseReading();
+    Object.assign(this.s, { block: id, blockStartedAt: this.now, roundEnd: null, reveal: null, wild: null, q: null, timer: null, answers: {}, uses: {}, chestQs: [] });
     this.s.startedAt ??= this.now;
-    if (id === 'final') {
+    const def = blockDef(id)!;
+    if (def.kind === 'final') {
       this.s.phase = 'final';
+      this.s.queue = [];
+      this.touch();
       return OK;
     }
-    this.s.queue = buildQueue(id, this.d.bank, new Set(this.s.used), this.d.rand);
+    this.s.queue = def.kind === 'quiz' ? buildQueue(id, this.d.bank, new Set(this.s.used), this.d.rand, this.selCtx()) : [];
     this.s.qNo = 0;
     this.s.qTotal = this.s.queue.length;
     this.s.phase = 'intro';
     if (id === 'lesen') this.s.timer = { endsAt: this.now + 240_000, left: null, total: 240 };
-    if (blockDef(id)?.items && !this.s.starterGiven) {
-      this.s.starterGiven = true;
-      for (const p of this.s.players) this.award(p, this.draw(p), 'Objeto inicial');
+    if (def.items) {
+      // Una Truhenfrage por ronda: media o fácil, en la primera parte de la ronda.
+      const cand = this.s.queue.slice(0, Math.max(1, Math.ceil(this.s.queue.length * 0.75)))
+        .filter((qid) => { const q = this.d.bank.get(qid); return q && !q.unlock && (q.diff === 'medium' || q.diff === 'easy'); });
+      if (cand.length) this.s.chestQs = [cand[Math.floor(this.d.rand() * cand.length)]];
+      if (!this.s.starterGiven) {
+        this.s.starterGiven = true;
+        for (const p of this.s.players) this.grant(p, 'bronze', 'cofre inicial');
+      }
     }
     this.touch();
     return OK;
@@ -230,13 +318,27 @@ export class Room {
   next(): Result {
     switch (this.s.phase) {
       case 'lobby': return this.startBlock(PLAN[0].id);
-      case 'intro': return this.presentNext();
+      case 'intro': {
+        const def = blockDef(this.s.block);
+        return def?.kind === 'task' ? startTask(this, def.id as TaskKind) : this.presentNext();
+      }
+      case 'task': {
+        const r = taskNext(this);
+        if (r) return r;
+        const stars = endTask(this);
+        Object.assign(this.s, { phase: 'roundEnd' as Phase, timer: null, roundEnd: { block: this.s.block as BlockId, rewards: [], stars } });
+        this.touch();
+        return OK;
+      }
       case 'reveal':
         if (this.s.wildPending && this.s.queue.length) return this.startWild();
         return this.s.queue.length ? this.presentNext() : this.endRound();
-      case 'roundEnd': {
+      case 'roundEnd':
+      case 'final': {
+        if (this.practice) return fail('No hay nada más.');
         const i = PLAN.findIndex((b) => b.id === this.s.block);
-        return this.startBlock(PLAN[i + 1]?.id ?? 'final');
+        const nxt = PLAN[i + 1];
+        return nxt ? this.startBlock(nxt.id) : fail('La clase ha terminado.');
       }
       case 'question': return fail('Primero cierra la pregunta.');
       case 'review': return fail('Primero revisa las respuestas pendientes.');
@@ -261,13 +363,16 @@ export class Room {
 
   private endRound(): Result {
     const def = blockDef(this.s.block);
-    const rewards: { pid: string; item: ItemId }[] = [];
+    const rewards: { pid: string; tier: ChestTier }[] = [];
     if (this.s.wildPending) this.refundWild();
-    if (def?.reward) {
+    if (def?.reward && this.s.players.length) {
+      // Todos reciben un cofre; quien va último, uno de plata (para que la partida siga abierta).
+      const min = Math.min(...this.s.players.map((p) => p.score));
+      const allEqual = this.s.players.every((p) => p.score === min);
       for (const p of this.s.players) {
-        const item = this.draw(p);
-        this.award(p, item, `Fin de ${def.name}`);
-        rewards.push({ pid: p.id, item });
+        const tier: ChestTier = !allEqual && p.score === min ? 'silver' : 'bronze';
+        this.grant(p, tier, `fin de ${def.name}`);
+        rewards.push({ pid: p.id, tier });
       }
     }
     this.expireRoundEffects();
@@ -292,7 +397,7 @@ export class Room {
   private startWild(): Result {
     const by = this.s.wildPending as string;
     this.s.wildPending = null;
-    const options = wildTopics(this.s.block as BlockId, this.d.bank, new Set([...this.s.used, ...this.s.queue]), this.d.rand);
+    const options = wildTopics(this.s.block as BlockId, this.d.bank, new Set([...this.s.used, ...this.s.queue]), this.d.rand, this.selCtx());
     if (options.length < 2) {
       const p = this.player(by);
       if (p) this.award(p, 'wildcard', 'devuelto (no había dos categorías)');
@@ -313,7 +418,7 @@ export class Room {
     if (!w.options.includes(topic)) return fail('Categoría no válida.');
     const i = this.s.queue.findIndex((id) => !this.d.bank.get(id)?.unlock);
     const diff = (i >= 0 ? this.d.bank.get(this.s.queue[i])?.diff : undefined) ?? 'medium';
-    const id = drawTopic(this.s.block as BlockId, topic, diff, this.d.bank, new Set([...this.s.used, ...this.s.queue]), this.d.rand);
+    const id = drawTopic(this.s.block as BlockId, topic, diff, this.d.bank, new Set([...this.s.used, ...this.s.queue]), this.d.rand, this.selCtx());
     this.fx('info', `${auto ? 'Tiempo: ' : ''}${this.name(w.by)} elige «${TOPICS[topic].de}»`, { by: w.by, item: 'wildcard' });
     if (!id) return this.presentNext();
     if (i >= 0) this.s.queue.splice(i, 1);
@@ -329,6 +434,7 @@ export class Room {
   answer(pid: string, qid: string, raw: Answer): Result {
     const p = this.player(pid);
     if (!p) return fail('Jugador desconocido.');
+    if (this.s.phase === 'task' && this.s.task?.kind === 'jenga') return jengaAnswer(this, pid, qid, raw);
     if (this.s.phase !== 'question' || !this.s.q) return fail('La pregunta ya está cerrada.');
     if (this.s.q.id !== qid) return fail('Esa pregunta ya no está activa.');
     const rec = this.s.answers[pid];
@@ -511,13 +617,14 @@ export class Room {
       this.fx('steal', `${by.name} roba ${amt} puntos a ${t.name}`, { by: pid, target: t.id, item: 'thief', amount: amt });
     }
 
-    // 4) Recompensas: Prüfungsfrage → BlackCard · reto especial → objeto · racha → objeto.
+    // 4) Cofres: Prüfungsfrage → negro (BlackCard) · reto especial → oro · Truhenfrage → plata · racha de 3 → bronce.
     if (this.blockItems) {
       for (const p of this.s.players) {
         if (results[p.id]?.status !== 'correct') continue;
-        if (q.unlock) this.award(p, 'blackcard', 'Prüfungsfrage superada');
-        if (q.diff === 'special') this.award(p, this.draw(p), 'Reto especial superado');
-        if (p.streak > 0 && p.streak % STREAK_REWARD === 0) this.award(p, this.draw(p), `racha de ${p.streak} aciertos`);
+        if (q.unlock) this.grant(p, 'black', 'Prüfungsfrage superada');
+        if (q.diff === 'special') this.grant(p, 'gold', 'reto especial superado');
+        if (this.s.chestQs.includes(q.id)) this.grant(p, 'silver', 'Truhenfrage');
+        if (p.streak > 0 && p.streak % STREAK_REWARD === 0) this.grant(p, 'bronze', `racha de ${p.streak} aciertos`);
       }
     }
 
@@ -606,6 +713,7 @@ export class Room {
     const t = this.s.timer;
     if (!t || t.endsAt === null || this.now < t.endsAt) return false;
     if (this.s.phase === 'question') { this.lock(); return true; }
+    if (this.s.phase === 'task') return taskTick(this);
     if (this.s.phase === 'wild' && this.s.wild) {
       const opts = this.s.wild.options;
       this.pickWild(this.s.wild.by, opts[Math.floor(this.d.rand() * opts.length)], true);
@@ -685,7 +793,7 @@ export class Room {
     const sorted = [...this.s.players].sort((a, b) => b.score - a.score);
     const players = sorted.map((p) => ({
       id: p.id, name: p.name, score: p.score, rank: sorted.findIndex((x) => x.score === p.score) + 1, correct: p.correct, total: p.total,
-      best: p.best, bcWon: p.bcWon, bcLost: p.bcLost, itemsUsed: p.itemsUsed, stolen: p.stolen,
+      best: p.best, bcWon: p.bcWon, bcLost: p.bcLost, itemsUsed: p.itemsUsed, stolen: p.stolen, chests: p.chests.length, stars: p.stars,
       errors: p.errors.map((e) => this.errorEntry(e.qid, e.given)).filter((e): e is ErrorEntry => !!e),
     }));
     const agg = new Map<string, { count: number; names: string[]; given: string }>();
@@ -706,10 +814,10 @@ export class Room {
   view(viewer: { teacher: true } | { pid: string }): RoomView {
     const s = this.s;
     const q = this.question;
-    const pq = q && s.q ? { ...publicView(q, s.q.inst), ...(s.q.review ? { review: true } : {}) } : null;
+    const pq = q && s.q ? { ...publicView(q, s.q.inst), ...(s.q.review ? { review: true } : {}), ...(s.chestQs.includes(s.q.id) ? { chest: true } : {}) } : null;
     const players = [...s.players].sort((a, b) => b.score - a.score).map((p) => ({
       id: p.id, name: p.name, score: p.score, streak: p.streak, connected: p.connected, shield: p.shield, sabotaged: !!p.sabot,
-      items: p.inv.length, answered: !!s.answers[p.id]?.final,
+      items: p.inv.length, answered: !!s.answers[p.id]?.final, chests: p.chests.length, stars: p.stars + pendingStars(s.task, p.id),
     }));
     const v: RoomView = {
       code: s.code, mode: s.mode, phase: s.phase, block: s.block, blockStartedAt: s.blockStartedAt, startedAt: s.startedAt, serverNow: this.now,
@@ -717,6 +825,7 @@ export class Room {
       itemsOn: s.itemsOn, itemsOff: s.itemsOff, blockItems: this.blockItems,
       uses: Object.entries(s.uses).map(([by, u]) => ({ by, item: u.item, ...(u.target ? { target: u.target } : {}) })),
       wild: s.wild, wildPending: s.wildPending, roundEnd: s.roundEnd, log: s.log.slice(-25),
+      reading: s.reading, task: taskView(this, viewer),
     };
     if (s.practice) v.practice = { topics: s.practice.topics, done: s.practice.done, correct: s.practice.correct };
     if (s.phase === 'final') v.final = this.finalView();
@@ -740,6 +849,7 @@ export class Room {
           used: s.uses[p.id]?.item ?? null,
           incoming: Object.entries(s.uses).filter(([, u]) => u.target === p.id && ITEMS[u.item].target).map(([by, u]) => ({ kind: u.item as 'thief' | 'sabotage', by })),
           profileCode: this.d.profileCode?.(p.profile) ?? '',
+          chests: p.chests.map((c) => ({ id: c.id, tier: c.tier, reason: c.reason })),
         };
       }
     }

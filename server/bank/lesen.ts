@@ -2,7 +2,7 @@
 import type { Question } from '../../shared/types.ts';
 import { gp, mc, mt, od, tf, wr, type Meta } from './h.ts';
 
-const L = (d: Meta['d'], x: string): Meta => ({ t: 'lesen', s: 'lesen', d, x, tags: ['reading'] });
+const L = (d: Meta['d'], x: string): Meta => ({ t: 'lesen', s: 'lesen', d, x, tags: ['text:samstag'] });
 
 export function lesenQuestions(): Question[] {
   return [

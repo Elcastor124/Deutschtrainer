@@ -145,6 +145,111 @@ export const VOCAB: Voc[] = [
     ['einkaufen', 'hacer la compra'], ['anrufen', 'llamar (por teléfono)'], ['fernsehen', 'ver la tele'],
   ]),
 
+  // ── A1–A2 general (contenido nuevo de esta app, no sale de ninguna presentación) ──
+  ...V('a1', 'food', [
+    ['das Brot', 'el pan', 'die Brote'], ['das Brötchen', 'el panecillo', 'die Brötchen'], ['die Butter', 'la mantequilla'],
+    ['der Käse', 'el queso'], ['die Wurst', 'el embutido / la salchicha', 'die Würste'], ['das Ei', 'el huevo', 'die Eier'],
+    ['die Milch', 'la leche'], ['der Kaffee', 'el café'], ['der Tee', 'el té'], ['das Wasser', 'el agua'],
+    ['der Saft', 'el zumo', 'die Säfte'], ['der Wein', 'el vino', 'die Weine'], ['die Banane', 'el plátano', 'die Bananen'],
+    ['die Orange', 'la naranja', 'die Orangen'], ['die Tomate', 'el tomate', 'die Tomaten'], ['die Kartoffel', 'la patata', 'die Kartoffeln'],
+    ['der Reis', 'el arroz'], ['die Nudeln', 'la pasta', 'only'], ['das Fleisch', 'la carne'], ['der Fisch', 'el pescado', 'die Fische'],
+    ['das Hähnchen', 'el pollo', 'die Hähnchen'], ['der Salat', 'la ensalada', 'die Salate'], ['die Suppe', 'la sopa', 'die Suppen'],
+    ['der Kuchen', 'la tarta / el pastel', 'die Kuchen'], ['das Eis', 'el helado'], ['die Schokolade', 'el chocolate'],
+    ['der Zucker', 'el azúcar'], ['das Salz', 'la sal'],
+  ]),
+  ...V('a1', 'meal', [
+    ['das Frühstück', 'el desayuno'], ['das Mittagessen', 'la comida (del mediodía)'], ['das Abendessen', 'la cena'],
+    ['das Restaurant', 'el restaurante', 'die Restaurants'], ['die Speisekarte', 'la carta (del restaurante)', 'die Speisekarten'],
+    ['die Rechnung', 'la cuenta / la factura', 'die Rechnungen'], ['der Teller', 'el plato', 'die Teller'], ['das Glas', 'el vaso', 'die Gläser'],
+  ]),
+  ...V('a1', 'clothes', [
+    ['die Hose', 'el pantalón', 'die Hosen'], ['das Hemd', 'la camisa', 'die Hemden'], ['das T-Shirt', 'la camiseta', 'die T-Shirts'],
+    ['der Pullover', 'el jersey', 'die Pullover'], ['das Kleid', 'el vestido', 'die Kleider'], ['der Rock', 'la falda', 'die Röcke'],
+    ['der Schuh', 'el zapato', 'die Schuhe'], ['die Socke', 'el calcetín', 'die Socken'], ['der Mantel', 'el abrigo', 'die Mäntel'],
+    ['die Mütze', 'el gorro', 'die Mützen'], ['der Schal', 'la bufanda', 'die Schals'], ['die Brille', 'las gafas', 'die Brillen'],
+    ['die Tasche', 'el bolso / la bolsa', 'die Taschen'], ['der Rucksack', 'la mochila', 'die Rucksäcke'],
+  ]),
+  ...V('a1', 'house', [
+    ['das Haus', 'la casa', 'die Häuser'], ['das Zimmer', 'la habitación', 'die Zimmer'], ['die Küche', 'la cocina', 'die Küchen'],
+    ['das Bad', 'el baño', 'die Bäder'], ['das Schlafzimmer', 'el dormitorio', 'die Schlafzimmer'], ['das Wohnzimmer', 'el salón', 'die Wohnzimmer'],
+    ['der Balkon', 'el balcón', 'die Balkone'], ['der Garten', 'el jardín', 'die Gärten'], ['die Treppe', 'la escalera', 'die Treppen'],
+  ]),
+  ...V('a1', 'furniture', [
+    ['der Tisch', 'la mesa', 'die Tische'], ['der Stuhl', 'la silla', 'die Stühle'], ['das Bett', 'la cama', 'die Betten'],
+    ['der Schrank', 'el armario', 'die Schränke'], ['das Regal', 'la estantería', 'die Regale'], ['die Lampe', 'la lámpara', 'die Lampen'],
+    ['das Fenster', 'la ventana', 'die Fenster'], ['die Tür', 'la puerta', 'die Türen'], ['der Kühlschrank', 'la nevera', 'die Kühlschränke'],
+    ['der Teppich', 'la alfombra', 'die Teppiche'],
+  ]),
+  ...V('a1', 'weather', [
+    ['das Wetter', 'el tiempo (meteorológico)'], ['die Sonne', 'el sol'], ['der Regen', 'la lluvia'], ['der Schnee', 'la nieve'],
+    ['der Wind', 'el viento'], ['die Wolke', 'la nube', 'die Wolken'], ['der Frühling', 'la primavera'], ['der Sommer', 'el verano'],
+    ['der Herbst', 'el otoño'], ['der Winter', 'el invierno'],
+  ]),
+  ...V('a1', 'weather-adj', [
+    ['sonnig', 'soleado'], ['windig', 'con viento'], ['bewölkt', 'nublado'], ['warm', 'cálido / templado'], ['kühl', 'fresco'], ['neblig', 'con niebla'],
+  ]),
+  ...V('a1', 'time', [
+    ['der Tag', 'el día', 'die Tage'], ['die Woche', 'la semana', 'die Wochen'], ['der Monat', 'el mes', 'die Monate'],
+    ['das Jahr', 'el año', 'die Jahre'], ['die Stunde', 'la hora (duración)', 'die Stunden'], ['die Minute', 'el minuto', 'die Minuten'],
+    ['der Morgen', 'la mañana (temprano)'], ['der Mittag', 'el mediodía'], ['der Nachmittag', 'la tarde (13–18 h)'],
+    ['der Abend', 'la tarde-noche (después de las 18 h)'], ['die Nacht', 'la noche', 'die Nächte'],
+  ]),
+  ...V('a1', 'days', [
+    ['der Montag', 'el lunes'], ['der Dienstag', 'el martes'], ['der Mittwoch', 'el miércoles'], ['der Donnerstag', 'el jueves'],
+    ['der Freitag', 'el viernes'], ['der Samstag', 'el sábado'], ['der Sonntag', 'el domingo'],
+  ]),
+  ...V('a1', 'time-adv', [
+    ['heute', 'hoy'], ['morgen', 'mañana (el día siguiente)'], ['übermorgen', 'pasado mañana'], ['vorgestern', 'anteayer'],
+    ['immer', 'siempre'], ['oft', 'a menudo'], ['manchmal', 'a veces'], ['nie', 'nunca'], ['früh', 'temprano'], ['spät', 'tarde (hora)'],
+    ['jetzt', 'ahora'], ['bald', 'pronto'],
+  ]),
+  ...V('a1', 'free', [
+    ['das Hobby', 'el hobby / la afición', 'die Hobbys'], ['die Musik', 'la música'], ['das Buch', 'el libro', 'die Bücher'],
+    ['der Film', 'la película', 'die Filme'], ['das Spiel', 'el juego / el partido', 'die Spiele'], ['der Sport', 'el deporte'],
+    ['der Fußball', 'el fútbol'], ['das Schwimmbad', 'la piscina', 'die Schwimmbäder'], ['der Park', 'el parque', 'die Parks'],
+    ['das Museum', 'el museo', 'die Museen'], ['das Konzert', 'el concierto', 'die Konzerte'], ['die Party', 'la fiesta', 'die Partys'],
+    ['die Gitarre', 'la guitarra', 'die Gitarren'], ['das Foto', 'la foto', 'die Fotos'],
+  ]),
+  ...V('a1', 'jobs', [
+    ['der Lehrer', 'el profesor', 'die Lehrer'], ['die Lehrerin', 'la profesora', 'die Lehrerinnen'], ['der Koch', 'el cocinero', 'die Köche'],
+    ['der Kellner', 'el camarero', 'die Kellner'], ['die Verkäuferin', 'la dependienta', 'die Verkäuferinnen'],
+    ['der Polizist', 'el policía', 'die Polizisten'], ['der Ingenieur', 'el ingeniero', 'die Ingenieure'],
+    ['die Krankenpflegerin', 'la enfermera', 'die Krankenpflegerinnen'], ['der Student', 'el estudiante', 'die Studenten'],
+    ['der Friseur', 'el peluquero', 'die Friseure'], ['der Bäcker', 'el panadero', 'die Bäcker'], ['der Beruf', 'la profesión', 'die Berufe'],
+    ['die Arbeit', 'el trabajo'], ['das Büro', 'la oficina', 'die Büros'],
+  ]),
+  ...V('a1', 'city2', [
+    ['die Straße', 'la calle', 'die Straßen'], ['der Platz', 'la plaza', 'die Plätze'], ['die Kirche', 'la iglesia', 'die Kirchen'],
+    ['das Rathaus', 'el ayuntamiento', 'die Rathäuser'], ['die Post', 'correos (la oficina)'], ['die Bäckerei', 'la panadería', 'die Bäckereien'],
+    ['der Markt', 'el mercado', 'die Märkte'], ['das Geschäft', 'la tienda', 'die Geschäfte'], ['das Hotel', 'el hotel', 'die Hotels'],
+    ['der Flughafen', 'el aeropuerto', 'die Flughäfen'], ['die Brücke', 'el puente', 'die Brücken'], ['die Ampel', 'el semáforo', 'die Ampeln'],
+    ['das Café', 'la cafetería', 'die Cafés'], ['der Preis', 'el precio', 'die Preise'], ['die Bibliothek', 'la biblioteca', 'die Bibliotheken'],
+  ]),
+  ...V('a1', 'adj', [
+    ['groß', 'grande / alto (persona)'], ['klein', 'pequeño'], ['alt', 'viejo / mayor'], ['jung', 'joven'], ['neu', 'nuevo'],
+    ['gut', 'bueno / bien'], ['schlecht', 'malo / mal'], ['schön', 'bonito'], ['hässlich', 'feo'], ['lang', 'largo'], ['kurz', 'corto'],
+    ['leicht', 'fácil / ligero'], ['schwer', 'difícil / pesado'], ['laut', 'ruidoso / fuerte (sonido)'], ['leise', 'silencioso / bajito'],
+    ['voll', 'lleno'], ['leer', 'vacío'], ['billig', 'barato'], ['teuer', 'caro'], ['langsam', 'lento'], ['interessant', 'interesante'],
+    ['langweilig', 'aburrido'], ['traurig', 'triste'], ['lustig', 'divertido / gracioso'], ['freundlich', 'amable / simpático'],
+    ['ruhig', 'tranquilo'], ['hungrig', 'con hambre'], ['durstig', 'con sed'],
+  ]),
+  ...V('a1', 'verb-a1', [
+    ['wohnen', 'vivir (en un sitio)'], ['heißen', 'llamarse'], ['essen', 'comer'], ['trinken', 'beber'], ['schlafen', 'dormir'],
+    ['kochen', 'cocinar'], ['lesen', 'leer'], ['schreiben', 'escribir'], ['hören', 'oír / escuchar'], ['sehen', 'ver'],
+    ['sprechen', 'hablar'], ['verstehen', 'entender'], ['fragen', 'preguntar'], ['antworten', 'responder'], ['suchen', 'buscar'],
+    ['finden', 'encontrar'], ['brauchen', 'necesitar'], ['warten', 'esperar'], ['öffnen', 'abrir'], ['schließen', 'cerrar'],
+    ['beginnen', 'empezar'], ['bezahlen', 'pagar'], ['kosten', 'costar'], ['arbeiten', 'trabajar'], ['lernen', 'aprender / estudiar'],
+    ['spielen', 'jugar / tocar (un instrumento)'], ['tanzen', 'bailar'], ['singen', 'cantar'], ['schwimmen', 'nadar'], ['reisen', 'viajar'],
+    ['besuchen', 'visitar'], ['treffen', 'quedar con alguien'], ['mögen', 'gustar (ich mag…)'], ['wissen', 'saber (un dato)'],
+    ['kennen', 'conocer'], ['kaufen', 'comprar'], ['nehmen', 'tomar / coger'], ['geben', 'dar'], ['laufen', 'correr / andar'],
+    ['tragen', 'llevar puesto / cargar'], ['waschen', 'lavar'], ['verkaufen', 'vender'],
+  ]),
+  ...V('a1', 'sep-a1', [
+    ['aufräumen', 'ordenar (recoger)'], ['anfangen', 'comenzar'], ['mitbringen', 'traer (consigo)'], ['abholen', 'recoger (a alguien)'],
+    ['ankommen', 'llegar'], ['abfahren', 'salir (un tren, un bus)'], ['zurückkommen', 'volver'], ['aufmachen', 'abrir (coloquial)'],
+    ['zumachen', 'cerrar (coloquial)'], ['anziehen', 'ponerse (ropa)'],
+  ]),
+
   // ── Lectura de esta clase ──
   ...V('lesen', 'lesen', [
     ['nett', 'amable'], ['ausfüllen', 'rellenar (un formulario)'], ['plötzlich', 'de repente'], ['glücklich', 'feliz'],

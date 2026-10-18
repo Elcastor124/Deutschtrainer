@@ -1,24 +1,39 @@
 // Selección de preguntas: colas por bloque con dificultad progresiva, sin repeticiones en la sesión.
-import type { BlockId, Difficulty, Question, Topic } from '../shared/types.ts';
+import type { BlockId, Difficulty, Question, QuizBlock, Topic } from '../shared/types.ts';
 
 type Mix = Partial<Record<Difficulty, number>>;
-interface Rule { filter: (q: Question) => boolean; mix: Mix; prefer?: { tag: string; n: number }; unlock?: boolean }
+/** Contexto de la sesión: texto de lectura elegido y preguntas que ya vieron estos alumnos en otras partidas. */
+export interface SelCtx { reading?: string; seen?: Map<string, number> }
+interface Rule { filter: (q: Question, c: SelCtx) => boolean; mix: Mix; prefer?: { reading: true; n: number }; unlock?: boolean }
 
-const GRAMMAR: Topic[] = ['perfekt', 'nebensatz', 'dativ', 'akkusativ', 'praesens', 'trennbar'];
+const GRAMMAR: Topic[] = ['perfekt', 'nebensatz', 'dativ', 'akkusativ', 'praesens', 'trennbar', 'modal', 'possessiv', 'praep', 'adjektiv', 'imperativ'];
 const SATZBAU_TYPES = ['order', 'build', 'error'];
 
-export const RULES: Record<Exclude<BlockId, 'final'>, Rule> = {
-  lesen: { filter: (q) => q.topic === 'lesen', mix: { easy: 3, medium: 3 } },
+/** ¿La pregunta es del texto de lectura de la sesión? (Las preguntas sin etiqueta de texto valen para cualquiera.) */
+const ofText = (q: Question, c: SelCtx) => !q.tags?.some((t) => t.startsWith('text:')) || q.tags.includes(`text:${c.reading}`);
+export const readingTag = (c: SelCtx) => `reading:${c.reading}`;
+
+// Número de preguntas ajustado al tiempo real de cada bloque (~70 s por pregunta con la corrección).
+export const RULES: Record<QuizBlock, Rule> = {
+  lesen: { filter: (q, c) => q.topic === 'lesen' && ofText(q, c), mix: { easy: 3, medium: 3 } },
   warmup: {
     filter: (q) => (q.topic === 'vocab' || q.topic === 'alltag') && q.diff === 'easy' && (q.type === 'mc' || q.type === 'match') && !q.tags?.includes('tf'),
-    mix: { easy: 8 }, prefer: { tag: 'reading', n: 4 },
+    mix: { easy: 7 }, prefer: { reading: true, n: 3 },
   },
-  r1: { filter: (q) => q.topic === 'vocab' || q.topic === 'alltag', mix: { easy: 4, medium: 6, hard: 2 }, prefer: { tag: 'reading', n: 3 } },
-  r2: { filter: (q) => GRAMMAR.includes(q.topic) && !['order', 'build'].includes(q.type), mix: { easy: 2, medium: 6, hard: 2 }, unlock: true },
-  r3: { filter: (q) => SATZBAU_TYPES.includes(q.type) || !!q.tags?.includes('fix'), mix: { easy: 1, medium: 4, hard: 2 }, unlock: true },
-  r4: { filter: (q) => q.topic !== 'lesen', mix: { easy: 1, medium: 4, hard: 2, special: 1 }, unlock: true, prefer: { tag: 'reading', n: 1 } },
-  boss: { filter: (q) => (q.diff === 'hard' || q.diff === 'special') && !!q.why && !q.unlock, mix: { special: 3, hard: 2 } },
+  r1: { filter: (q) => q.topic === 'vocab' || q.topic === 'alltag', mix: { easy: 3, medium: 5, hard: 1 }, prefer: { reading: true, n: 2 } },
+  r2: { filter: (q) => GRAMMAR.includes(q.topic) && !['order', 'build'].includes(q.type), mix: { easy: 2, medium: 4, hard: 2 }, unlock: true },
+  r3: { filter: (q) => SATZBAU_TYPES.includes(q.type) || !!q.tags?.includes('fix'), mix: { easy: 1, medium: 3, hard: 2 }, unlock: true },
+  r4: { filter: (q) => q.topic !== 'lesen', mix: { easy: 1, medium: 3, hard: 2, special: 1 }, unlock: true, prefer: { reading: true, n: 1 } },
+  boss: { filter: (q) => (q.diff === 'hard' || q.diff === 'special') && !!q.why && !q.unlock, mix: { special: 2, hard: 2 } },
 };
+const isQuiz = (b: BlockId): b is QuizBlock => b in RULES;
+
+/** Baraja y deja delante lo que estos alumnos nunca han visto; después, lo visto hace más tiempo. */
+export function freshFirst<T extends { id: string }>(list: T[], rand: () => number, seen?: Map<string, number>): T[] {
+  const r = shuffle(list, rand);
+  if (!seen?.size) return r;
+  return r.sort((a, b) => (seen.get(a.id) ?? 0) - (seen.get(b.id) ?? 0));
+}
 
 const ORDER: Difficulty[] = ['easy', 'medium', 'hard', 'special'];
 
@@ -44,10 +59,10 @@ function spread(list: Question[]): Question[] {
 }
 
 /** Construye la cola de un bloque. «used» evita repetir preguntas ya vistas en la sesión. */
-export function buildQueue(block: BlockId, bank: Map<string, Question>, used: Set<string>, rand: () => number): string[] {
-  if (block === 'final') return [];
+export function buildQueue(block: BlockId, bank: Map<string, Question>, used: Set<string>, rand: () => number, ctx: SelCtx = {}): string[] {
+  if (!isQuiz(block)) return [];
   const rule = RULES[block];
-  const pool = shuffle([...bank.values()].filter((q) => rule.filter(q) && !used.has(q.id)), rand);
+  const pool = freshFirst([...bank.values()].filter((q) => rule.filter(q, ctx) && !used.has(q.id)), rand, ctx.seen);
   const picked: Question[] = [];
   const take = (pred: (q: Question) => boolean, n: number) => {
     for (const q of pool) {
@@ -59,11 +74,12 @@ export function buildQueue(block: BlockId, bank: Map<string, Question>, used: Se
   // 1) Prüfungsfrage que desbloquea la BlackCard (ocupa un hueco «hard»).
   const mix: Mix = { ...rule.mix };
   if (rule.unlock && (mix.hard ?? 0) > 0 && take((q) => !!q.unlock && q.diff === 'hard', 1) === 0) mix.hard = (mix.hard ?? 0) - 1;
-  // 2) Vocabulario de la lectura (vuelve a aparecer).
+  // 2) Vocabulario de la lectura de la sesión (vuelve a aparecer).
   if (rule.prefer) {
+    const tag = readingTag(ctx);
     for (const d of ORDER) {
-      const want = Math.min(mix[d] ?? 0, rule.prefer.n - picked.filter((q) => q.tags?.includes(rule.prefer!.tag)).length);
-      if (want > 0) mix[d] = (mix[d] ?? 0) - (want - take((q) => q.diff === d && !!q.tags?.includes(rule.prefer!.tag) && !q.unlock, want));
+      const want = Math.min(mix[d] ?? 0, rule.prefer.n - picked.filter((q) => q.tags?.includes(tag)).length);
+      if (want > 0) mix[d] = (mix[d] ?? 0) - (want - take((q) => q.diff === d && !!q.tags?.includes(tag) && !q.unlock, want));
     }
   }
   // 3) Resto por dificultad; si falta en un nivel, se completa con el contiguo.
@@ -82,19 +98,19 @@ export function buildQueue(block: BlockId, bank: Map<string, Question>, used: Se
 }
 
 /** Temas disponibles para el WILDCARD dentro de las reglas del bloque. */
-export function wildTopics(block: BlockId, bank: Map<string, Question>, used: Set<string>, rand: () => number): Topic[] {
-  if (block === 'final') return [];
+export function wildTopics(block: BlockId, bank: Map<string, Question>, used: Set<string>, rand: () => number, ctx: SelCtx = {}): Topic[] {
+  if (!isQuiz(block)) return [];
   const rule = RULES[block];
   const topics = new Set<Topic>();
-  for (const q of bank.values()) if (rule.filter(q) && !used.has(q.id) && !q.unlock) topics.add(q.topic);
+  for (const q of bank.values()) if (rule.filter(q, ctx) && !used.has(q.id) && !q.unlock) topics.add(q.topic);
   return shuffle([...topics], rand).slice(0, 2);
 }
 
 /** Pregunta de un tema concreto para el WILDCARD, cerca de la dificultad prevista. */
-export function drawTopic(block: BlockId, topic: Topic, diff: Difficulty, bank: Map<string, Question>, used: Set<string>, rand: () => number): string | null {
-  if (block === 'final') return null;
+export function drawTopic(block: BlockId, topic: Topic, diff: Difficulty, bank: Map<string, Question>, used: Set<string>, rand: () => number, ctx: SelCtx = {}): string | null {
+  if (!isQuiz(block)) return null;
   const rule = RULES[block];
-  const pool = shuffle([...bank.values()].filter((q) => rule.filter(q) && q.topic === topic && !used.has(q.id) && !q.unlock), rand);
+  const pool = freshFirst([...bank.values()].filter((q) => rule.filter(q, ctx) && q.topic === topic && !used.has(q.id) && !q.unlock), rand, ctx.seen);
   const byDist = pool.sort((a, b) => Math.abs(ORDER.indexOf(a.diff) - ORDER.indexOf(diff)) - Math.abs(ORDER.indexOf(b.diff) - ORDER.indexOf(diff)));
   return byDist[0]?.id ?? null;
 }
@@ -116,4 +132,11 @@ export function practiceQueue(stats: Record<string, Stat>, topics: Topic[], focu
   };
   const items = cand.map((q) => ({ q, k: Math.pow(rand(), 1 / weight(q)) })).sort((a, b) => b.k - a.k).slice(0, n).map((x) => x.q);
   return items.sort((a, b) => ORDER.indexOf(a.diff) - ORDER.indexOf(b.diff)).map((q) => q.id);
+}
+
+/** Pregunta para el Wort-Jenga: rápida (elegir, escribir o rellenar), fácil o media, sin repetir. */
+export function jengaQuestion(bank: Map<string, Question>, used: Set<string>, rand: () => number, ctx: SelCtx = {}): string | null {
+  const pool = freshFirst([...bank.values()].filter((q) => ['mc', 'write', 'gap'].includes(q.type) && (q.diff === 'easy' || q.diff === 'medium')
+    && q.topic !== 'lesen' && !used.has(q.id) && !q.tags?.includes('tf')), rand, ctx.seen);
+  return pool[0]?.id ?? null;
 }

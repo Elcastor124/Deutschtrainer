@@ -2,7 +2,7 @@
   "name": "deutsch-trainer-blackcard",
   "private": true,
   "version": "1.0.0",
-  "description": "DEUTSCH TRAINER // BLACKCARD EDITION — quiz multijugador de alemán A1–A2 para una clase de 105 minutos",
+  "description": "DEUTSCH TRAINER // BLACKCARD — quiz multijugador de alemán A1–A2 para una clase de 2 horas: juego + actividades de escritura, rol y Wort-Jenga",
   "type": "module",
   "engines": {
     "node": ">=22.18"
@@ -13,8 +13,11 @@
     "start": "node --disable-warning=ExperimentalWarning server/index.ts",
     "test": "vitest run",
     "check": "tsc --noEmit",
-    "e2e": "node scripts/e2e.mjs",
-    "ui": "node scripts/ui.mjs"
+    "e2e": "node --disable-warning=ExperimentalWarning scripts/e2e.mjs",
+    "ui": "node --disable-warning=ExperimentalWarning scripts/ui.mjs",
+    "tour": "node --disable-warning=ExperimentalWarning scripts/tour.mjs",
+    "bank": "node --disable-warning=ExperimentalWarning scripts/bankstats.mjs",
+    "overflow": "node --disable-warning=ExperimentalWarning scripts/overflow.mjs"
   },
   "dependencies": {
     "ws": "^8.18.3"

@@ -1,383 +1,396 @@
-// Prueba de interfaz con navegadores reales: Edge headless, 3 contextos aislados (profesor + 2 alumnos).
-// Juega desde la UI (clics, arrastre, teclado), comprueba errores de consola y guarda capturas.
+// Prueba de interfaz con navegadores reales (Edge/Chrome headless): profesor 1920×1080, Chromebook 1366×768 y móvil 390×844 táctil.
+// Pulsa de verdad los botones (ratón y toque) y comprueba en el estado del servidor que cada uno hace lo que dice.
 // Uso: npm run build && node scripts/ui.mjs [carpeta-capturas]
-import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
 import { loadBank } from '../server/bank/index.ts';
+import { launch, sleep } from './cdp.mjs';
 
-const SHOTS = resolve(process.argv[2] ?? 'shots');
-mkdirSync(SHOTS, { recursive: true });
-const EDGE = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
-  'C:/Program Files/Google/Chrome/Application/chrome.exe'].find(existsSync);
-const PORT = 4100 + Math.floor(Math.random() * 80);
-const DBG = 9600 + Math.floor(Math.random() * 80);
-const BASE = `http://127.0.0.1:${PORT}`;
-const DATA = mkdtempSync(join(tmpdir(), 'bc-ui-'));
-const PROFILE = mkdtempSync(join(tmpdir(), 'bc-edge-'));
 const bank = loadBank();
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const L = await launch({ shots: process.argv[2] ?? 'shots' });
 let failures = 0;
 const ok = (c, m) => { console.log(`${c ? '  ✔' : '  ✘'} ${m}`); if (!c) failures++; };
+const st = (p, expr) => p.eval(`(()=>{const v=globalThis.__bcNet?.state?.view; return ${expr}})()`);
+const waitSt = (p, expr, what, ms = 8000) => p.until(`(()=>{const v=globalThis.__bcNet?.state?.view; return !!v && (${expr})})()`, what, ms);
 
-const server = spawn(process.execPath, ['server/index.ts'], { env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA }, stdio: 'ignore' });
-const edge = spawn(EDGE, ['--headless=new', `--remote-debugging-port=${DBG}`, `--user-data-dir=${PROFILE}`, '--no-first-run', '--hide-scrollbars',
-  '--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--mute-audio', 'about:blank'], { stdio: 'ignore' });
-
-async function waitHttp(url) {
-  for (let i = 0; i < 80; i++) { try { const r = await fetch(url); if (r.ok) return r; } catch { /* aún no */ } await sleep(200); }
-  throw new Error(`no responde ${url}`);
-}
-
-// ── CDP mínimo con sesiones ──
-let ws, seq = 0;
-const pending = new Map();
-const pageErrors = new Map();
-function send(method, params = {}, sessionId) {
-  const id = ++seq;
-  ws.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
-  return new Promise((res, rej) => pending.set(id, { res, rej, method }));
-}
-
-// Nota: «eval» es solo un envoltorio de Runtime.evaluate (CDP) sobre las páginas locales de esta prueba.
-class Page {
-  constructor(label, sid, w, h) { this.label = label; this.sid = sid; this.w = w; this.h = h; pageErrors.set(sid, []); }
-  async eval(expr) {
-    const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }, this.sid);
-    if (r.exceptionDetails) throw new Error(`${this.label}: ${r.exceptionDetails.exception?.description ?? r.exceptionDetails.text}`);
-    return r.result.value;
-  }
-  async until(expr, what, ms = 8000) {
-    const t = Date.now();
-    while (Date.now() - t < ms) { try { if (await this.eval(expr)) return; } catch { /* reintenta */ } await sleep(120); }
-    throw new Error(`${this.label}: timeout esperando ${what}`);
-  }
-  go(path) { return send('Page.navigate', { url: BASE + path }, this.sid); }
-  state() { return this.eval('globalThis.__bcNet?.state?.view ?? null'); }
-  async rect(sel, i = 0) {
-    return this.eval(`(()=>{const e=document.querySelectorAll(${JSON.stringify(sel)})[${i}]; if(!e) return null; e.scrollIntoView({block:'center'}); const r=e.getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height/2}})()`);
-  }
-  async click(sel, i = 0) {
-    const p = await this.rect(sel, i);
-    if (!p) throw new Error(`${this.label}: no encuentro ${sel}[${i}]`);
-    if (this.touch) {
-      await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: p.x, y: p.y }] }, this.sid);
-      await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }, this.sid);
-    } else {
-      for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) await send('Input.dispatchMouseEvent', { type, x: p.x, y: p.y, button: 'left', clickCount: 1 }, this.sid);
-    }
-    await sleep(80);
-  }
-  async drag(fromSel, fi, toSel) {
-    const a = await this.rect(fromSel, fi);
-    const b = await this.eval(`(()=>{const r=document.querySelector(${JSON.stringify(toSel)}).getBoundingClientRect();return {x:r.right-12,y:r.top+r.height/2}})()`);
-    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: a.x, y: a.y }, this.sid);
-    await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: a.x, y: a.y, button: 'left', clickCount: 1 }, this.sid);
-    for (let k = 1; k <= 8; k++) await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: a.x + ((b.x - a.x) * k) / 8, y: a.y + ((b.y - a.y) * k) / 8, button: 'left' }, this.sid);
-    await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: b.x, y: b.y, button: 'left', clickCount: 1 }, this.sid);
-    await sleep(80);
-  }
-  async type(sel, text, i = 0) {
-    await this.eval(`(()=>{const e=document.querySelectorAll(${JSON.stringify(sel)})[${i}]; e.focus(); e.select?.(); return true})()`);
-    await send('Input.insertText', { text }, this.sid);
-    await sleep(40);
-  }
-  async key(key) {
-    const code = key.length === 1 ? `Key${key.toUpperCase()}` : key;
-    await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, text: key.length === 1 ? key : undefined }, this.sid);
-    await send('Input.dispatchKeyEvent', { type: 'keyUp', key, code }, this.sid);
-    await sleep(80);
-  }
-  async shot(name) {
-    const r = await send('Page.captureScreenshot', { format: 'png' }, this.sid);
-    writeFileSync(join(SHOTS, `${name}.png`), Buffer.from(r.data, 'base64'));
-  }
-}
-
-async function newPage(label, w, h, mobile = false) {
-  const { browserContextId } = await send('Target.createBrowserContext', { disposeOnDetach: true });
-  const { targetId } = await send('Target.createTarget', { url: 'about:blank', browserContextId });
-  const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: true });
-  await send('Page.enable', {}, sessionId);
-  await send('Runtime.enable', {}, sessionId);
-  await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile }, sessionId);
-  if (mobile) await send('Emulation.setTouchEmulationEnabled', { enabled: true }, sessionId);
-  const page = new Page(label, sessionId, w, h);
-  page.touch = mobile;
-  return page;
-}
-
-/** Responde la pregunta actual desde la interfaz (correcta o incorrecta) según su tipo. */
-async function answerUI(p, good, opts = {}) {
-  const v = await p.state();
-  const pub = v.q;
+/** Responde la pregunta actual desde la interfaz (bien o mal) según su tipo. */
+async function answerUI(p, good) {
+  const pub = await st(p, 'v.q');
   const q = bank.get(pub.id);
   switch (q.type) {
     case 'mc': {
       const right = pub.options.indexOf(q.options[q.answer]);
-      const idx = good ? right : pub.options.findIndex((_, i) => i !== right);
-      if (opts.keyboard) await p.key(String(idx + 1)); else await p.click('.opt', idx);
+      await p.click('.qpanel button.opt', good ? right : (right + 1) % pub.options.length);
       break;
     }
     case 'write': case 'build':
-      await p.type('input.field.big', good ? q.accept[0] : 'qqq zzz');
-      await p.click('form .btn.primary');
+      await p.type('.qpanel input.field.big', good ? q.accept[0] : 'qqq zzz');
+      await p.click('.qpanel form .btn.primary');
       break;
     case 'gap':
       for (let i = 0; i < q.gaps.length; i++) await p.type('.gaptext input', good ? q.gaps[i][0] : 'qqq', i);
-      await p.click('.btn.primary');
+      await p.click('.qpanel form .btn.primary');
       break;
     case 'order': {
       const used = new Set();
       const order = q.tokens.map((t) => { const i = pub.tokens.findIndex((x, k) => x === t && !used.has(k)); used.add(i); return i; });
       if (!good) order.reverse();
-      // Las fichas pendientes se reindexan al colocarlas: se busca por texto.
-      for (let k = 0; k < order.length; k++) {
-        const word = pub.tokens[order[k]];
+      for (const k of order) {
+        const word = pub.tokens[k];
         const idx = await p.eval(`[...document.querySelectorAll('.tiles .tile')].findIndex(e=>e.textContent===${JSON.stringify(word)})`);
-        if (k === 0 && opts.drag) await p.drag('.tiles .tile', idx, '.drop');
-        else await p.click('.tiles .tile', idx);
+        await p.click('.tiles .tile', idx);
       }
-      await p.click('.btn.primary.lg');
+      await p.click('.qpanel .btn.primary.lg');
       break;
     }
     case 'error':
       await p.click('.errtok', good ? q.wrong : (q.wrong + 1) % q.tokens.length);
-      await p.type('input.field.big', good ? q.fix[0] : 'qqq');
-      await p.click('form .btn.primary');
+      await p.type('.qpanel input.field.big', good ? q.fix[0] : 'qqq');
+      await p.click('.qpanel form .btn.primary');
       break;
     case 'match':
       for (let i = 0; i < q.pairs.length; i++) {
         await p.click('.match .col:first-child .mitem', i);
         await p.click('.match .col:last-child .mitem', good ? pub.right.indexOf(q.pairs[i][1]) : (i + 1) % q.pairs.length);
       }
-      await p.click('.btn.primary.lg');
+      await p.click('.qpanel .btn.primary.lg');
       break;
   }
   return q.type;
 }
+const pid = async (T, name) => (await st(T, 'v.players')).find((p) => p.name === name).id;
+/** El profesor da un objeto desde su panel (select + botón «Dar …»). */
+async function give(T, idx, item) {
+  await T.eval(`document.querySelector('details.tools').open = true`);
+  await T.eval(`(()=>{const s=document.querySelectorAll('details.tools select')[0]; const set=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set; set.call(s,${JSON.stringify(item)}); s.dispatchEvent(new Event('change',{bubbles:true})); return true})()`);
+  await sleep(80);
+  const i = await T.eval(`[...document.querySelectorAll('details.tools .btn')].filter(b=>b.textContent.startsWith('Dar ') && !b.textContent.includes('cofre')).map(b=>[...document.querySelectorAll('details.tools .btn')].indexOf(b))[${idx}]`);
+  await T.click('details.tools .btn', i);
+}
+/** Si llega con la mano llena, el alumno sustituye la primera carta desde el modal. */
+async function settle(p, item) {
+  await waitSt(p, `v.me.inventory.includes(${JSON.stringify(item)}) || v.me.pickups.length>0`, `recibir ${item}`);
+  while ((await st(p, 'v.me.pickups.length')) > 0) {
+    await p.until(`!!document.querySelector('.ovl .cards .card3d .front')`, 'modal de mano llena');
+    await p.click('.ovl .cards .card3d .front', 0);
+    await sleep(250);
+  }
+}
+async function useCard(p, item, target) {
+  const i = await st(p, `v.me.inventory.indexOf(${JSON.stringify(item)})`);
+  await p.click('.cards .slot .front', i);
+  await sleep(700);
+  if (target) await p.click('.card3d.flipped .targets .btn'); else await p.click('.card3d.flipped .use');
+}
+const teacherNext = (T) => T.click('.controls .btn.primary');
 
-let T, A, B;
-const typesSeen = new Set();
 try {
-  await waitHttp(`${BASE}/api/health`);
-  const ver = await (await waitHttp(`http://127.0.0.1:${DBG}/json/version`)).json();
-  ws = new WebSocket(ver.webSocketDebuggerUrl);
-  await new Promise((r) => { ws.onopen = r; });
-  ws.onmessage = (e) => {
-    const m = JSON.parse(e.data);
-    if (m.id && pending.has(m.id)) { const p = pending.get(m.id); pending.delete(m.id); m.error ? p.rej(new Error(`${p.method}: ${m.error.message}`)) : p.res(m.result); }
-    if (m.method === 'Runtime.exceptionThrown') pageErrors.get(m.sessionId)?.push(m.params.exceptionDetails.exception?.description ?? m.params.exceptionDetails.text);
-    if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') pageErrors.get(m.sessionId)?.push(m.params.args.map((a) => a.value ?? a.description).join(' '));
-  };
+  const T = await L.newPage('profesor', 1920, 1080);
+  const A = await L.newPage('Ana (Chromebook)', 1366, 768);
+  const B = await L.newPage('Tomás (móvil)', 390, 844, true);
 
-  T = await newPage('profesor', 1920, 1080);
-  A = await newPage('Ana (Chromebook)', 1366, 768);
-  B = await newPage('Tomás (móvil)', 390, 844, true);
-
-  console.log('\n1 · Inicio, sala y entrada de alumnos');
+  console.log('\n1 · Inicio, sala y entrada');
   await T.go('/');
-  await T.until(`!!document.querySelector('.home-title')`, 'home');
-  await T.shot('01-home-1920');
+  await T.until(`!!document.querySelector('.home-card .btn.primary')`, 'home');
   await T.click('.home-card .btn.primary');
-  await T.until(`/^\\/t\\/[A-Z0-9]{4}$/.test(location.pathname) && !!document.querySelector('.lobby-code')`, 'lobby');
-  const code = await T.eval(`document.querySelector('.lobby-code').textContent`);
-  ok(/^[A-Z0-9]{4}$/.test(code), `sala creada: ${code}`);
+  await T.until(`!!document.querySelector('.lobby-code')`, 'lobby');
+  const code = await T.eval(`location.pathname.split('/').pop()`);
+  ok(/^[A-Z0-9]{4}$/.test(code), `el botón «Crear sala» crea la sala ${code}`);
   for (const [p, name] of [[A, 'Ana'], [B, 'Tomás']]) {
     await p.go('/');
-    await p.until(`!!document.querySelector('.home-title')`, 'home');
+    await p.until(`!!document.querySelector('input[aria-label="Código de sala"]')`, 'home');
     await p.type('input[aria-label="Código de sala"]', code);
     await p.type('input[aria-label="Tu nombre"]', name);
     await p.click('form.home-card .btn.primary');
-    await p.until(`!!document.querySelector('#my-score')`, 'dentro de la sala');
+    await p.until(`!!document.querySelector('#my-score')`, 'dentro');
   }
-  await T.until(`document.querySelectorAll('.lb .r').length === 2`, 'dos alumnos en el ranking');
-  ok(true, 'los dos alumnos entran desde la interfaz');
-  await B.shot('02-alumno-lobby-movil');
-  await T.shot('03-profesor-lobby');
+  await T.until(`document.querySelectorAll('.slot-pad.on').length === 2`, 'dos alumnos');
+  ok(true, 'los alumnos entran con el formulario y el profesor ve sus pilotos encendidos');
+  await T.click('.lobby .btn.primary.xl');
+  await waitSt(A, `v.block==='lesen' && v.phase==='intro'`, 'Leseverstehen');
+  ok(true, 'el botón «Empezar la clase» funciona');
 
-  console.log('\n2 · Leseverstehen');
-  await T.key(' ');
-  await A.until(`!!document.querySelector('.reading .gl')`, 'texto de lectura');
-  await A.click('.reading .gl', 3);
-  ok(await A.eval(`!!document.querySelector('.gl .tip')`), 'pulsar una palabra subrayada muestra la traducción');
-  await A.shot('04-alumno-lectura-chromebook');
-  await T.shot('05-profesor-lectura');
-  await T.key(' ');
-  await A.until(`!!document.querySelector('.qhead')`, 'pregunta');
-  await B.until(`!!document.querySelector('.qhead')`, 'pregunta');
-  await A.shot('06-alumno-pregunta-lectura');
-  typesSeen.add(await answerUI(A, true, { keyboard: true }));
-  await A.until(`document.body.innerText.includes('Respuesta recibida') || !!document.querySelector('.verdict')`, 'confirmación del servidor');
-  ok(true, 'la confirmación llega del servidor (no es local)');
-  typesSeen.add(await answerUI(B, false));
-  await A.until(`!!document.querySelector('.verdict')`, 'corrección');
-  await sleep(500);
-  await A.shot('07-alumno-correccion');
-  await B.shot('08-movil-correccion');
-  await T.shot('09-profesor-correccion');
-  const sv = await T.state();
-  ok(sv.players[0].name === 'Ana' && sv.players[0].score > 0, 'ranking: Ana primera con puntos');
+  console.log('\n2 · Leseverstehen y preguntas');
+  await A.click('.reading .gl', 1);
+  ok(await A.eval(`!!document.querySelector('.gl .tip')`), 'tocar una palabra subrayada muestra su traducción');
+  await teacherNext(T);
+  await waitSt(A, `v.phase==='question'`, 'pregunta');
+  ok(await T.eval(`document.querySelectorAll('.qpanel button.opt, .qpanel button.tile, .qpanel button.mitem, .qpanel button.errtok').length === 0`),
+    'en el proyector las respuestas NO son botones (solo se muestran)');
+  ok(await T.eval(`!!document.querySelector('.device-hint')`), 'el proyector indica que se responde en cada dispositivo');
+  await answerUI(A, true);
+  await waitSt(A, `v.me.state==='sent' || v.phase==='reveal'`, 'respuesta registrada');
+  ok(true, 'Ana responde pulsando en su pantalla y el servidor lo registra');
+  await answerUI(B, false);
+  await waitSt(T, `v.phase==='reveal' || v.phase==='review'`, 'corrección');
+  if ((await st(T, 'v.phase')) === 'review') await T.click('.review-item .btn.primary');
+  await waitSt(T, `v.phase==='reveal'`, 'corrección');
+  ok(true, 'Tomás responde con el dedo (móvil) y se corrige al responder todos');
+  await A.until(`!!document.querySelector('.verdict')`, 'veredicto');
+  await A.shot('ui-01-veredicto');
+  await T.shot('ui-02-correccion-proyector');
+  await teacherNext(T);
+  await waitSt(T, `v.phase==='question' && v.qNo===2`, 'segunda pregunta');
+  ok(true, 'el botón «Siguiente pregunta» funciona');
+  await T.click('.controls .btn.signal');
+  await waitSt(T, `v.phase==='reveal' || v.phase==='review'`, 'cerrar');
+  ok(true, 'el botón «Cerrar y corregir» funciona');
 
-  console.log('\n3 · Rondas con objetos: jugar varias preguntas de cada tipo');
-  const playBlock = async (block, n, extra) => {
-    await T.eval(`document.querySelectorAll('.seq button.step')[${['lesen', 'warmup', 'r1', 'r2', 'r3', 'r4', 'boss', 'final'].indexOf(block)}].click()`);
-    await A.until(`globalThis.__bcNet.state.view?.block === ${JSON.stringify(block)} && globalThis.__bcNet.state.view?.phase === 'intro'`, `intro ${block}`);
-    for (let i = 0; i < n; i++) {
-      await T.key(' ');
-      await A.until(`globalThis.__bcNet.state.view?.phase === 'question'`, 'pregunta');
-      await B.until(`globalThis.__bcNet.state.view?.phase === 'question'`, 'pregunta');
-      if (extra) await extra(i);
-      typesSeen.add(await answerUI(A, true, { drag: i === 0 }));
-      typesSeen.add(await answerUI(B, i % 2 === 0));
-      await T.until(`['reveal','review'].includes(globalThis.__bcNet.state.view?.phase)`, 'corrección');
-      if ((await T.state()).phase === 'review') { await T.shot(`10-profesor-revision-${block}`); await T.click('.review-item .btn.primary'); }
-      await T.until(`globalThis.__bcNet.state.view?.phase === 'reveal'`, 'reveal');
-    }
-  };
-  await playBlock('r3', 3, async (i) => { if (i === 0) { await A.shot('11-alumno-ordenar'); await B.shot('12-movil-ordenar'); } });
-  await A.shot('13-alumno-reveal-satzbau');
-  await playBlock('r1', 4, async (i) => { if (i === 1) await T.shot('14-profesor-pregunta-r1'); });
+  console.log('\n3 · Cofres y cartas');
+  await T.click('button.pad', 2);
+  await waitSt(A, `v.block==='r1' && v.me.chests.length===1`, 'cofre inicial');
+  ok(true, 'pulsar un pad del secuenciador salta al bloque (Vocabulary Rush) y llega el cofre inicial');
+  await A.click('.chest-tile', 0);
+  await A.until(`!!document.querySelector('.chest-big')`, 'escena del cofre');
+  for (let i = 0; i < 3; i++) { await A.click('.chest-big'); await sleep(220); }
+  await A.until(`!!document.querySelector('.prize')`, 'premio', 6000);
+  const prizeName = await A.eval(`document.querySelector('.prize-name b').textContent`);
+  await A.shot('ui-03-cofre-premio');
+  await A.click('.prize .btn.primary');
+  ok((await st(A, 'v.me.inventory.length')) === 1 && (await st(A, 'v.me.chests.length')) === 0, `tres golpes abren el cofre: ${prizeName} pasa a la mano`);
+  await B.click('.chest-tile', 0);
+  for (let i = 0; i < 3; i++) { await B.click('.chest-big'); await sleep(220); }
+  await B.until(`!!document.querySelector('.prize')`, 'premio móvil', 6000);
+  await B.click('.prize .btn.primary');
+  ok((await st(B, 'v.me.inventory.length')) === 1, 'Tomás abre su cofre desde el móvil');
 
-  console.log('\n4 · Objetos desde la interfaz');
-  // El profesor da objetos con su panel
-  await T.eval(`document.querySelector('details.tools').open = true`);
-  const give = async (pi, item) => {
-    await T.eval(`(()=>{const s=document.querySelector('details.tools select'); const set=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set; set.call(s,${JSON.stringify(item)}); s.dispatchEvent(new Event('change',{bubbles:true})); return true})()`);
-    await sleep(80);
-    const idx = await T.eval(`[...document.querySelectorAll('details.tools .btn')].findIndex((b,i,arr)=>b.textContent.startsWith('Dar ') && arr.filter(x=>x.textContent.startsWith('Dar ')).indexOf(b)===${pi})`);
-    await T.click('details.tools .btn', idx);
-  };
-  /** Si el inventario está lleno, el alumno cambia el primer objeto por el nuevo desde el modal. */
-  let pickShot = false;
-  const settle = async (pg, item) => {
-    await pg.until(`(()=>{const m=globalThis.__bcNet.state.view.me; return m.inventory.includes(${JSON.stringify(item)}) || m.pickups.length>0})()`, `recibir ${item}`);
-    while ((await pg.state()).me.pickups.length) {
-      await pg.until(`!!document.querySelector('.ovl .cards .card3d .front')`, 'modal inventario lleno');
-      if (!pickShot) { pickShot = true; await pg.shot('14b-inventario-lleno'); }
-      await pg.click('.ovl .cards .card3d .front', 0);
-      await sleep(250);
-    }
-  };
-  const aIdx = (await T.state()).players.findIndex((p) => p.name === 'Ana');
-  const bIdx = (await T.state()).players.findIndex((p) => p.name === 'Tomás');
-  await give(bIdx, 'shield');
+  const pa = await pid(T, 'Ana'), pb = await pid(T, 'Tomás');
+  const idxA = (await st(T, 'v.players')).findIndex((p) => p.name === 'Ana');
+  const idxB = (await st(T, 'v.players')).findIndex((p) => p.name === 'Tomás');
+  await give(T, idxB, 'shield');
   await settle(B, 'shield');
-  await give(aIdx, 'thief');
+  await give(T, idxA, 'thief');
   await settle(A, 'thief');
-  await T.key(' ');
-  await A.until(`globalThis.__bcNet.state.view?.phase === 'question'`, 'pregunta');
-  const invA = (await A.state()).me.inventory;
-  ok(invA.includes('thief'), `Ana tiene THIEF (inventario: ${invA.join(', ')})`);
-  const ti = invA.indexOf('thief');
-  await A.click('.cards .card3d .front', ti);
-  await sleep(650);
-  await A.shot('15-alumno-carta-girada');
-  await A.click('.card3d.flipped .targets .btn');
-  await B.until(`!!document.querySelector('.alert')`, 'aviso de ataque');
+  ok(true, 'el profesor regala objetos desde su panel');
+  await teacherNext(T);
+  await waitSt(A, `v.phase==='question'`, 'pregunta r1');
+  await useCard(A, 'thief', pb);
+  await waitSt(B, `v.me.incoming.length>0`, 'aviso de ataque');
+  ok(await B.eval(`document.body.dataset.target==='on'`), 'Ana usa THIEF desde su carta y la pantalla de Tomás entra en «punto de mira»');
   await sleep(500);
-  await B.shot('16-movil-ataque-recibido');
-  await T.shot('17-profesor-animacion-objeto');
-  const shIdx = (await B.state()).me.inventory.indexOf('shield');
-  if (shIdx >= 0) {
-    await B.eval(`document.querySelector('.tray').scrollIntoView()`);
-    await B.click('.cards .card3d .front', shIdx);
-    await sleep(650);
-    await B.click('.card3d.flipped .use');
-  }
-  await B.until(`globalThis.__bcNet.state.view.players.find(p=>p.name==='Tomás').shield === true`, 'escudo activo');
-  ok(true, 'Tomás activa SHIELD como reacción desde su móvil');
-  typesSeen.add(await answerUI(A, true));
-  typesSeen.add(await answerUI(B, true));
-  await T.until(`globalThis.__bcNet.state.view?.phase === 'reveal'`, 'reveal');
-  ok((await T.state()).log.some((f) => f.kind === 'block'), 'el escudo bloquea el robo');
+  await B.shot('ui-04-movil-punto-de-mira');
+  await T.shot('ui-05-proyector-thief');
+  await B.eval(`document.querySelector('.hand').scrollIntoView()`);
+  await useCard(B, 'shield');
+  await waitSt(B, `v.players.find(p=>p.name==='Tomás').shield`, 'escudo');
+  ok(await B.eval(`document.body.dataset.shield==='on'`), 'Tomás reacciona con SHIELD desde el móvil y aparece el marco del escudo');
+  await answerUI(A, true);
+  await answerUI(B, true);
+  await waitSt(T, `v.phase==='reveal' || v.phase==='review'`, 'reveal');
+  if ((await st(T, 'v.phase')) === 'review') await T.click('.review-item .btn.primary');
+  await waitSt(T, `v.phase==='reveal'`, 'reveal');
+  ok(await st(T, `v.log.some(f=>f.kind==='block')`), 'el escudo bloquea el robo');
 
-  console.log('\n5 · BlackCard (Final Boss)');
-  await T.eval(`document.querySelectorAll('.seq button.step')[6].click()`);
-  await A.until(`globalThis.__bcNet.state.view?.block === 'boss'`, 'boss');
-  await T.eval(`document.querySelector('details.tools').open = true`);
-  await give(aIdx, 'blackcard');
+  // WILDCARD
+  await give(T, idxA, 'wildcard');
+  await settle(A, 'wildcard');
+  await teacherNext(T);
+  await waitSt(A, `v.phase==='question'`, 'pregunta');
+  await useCard(A, 'wildcard');
+  await waitSt(A, `v.me.used==='wildcard'`, 'comodín activo');
+  await answerUI(A, true);
+  await answerUI(B, false);
+  await waitSt(T, `v.phase==='reveal' || v.phase==='review'`, 'reveal');
+  if ((await st(T, 'v.phase')) === 'review') await T.click('.review-item .btn.primary');
+  await waitSt(T, `v.phase==='reveal'`, 'reveal');
+  await teacherNext(T);
+  await waitSt(A, `v.phase==='wild'`, 'elección de categoría');
+  const topic = await A.eval(`document.querySelectorAll('.wild-card .wc-de')[1].textContent`);
+  await A.click('.wild-card', 1);
+  await waitSt(A, `v.phase==='question'`, 'pregunta elegida');
+  ok(true, `WILDCARD: Ana elige «${topic}» pulsando una carta`);
+
+  console.log('\n4 · BlackCard');
+  await T.click('button.pad', 6);
+  await waitSt(A, `v.block==='boss'`, 'boss');
+  await give(T, idxA, 'blackcard');
   await settle(A, 'blackcard');
-  await T.key(' ');
-  await A.until(`globalThis.__bcNet.state.view?.phase === 'question'`, 'pregunta boss');
-  await A.shot('18-alumno-boss');
-  const bi = (await A.state()).me.inventory.indexOf('blackcard');
-  await A.click('.cards .card3d .front', bi);
-  await sleep(650);
-  await A.click('.card3d.flipped .use');
+  await teacherNext(T);
+  await waitSt(A, `v.phase==='question'`, 'pregunta boss');
+  await useCard(A, 'blackcard');
   await A.until(`!!document.querySelector('.bcfx')`, 'escena BlackCard');
-  await A.until(`!!document.querySelector('.bcfx canvas') || !!document.querySelector('.bc-lite')`, 'canvas BlackCard', 4000);
-  ok(await A.eval(`!!document.querySelector('.bcfx canvas')`), 'la BlackCard se renderiza en 3D (WebGL)');
+  await A.until(`!!document.querySelector('.bcfx canvas') || !!document.querySelector('.bc-lite')`, 'canvas', 5000);
+  ok(await A.eval(`!!document.querySelector('.bcfx canvas')`), 'la BlackCard se activa desde la carta y se renderiza en 3D');
+  ok(await A.eval(`document.body.dataset.bc==='on'`), 'modo rojo y negro activado');
   await sleep(900);
-  await A.shot('19-blackcard-activacion');
-  await T.shot('20-profesor-blackcard-activacion');
-  ok(await A.eval(`document.body.dataset.bc === 'on'`), 'modo rojo y negro activado en la pantalla de Ana');
-  await A.until(`!document.querySelector('.bcfx')`, 'fin activación', 8000);
-  typesSeen.add(await answerUI(A, true));
-  typesSeen.add(await answerUI(B, false));
-  await T.until(`['reveal','review'].includes(globalThis.__bcNet.state.view?.phase)`, 'corrección');
-  if ((await T.state()).phase === 'review') await T.click('.review-item .btn.primary');
-  await A.until(`!!document.querySelector('.bcfx')`, 'quemado', 8000);
-  await sleep(2200);
-  await A.shot('21-blackcard-quemandose');
-  await T.shot('22-profesor-blackcard-quemandose');
-  await A.until(`!document.querySelector('.bcfx')`, 'fin quemado', 9000);
+  await A.shot('ui-06-blackcard');
+  await A.until(`!document.querySelector('.bcfx')`, 'fin activación', 9000);
+  await answerUI(A, true);
+  await answerUI(B, false);
+  await waitSt(T, `v.phase==='reveal' || v.phase==='review'`, 'reveal');
+  if ((await st(T, 'v.phase')) === 'review') await T.click('.review-item .btn.primary');
+  await A.until(`!!document.querySelector('.bcfx')`, 'quemado', 9000);
+  ok(true, 'la BlackCard se quema al corregir');
+  await A.until(`!document.querySelector('.bcfx')`, 'fin quemado', 10000);
 
-  console.log('\n6 · Diccionario, marcador, reconexión, pantallas pequeñas');
-  await A.key('d');
+  console.log('\n5 · Herramientas del HUD');
+  await A.click('button[title^="Diccionario"]');
   await A.until(`!!document.querySelector('.dict-list')`, 'diccionario');
-  await A.type('.ovl input.field', 'Notaufnahme');
-  ok(await A.eval(`document.querySelector('.dict-list').innerText.includes('urgencias')`), 'el diccionario (tecla D) encuentra «Notaufnahme» → urgencias');
-  await A.shot('23-diccionario');
+  await A.type('.ovl input.field', 'Kühlschrank');
+  ok(await A.eval(`document.querySelector('.dict-list').innerText.includes('nevera')`), 'el botón Diccionario abre la búsqueda (Kühlschrank → nevera)');
+  await A.click('.ovl .btn.sm');
+  ok(await A.eval(`!document.querySelector('.ovl')`), 'el botón «Cerrar» cierra el diccionario');
+  await A.click('button[title^="Marcador"]');
+  ok(await A.eval(`!!document.querySelector('.ovl .lb')`), 'el botón Marcador abre el ranking');
   await A.key('Escape');
-  await B.key('p');
-  await B.until(`!!document.querySelector('.ovl .lb')`, 'marcador');
-  await B.shot('24-movil-marcador');
-  await B.key('Escape');
-  const before = (await A.state()).players.find((p) => p.name === 'Ana').score;
-  await send('Page.reload', {}, A.sid);
-  await A.until(`!!globalThis.__bcNet?.state?.view?.me`, 'reconexión tras recargar');
-  const after = (await A.state()).players.find((p) => p.name === 'Ana').score;
-  ok(after === before && (await A.state()).players.length === 2, `recargar la página no pierde la puntuación (${after})`);
+  const lite0 = await A.eval(`document.documentElement.dataset.lite`);
+  await A.click('button[title^="Efectos"]');
+  const lite1 = await A.eval(`document.documentElement.dataset.lite`);
+  await A.click('button[title^="Efectos"]');
+  ok(lite0 !== lite1, 'el botón Efectos cambia el modo ligero');
+  const snd0 = await A.eval(`document.querySelector('button[title^="Sonido"], button[title^="Silencio"]').getAttribute('aria-pressed')`);
+  await A.click('button[title^="Sonido"], button[title^="Silencio"]');
+  const snd1 = await A.eval(`document.querySelector('button[title^="Sonido"], button[title^="Silencio"]').getAttribute('aria-pressed')`);
+  ok(snd0 !== snd1, 'el botón de sonido se activa y desactiva');
+  await A.click('button[title^="Atajos"]');
+  ok(await A.eval(`!!document.querySelector('.ovl')`), 'el botón Atajos abre la ayuda');
+  await A.click('.ovl .btn.sm');
+  await T.click('button.code-chip');
+  await sleep(200);
+  ok(await T.eval(`['COPIADO', ${JSON.stringify(code)}].includes(document.querySelector('button.code-chip').textContent)`), 'el código de sala del profesor es un botón que copia el enlace (sin bloquear la página)');
+  const before = (await st(A, 'v.players')).find((p) => p.name === 'Ana').score;
+  await A.reload();
+  await A.until(`!!globalThis.__bcNet?.state?.view?.me`, 'reconexión');
+  ok((await st(A, 'v.players')).find((p) => p.name === 'Ana').score === before, 'recargar la página no pierde la puntuación');
+
+  console.log('\n6 · Podio');
+  await T.click('button.pad', 7);
+  await A.until(`!!document.querySelector('.podium')`, 'podio');
+  await A.click('.seg-tabs .btn', 1);
+  ok(await A.eval(`document.querySelectorAll('.seg-tabs .btn')[1].getAttribute('aria-selected')==='true'`), 'las pestañas del repaso de errores funcionan');
+  await sleep(3500);
+  await T.shot('ui-07-podio');
+
+  console.log('\n7 · Después del juego');
+  await teacherNext(T);
+  await waitSt(A, `v.block==='rolle' && v.phase==='intro'`, 'intro rolle');
+  ok(await T.eval(`document.body.dataset.theme==='workshop'`), 'el Acto II cambia la pantalla a modo papel');
+  await teacherNext(T);
+  await waitSt(A, `v.phase==='task' && v.task.kind==='rolle'`, 'escritura');
+  const words = await st(A, `v.task.sets[v.me.id].words.map(w=>w.de)`);
+  await A.eval(`(()=>{const t=document.querySelector('.writer textarea'); t.focus(); t.setSelectionRange(t.value.length,t.value.length); return true})()`);
+  await L.send('Input.insertText', { text: ` Plötzlich kommt ${words[0]} und dann ${words[1]}!` }, A.sid);
+  await A.until(`document.querySelectorAll('.wchip.on').length >= 2`, 'palabras marcadas');
+  ok(true, 'al escribir, las palabras de la lista se encienden en directo');
+  await A.until(`document.querySelector('.save').textContent.includes('Guardado')`, 'guardado', 6000);
+  await A.click('.writer-bar .btn.primary');
+  await waitSt(T, `v.task.entries[${JSON.stringify(pa)}].done`, 'entregado');
+  ok(true, 'el botón «Entregar» envía el texto al servidor');
+  await T.shot('ui-08-progreso-escritura');
+  await teacherNext(T);
+  await waitSt(T, `v.task.stage==='show'`, 'mostrar');
+  const showBtns = await T.eval(`document.querySelectorAll('.ctl-group .btn').length`);
+  /** Índice global del botón k del grupo de un alumno en los controles del profesor. */
+  const ctlIdx = (name, k) => T.eval(`(()=>{const all=[...document.querySelectorAll('.ctl-group .btn')]; const g=[...document.querySelectorAll('.ctl-group')].find(x=>x.querySelector('b').textContent===${JSON.stringify('X')}.replace('X', ${JSON.stringify(name)})); return all.indexOf(g.querySelectorAll('.btn')[${k}])})()`);
+  await T.click('.ctl-group .btn', await ctlIdx('Tomás', 0));
+  await waitSt(T, `v.task.showing===${JSON.stringify(pb)}`, 'mostrar Tomás');
+  await T.click('.ctl-group .btn', await ctlIdx('Ana', 1));
+  await waitSt(T, `v.task.entries[${JSON.stringify(pa)}].bonus===1`, 'estrella extra');
+  ok(showBtns >= 6, 'el profesor proyecta el texto de cada alumno y da estrellas con sus botones');
+  await teacherNext(T);
+  await waitSt(T, `v.phase==='roundEnd'`, 'fin rolle');
+  ok((await st(T, 'v.players')).find((p) => p.name === 'Ana').stars >= 3, 'las estrellas se suman al terminar');
+
+  await teacherNext(T);
+  await teacherNext(T);
+  await waitSt(A, `v.task?.kind==='szene'`, 'escena');
+  ok(await A.eval(`!!document.querySelector('.role-card .rc-goals')`), 'cada alumno ve su tarjeta de rol con objetivos secretos');
+  await B.shot('ui-09-movil-tarjeta');
+  await teacherNext(T);
+  await waitSt(T, `v.task.stage==='play'`, 'acción');
+  await teacherNext(T);
+  await waitSt(T, `v.task.stage==='score'`, 'valorar');
+  await T.click('.goal-ctl .btn', 0);
+  await waitSt(T, `Object.values(v.task.goals).some(g=>g[0])`, 'objetivo marcado');
+  ok(true, 'botones de la escena: «¡Acción!», «Valorar objetivos» y marcar objetivos');
+  await teacherNext(T);
+  await waitSt(T, `v.phase==='roundEnd'`, 'fin escena');
+
+  await teacherNext(T);
+  await teacherNext(T);
+  await waitSt(B, `v.task?.kind==='wort'`, 'schreibwerkstatt');
+  ok(await B.eval(`document.querySelectorAll('.wchip').length===6`), 'Schreibwerkstatt: cada alumno recibe 6 palabras');
+  await teacherNext(T);
+  await teacherNext(T);
+  await waitSt(T, `v.phase==='roundEnd'`, 'fin wort');
+
+  await teacherNext(T);
+  await teacherNext(T);
+  await waitSt(A, `v.task?.kind==='frei'`, 'freies schreiben');
+  await A.click('.prompt-card', 2);
+  await waitSt(A, `v.task.choice[v.me.id]===2`, 'consigna elegida');
+  ok(true, 'Freies Schreiben: se elige consigna pulsando su tarjeta');
+  await A.type('.writer textarea', 'Gestern bin ich mit dem Bus gefahren, weil es geregnet hat.');
+  await A.until(`document.querySelectorAll('.feat.on').length >= 3`, 'estructuras detectadas');
+  ok(true, 'detecta Perfekt, Nebensatz y Dativ mientras se escribe');
+  await teacherNext(T);
+  await teacherNext(T);
+  await waitSt(T, `v.phase==='roundEnd'`, 'fin frei');
+
+  await teacherNext(T);
+  await teacherNext(T);
+  await waitSt(T, `v.task?.kind==='jenga'`, 'jenga');
+  for (let round = 0; round < 2; round++) {
+    const turn = await st(T, 'v.task.turn');
+    const P = turn === pa ? A : B;
+    const tk = await st(T, 'v.task');
+    if (tk.speak) {
+      await T.click('.task-ctl .btn.primary');
+    } else {
+      await waitSt(P, `v.task.q`, 'pregunta jenga');
+      const pub = tk.q;
+      const q = bank.get(pub.id);
+      if (q.type === 'mc') { await P.click('.jenga .qpanel button.opt', pub.options.indexOf(q.options[q.answer])); }
+      else if (q.type === 'gap') { for (let i = 0; i < q.gaps.length; i++) await P.type('.jenga .gaptext input', q.gaps[i][0], i); await P.click('.jenga .qpanel form .btn.primary'); }
+      else { await P.type('.jenga .qpanel input.field.big', q.accept[0]); await P.click('.jenga .qpanel form .btn.primary'); }
+    }
+    await waitSt(T, `v.task.stage==='pull' || v.task.stage==='judge'`, 'quitar pieza');
+    if ((await st(T, 'v.task.stage')) === 'judge') await T.click('.task-ctl .btn.primary');
+    await waitSt(P, `v.task.stage==='pull'`, 'quitar pieza (alumno)');
+    let pulls = await st(T, 'v.task.pulls');
+    while (pulls > 0 && (await st(T, 'v.task.stage')) === 'pull') {
+      // Una pieza visible que reciba el toque (las de delante tapan a las de detrás).
+      const idx = await P.eval(`(()=>{const fs=[...document.querySelectorAll('.blk.can .f.front, .blk.can .f.top')]; for (let i=0;i<fs.length;i++){const r=fs[i].getBoundingClientRect(); const h=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2); if (h && h.closest('.blk.can')===fs[i].closest('.blk')) return i;} return -1})()`);
+      if (idx < 0) break;
+      const lv = await st(T, 'v.task.levels.length');
+      await P.click('.blk.can .f.front, .blk.can .f.top', idx);
+      await T.until(`(()=>{const v=globalThis.__bcNet.state.view; return v.task.levels.length!==${lv} || v.task.pulls!==${pulls} || v.task.stage!=='pull'})()`, 'pieza sacada', 6000);
+      pulls = await st(T, 'v.task.pulls');
+    }
+  }
+  ok((await st(T, 'v.task.levels.length')) > 15 || (await st(T, 'v.task.stage')) === 'fallen', 'Wort-Jenga: se responde y se sacan piezas tocando la torre 3D');
+  await T.shot('ui-10-jenga');
+  if ((await st(T, 'v.task.stage')) !== 'fallen') {
+    await T.click('.task-ctl .btn');
+    ok(true, 'el botón «Pasar turno» funciona');
+  }
+  await teacherNext(T);
+  await waitSt(T, `v.phase==='roundEnd'`, 'fin jenga');
+  await teacherNext(T);
+  await waitSt(A, `v.block==='ende' && v.phase==='final'`, 'Feierabend');
+  ok(await A.eval(`!!document.querySelector('.bon')`), 'Feierabend: resumen final con tickets');
+
+  console.log('\n8 · Práctica en casa (móvil)');
+  await B.go('/practica');
+  await B.until(`!!document.querySelector('form .btn.primary.lg')`, 'formulario práctica');
+  await B.click('form .btn.primary.lg');
+  await waitSt(B, `v.phase==='question'`, 'pregunta de práctica');
+  await answerUI(B, false);
+  await waitSt(B, `v.phase==='reveal'`, 'corrección práctica');
+  await B.click('.qpanel .btn.primary.lg');
+  await waitSt(B, `v.phase==='question' && v.qNo===2`, 'siguiente práctica');
+  ok(true, 'práctica: responder y pulsar «Siguiente»');
   const overflow = await B.eval(`document.documentElement.scrollWidth > innerWidth + 1`);
-  const culprits = overflow ? await B.eval(`[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1 && !e.closest('.toasts')).slice(0,6).map(e=>e.tagName+'.'+e.className).join(' | ')`) : '';
+  const culprits = overflow ? await B.eval(`[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1 && getComputedStyle(e).position!=='fixed' && !e.closest('.toasts')).slice(0,6).map(e=>e.tagName+'.'+e.className+' «'+(e.textContent||'').slice(0,40)+'»').join(' | ')`) : '';
   ok(!overflow, `sin desplazamiento horizontal en el móvil (390 px)${culprits ? ' → ' + culprits : ''}`);
 
-  console.log('\n7 · Resultados');
-  await T.eval(`document.querySelectorAll('.seq button.step')[7].click()`);
-  await A.until(`!!document.querySelector('.podium')`, 'podio');
-  await sleep(2600);
-  await T.shot('25-profesor-final');
-  await A.shot('26-alumno-final');
-  await B.shot('27-movil-final');
-
-  console.log('\n8 · Modo práctica (móvil)');
-  await B.go('/practica');
-  await B.until(`!!document.querySelector('.chips')`, 'formulario práctica');
-  await B.shot('28-practica-inicio');
-  await B.click('form .btn.primary.lg');
-  await B.until(`globalThis.__bcNet?.state?.view?.phase === 'question'`, 'pregunta de práctica');
-  typesSeen.add(await answerUI(B, false));
-  await B.until(`!!document.querySelector('.verdict')`, 'corrección práctica');
-  await B.shot('29-practica-correccion');
-  ok(true, 'práctica individual: corrección y explicación');
-
-  ok(['mc', 'write', 'gap', 'order', 'error', 'match', 'build'].filter((t) => typesSeen.has(t)).length >= 4, `tipos de ejercicio jugados por la UI: ${[...typesSeen].join(', ')}`);
   for (const p of [T, A, B]) {
-    const errs = pageErrors.get(p.sid).filter((e) => !/WebSocket|ERR_CONNECTION|favicon/.test(e));
+    const errs = p.errors();
     ok(errs.length === 0, `${p.label}: sin errores de JavaScript${errs.length ? ` → ${errs.slice(0, 3).join(' | ')}` : ''}`);
   }
 } catch (e) {
   failures++;
   console.error('\n✘ ERROR:', e.message);
-  for (const [p, n] of [[T, 'x-profesor'], [A, 'x-ana'], [B, 'x-tomas']]) { try { await p?.shot(n); } catch { /* ignorar */ } }
 } finally {
-  try { ws?.close(); } catch { /* ignorar */ }
-  edge.kill();
-  server.kill();
-  await sleep(600);
-  for (const d of [DATA, PROFILE]) { try { rmSync(d, { recursive: true, force: true }); } catch { /* Edge puede tardar en soltarlo */ } }
-  console.log(failures ? `\n${failures} fallo(s) · capturas en ${SHOTS}` : `\nTodo correcto · capturas en ${SHOTS}`);
+  await L.close();
+  console.log(failures ? `\n${failures} fallo(s)` : '\nTodo correcto');
   process.exit(failures ? 1 : 0);
 }

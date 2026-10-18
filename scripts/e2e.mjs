@@ -139,9 +139,18 @@ try {
   const nextQ = async (prev) => { await T.ctl({ k: 'next' }); return (await A.until((s) => s.phase === 'question' && s.q.id !== prev, 'nueva pregunta')).q; };
 
   await T.ctl({ k: 'block', block: 'r2' });
-  await A.until((s) => s.phase === 'intro' && s.block === 'r2' && s.me.inventory.length === 1, 'objeto inicial Ana');
-  await B.until((s) => s.phase === 'intro' && s.block === 'r2' && s.me.inventory.length === 1, 'objeto inicial Tomás');
-  ok(true, 'cada alumno recibe 1 objeto inicial al empezar la primera ronda con objetos');
+  await A.until((s) => s.phase === 'intro' && s.block === 'r2' && s.me.chests.length === 1, 'cofre inicial Ana');
+  await B.until((s) => s.phase === 'intro' && s.block === 'r2' && s.me.chests.length === 1, 'cofre inicial Tomás');
+  ok(A.state.me.chests[0].tier === 'bronze' && B.state.me.chests[0].tier === 'bronze', 'cada alumno recibe un cofre de bronce al empezar la primera ronda con objetos');
+  ok(!JSON.stringify(A.state.me.chests).includes('"item"'), 'el contenido del cofre no viaja al alumno antes de abrirlo');
+  const chestA = A.state.me.chests[0].id;
+  const [o1, o2] = await Promise.all([A.req({ t: 'open', chest: chestA }), A.req({ t: 'open', chest: chestA })]);
+  ok([o1.ok, o2.ok].filter(Boolean).length === 1, 'un cofre no se puede abrir dos veces (peticiones simultáneas)');
+  await A.until((s) => s.me.inventory.length === 1 && s.me.chests.length === 0, 'objeto del cofre de Ana');
+  ok(T.state.log.some((f) => f.kind === 'chest-open' && f.by === A.welcome.pid), 'el profesor ve qué sale del cofre (evento para la animación)');
+  ok((await B.req({ t: 'open', chest: chestA })).ok === false, 'nadie puede abrir el cofre de otro');
+  await B.req({ t: 'open', chest: B.state.me.chests[0].id });
+  await B.until((s) => s.me.inventory.length === 1, 'objeto del cofre de Tomás');
   await grant(A, 'double');
   await grant(B, 'shield');
   let q = await nextQ(null);
@@ -235,6 +244,52 @@ try {
   await A.until((s) => s.phase === 'reveal', 'reveal Ana');
   ok(T.state.log.some((f) => f.kind === 'bc-win'), 'evento de quemado (bc-win) para la animación');
   ok(!A.state.me.inventory.includes('blackcard'), 'la BlackCard se consume');
+
+  console.log('\n4b · Después del juego: escritura, escenas y Wort-Jenga');
+  await T.ctl({ k: 'block', block: 'rolle' });
+  await T.ctl({ k: 'next' });
+  const rolle = await A.until((s) => s.phase === 'task' && s.task?.kind === 'rolle', 'actividad rolle');
+  const myWords = rolle.task.sets[A.welcome.pid].words;
+  ok(myWords.length === 8 && !rolle.task.sets[B.welcome.pid], 'cada alumno ve solo su lista de 8 palabras');
+  const base = rolle.task.entries[A.welcome.pid].text;
+  ok((await A.req({ t: 'text', text: `${base} Plötzlich kommt ${myWords[0].de} und dann ${myWords[1].de}.` })).ok, 'Ana guarda su texto');
+  const prog = await T.until((s) => s.task?.entries?.[A.welcome.pid]?.used.length >= 2, 'progreso en el proyector');
+  ok(prog.task.entries[A.welcome.pid].used.length >= 2, 'el proyector ve en directo las palabras usadas');
+  ok(B.state.task.entries[A.welcome.pid].text === '', 'Tomás no ve el texto de Ana mientras escribe');
+  await T.ctl({ k: 'next' });
+  await B.until((s) => s.task?.stage === 'show' && s.task.entries[A.welcome.pid].text.length > 0, 'textos visibles');
+  ok(true, 'al terminar, todos pueden leer los textos');
+  ok((await A.req({ t: 'text', text: 'tarde' })).ok === false, 'ya no se puede editar después del tiempo de escritura');
+  const starsBefore = T.state.players.find((p) => p.id === A.welcome.pid).stars;
+  await T.ctl({ k: 'next' });
+  await T.until((s) => s.phase === 'roundEnd', 'fin rolle');
+  ok(T.state.players.find((p) => p.id === A.welcome.pid).stars >= starsBefore && T.state.roundEnd.stars.some((x) => x.pid === A.welcome.pid && x.n >= 2), 'las palabras usadas se convierten en estrellas');
+
+  await T.ctl({ k: 'block', block: 'szene' });
+  await T.ctl({ k: 'next' });
+  const sz = await A.until((s) => s.task?.kind === 'szene', 'escena');
+  ok(!!sz.task.roles[A.welcome.pid].card && !sz.task.roles[B.welcome.pid].card, 'la tarjeta de rol es secreta: cada uno ve solo la suya');
+
+  await T.ctl({ k: 'block', block: 'jenga' });
+  await T.ctl({ k: 'next' });
+  const jg = await T.until((s) => s.task?.kind === 'jenga', 'jenga');
+  const turnC = jg.task.turn === A.welcome.pid ? A : B, otherC = turnC === A ? B : A;
+  ok(jg.task.levels.length === 15 && jg.task.levels.every((l) => l.join('') === '111'), 'torre de 15 pisos completa');
+  if (jg.task.q) {
+    ok((await otherC.req({ t: 'answer', qid: jg.task.q.id, a: {} })).ok === false, 'solo responde quien tiene el turno');
+    await turnC.req({ t: 'answer', qid: jg.task.q.id, a: answerFor(jg.task.q, false) });
+  } else {
+    await T.ctl({ k: 'task', op: 'judge', ok: false });
+  }
+  const pullState = await T.until((s) => s.task.stage === 'pull' || s.task.stage === 'judge', 'quitar piezas');
+  if (pullState.task.stage === 'judge') await T.ctl({ k: 'task', op: 'judge', ok: false });
+  await T.until((s) => s.task.stage === 'pull', 'quitar piezas');
+  ok(T.state.task.pulls === 2, 'respuesta incorrecta = quitar 2 piezas');
+  ok((await turnC.req({ t: 'pull', level: 14, slot: 0 })).ok === false, 'no se puede sacar del piso de arriba');
+  ok((await otherC.req({ t: 'pull', level: 0, slot: 0 })).ok === false, 'solo saca piezas quien tiene el turno');
+  await turnC.req({ t: 'pull', level: 0, slot: 1 });
+  await T.until((s) => s.task.pulls === 1 || s.task.stage === 'fallen', 'primera pieza');
+  ok(T.state.task.stage === 'fallen' || T.state.task.levels.length === 16, 'la pieza sacada se coloca arriba (nuevo piso)');
 
   console.log('\n5 · Reconexión sin perder puntos');
   const before = score(T, A.welcome.pid);

@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { COMMON_ITEMS, ITEMS, PLAN, blockDef } from '../../shared/rules.ts';
-import type { BlockId, CtlAction, ItemId, RoomView } from '../../shared/types.ts';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { CHESTS, COMMON_ITEMS, ITEMS, PLAN, PLAN_MIN, blockDef } from '../../shared/rules.ts';
+import type { BlockId, ChestTier, CtlAction, ItemId, RoomView } from '../../shared/types.ts';
 import { Timer } from '../components/bits.tsx';
 import { Leaderboard } from '../components/Leaderboard.tsx';
 import { Question, QuestionHead } from '../components/Question.tsx';
 import { Reading } from '../components/Reading.tsx';
 import { ClassReveal, Final, Intro, RoundEnd, WildPicker } from '../components/Screens.tsx';
 import { Shell } from '../components/Shell.tsx';
+import { TaskControls, TaskStage } from '../components/Tasks.tsx';
 import { sfx } from '../fx/sound.ts';
 import { Net, useNet } from '../net.ts';
 import { navigate, store } from '../util.ts';
@@ -32,8 +33,12 @@ export function Teacher({ code }: { code: string }) {
     const r = await net.request({ t: 'ctl', a });
     setErr(r.ok ? null : r.error ?? 'Error');
     if (r.ok && a.k === 'next') sfx.next();
+    if (r.ok && (a.k === 'next' || a.k === 'block')) scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Cada respuesta que llega suena en el proyector.
+  const answeredN = v?.players.filter((p) => p.answered).length ?? 0;
+  useEffect(() => { if (answeredN > 0) sfx.lock(); }, [answeredN]);
   useEffect(() => {
     const up = (e: KeyboardEvent) => { if (e.key.toLowerCase() === 'v') setPeek(false); };
     addEventListener('keyup', up);
@@ -62,7 +67,7 @@ export function Teacher({ code }: { code: string }) {
   };
 
   return (
-    <Shell st={st} teacher onBlock={(b) => ctl({ k: 'block', block: b })} onKey={onKey} hudExtra={<span className="code-chip" title="Código de la sala">{v.code}</span>}>
+    <Shell st={st} teacher onBlock={(b) => ctl({ k: 'block', block: b })} onKey={onKey} hudExtra={<CodeChip code={v.code} />}>
       {v.phase === 'lobby' ? <Lobby v={v} onStart={() => ctl({ k: 'next' })} /> : (
         <div className="teacher">
           <div className="stage">
@@ -73,14 +78,36 @@ export function Teacher({ code }: { code: string }) {
             {err && <p className="err-msg" role="alert">{err}</p>}
           </div>
           <aside className="rail">
-            <div className="panel" id="lb"><Leaderboard players={v.players} /></div>
-            {v.block === 'lesen' && v.phase !== 'intro' && <div className="panel reading-side"><Reading compact /></div>}
+            <div className="panel" id="lb"><Leaderboard players={v.players} stars={blockDef(v.block)?.act === 2} items={v.blockItems} /></div>
+            {v.block === 'lesen' && v.phase !== 'intro' && <div className="panel reading-side"><Reading id={v.reading} compact /></div>}
             <Activity v={v} />
             {!hide && <Tools v={v} ctl={ctl} />}
           </aside>
         </div>
       )}
     </Shell>
+  );
+}
+
+/** Código de la sala en el HUD: al pulsarlo copia el enlace directo para los alumnos. */
+function CodeChip({ code }: { code: string }) {
+  const { url } = useLanUrl(code);
+  const [ok, setOk] = useState(false);
+  return (
+    <button type="button" className="code-chip" title="Copiar el enlace para los alumnos" onClick={async () => {
+      let done = false;
+      try { await navigator.clipboard.writeText(url); done = true; } catch {
+        // Sin permiso de portapapeles (http en la red local): copia clásica con un campo temporal.
+        const t = document.createElement('textarea');
+        t.value = url;
+        document.body.appendChild(t);
+        t.select();
+        try { done = document.execCommand('copy'); } catch { done = false; }
+        t.remove();
+      }
+      setOk(done);
+      setTimeout(() => setOk(false), 1500);
+    }}>{ok ? 'COPIADO' : code}</button>
   );
 }
 
@@ -98,43 +125,58 @@ function useLanUrl(code: string) {
 function Lobby({ v, onStart }: { v: RoomView; onStart: () => void }) {
   const { base, url } = useLanUrl(v.code);
   return (
-    <div className="teacher">
-      <section className="stage">
-        <p className="dim" style={{ margin: 0 }}>Entrad en <span className="lobby-url">{base.replace(/^https?:\/\//, '')}</span> y escribid el código</p>
-        <div className="lobby-code">{v.code}</div>
-        <p className="dim" style={{ margin: 0 }}>Enlace directo: <span className="lobby-url">{url}</span></p>
+    <div className="lobby">
+      <section className="lobby-main">
+        <p className="lobby-line">Entrad en <span className="lobby-url">{base.replace(/^https?:\/\//, '')}</span> y escribid el código</p>
+        <div className="lobby-code" aria-label={`Código ${v.code}`}>{[...v.code].map((c, i) => <span key={i} style={{ '--i': i } as CSSProperties}>{c}</span>)}</div>
+        <p className="lobby-line">Enlace directo: <span className="lobby-url">{url}</span></p>
         <div className="row">
-          <button className="btn primary lg" onClick={onStart} disabled={!v.players.length}>Empezar clase <kbd>Espacio</kbd></button>
+          <button className="btn primary xl" onClick={onStart} disabled={!v.players.length}>Empezar la clase <kbd>Espacio</kbd></button>
           {!v.players.length && <span className="dim">Esperando a los alumnos…</span>}
         </div>
-        <ol className="dim" style={{ margin: 0, paddingLeft: 18 }}>
-          {PLAN.map((b) => <li key={b.id}>{b.name} · {b.min} min</li>)}
-        </ol>
       </section>
-      <aside className="rail"><div className="panel" id="lb"><Leaderboard players={v.players} /></div></aside>
+      <aside className="lobby-side">
+        <div className="slots-grid" aria-label="Alumnos en la sala">
+          {Array.from({ length: Math.max(4, v.players.length) }, (_, i) => {
+            const p = v.players[i];
+            return <div key={p?.id ?? `e${i}`} className={`slot-pad${p ? ' on' : ''}`}><i className="led" />{p ? <b>{p.name}</b> : <span>libre</span>}</div>;
+          })}
+        </div>
+        <div className="plan-list">
+          <b className="label">Plan de clase · {PLAN_MIN} min</b>
+          {[1, 2].map((act) => (
+            <ol key={act} className={`plan-act a${act}`}>
+              <li className="act-h">{act === 1 ? 'Akt I · das Spiel' : 'Akt II · nach dem Spiel'}</li>
+              {PLAN.filter((b) => b.act === act).map((b) => <li key={b.id}><span>{b.name}</span><span className="dim">{b.min}′</span></li>)}
+            </ol>
+          ))}
+        </div>
+      </aside>
     </div>
   );
 }
 
 function Stage({ v, offset, peek }: { v: RoomView; offset: number; peek: boolean }) {
-  if (v.phase === 'intro') return <><Intro view={v} />{v.timer && <Timer timer={v.timer} offset={offset} />}</>;
+  if (v.phase === 'intro') return <><Intro view={v} />{v.timer && <Timer timer={v.timer} offset={offset} big />}</>;
   if (v.phase === 'roundEnd') return <RoundEnd view={v} />;
   if (v.phase === 'final') return <Final view={v} teacher />;
   if (v.phase === 'wild') return <><WildPicker view={v} /><Timer timer={v.timer} offset={offset} /></>;
+  if (v.phase === 'task') return <TaskStage view={v} offset={offset} />;
   if (!v.q) return null;
   const used = v.uses.map((u) => `${v.players.find((p) => p.id === u.by)?.name}: ${ITEMS[u.item].name}${u.target ? ` → ${v.players.find((p) => p.id === u.target)?.name}` : ''}`);
   return (
-    <section className="panel qpanel" key={v.q.id}>
+    <section className={`panel qpanel screen${v.phase === 'reveal' ? ' is-reveal' : ''}`} key={v.q.id}>
       <QuestionHead q={v.q} no={v.qNo} total={v.qTotal} />
       {(v.phase === 'question' || v.phase === 'review') && (
         <>
-          <Timer timer={v.timer} offset={offset} onLow={() => sfx.tick()} />
-          <div style={{ height: 14 }} />
-          <Question key={v.q.id} q={v.q} mode="view" />
-          <div className="answered" style={{ marginTop: 16 }}>
+          <Timer timer={v.timer} offset={offset} onLow={(s) => sfx.tick(5 - s)} />
+          <Question key={v.q.id} q={v.q} mode="display" />
+          <div className="answered">
+            <span className="label">Respuestas</span>
             {v.players.map((p) => (
-              <span key={p.id} className={`who${p.answered ? ' yes' : ''}${p.connected ? '' : ' off'}`}><i />{p.name}</span>
+              <span key={p.id} className={`who${p.answered ? ' yes' : ''}${p.connected ? '' : ' off'}`}><i className="led" />{p.name}</span>
             ))}
+            <span className="count">{v.players.filter((p) => p.answered).length}/{v.players.filter((p) => p.connected).length}</span>
           </div>
           {used.length > 0 && <p className="dim" style={{ marginBottom: 0 }}>Objetos en juego: {used.join(' · ')}</p>}
           {peek && v.teacher && <div className="solution" style={{ marginTop: 14 }}>{v.teacher.solution}</div>}
@@ -142,7 +184,7 @@ function Stage({ v, offset, peek }: { v: RoomView; offset: number; peek: boolean
       )}
       {v.phase === 'reveal' && (
         <>
-          <h2 className="prompt" style={{ fontSize: 'clamp(1.1rem, 0.9rem + 1vw, 1.8rem)' }}>{v.q.type === 'gap' ? `${v.q.prompt} ${v.q.text}` : v.q.prompt}</h2>
+          {v.q.type !== 'mc' && <h2 className="prompt small">{v.q.type === 'gap' ? `${v.q.prompt} ${v.q.text}` : v.q.prompt}</h2>}
           <ClassReveal view={v} />
         </>
       )}
@@ -179,9 +221,12 @@ function Controls({ v, ctl, setPeek, onHide }: { v: RoomView; ctl: (a: CtlAction
   const i = PLAN.findIndex((b) => b.id === v.block);
   const nextBlock = PLAN[i + 1];
   const left = v.teacher?.queueLeft ?? 0;
-  const label = v.phase === 'intro' ? 'Primera pregunta'
+  const task = v.task;
+  const label = v.phase === 'intro' ? (blockDef(v.block)?.kind === 'task' ? 'Empezar actividad' : 'Primera pregunta')
     : v.phase === 'reveal' ? (v.wildPending && left ? 'Siguiente: comodín' : left ? 'Siguiente pregunta' : 'Terminar ronda')
-    : v.phase === 'roundEnd' ? (nextBlock ? `Empezar ${nextBlock.name}` : 'Resultados')
+    : v.phase === 'roundEnd' || v.phase === 'final' ? (nextBlock ? `Empezar ${nextBlock.name}` : 'Fin')
+    : v.phase === 'task' ? (task && task.kind !== 'szene' && task.kind !== 'jenga' && task.stage === 'write' ? 'Terminar y leer los textos'
+      : task?.kind === 'szene' && task.stage === 'prep' ? '¡Acción!' : task?.kind === 'szene' && task.stage === 'play' ? 'Valorar objetivos' : 'Terminar actividad')
     : 'Siguiente';
   const live = v.phase === 'question';
   const paused = v.timer?.endsAt === null && (v.timer?.left ?? 0) > 0;
@@ -189,16 +234,17 @@ function Controls({ v, ctl, setPeek, onHide }: { v: RoomView; ctl: (a: CtlAction
     <section className="panel stack" aria-label="Controles del profesor">
       <div className="controls">
         {live ? <button className="btn signal lg" onClick={() => ctl({ k: 'lock' })}>Cerrar y corregir <kbd>C</kbd></button>
-          : v.phase !== 'final' && v.phase !== 'review' && v.phase !== 'wild' && <button className="btn primary lg" onClick={() => ctl({ k: 'next' })}>{label} <kbd>Espacio</kbd></button>}
+          : v.phase !== 'review' && v.phase !== 'wild' && !(v.phase === 'final' && !nextBlock) && <button className="btn primary lg" onClick={() => ctl({ k: 'next' })}>{label} <kbd>Espacio</kbd></button>}
         {v.timer && <button className="btn" onClick={() => ctl({ k: paused ? 'resume' : 'pause' })}>{paused ? 'Continuar' : 'Pausa'} <kbd>S</kbd></button>}
         {v.timer && <button className="btn" onClick={() => ctl({ k: 'addTime', s: 15 })}>+15 s</button>}
         {(live || v.phase === 'review' || v.phase === 'wild') && <button className="btn" onClick={() => ctl({ k: 'skip' })}>Anular pregunta</button>}
         {(live || v.phase === 'review') && (
           <button className="btn" onPointerDown={() => setPeek(true)} onPointerUp={() => setPeek(false)} onPointerLeave={() => setPeek(false)}>Ver solución (mantener) <kbd>V</kbd></button>
         )}
-        <button className={`btn${v.itemsOn ? '' : ' on'}`} onClick={() => ctl({ k: 'items', on: !v.itemsOn })}>{v.itemsOn ? 'Pausar objetos' : 'Objetos pausados'}</button>
-        <button className="btn ghost" onClick={onHide}>Modo proyector <kbd>H</kbd></button>
+        {v.blockItems && <button className={`btn${v.itemsOn ? '' : ' on'}`} onClick={() => ctl({ k: 'items', on: !v.itemsOn })}>{v.itemsOn ? 'Pausar objetos' : 'Objetos pausados'}</button>}
+        <button className="btn ghost" onClick={onHide}>Ocultar controles <kbd>H</kbd></button>
       </div>
+      {v.phase === 'task' && <TaskControls view={v} ctl={ctl} />}
       {blockDef(v.block)?.theme === 'boss' && <span className="dim">Final Boss: todas las preguntas admiten BlackCard.</span>}
     </section>
   );
@@ -221,6 +267,7 @@ function Activity({ v }: { v: RoomView }) {
 
 function Tools({ v, ctl }: { v: RoomView; ctl: (a: CtlAction) => void }) {
   const [give, setGive] = useState<ItemId>('shield');
+  const [tier, setTier] = useState<ChestTier>('bronze');
   return (
     <details className="tools panel">
       <summary>Puntos, objetos y alumnos</summary>
@@ -231,6 +278,7 @@ function Tools({ v, ctl }: { v: RoomView; ctl: (a: CtlAction) => void }) {
             <div className="row">
               {[-5, -1, 1, 5].map((d) => <button key={d} className="btn sm" onClick={() => ctl({ k: 'points', pid: p.id, delta: d })}>{d > 0 ? `+${d}` : d}</button>)}
               <button className="btn sm" onClick={() => ctl({ k: 'give', pid: p.id, item: give })}>Dar {ITEMS[give].name}</button>
+              <button className="btn sm" onClick={() => ctl({ k: 'chest', pid: p.id, tier })}>Dar {CHESTS[tier].name.toLowerCase()}</button>
               <button className="btn ghost sm" onClick={() => confirm(`¿Sacar a ${p.name} de la sala? Perderá su puntuación.`) && ctl({ k: 'kick', pid: p.id })}>Expulsar</button>
             </div>
           </div>
@@ -238,6 +286,11 @@ function Tools({ v, ctl }: { v: RoomView; ctl: (a: CtlAction) => void }) {
         <label className="row">Objeto a dar:
           <select className="field" style={{ width: 'auto', minHeight: 36 }} value={give} onChange={(e) => setGive(e.target.value as ItemId)}>
             {(Object.keys(ITEMS) as ItemId[]).map((i) => <option key={i} value={i}>{ITEMS[i].name}</option>)}
+          </select>
+        </label>
+        <label className="row">Cofre a dar:
+          <select className="field" style={{ width: 'auto', minHeight: 36 }} value={tier} onChange={(e) => setTier(e.target.value as ChestTier)}>
+            {(Object.keys(CHESTS) as ChestTier[]).filter((t) => t !== 'black').map((t) => <option key={t} value={t}>{CHESTS[t].name}</option>)}
           </select>
         </label>
         <b>Objetos activos</b>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { compare, fold, grade, makeInstance, publicView } from '../server/grade.ts';
-import { READING_WORDS } from '../shared/reading.ts';
+import { READINGS, readingWords } from '../shared/reading.ts';
 import { all, correct, seeded, wrong } from './helpers.ts';
 
 const rand = seeded(42);
@@ -75,9 +75,12 @@ describe('banco de preguntas', () => {
     }
   });
 
-  it('la lectura tiene entre 120 y 150 palabras', () => {
-    expect(READING_WORDS).toBeGreaterThanOrEqual(120);
-    expect(READING_WORDS).toBeLessThanOrEqual(150);
+  it('cada lectura tiene entre 120 y 150 palabras y sus propias preguntas', () => {
+    for (const r of READINGS) {
+      expect(readingWords(r), r.id).toBeGreaterThanOrEqual(120);
+      expect(readingWords(r), r.id).toBeLessThanOrEqual(150);
+      expect(all.filter((q) => q.tags?.includes(`text:${r.id}`)).length, r.id).toBeGreaterThanOrEqual(10);
+    }
   });
 });
 

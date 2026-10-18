@@ -1,8 +1,11 @@
 import type { Question } from '../../shared/types.ts';
+import { a1GrammarQuestions } from './a1grammar.ts';
+import { expertQuestions } from './expert.ts';
 import { alltagQuestions } from './alltag.ts';
 import { bossQuestions } from './boss.ts';
 import { grammarQuestions } from './grammar.ts';
 import { lesenQuestions } from './lesen.ts';
+import { lesenMoreQuestions } from './lesen2.ts';
 import { nebenQuestions } from './neben.ts';
 import { satzbauQuestions } from './satzbau.ts';
 import { vocabQuestions } from './vocabq.ts';
@@ -13,8 +16,8 @@ let cache: Map<string, Question> | null = null;
 export function loadBank(): Map<string, Question> {
   if (cache) return cache;
   const all = [
-    ...lesenQuestions(), ...vocabQuestions(), ...alltagQuestions(), ...grammarQuestions(),
-    ...nebenQuestions(), ...satzbauQuestions(), ...bossQuestions(),
+    ...lesenQuestions(), ...lesenMoreQuestions(), ...vocabQuestions(), ...alltagQuestions(), ...grammarQuestions(),
+    ...nebenQuestions(), ...satzbauQuestions(), ...bossQuestions(), ...a1GrammarQuestions(), ...expertQuestions(),
   ];
   const map = new Map<string, Question>();
   for (const q of all) {
