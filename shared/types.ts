@@ -1,0 +1,230 @@
+// Tipos compartidos entre servidor y cliente. Solo sintaxis "borrable" (Node ejecuta el TS sin compilar).
+
+export type Difficulty = 'easy' | 'medium' | 'hard' | 'special';
+export type Topic =
+  | 'vocab' | 'perfekt' | 'nebensatz' | 'dativ' | 'akkusativ'
+  | 'praesens' | 'trennbar' | 'satzbau' | 'alltag' | 'lesen';
+/** Origen real de cada contenido (ver shared/sources.ts). */
+export type Source = 'bank' | 'warum' | 'kh' | 'unterwegs' | 'bruecke' | 'trainer' | 'lesen' | 'a1';
+export type QType = 'mc' | 'write' | 'gap' | 'order' | 'error' | 'match' | 'build';
+export type ItemId = 'blackcard' | 'thief' | 'shield' | 'double' | 'sabotage' | 'second' | 'wildcard';
+export type Phase = 'lobby' | 'intro' | 'question' | 'review' | 'reveal' | 'wild' | 'roundEnd' | 'final';
+export type BlockId = 'lesen' | 'warmup' | 'r1' | 'r2' | 'r3' | 'r4' | 'boss' | 'final';
+
+// ---------- Preguntas (solo en el servidor) ----------
+interface QBase {
+  id: string;
+  type: QType;
+  topic: Topic;
+  diff: Difficulty;
+  src: Source;
+  prompt: string;
+  explain: string;
+  /** Justificación de dificultad. Obligatoria en hard/special: habilita la BlackCard. */
+  why?: string;
+  /** Prüfungsfrage: acertarla desbloquea la BlackCard. */
+  unlock?: boolean;
+  tags?: string[];
+  swatch?: string;
+  time?: number;
+}
+export interface QMc extends QBase { type: 'mc'; options: string[]; answer: number; fixed?: boolean }
+export interface QWrite extends QBase { type: 'write' | 'build'; accept: string[]; parts?: string[]; strict?: boolean }
+export interface QGap extends QBase { type: 'gap'; text: string; gaps: string[][] }
+export interface QOrder extends QBase { type: 'order'; tokens: string[]; accept: string[] }
+export interface QError extends QBase { type: 'error'; tokens: string[]; wrong: number; fix: string[] }
+export interface QMatch extends QBase { type: 'match'; pairs: [string, string][] }
+export type Question = QMc | QWrite | QGap | QOrder | QError | QMatch;
+
+// ---------- Lo que ve el alumno (sin soluciones) ----------
+export interface PublicQuestion {
+  id: string;
+  type: QType;
+  topic: Topic;
+  diff: Difficulty;
+  src: Source;
+  points: number;
+  prompt: string;
+  options?: string[];
+  text?: string;
+  gapCount?: number;
+  tokens?: string[];
+  left?: string[];
+  right?: string[];
+  parts?: string[];
+  swatch?: string;
+  why?: string;
+  /** BlackCard utilizable. */
+  bc: boolean;
+  secondOk: boolean;
+  unlock: boolean;
+  time: number;
+  /** Repetición deliberada de repaso (modo práctica). */
+  review?: boolean;
+}
+
+export interface Answer {
+  choice?: number;
+  text?: string;
+  gaps?: string[];
+  order?: number[];
+  index?: number;
+  fix?: string;
+  pairs?: number[];
+}
+
+export type Status = 'correct' | 'wrong' | 'review';
+
+export interface PlayerResult {
+  status: 'correct' | 'wrong' | 'none';
+  given: string;
+  delta: number;
+  lines: string[];
+  note?: string;
+  attempt?: number;
+}
+
+export interface RevealView {
+  qid: string;
+  solution: string;
+  explain: string;
+  skipped?: boolean;
+  results: Record<string, PlayerResult>;
+}
+
+export interface Fx {
+  id: number;
+  kind: 'item' | 'steal' | 'block' | 'fizzle' | 'sabotaged' | 'bc-win' | 'bc-lose' | 'reward' | 'unlock' | 'manual' | 'join' | 'expire' | 'info';
+  by?: string;
+  target?: string;
+  item?: ItemId;
+  amount?: number;
+  text: string;
+  at: number;
+}
+
+export interface PlayerPub {
+  id: string;
+  name: string;
+  score: number;
+  streak: number;
+  connected: boolean;
+  shield: boolean;
+  sabotaged: boolean;
+  items: number;
+  answered: boolean;
+}
+
+export interface ErrorEntry {
+  qid: string;
+  prompt: string;
+  solution: string;
+  explain: string;
+  given: string;
+  topic: Topic;
+  src: Source;
+}
+
+export interface FinalPlayer {
+  id: string;
+  name: string;
+  score: number;
+  rank: number;
+  correct: number;
+  total: number;
+  best: number;
+  bcWon: number;
+  bcLost: number;
+  itemsUsed: number;
+  stolen: number;
+  errors: ErrorEntry[];
+}
+
+export interface FinalView {
+  players: FinalPlayer[];
+  /** Preguntas más falladas por la clase (para el repaso final). */
+  classErrors: (ErrorEntry & { count: number; names: string[] })[];
+}
+
+export interface MeView {
+  id: string;
+  name: string;
+  inventory: ItemId[];
+  pickups: ItemId[];
+  /** idle: sin responder · sent: respuesta final enviada · retry: Second Chance pendiente */
+  state: 'idle' | 'sent' | 'retry';
+  used: ItemId | null;
+  incoming: { kind: 'thief' | 'sabotage'; by: string }[];
+  profileCode: string;
+}
+
+export interface TeacherView {
+  solution: string;
+  answers: Record<string, { given: string; status: Status; note?: string; final: boolean; attempt: number }>;
+  review: { pid: string; given: string; expected: string; note?: string }[];
+  inventories: Record<string, ItemId[]>;
+  queueLeft: number;
+  usedCount: number;
+  bankSize: number;
+}
+
+export interface RoomView {
+  code: string;
+  mode: 'class' | 'practice';
+  phase: Phase;
+  block: BlockId | null;
+  blockStartedAt: number | null;
+  startedAt: number | null;
+  serverNow: number;
+  timer: { endsAt: number | null; left: number | null; total: number } | null;
+  q: PublicQuestion | null;
+  qNo: number;
+  qTotal: number;
+  players: PlayerPub[];
+  me?: MeView;
+  reveal: RevealView | null;
+  itemsOn: boolean;
+  itemsOff: ItemId[];
+  blockItems: boolean;
+  uses: { by: string; item: ItemId; target?: string }[];
+  wild: { by: string; options: Topic[]; endsAt: number } | null;
+  wildPending: string | null;
+  roundEnd: { block: BlockId; rewards: { pid: string; item: ItemId }[] } | null;
+  log: Fx[];
+  teacher?: TeacherView;
+  final?: FinalView;
+  practice?: { topics: Topic[]; done: number; correct: number };
+}
+
+// ---------- Protocolo ----------
+export type ClientMsg =
+  | { t: 'hello'; role: 'teacher'; create?: boolean; room?: string; token?: string }
+  | { t: 'hello'; role: 'player'; room: string; token?: string; name?: string; profile?: string }
+  | { t: 'hello'; role: 'practice'; room?: string; token?: string; profile?: string; profileCode?: string; name?: string; topics?: Topic[]; focus?: boolean }
+  | { t: 'answer'; id: number; qid: string; a: Answer }
+  | { t: 'item'; id: number; item: ItemId; target?: string }
+  | { t: 'wild'; id: number; topic: Topic }
+  | { t: 'pickup'; id: number; discard: number }
+  | { t: 'pnext'; id: number }
+  | { t: 'ctl'; id: number; a: CtlAction };
+
+export type CtlAction =
+  | { k: 'block'; block: BlockId }
+  | { k: 'next' }
+  | { k: 'pause' }
+  | { k: 'resume' }
+  | { k: 'addTime'; s: number }
+  | { k: 'lock' }
+  | { k: 'skip' }
+  | { k: 'judge'; pid: string; ok: boolean }
+  | { k: 'judgeAll'; ok: boolean }
+  | { k: 'points'; pid: string; delta: number }
+  | { k: 'items'; on: boolean; item?: ItemId }
+  | { k: 'give'; pid: string; item: ItemId }
+  | { k: 'kick'; pid: string };
+
+export type ServerMsg =
+  | { t: 'welcome'; role: 'teacher' | 'player' | 'practice'; room: string; token: string; pid?: string; profile?: string; profileCode?: string }
+  | { t: 'state'; s: RoomView }
+  | { t: 'ack'; id: number; ok: boolean; error?: string; retry?: boolean }
+  | { t: 'err'; msg: string; fatal?: boolean };

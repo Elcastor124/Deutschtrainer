@@ -1,0 +1,18 @@
+# Despliegue en Render (https://render.com) con un clic: «New → Blueprint» y elegir este repositorio.
+services:
+  - type: web
+    name: deutsch-blackcard
+    runtime: node
+    plan: starter            # con disco persistente; en «free» funciona, pero los datos se borran al dormir
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.19.0
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: blackcard-data
+      mountPath: /var/data
+      sizeGB: 1
