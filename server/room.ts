@@ -152,6 +152,8 @@ export class Room {
     s.task ??= null;
     s.scenesUsed ??= [];
     for (const p of s.players) { p.chests ??= []; p.stars ??= 0; }
+    // Las recompensas antiguas eran objetos sueltos (sin cofre): no se pueden mostrar como cofres.
+    if (s.roundEnd?.rewards.some((r) => !('tier' in r))) s.roundEnd.rewards = [];
     return new Room(s, d);
   }
 
