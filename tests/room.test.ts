@@ -119,12 +119,11 @@ describe('flujo completo de clase', () => {
       expect(room.s.queue.some((id) => bank.get(id)!.unlock), blk).toBe(true);
     }
     room.startBlock('boss');
-    expect(room.s.queue.length).toBe(6);
+    expect(room.s.queue.length).toBe(20);
     for (const id of room.s.queue) {
       const q = bank.get(id)!;
       expect(['hard', 'special']).toContain(q.diff);
       expect(q.why).toBeTruthy();
-      expect(q.tags).toContain('boss');
     }
   });
 

@@ -173,7 +173,7 @@ export const PLAN: BlockDef[] = [
   },
   {
     id: 'boss', name: 'BlackCard Championship', sub: 'Final Boss · solo preguntas difíciles', min: 7, act: 1, kind: 'quiz', items: true, reward: false, theme: 'boss',
-    brief: ['Seis preguntas difíciles ◆: la BlackCard está permitida.', 'Abre un cofre al entrar y otro cada dos preguntas para conseguir cartas.', 'Retos especiales +15. Un error con BlackCard cuesta −10.'],
+    brief: ['Veinte preguntas difíciles ◆: la BlackCard está permitida.', 'Abre un cofre al entrar y otro cada dos preguntas para conseguir cartas.', 'Retos especiales +15. Un error con BlackCard cuesta −10.'],
   },
   {
     id: 'final', name: 'Siegerehrung', sub: 'Podio y repaso de errores', min: 5, act: 1, kind: 'final', items: false, reward: false, theme: 'final',
