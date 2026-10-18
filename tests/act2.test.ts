@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Player } from '../server/room.ts';
 import { Room } from '../server/room.ts';
+import { grade } from '../server/grade.ts';
 import { freshTower, maxPullLevel, unstable, type JengaTask, type SceneTask, type WriteTask } from '../server/tasks.ts';
 import { FEATURES, LEARNED, countWords, features, usedWords } from '../shared/activities.ts';
 import { PLAN, PLAN_MIN } from '../shared/rules.ts';
@@ -16,7 +17,13 @@ function classRoom(seen?: Map<string, number>) {
 }
 const ans = (room: Room, p: Player, good: boolean) => {
   const q = room.question as Question;
-  return room.answer(p.id, q.id, (good ? correct : wrong)(q, room.s.q!.inst));
+  const result = room.answer(p.id, q.id, (good ? correct : wrong)(q, room.s.q!.inst));
+  if (room.s.phase === 'review') {
+    for (const [pid, rec] of Object.entries(room.s.answers)) {
+      if (rec.status === 'review') room.judge(pid, grade(q, room.s.q!.inst, rec.a, true).status === 'correct');
+    }
+  }
+  return result;
 };
 const special = find((q) => q.diff === 'special');
 
@@ -135,7 +142,7 @@ describe('actividades de escritura', () => {
     const text = `${t.texts[a.id].text} Plötzlich kommt ${w1} und dann ${w2}!`;
     expect(room.view({ pid: a.id }).task?.kind).toBe('rolle');
     expect(t.stage).toBe('write');
-    expect(taskTextOk(room, a.id, text)).toBe(true);
+    expect(taskText(room, a.id, text, true).ok).toBe(true);
     const va = room.view({ pid: a.id }).task as TaskWriteView;
     expect(va.entries[a.id].used.length).toBeGreaterThanOrEqual(2);
     const vb = room.view({ pid: b.id }).task as TaskWriteView;
@@ -143,6 +150,9 @@ describe('actividades de escritura', () => {
     expect(vb.sets[a.id]).toBeUndefined();
     room.next(); // → mostrar
     expect((room.view({ pid: b.id }).task as TaskWriteView).entries[a.id].text).toBe(text);
+    expect(a.stars).toBe(0);
+    expect(room.next().ok).toBe(false); // no se avanza sin decisión del profesor
+    expect(ctl(room, 'judgeText', a.id, undefined, true)).toBe(true);
     room.next(); // → fin
     expect(room.s.phase).toBe('roundEnd');
     expect(a.stars).toBeGreaterThanOrEqual(2);
@@ -168,6 +178,19 @@ describe('actividades de escritura', () => {
     const e = (room.view({ pid: a.id }).task as TaskWriteView).entries[a.id];
     expect(e.features).toEqual(expect.arrayContaining(['perfekt', 'neben', 'dativ', 'zeit']));
     expect(e.stars).toBe(4);
+  });
+
+  it('el profesor puede rechazar un texto libre y no se conceden estrellas', () => {
+    const { room, a } = classRoom();
+    room.startBlock('frei');
+    room.next();
+    expect(pick(room, a.id, 0)).toBe(true);
+    expect(taskText(room, a.id, 'Gestern habe ich viel gelernt, weil es geregnet hat.', true).ok).toBe(true);
+    room.next();
+    expect(room.next().ok).toBe(false);
+    expect(ctl(room, 'judgeText', a.id, undefined, false)).toBe(true);
+    expect(room.next().ok).toBe(true);
+    expect(a.stars).toBe(0);
   });
 
   it('detección: verbos separables y palabras con umlaut', () => {

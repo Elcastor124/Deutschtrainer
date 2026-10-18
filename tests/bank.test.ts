@@ -25,9 +25,18 @@ describe('banco de preguntas', () => {
     for (const q of all) {
       for (let k = 0; k < 3; k++) {
         const inst = makeInstance(q, rand);
-        const g = grade(q, inst, correct(q, inst), false);
+        const g = grade(q, inst, correct(q, inst), true);
         expect(g.status, `${q.id} ${q.prompt}`).toBe('correct');
       }
+    }
+  });
+
+  it('en clase las respuestas escritas siempre esperan la decisión del profesor', () => {
+    for (const type of ['write', 'build', 'gap', 'error'] as const) {
+      const q = all.find((item) => item.type === type)!;
+      const inst = makeInstance(q, rand);
+      expect(grade(q, inst, correct(q, inst), false).status).toBe('review');
+      expect(grade(q, inst, wrong(q, inst), false).status).toBe('review');
     }
   });
 

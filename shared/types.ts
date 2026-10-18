@@ -199,6 +199,7 @@ export interface TaskWriteView {
   prompts?: string[];
   choice?: Record<string, number>;
   entries: Record<string, WriteEntry>;
+  judged: Record<string, boolean>;
 }
 export interface RoleCard { role: string; who: string; situation: string; goals: string[]; phrases: string[] }
 export interface TaskSceneView {
@@ -303,7 +304,7 @@ export type CtlAction =
   | { k: 'give'; pid: string; item: ItemId }
   | { k: 'chest'; pid: string; tier: ChestTier }
   | { k: 'kick'; pid: string }
-  | { k: 'task'; op: 'show' | 'star' | 'goal' | 'reroll' | 'judge' | 'reset' | 'skip'; pid?: string; n?: number; ok?: boolean };
+  | { k: 'task'; op: 'show' | 'star' | 'judgeText' | 'goal' | 'reroll' | 'judge' | 'reset' | 'skip'; pid?: string; n?: number; ok?: boolean };
 
 export type ServerMsg =
   | { t: 'welcome'; role: 'teacher' | 'player' | 'practice'; room: string; token: string; pid?: string; profile?: string; profileCode?: string }

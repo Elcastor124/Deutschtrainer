@@ -3,6 +3,7 @@ import { Room } from '../server/room.ts';
 import type { Player } from '../server/room.ts';
 import { BC_BONUS, POINTS } from '../shared/rules.ts';
 import type { Question } from '../shared/types.ts';
+import { grade } from '../server/grade.ts';
 import { all, bank, correct, find, force, setup, wrong } from './helpers.ts';
 
 function classRoom() {
@@ -13,7 +14,13 @@ function classRoom() {
 }
 const ans = (room: Room, p: Player, good: boolean) => {
   const q = room.question as Question;
-  return room.answer(p.id, q.id, (good ? correct : wrong)(q, room.s.q!.inst));
+  const result = room.answer(p.id, q.id, (good ? correct : wrong)(q, room.s.q!.inst));
+  if (room.s.phase === 'review') {
+    for (const [pid, rec] of Object.entries(room.s.answers)) {
+      if (rec.status === 'review') room.judge(pid, grade(q, room.s.q!.inst, rec.a, true).status === 'correct');
+    }
+  }
+  return result;
 };
 /** Entra en un bloque con objetos y deja inventarios vacíos (para controlar qué tiene cada uno). */
 function intoItemsBlock(env: ReturnType<typeof classRoom>) {
@@ -410,16 +417,51 @@ describe('objetos', () => {
 });
 
 describe('revisión del profesor', () => {
+  it('la decisión del profesor prevalece sobre la coincidencia con la solución modelo', () => {
+    const { room, a, b } = classRoom();
+    const q = find((x) => x.type === 'write');
+    force(room, q.id);
+    room.answer(a.id, q.id, { text: 'Otra formulación válida' });
+    room.answer(b.id, q.id, { text: 'Sin respuesta válida' });
+    expect(room.s.phase).toBe('review');
+    room.judge(a.id, true);
+    room.judge(b.id, false);
+    expect(a.score).toBe(POINTS[q.diff]);
+    expect(b.score).toBe(0);
+  });
+  it('Second Chance permite repetir una respuesta escrita rechazada por el profesor', () => {
+    const { room, a, b } = classRoom();
+    room.startBlock('r2');
+    const q = find((x) => x.type === 'write' && x.diff === 'medium');
+    if (q.type !== 'write') throw new Error('Se esperaba una pregunta de escritura');
+    force(room, q.id);
+    a.inv.push('second');
+    expect(room.useItem(a.id, 'second').ok).toBe(true);
+    room.answer(a.id, q.id, { text: 'Primera respuesta' });
+    room.answer(b.id, q.id, { text: q.accept[0] });
+    expect(room.s.phase).toBe('review');
+    expect(room.judge(a.id, false).ok).toBe(true);
+    expect(room.s.phase).toBe('question');
+    expect(room.s.answers[a.id].final).toBe(false);
+    room.answer(a.id, q.id, { text: q.accept[0] });
+    room.judge(a.id, true);
+    room.judge(b.id, true);
+    expect(room.s.phase).toBe('reveal');
+    expect(a.score).toBe(Math.ceil(POINTS.medium / 2));
+  });
   it('respuestas abiertas dudosas pasan a revisión y el profesor decide', () => {
     const { room, a, b } = classRoom();
     const q = find((x) => x.type === 'write' && !x.strict && x.accept[0].length > 20);
+    if (q.type !== 'write') throw new Error('Se esperaba una pregunta de escritura');
     force(room, q.id);
     const typo = q.type === 'write' ? q.accept[0].replace(/e/, 'a') : '';
     room.answer(a.id, q.id, { text: typo });
-    ans(room, b, true);
+    room.answer(b.id, q.id, { text: q.accept[0] });
     expect(room.s.phase).toBe('review');
-    expect(room.view({ teacher: true }).teacher?.review.length).toBe(1);
+    expect(room.view({ teacher: true }).teacher?.review.length).toBe(2);
     room.judge(a.id, true);
+    expect(room.s.phase).toBe('review');
+    room.judge(b.id, true);
     expect(room.s.phase).toBe('reveal');
     expect(a.score).toBe(POINTS[q.diff]);
   });
@@ -433,6 +475,14 @@ describe('revisión del profesor', () => {
 });
 
 describe('modo práctica', () => {
+  it('muestra el texto correspondiente a cada pregunta de Leseverstehen', () => {
+    const env = setup('practice');
+    const p = env.room.join('Ana', 'prof-ana') as Player;
+    const q = all.find((item) => item.topic === 'lesen' && item.tags?.includes('text:ausrede'))!;
+    env.room.startPractice(p, ['lesen'], true, { [q.id]: { n: 1, wrong: 1, last: 0, at: 1 } });
+    expect(env.room.question?.id).toBe(q.id);
+    expect(env.room.view({ pid: p.id }).reading).toBe('ausrede');
+  });
   it('prioriza preguntas falladas y repite deliberadamente lo fallado en la sesión', () => {
     const env = setup('practice');
     const p = env.room.join('Ana', 'prof-ana') as Player;

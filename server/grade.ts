@@ -112,6 +112,10 @@ export interface Graded { status: Status; given: string; note?: string }
 /** Corrige una respuesta. «review» = dudosa → la decide el profesor (en práctica cuenta como fallo con pista). */
 export function grade(q: Question, inst: Instance, a: Answer, practice: boolean): Graded {
   const given = describe(q, inst, a);
+  // En clase, el profesor decide las respuestas que contienen texto escrito.
+  if (!practice && (q.type === 'write' || q.type === 'build' || q.type === 'gap' || q.type === 'error')) {
+    return { status: 'review', given };
+  }
   const review = (note: string): Graded => (practice ? { status: 'wrong', given, note } : { status: 'review', given, note });
   switch (q.type) {
     case 'mc': {

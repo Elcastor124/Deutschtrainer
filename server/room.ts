@@ -149,7 +149,12 @@ export class Room {
   static restore(s: RoomState, d: Deps): Room {
     s.chestQs ??= [];
     s.reading ??= READINGS[0].id;
+    if (s.mode === 'practice' && s.q) {
+      const reading = d.bank.get(s.q.id)?.tags?.find((tag) => tag.startsWith('text:'))?.slice(5);
+      if (reading) s.reading = reading;
+    }
     s.task ??= null;
+    if (s.task && (s.task.kind === 'rolle' || s.task.kind === 'wort' || s.task.kind === 'frei')) s.task.judged ??= {};
     s.scenesUsed ??= [];
     for (const p of s.players) { p.chests ??= []; p.stars ??= 0; }
     // Las recompensas antiguas eran objetos sueltos (sin cofre): no se pueden mostrar como cofres.
@@ -328,6 +333,11 @@ export class Room {
       case 'task': {
         const r = taskNext(this);
         if (r) return r;
+        const t = this.s.task;
+        if (t && (t.kind === 'rolle' || t.kind === 'wort' || t.kind === 'frei') &&
+          Object.entries(t.texts).some(([pid, entry]) => entry.done && entry.text.trim() && t.judged?.[pid] === undefined)) {
+          return fail('Valora los textos entregados antes de continuar.');
+        }
         const stars = endTask(this);
         Object.assign(this.s, { phase: 'roundEnd' as Phase, timer: null, roundEnd: { block: this.s.block as BlockId, rewards: [], stars } });
         this.touch();
@@ -354,6 +364,10 @@ export class Room {
     if (!id) return this.practice ? this.finishPractice() : this.endRound();
     const q = this.d.bank.get(id);
     if (!q) return this.presentNext();
+    if (this.practice && q.topic === 'lesen') {
+      const reading = q.tags?.find((tag) => tag.startsWith('text:'))?.slice(5);
+      if (reading) this.s.reading = reading;
+    }
     if (!this.s.used.includes(id)) this.s.used.push(id);
     this.s.q = { id, inst: makeInstance(q, this.d.rand), ...(review ? { review: true } : {}) };
     const t = publicView(q, this.s.q.inst).time;
@@ -526,6 +540,15 @@ export class Room {
   judge(pid: string, ok: boolean): Result {
     const r = this.s.answers[pid];
     if (this.s.phase !== 'review' || !r || r.status !== 'review') return fail('Esa respuesta no está pendiente de revisión.');
+    if (!ok && r.attempt === 1 && this.s.uses[pid]?.item === 'second') {
+      r.status = 'wrong';
+      r.final = false;
+      r.note = 'El profesor no la acepta: segunda oportunidad.';
+      this.s.phase = 'question';
+      this.s.timer = { endsAt: this.now + 15_000, left: null, total: 15 };
+      this.touch();
+      return OK;
+    }
     r.status = ok ? 'correct' : 'wrong';
     r.note = ok ? 'Aceptada por el profesor.' : r.note;
     if (!Object.values(this.s.answers).some((x) => x.status === 'review')) this.doReveal();

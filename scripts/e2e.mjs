@@ -118,6 +118,11 @@ try {
   await T.until((s) => s.players.find((p) => p.id === A.welcome.pid).answered, 'Ana marcada como respondida');
   ok((await A.req({ t: 'answer', qid: q1.id, a: answerFor(q1, true) })).ok === false, 'no puede responder dos veces');
   await B.req({ t: 'answer', qid: q1.id, a: answerFor(q1, false) });
+  await T.until((s) => s.phase === 'reveal' || s.phase === 'review', 'corrección');
+  if (T.state.phase === 'review') {
+    await T.ctl({ k: 'judge', pid: A.welcome.pid, ok: true });
+    await T.ctl({ k: 'judge', pid: B.welcome.pid, ok: false });
+  }
   const r1 = await T.until((s) => s.phase === 'reveal', 'corrección');
   const pts = q1.points;
   ok(r1.reveal.results[A.welcome.pid].status === 'correct' && r1.reveal.results[B.welcome.pid].status === 'wrong', 'el servidor valida: Ana bien, Tomás mal');
@@ -129,7 +134,13 @@ try {
   console.log('\n3 · Objetos (Ronda 1 y siguientes)');
   // Lee siempre las puntuaciones de la vista del profesor, una vez corregida la pregunta.
   const pa = () => score(T, A.welcome.pid), pb = () => score(T, B.welcome.pid);
-  const reveal = async () => { await T.until((s) => s.phase === 'reveal' || s.phase === 'review', 'corrección'); if (T.state.phase === 'review') await T.ctl({ k: 'judgeAll', ok: false }); await T.until((s) => s.phase === 'reveal', 'corrección'); };
+  const reveal = async (aOk = true, bOk = true) => {
+    await T.until((s) => s.phase === 'reveal' || s.phase === 'review', 'corrección');
+    if (T.state.phase === 'review') {
+      for (const r of T.state.teacher.review) await T.ctl({ k: 'judge', pid: r.pid, ok: r.pid === A.welcome.pid ? aOk : bOk });
+    }
+    await T.until((s) => s.phase === 'reveal', 'corrección');
+  };
   /** Da un objeto; si el inventario está lleno, lo cambia por el primero. */
   const grant = async (c, item) => {
     await T.ctl({ k: 'give', pid: c.welcome.pid, item });
@@ -189,15 +200,16 @@ try {
   a0 = pa(); b0 = pb();
   await B.req({ t: 'answer', qid: q.id, a: answerFor(q, false) });
   await A.req({ t: 'answer', qid: q.id, a: answerFor(q, true) });
-  await reveal();
+  await reveal(true, false);
   const stolen = Math.min(5, b0);
   ok(pa() - a0 === q.points + stolen && pb() === b0 - stolen, `THIEF roba ${stolen} (máx. 5, nunca más de lo que tiene)`);
 
   // SECOND CHANCE + SABOTAGE
+  await T.ctl({ k: 'block', block: 'r2' });
   await grant(B, 'second');
   await grant(A, 'sabotage');
-  q = await nextQ(q.id);
-  for (let k = 0; k < 6 && !q.secondOk; k++) { await T.ctl({ k: 'skip' }); q = await nextQ(q.id); }
+  q = await nextQ('');
+  for (let k = 0; k < 12 && (!q.secondOk || ['write', 'build', 'gap', 'error'].includes(q.type)); k++) { await T.ctl({ k: 'skip' }); q = await nextQ(q.id); }
   ok((await B.req({ t: 'item', item: 'second' })).ok, 'Tomás activa SECOND CHANCE');
   const first = await B.req({ t: 'answer', qid: q.id, a: answerFor(q, false) });
   ok(first.ok && first.retry === true, 'primer fallo → segundo intento');
@@ -205,7 +217,7 @@ try {
   b0 = pb();
   await A.req({ t: 'answer', qid: q.id, a: answerFor(q, false) });
   await B.req({ t: 'answer', qid: q.id, a: answerFor(q, true) });
-  await reveal();
+  await reveal(false, true);
   ok(pb() - b0 === Math.ceil(Math.ceil(q.points / 2) / 2), 'Second Chance (½) y Sabotage (½) aplicados');
 
   // WILDCARD: Ana elige la categoría de la siguiente pregunta
@@ -239,7 +251,7 @@ try {
   a0 = pa();
   await A.req({ t: 'answer', qid: q.id, a: answerFor(q, true) });
   await B.req({ t: 'answer', qid: q.id, a: answerFor(q, false) });
-  await reveal();
+  await reveal(true, false);
   ok(pa() - a0 === q.points + 10, `BlackCard acertada: +${q.points} +10`);
   await A.until((s) => s.phase === 'reveal', 'reveal Ana');
   ok(T.state.log.some((f) => f.kind === 'bc-win'), 'evento de quemado (bc-win) para la animación');
@@ -252,7 +264,7 @@ try {
   const myWords = rolle.task.sets[A.welcome.pid].words;
   ok(myWords.length === 8 && !rolle.task.sets[B.welcome.pid], 'cada alumno ve solo su lista de 8 palabras');
   const base = rolle.task.entries[A.welcome.pid].text;
-  ok((await A.req({ t: 'text', text: `${base} Plötzlich kommt ${myWords[0].de} und dann ${myWords[1].de}.` })).ok, 'Ana guarda su texto');
+  ok((await A.req({ t: 'text', text: `${base} Plötzlich kommt ${myWords[0].de} und dann ${myWords[1].de}.`, done: true })).ok, 'Ana entrega su texto');
   const prog = await T.until((s) => s.task?.entries?.[A.welcome.pid]?.used.length >= 2, 'progreso en el proyector');
   ok(prog.task.entries[A.welcome.pid].used.length >= 2, 'el proyector ve en directo las palabras usadas');
   ok(B.state.task.entries[A.welcome.pid].text === '', 'Tomás no ve el texto de Ana mientras escribe');
@@ -261,6 +273,7 @@ try {
   ok(true, 'al terminar, todos pueden leer los textos');
   ok((await A.req({ t: 'text', text: 'tarde' })).ok === false, 'ya no se puede editar después del tiempo de escritura');
   const starsBefore = T.state.players.find((p) => p.id === A.welcome.pid).stars;
+  ok((await T.ctl({ k: 'task', op: 'judgeText', pid: A.welcome.pid, ok: true })).ok, 'el profesor acepta el texto');
   await T.ctl({ k: 'next' });
   await T.until((s) => s.phase === 'roundEnd', 'fin rolle');
   ok(T.state.players.find((p) => p.id === A.welcome.pid).stars >= starsBefore && T.state.roundEnd.stars.some((x) => x.pid === A.welcome.pid && x.n >= 2), 'las palabras usadas se convierten en estrellas');

@@ -19,6 +19,8 @@ export interface WriteTask {
   prompts?: string[];
   choice: Record<string, number>;
   texts: Record<string, { text: string; done: boolean }>;
+  /** El profesor acepta o rechaza cada texto; sin decisión no se conceden estrellas. */
+  judged: Record<string, boolean>;
   bonus: Record<string, number>;
 }
 export interface SceneTask {
@@ -83,7 +85,7 @@ export function startTask(room: Room, kind: TaskKind): Result {
     room.touch();
     return OK;
   } else {
-    const t: WriteTask = { kind, stage: 'write', showing: null, sets: {}, choice: {}, texts: {}, bonus: {} };
+    const t: WriteTask = { kind, stage: 'write', showing: null, sets: {}, choice: {}, texts: {}, judged: {}, bonus: {} };
     if (kind === 'frei') t.prompts = shuffled(FREE_PROMPTS, room.d.rand).slice(0, 3);
     s.task = t;
     for (const p of s.players) ensureSet(room, t, p.id);
@@ -153,6 +155,7 @@ export function taskText(room: Room, pid: string, text: string, done: boolean): 
   ensureSet(room, t, pid);
   if (t.kind === 'frei' && (t.choice[pid] ?? -1) < 0) return fail('Primero elige una consigna.');
   t.texts[pid] = { text: String(text ?? '').slice(0, MAX_TEXT), done: !!done };
+  delete t.judged?.[pid];
   room.touch();
   return OK;
 }
@@ -329,6 +332,11 @@ export function taskCtl(room: Room, op: string, pid?: string, n?: number, ok?: b
       if (t.stage === 'write') { t.stage = 'show'; room.s.timer = null; }
       t.showing = pid;
       break;
+    case 'judgeText':
+      if (t.kind !== 'rolle' && t.kind !== 'wort' && t.kind !== 'frei') return fail('Solo en las actividades de escritura.');
+      if (t.stage !== 'show' || !pid || !room.player(pid) || !t.texts[pid]?.done) return fail('No hay un texto entregado para valorar.');
+      (t.judged ??= {})[pid] = !!ok;
+      break;
     case 'star': {
       if (!pid || !room.player(pid)) return fail('Elige un alumno.');
       const d = Math.max(-3, Math.min(3, Math.round(n ?? 1)));
@@ -436,7 +444,7 @@ export function pendingStars(t: TaskState | null, pid: string): number {
   if (!t) return 0;
   if (t.kind === 'szene') return sceneStars(t, pid);
   if (t.kind === 'jenga') return 0;
-  return t.sets[pid] ? entry(t, pid).stars : 0;
+  return t.judged?.[pid] === true && t.sets[pid] ? entry(t, pid).stars : 0;
 }
 
 export function endTask(room: Room): { pid: string; n: number }[] {
@@ -501,5 +509,5 @@ export function taskView(room: Room, viewer: { teacher: true } | { pid: string }
     const e = entry(t, pid);
     entries[pid] = open || mine ? e : { ...e, text: '' };
   }
-  return { kind: t.kind, stage: t.stage, showing: t.showing, sets, ...(t.prompts ? { prompts: t.prompts, choice: t.choice } : {}), entries };
+  return { kind: t.kind, stage: t.stage, showing: t.showing, sets, judged: t.judged ?? {}, ...(t.prompts ? { prompts: t.prompts, choice: t.choice } : {}), entries };
 }

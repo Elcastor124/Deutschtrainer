@@ -81,6 +81,14 @@ async function useCard(p, item, target) {
   if (target) await p.click('.card3d.flipped .targets .btn'); else await p.click('.card3d.flipped .use');
 }
 const teacherNext = (T) => T.click('.controls .btn.primary');
+async function reviewUI(T, verdicts) {
+  while ((await st(T, 'v.phase')) === 'review') {
+    const pid = await st(T, 'v.teacher.review[0].pid');
+    const name = await st(T, `v.players.find(p=>p.id===${JSON.stringify(pid)}).name`);
+    await T.click('.review-item .btn', verdicts[name] ? 0 : 1);
+    await T.until(`(()=>{const v=globalThis.__bcNet.state.view; return v.phase!=='review' || v.teacher.review[0]?.pid!==${JSON.stringify(pid)}})()`, 'decisión del profesor');
+  }
+}
 
 try {
   const T = await L.newPage('profesor', 1920, 1080);
@@ -121,7 +129,7 @@ try {
   ok(true, 'Ana responde pulsando en su pantalla y el servidor lo registra');
   await answerUI(B, false);
   await waitSt(T, `v.phase==='reveal' || v.phase==='review'`, 'corrección');
-  if ((await st(T, 'v.phase')) === 'review') await T.click('.review-item .btn.primary');
+  await reviewUI(T, { Ana: true, Tomás: false });
   await waitSt(T, `v.phase==='reveal'`, 'corrección');
   ok(true, 'Tomás responde con el dedo (móvil) y se corrige al responder todos');
   await A.until(`!!document.querySelector('.verdict')`, 'veredicto');
@@ -175,7 +183,7 @@ try {
   await answerUI(A, true);
   await answerUI(B, true);
   await waitSt(T, `v.phase==='reveal' || v.phase==='review'`, 'reveal');
-  if ((await st(T, 'v.phase')) === 'review') await T.click('.review-item .btn.primary');
+  await reviewUI(T, { Ana: true, Tomás: true });
   await waitSt(T, `v.phase==='reveal'`, 'reveal');
   ok(await st(T, `v.log.some(f=>f.kind==='block')`), 'el escudo bloquea el robo');
 
@@ -189,7 +197,7 @@ try {
   await answerUI(A, true);
   await answerUI(B, false);
   await waitSt(T, `v.phase==='reveal' || v.phase==='review'`, 'reveal');
-  if ((await st(T, 'v.phase')) === 'review') await T.click('.review-item .btn.primary');
+  await reviewUI(T, { Ana: true, Tomás: false });
   await waitSt(T, `v.phase==='reveal'`, 'reveal');
   await teacherNext(T);
   await waitSt(A, `v.phase==='wild'`, 'elección de categoría');
@@ -216,7 +224,7 @@ try {
   await answerUI(A, true);
   await answerUI(B, false);
   await waitSt(T, `v.phase==='reveal' || v.phase==='review'`, 'reveal');
-  if ((await st(T, 'v.phase')) === 'review') await T.click('.review-item .btn.primary');
+  await reviewUI(T, { Ana: true, Tomás: false });
   await A.until(`!!document.querySelector('.bcfx')`, 'quemado', 9000);
   ok(true, 'la BlackCard se quema al corregir');
   await A.until(`!document.querySelector('.bcfx')`, 'fin quemado', 10000);
@@ -283,8 +291,10 @@ try {
   await T.click('.ctl-group .btn', await ctlIdx('Tomás', 0));
   await waitSt(T, `v.task.showing===${JSON.stringify(pb)}`, 'mostrar Tomás');
   await T.click('.ctl-group .btn', await ctlIdx('Ana', 1));
+  await waitSt(T, `v.task.judged[${JSON.stringify(pa)}]===true`, 'texto aceptado');
+  await T.click('.ctl-group .btn', await ctlIdx('Ana', 3));
   await waitSt(T, `v.task.entries[${JSON.stringify(pa)}].bonus===1`, 'estrella extra');
-  ok(showBtns >= 6, 'el profesor proyecta el texto de cada alumno y da estrellas con sus botones');
+  ok(showBtns >= 6, 'el profesor proyecta, acepta el texto y da estrellas con sus botones');
   await teacherNext(T);
   await waitSt(T, `v.phase==='roundEnd'`, 'fin rolle');
   ok((await st(T, 'v.players')).find((p) => p.name === 'Ana').stars >= 3, 'las estrellas se suman al terminar');

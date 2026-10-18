@@ -144,6 +144,13 @@ export function PlayScreen({ net, st, onNewPractice }: { net: Net; st: NetState;
           {v.phase === 'final' && <Final view={v} onPractice={onNewPractice} />}
           {v.phase === 'task' && <TaskPlay view={v} net={net} offset={st.offset} />}
 
+          {practice && v.q?.topic === 'lesen' && (
+            <details className="panel reading-drawer" open key={v.reading}>
+              <summary>Texto de la lectura</summary>
+              <div className="reading-side"><Reading id={v.reading} compact /></div>
+            </details>
+          )}
+
           {(v.phase === 'question' || v.phase === 'review' || v.phase === 'reveal') && v.q && (
             <section className={`panel qpanel screen${v.phase === 'reveal' ? ' is-reveal' : ''}`} key={v.q.id}>
               <QuestionHead q={v.q} no={v.qNo} total={v.qTotal} />
@@ -170,7 +177,7 @@ export function PlayScreen({ net, st, onNewPractice }: { net: Net; st: NetState;
               {err && <div className="status-line bad" role="alert">{err}</div>}
             </section>
           )}
-          {v.block === 'lesen' && v.phase !== 'intro' && v.phase !== 'roundEnd' && (
+          {!practice && v.block === 'lesen' && v.phase !== 'intro' && v.phase !== 'roundEnd' && (
             <details className="panel reading-drawer" open>
               <summary>Texto de la lectura</summary>
               <div className="reading-side"><Reading id={v.reading} compact /></div>

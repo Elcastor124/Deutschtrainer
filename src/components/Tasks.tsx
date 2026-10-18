@@ -123,7 +123,7 @@ function WritePlay({ view, t, net, offset }: { view: RoomView; t: TaskWriteView;
     : { title: t.prompts?.[choice] ?? '', sub: 'Escribe libremente: 30, 50 y 80 palabras dan ★, y cada estructura que uses también.' };
   return (
     <div className="writer">
-      <TaskHead title={head.title} sub={head.sub} view={view} offset={offset} right={<Stars n={stars + (entry?.bonus ?? 0)} className="big-stars" />} />
+      <TaskHead title={head.title} sub={subWithReview(head.sub)} view={view} offset={offset} right={<Stars n={stars + (entry?.bonus ?? 0)} className="big-stars" />} />
       {words.length > 0 && <div ref={chips}><WordChips words={words} used={used} /></div>}
       {t.kind === 'frei' && (
         <div className="feats">
@@ -158,6 +158,8 @@ function TaskHead({ title, sub, view, offset, right }: { title: string; sub?: st
   );
 }
 
+const subWithReview = (sub?: string) => `${sub ?? ''} Las estrellas son posibles hasta que el profesor valore el texto.`;
+
 /** Etapa «mostrar»: los textos de todos, el que se está leyendo en grande. */
 function WriteShow({ view, t, teacher }: { view: RoomView; t: TaskWriteView; teacher?: boolean }) {
   const ids = view.players.map((p) => p.id).filter((id) => t.entries[id]);
@@ -166,7 +168,7 @@ function WriteShow({ view, t, teacher }: { view: RoomView; t: TaskWriteView; tea
     <div className="write-show">
       {shown && (
         <article className="show-main" key={shown}>
-          <div className="show-who"><b>{nameOf(view, shown)}</b><span lang="de">{t.kind === 'rolle' ? 'Mach es lustiger!' : t.kind === 'wort' ? splitTheme(t.sets[shown]?.prompt ?? '').title : t.sets[shown]?.prompt}</span><Stars n={t.entries[shown].stars} /></div>
+          <div className="show-who"><b>{nameOf(view, shown)}</b><span lang="de">{t.kind === 'rolle' ? 'Mach es lustiger!' : t.kind === 'wort' ? splitTheme(t.sets[shown]?.prompt ?? '').title : t.sets[shown]?.prompt}</span><span>{t.judged[shown] === true ? 'Aceptado' : t.judged[shown] === false ? 'No aceptado' : 'Pendiente del profesor'}</span><Stars n={t.judged[shown] === true ? t.entries[shown].stars : 0} /></div>
           <Marked text={t.entries[shown].text || '(sin texto)'} words={t.sets[shown]?.words ?? []} />
           <div className="show-meta">
             <span>{t.entries[shown].words} palabras</span>
@@ -418,6 +420,8 @@ export function TaskControls({ view, ctl }: { view: RoomView; ctl: (a: CtlAction
         <span key={p.id} className="ctl-group">
           <b>{p.name}</b>
           <button className={`btn sm${t.showing === p.id ? ' on' : ''}`} onClick={() => op('show', { pid: p.id })}>{t.showing === p.id ? 'En pantalla' : 'Mostrar su texto'}</button>
+          {t.entries[p.id]?.done && <button className={`btn sm${t.judged[p.id] === true ? ' on-good' : ''}`} onClick={() => op('judgeText', { pid: p.id, ok: true })}>✓ Aceptar texto</button>}
+          {t.entries[p.id]?.done && <button className={`btn sm${t.judged[p.id] === false ? ' on' : ''}`} onClick={() => op('judgeText', { pid: p.id, ok: false })}>✗ No aceptar</button>}
           <button className="btn sm" onClick={() => op('star', { pid: p.id, n: 1 })}>+1 ★</button>
           <button className="btn sm ghost" onClick={() => op('star', { pid: p.id, n: -1 })}>−1 ★</button>
         </span>
