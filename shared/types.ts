@@ -169,6 +169,7 @@ export interface MeView {
   /** idle: sin responder · sent: respuesta final enviada · retry: Second Chance pendiente */
   state: 'idle' | 'sent' | 'retry';
   used: ItemId | null;
+  lastQuestion: boolean;
   incoming: { kind: 'thief' | 'sabotage'; by: string }[];
   profileCode: string;
   chests: ChestPub[];

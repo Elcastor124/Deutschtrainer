@@ -479,8 +479,12 @@ button.errtok:hover:not(:disabled) { border-color: var(--steel-2); background: v
 .card3d .back .use { justify-self: stretch; }
 .card3d .why-not { color: #ff7a74; line-height: 1.3; font-size: 0.66rem; overflow: auto; }
 .targets { display: grid; gap: 6px; }
-.item-detail { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--body); font-size: 0.86rem; color: var(--steel); line-height: 1.45; animation: pix-in 0.3s var(--ease-out); }
+.item-detail { display: grid; gap: 10px; padding: 14px; border-radius: 12px; border: 1px solid var(--signal); background: var(--body); box-shadow: 0 0 28px rgba(255, 56, 50, 0.14); font-size: 0.86rem; color: var(--steel); line-height: 1.45; animation: pix-in 0.3s var(--ease-out); }
 .item-detail b { color: var(--paper); font-family: var(--dot); font-weight: 900; margin-right: 6px; }
+.item-detail p { margin: 0; }
+.item-detail .why-not { color: #ff7a74; }
+.item-actions { display: grid; gap: 8px; }
+.item-actions .btn, .item-detail > .btn { min-height: 42px; }
 
 /* Cofres */
 .chest-tray { display: grid; gap: 8px; }

@@ -119,11 +119,12 @@ describe('flujo completo de clase', () => {
       expect(room.s.queue.some((id) => bank.get(id)!.unlock), blk).toBe(true);
     }
     room.startBlock('boss');
-    expect(room.s.queue.length).toBe(4);
+    expect(room.s.queue.length).toBe(6);
     for (const id of room.s.queue) {
       const q = bank.get(id)!;
       expect(['hard', 'special']).toContain(q.diff);
       expect(q.why).toBeTruthy();
+      expect(q.tags).toContain('boss');
     }
   });
 
@@ -429,6 +430,30 @@ describe('revisión del profesor', () => {
     expect(a.score).toBe(POINTS[q.diff]);
     expect(b.score).toBe(0);
   });
+
+  it('el Championship entrega cofres abribles al entrar y tras cada dos preguntas', () => {
+    const { room, a, b } = classRoom();
+    room.startBlock('boss');
+    expect(a.chests.map((c) => c.tier)).toEqual(['bronze']);
+    expect(b.chests.map((c) => c.tier)).toEqual(['bronze']);
+    const first = a.chests[0];
+    expect(room.openChest(a.id, first.id).ok).toBe(true);
+    expect(a.inv).toContain(first.item);
+    room.next();
+    ans(room, a, false); ans(room, b, false);
+    expect(a.chests).toHaveLength(0);
+    room.next();
+    ans(room, a, false); ans(room, b, false);
+    expect(a.chests.map((c) => c.tier)).toEqual(['silver']);
+    expect(b.chests.map((c) => c.tier)).toEqual(['bronze', 'silver']);
+    room.next();
+    ans(room, a, false); ans(room, b, false);
+    expect(a.chests).toHaveLength(1);
+    room.next();
+    ans(room, a, false); ans(room, b, false);
+    expect(a.chests.map((c) => c.tier)).toEqual(['silver', 'silver']);
+  });
+
   it('Second Chance permite repetir una respuesta escrita rechazada por el profesor', () => {
     const { room, a, b } = classRoom();
     room.startBlock('r2');

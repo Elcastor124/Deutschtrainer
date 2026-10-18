@@ -13,7 +13,7 @@ export function useCtxFor(view: RoomView): UseCtx | null {
   return {
     phase: view.phase, blockItems: view.blockItems, itemsOn: view.itemsOn, itemsOff: view.itemsOff, q: view.q,
     inventory: me.inventory, used: me.used, state: me.state, shield: !!pub?.shield, wildPending: !!view.wildPending,
-    lastQuestion: view.qNo >= view.qTotal, self: me.id,
+    lastQuestion: me.lastQuestion, self: me.id,
     rivals: view.players.filter((x) => x.id !== me.id).map((x) => ({
       id: x.id, sabotaged: x.sabotaged, targeted: view.uses.some((u) => u.target === x.id && !!ITEMS[u.item].target),
     })),
@@ -128,8 +128,16 @@ export function Inventory({ view, onUse, onChest }: { view: RoomView; onUse: (it
         })}
       </div>
       {open !== null && me.inventory[open] && (
-        <div className="item-detail" aria-live="polite">
-          <b>{ITEMS[me.inventory[open]].name}</b> {ITEMS[me.inventory[open]].rule}
+        <div className="item-detail" role="group" aria-label={`Activar ${ITEMS[me.inventory[open]].name}`} aria-live="polite">
+          <b>{ITEMS[me.inventory[open]].name}</b>
+          <p>{ITEMS[me.inventory[open]].rule}</p>
+          {reasonFor(me.inventory[open]) ? <small className="why-not">{reasonFor(me.inventory[open])}</small>
+            : ITEMS[me.inventory[open]].target ? (
+              <div className="item-actions">
+                <span>Elige a quién afecta:</span>
+                {rivals.map((r) => <button key={r.id} type="button" className="btn signal sm" disabled={busy || !!checkUse(ctx, me.inventory[open], r.id)} onClick={() => use(open, me.inventory[open], r.id)}>Contra {r.name}</button>)}
+              </div>
+            ) : <button type="button" className="btn signal" disabled={busy} onClick={() => use(open, me.inventory[open])}>Activar {ITEMS[me.inventory[open]].name}</button>}
         </div>
       )}
       {msg && <p className="err-msg" role="alert">{msg}</p>}

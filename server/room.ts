@@ -3,7 +3,7 @@
 import { randomBytes } from 'node:crypto';
 import { READINGS } from '../shared/reading.ts';
 import {
-  BC_BONUS, CHESTS, COMMON_ITEMS, DIFF_LABEL, GOLD_ITEMS, ITEMS, MAX_INV, PLAN, POINTS, STREAK_REWARD, THIEF_MAX, TOPICS, blockDef, checkUse, type UseCtx,
+  BC_BONUS, BOSS_CHEST_EVERY, CHESTS, COMMON_ITEMS, DIFF_LABEL, GOLD_ITEMS, ITEMS, MAX_INV, PLAN, POINTS, STREAK_REWARD, THIEF_MAX, TOPICS, blockDef, checkUse, type UseCtx,
 } from '../shared/rules.ts';
 import type {
   Answer, BlockId, ChestTier, ErrorEntry, FinalView, Fx, ItemId, Phase, PlayerResult, Question, RevealView, RoomView, Status, TaskKind, Topic,
@@ -316,8 +316,9 @@ export class Room {
       if (cand.length) this.s.chestQs = [cand[Math.floor(this.d.rand() * cand.length)]];
       if (!this.s.starterGiven) {
         this.s.starterGiven = true;
-        for (const p of this.s.players) this.grant(p, 'bronze', 'cofre inicial');
+        if (id !== 'boss') for (const p of this.s.players) this.grant(p, 'bronze', 'cofre inicial');
       }
+      if (id === 'boss') for (const p of this.s.players) this.grant(p, 'bronze', 'inicio del Championship');
     }
     this.touch();
     return OK;
@@ -652,6 +653,9 @@ export class Room {
         if (this.s.chestQs.includes(q.id)) this.grant(p, 'silver', 'Truhenfrage');
         if (p.streak > 0 && p.streak % STREAK_REWARD === 0) this.grant(p, 'bronze', `racha de ${p.streak} aciertos`);
       }
+      if (this.s.block === 'boss' && this.s.qNo % BOSS_CHEST_EVERY === 0 && this.s.queue.length > 0) {
+        for (const p of this.s.players) this.grant(p, 'silver', `pregunta ${this.s.qNo} del Championship`);
+      }
     }
 
     // 5) Historial para el modo práctica.
@@ -872,7 +876,7 @@ export class Room {
         const r = s.answers[p.id];
         v.me = {
           id: p.id, name: p.name, inventory: p.inv, pickups: p.pickups, state: r ? (r.final ? 'sent' : 'retry') : 'idle',
-          used: s.uses[p.id]?.item ?? null,
+          used: s.uses[p.id]?.item ?? null, lastQuestion: s.queue.length === 0,
           incoming: Object.entries(s.uses).filter(([, u]) => u.target === p.id && ITEMS[u.item].target).map(([by, u]) => ({ kind: u.item as 'thief' | 'sabotage', by })),
           profileCode: this.d.profileCode?.(p.profile) ?? '',
           chests: p.chests.map((c) => ({ id: c.id, tier: c.tier, reason: c.reason })),

@@ -1,9 +1,9 @@
 // Final Boss y Prüfungsfragen: preguntas difíciles, clasificadas y justificadas (why).
 // Combinan reglas de varias presentaciones; todas admiten la BlackCard.
 import type { Question } from '../../shared/types.ts';
-import { bd, er, gp, od, wr, type Meta } from './h.ts';
+import { bd, er, gp, mc, od, wr, type Meta } from './h.ts';
 
-const B = (t: Meta['t'], s: Meta['s'], d: 'hard' | 'special', x: string, why: string, unlock = false): Meta => ({ t, s, d, x, why, ...(unlock ? { unlock } : {}) });
+const B = (t: Meta['t'], s: Meta['s'], d: 'hard' | 'special', x: string, why: string, unlock = false): Meta => ({ t, s, d, x, why, tags: ['boss'], ...(unlock ? { unlock } : {}) });
 
 export function bossQuestions(): Question[] {
   return [
@@ -42,6 +42,22 @@ export function bossQuestions(): Question[] {
       'En Nebensatz el verbo separable se vuelve a juntar al final: aufstehe.'),
       'Une con weil: «Ich bin müde. Ich stehe jeden Tag um sechs Uhr auf.»',
       ['Ich bin müde, weil ich jeden Tag um sechs Uhr aufstehe.', 'Ich bin müde, weil ich jeden Tag um 6 Uhr aufstehe.', 'Weil ich jeden Tag um sechs Uhr aufstehe, bin ich müde.', 'Weil ich jeden Tag um 6 Uhr aufstehe, bin ich müde.']),
+    mc(B('nebensatz', 'warum', 'special', 'Obwohl introduce una subordinada con el verbo al final; delante de la principal hay inversión.',
+      'Combina obwohl, Perfekt con sein e inversión después de la coma.'),
+      '¿Qué frase es correcta?', [
+        'Obwohl es geregnet hat, sind wir zum Bahnhof gegangen.',
+        'Obwohl es hat geregnet, sind wir zum Bahnhof gegangen.',
+        'Obwohl es geregnet hat, wir sind zum Bahnhof gegangen.',
+        'Obwohl es geregnet hat, haben wir zum Bahnhof gegangen.',
+      ]),
+    gp(B('trennbar', 'bank', 'special', 'Wenn du deine Karte verloren hast, musst du sie sofort sperren lassen.',
+      'Si wenn va delante, el auxiliar queda al final de la subordinada y el modal inicia la principal.'),
+      'Completa la frase de emergencia del banco',
+      'Wenn du deine Karte ___ (verlieren) ___, ___ du sie sofort sperren lassen.', [['verloren'], ['hast'], ['musst']]),
+    wr(B('nebensatz', 'kh', 'special', 'Obwohl mir der Arm wehtut, bin ich mit dem Fahrrad zur Apotheke gefahren.',
+      'obwohl + verbo al final, mir en Dativ y Perfekt de fahren con sein.'),
+      'Traduce: «Aunque me duele el brazo, he ido en bicicleta a la farmacia.»',
+      ['Obwohl mir der Arm wehtut, bin ich mit dem Fahrrad zur Apotheke gefahren.', 'Ich bin mit dem Fahrrad zur Apotheke gefahren, obwohl mir der Arm wehtut.']),
 
     // ── Difíciles (+10) · Prüfungsfragen que desbloquean la BlackCard ──
     wr(B('akkusativ', 'bank', 'hard', 'Ich habe meine Karte verloren. Was soll ich jetzt machen?',
@@ -77,5 +93,20 @@ export function bossQuestions(): Question[] {
       'Perfekt irregular (gegessen) + kein en Akkusativ masculino (keinen Hunger).'),
       'Traduce: «No he comido nada, pero no tengo hambre.»',
       ['Ich habe nichts gegessen, aber ich habe keinen Hunger.', 'Ich habe nichts gegessen, aber keinen Hunger.']),
+    mc(B('dativ', 'unterwegs', 'hard', 'seit y bei rigen Dativ; Woche y Oma son femeninos.',
+      'Dos preposiciones de Dativ en una misma frase.'),
+      'Elige la frase correcta', [
+        'Seit einer Woche wohnt sie bei ihrer Oma.',
+        'Seit eine Woche wohnt sie bei ihre Oma.',
+        'Seit einer Woche wohnt sie bei ihre Oma.',
+        'Seit eine Woche wohnt sie bei ihrer Oma.',
+      ]),
+    od(B('satzbau', 'warum', 'hard', 'Deshalb habe ich den Bus genommen, obwohl ich lieber Fahrrad fahre.',
+      'deshalb exige verbo en segunda posición y obwohl envía fahre al final.'),
+      'Ordena la frase con deshalb y obwohl', 'Deshalb habe ich den Bus genommen, obwohl ich lieber Fahrrad fahre.'),
+    gp(B('perfekt', 'kh', 'hard', 'Sie ist in die Notaufnahme gefahren, weil ihr Arm wehgetan hat.',
+      'fahren usa sein, in die indica dirección (Akkusativ) y wehgetan hat va al final tras weil.'),
+      'Completa la historia de urgencias', 'Sie ___ in ___ Notaufnahme gefahren, weil ihr Arm ___ ___.',
+      [['ist'], ['die'], ['wehgetan'], ['hat']]),
   ];
 }

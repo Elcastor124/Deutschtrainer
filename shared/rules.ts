@@ -6,6 +6,7 @@ export const BC_BONUS = 10;
 export const THIEF_MAX = 5;
 export const MAX_INV = 3;
 export const STREAK_REWARD = 3;
+export const BOSS_CHEST_EVERY = 2;
 
 export const SOURCES: Record<Source, { name: string; file: string }> = {
   bank: { name: 'Auf der Bank', file: 'Clase - Auf der Bank.pdf' },
@@ -172,7 +173,7 @@ export const PLAN: BlockDef[] = [
   },
   {
     id: 'boss', name: 'BlackCard Championship', sub: 'Final Boss · solo preguntas difíciles', min: 7, act: 1, kind: 'quiz', items: true, reward: false, theme: 'boss',
-    brief: ['Todas las preguntas son difíciles ◆: la BlackCard está permitida.', 'Retos especiales +15. Un error con BlackCard cuesta −10.', 'Piensa antes de arriesgar.'],
+    brief: ['Seis preguntas difíciles ◆: la BlackCard está permitida.', 'Abre un cofre al entrar y otro cada dos preguntas para conseguir cartas.', 'Retos especiales +15. Un error con BlackCard cuesta −10.'],
   },
   {
     id: 'final', name: 'Siegerehrung', sub: 'Podio y repaso de errores', min: 5, act: 1, kind: 'final', items: false, reward: false, theme: 'final',

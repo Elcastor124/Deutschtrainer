@@ -77,8 +77,8 @@ async function settle(p, item) {
 async function useCard(p, item, target) {
   const i = await st(p, `v.me.inventory.indexOf(${JSON.stringify(item)})`);
   await p.click('.cards .slot .front', i);
-  await sleep(700);
-  if (target) await p.click('.card3d.flipped .targets .btn'); else await p.click('.card3d.flipped .use');
+  await p.until(`!!document.querySelector('.item-detail')`, 'menú de carta');
+  if (target) await p.click('.item-detail .item-actions .btn'); else await p.click('.item-detail > .btn');
 }
 const teacherNext = (T) => T.click('.controls .btn.primary');
 async function reviewUI(T, verdicts) {

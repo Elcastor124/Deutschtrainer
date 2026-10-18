@@ -24,7 +24,7 @@ export const RULES: Record<QuizBlock, Rule> = {
   r2: { filter: (q) => GRAMMAR.includes(q.topic) && !['order', 'build'].includes(q.type), mix: { easy: 2, medium: 4, hard: 2 }, unlock: true },
   r3: { filter: (q) => SATZBAU_TYPES.includes(q.type) || !!q.tags?.includes('fix'), mix: { easy: 1, medium: 3, hard: 2 }, unlock: true },
   r4: { filter: (q) => q.topic !== 'lesen', mix: { easy: 1, medium: 3, hard: 2, special: 1 }, unlock: true, prefer: { reading: true, n: 1 } },
-  boss: { filter: (q) => (q.diff === 'hard' || q.diff === 'special') && !!q.why && !q.unlock, mix: { special: 2, hard: 2 } },
+  boss: { filter: (q) => !!q.tags?.includes('boss') && (q.diff === 'hard' || q.diff === 'special') && !!q.why && !q.unlock, mix: { special: 3, hard: 3 } },
 };
 const isQuiz = (b: BlockId): b is QuizBlock => b in RULES;
 
