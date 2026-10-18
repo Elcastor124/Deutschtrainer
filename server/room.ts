@@ -10,7 +10,7 @@ import type {
 } from '../shared/types.ts';
 import { grade, makeInstance, publicView, solution, type Instance } from './grade.ts';
 import { buildQueue, drawTopic, practiceQueue, wildTopics, type SelCtx, type Stat } from './select.ts';
-import { endTask, jengaAnswer, pendingStars, removeFromTask, startTask, taskNext, taskTick, taskView, type TaskState } from './tasks.ts';
+import { addTaskPlayer, endTask, jengaAnswer, pendingStars, removeFromTask, startTask, taskNext, taskTick, taskView, type TaskState } from './tasks.ts';
 
 export interface Player {
   id: string;
@@ -253,6 +253,7 @@ export class Room {
       shield: false, sabot: null, connected: true, bcWon: 0, bcLost: 0, itemsUsed: 0, stolen: 0, errors: [], chests: [], stars: 0,
     };
     this.s.players.push(p);
+    addTaskPlayer(this, p.id);
     this.fx('join', `${name} entra en la sala`, { by: p.id });
     if (this.s.starterGiven && !this.practice) this.grant(p, 'bronze', 'cofre inicial');
     this.touch();

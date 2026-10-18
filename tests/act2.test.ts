@@ -179,6 +179,27 @@ describe('actividades de escritura', () => {
     expect(features('Ich habe Pizza gegessen.')).toEqual(['perfekt']);
     expect(FEATURES.length).toBe(4);
   });
+
+  it('solo un jugador de la sala puede elegir consigna', () => {
+    const { room } = classRoom();
+    room.startBlock('frei');
+    room.next();
+    const before = JSON.stringify(room.s.task);
+    expect(pick(room, 'desconocido', 0)).toBe(false);
+    expect(JSON.stringify(room.s.task)).toBe(before);
+  });
+
+  it('prepara al alumno que entra tarde sin alterar el estado al consultar vistas', () => {
+    const { room } = classRoom();
+    room.startBlock('rolle');
+    room.next();
+    const late = room.join('Lena', 'prof-lena') as Player;
+    const t = room.s.task as WriteTask;
+    expect(t.sets[late.id].words).toHaveLength(8);
+    const before = JSON.stringify(room.s.task);
+    expect((room.view({ pid: late.id }).task as TaskWriteView).sets[late.id]).toBeDefined();
+    expect(JSON.stringify(room.s.task)).toBe(before);
+  });
 });
 
 describe('escenas de rol', () => {

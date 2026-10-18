@@ -119,6 +119,11 @@ function ensureSet(room: Room, t: WriteTask, pid: string) {
   }
   return t.sets[pid];
 }
+/** Prepara la ficha de quien entra mientras ya hay una actividad de escritura. */
+export function addTaskPlayer(room: Room, pid: string) {
+  const t = room.s.task;
+  if (t && (t.kind === 'rolle' || t.kind === 'wort' || t.kind === 'frei')) ensureSet(room, t, pid);
+}
 const themePrompt = (title: string) => `«${title}»: escribe una historia de al menos ${WORT_MIN} palabras con todas tus palabras.`;
 
 function pickScene(room: Room): number {
@@ -155,6 +160,7 @@ export function taskText(room: Room, pid: string, text: string, done: boolean): 
 export function taskPick(room: Room, pid: string, n: number): Result {
   const t = room.s.task;
   if (room.s.phase !== 'task' || t?.kind !== 'frei' || t.stage !== 'write') return fail('Ahora no se elige consigna.');
+  if (!room.player(pid)) return fail('Jugador desconocido.');
   if (!Number.isInteger(n) || n < 0 || n >= (t.prompts?.length ?? 0)) return fail('Consigna no válida.');
   ensureSet(room, t, pid);
   t.choice[pid] = n;
@@ -486,7 +492,6 @@ export function taskView(room: Room, viewer: { teacher: true } | { pid: string }
     };
   }
   const open = teacher || t.stage === 'show';
-  for (const p of room.s.players) ensureSet(room, t, p.id);
   const sets: Record<string, { words: { de: string; es: string }[]; prompt: string; base?: string }> = {};
   const entries: Record<string, WriteEntry> = {};
   for (const [pid, set] of Object.entries(t.sets)) {

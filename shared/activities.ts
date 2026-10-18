@@ -10,7 +10,7 @@ const n = (de: string, es: string, ...stems: string[]): LearnedWord => ({ de, es
 const exact = (de: string, es: string, ...words: string[]): LearnedWord => ({ de, es, re: words.map((w) => `\\b${w}\\b`).join('|') });
 /** Verbo separable: infinitivo/participio juntos o la raíz con la partícula más adelante en la misma frase. */
 const sep = (de: string, es: string, prefix: string, stem: string, part: string): LearnedWord =>
-  ({ de, es, re: `\\b${prefix}${stem}\\w*|\\b${part}\\b|\\b${stem}\\w*\\b[^.!?]*\\b${prefix}\\b` });
+  ({ de, es, re: `\\b${prefix}${stem}\\w{0,32}|\\b${part}\\b|\\b${stem}\\w{0,32}\\b[^.!?]{0,120}\\b${prefix}\\b` });
 
 export function fold(s: string): string {
   return s.toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
@@ -213,7 +213,7 @@ export const FREE_PROMPTS = [
 export const FREE_MILESTONES = [30, 50, 80];
 
 export const FEATURES: { id: string; label: string; hint: string; re: RegExp }[] = [
-  { id: 'perfekt', label: 'Perfekt', hint: 'habe/bin … ge-…t/en', re: /\b(habe|hast|hat|haben|habt|bin|bist|ist|sind|seid)\b[^.!?]{0,60}?\b(ge\w{2,}(t|en)|\w+iert|\w+ge\w+(t|en))\b/ },
+  { id: 'perfekt', label: 'Perfekt', hint: 'habe/bin … ge-…t/en', re: /\b(habe|hast|hat|haben|habt|bin|bist|ist|sind|seid)\b[^.!?]{0,60}?\b(ge\w{2,32}(t|en)|\w{1,32}iert|\w{1,32}ge\w{1,32}(t|en))\b/ },
   { id: 'neben', label: 'Nebensatz', hint: 'weil · obwohl · dass · wenn', re: /\b(weil|obwohl|dass|wenn)\b/ },
   { id: 'dativ', label: 'Dativ', hint: 'mit dem · zur · bei der…', re: /\b(mit|zu|bei|nach|aus|von|seit|gegenueber)\s+(dem|der|den|einem|einer|meinem|meiner|deinem|deiner|seinem|seiner|ihrem|ihrer)\b|\b(zum|zur|beim|vom)\b/ },
   { id: 'zeit', label: 'Orden', hint: 'zuerst · danach · am Ende', re: /\b(zuerst|danach|dann|spaeter|am ende|ploetzlich)\b/ },
