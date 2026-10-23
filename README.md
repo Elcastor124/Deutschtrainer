@@ -93,7 +93,9 @@ El servidor necesita WebSockets (las tres opciones los admiten). Variables: `POR
 
 El servidor calcula daños, aciertos, energía y estados, y guarda las salas de boxeo en `DATA_DIR/boxing.json`. Los clientes consultan el estado con autenticación cada 650 ms: no hay sincronización mediante `localStorage`. Este último solo guarda la sesión propia para recuperar al recargar. La conexión entre ordenadores exige que todos puedan alcanzar el mismo servidor; `localhost` solo sirve en el propio ordenador. En una wifi escolar puede haber aislamiento entre dispositivos.
 
-Mission Stadt está programada para **75 minutos en total**, con 12 minutos de combate incluidos: explicación y ejercicios 0–49, entrevista oral con cambio de rol 49–54, escritura y revisión entre compañeros 54–62, boxeo 62–74 y cierre 74–75. Sin el combate son 63 minutos. La versión anterior se conserva localmente en `../akkusativ_72min.html`.
+Mission Stadt está programada para **75 minutos en total**: título 0–1, calentamiento de seis preguntas 1–6, explicación y práctica de Akkusativ/Dativ 6–51, detectives de casos 51–56, laboratorio de frases (Präsens→Perfekt y weil) 56–62, boxeo 62–74 y cierre 74–75. No hay entrevista ni redacción libre. Son 22 diapositivas, 33 preguntas autocorregibles, 6 preguntas de calentamiento y 6 transformaciones guiadas; el PDF incluye todas las soluciones. La versión anterior se conserva localmente en `../akkusativ_75min_entrevista.html`.
+
+**Web pública:** `https://deutschtrainer-cg76.onrender.com/boxeo`. La versión descargada de la presentación usa ese servidor por defecto; al abrirla desde una web usa el mismo origen de esa web. Para verificar la sala pública con tres clientes: `BOXING_BASE=https://deutschtrainer-cg76.onrender.com node scripts/boxing-ui.mjs`.
 
 Pruebas: `npm test`, `node scripts/boxing-e2e.mjs`, `npm run build && node scripts/boxing-ui.mjs` (tres contextos de navegador reales).
 

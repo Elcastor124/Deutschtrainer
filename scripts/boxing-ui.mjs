@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { launch, sleep } from './cdp.mjs';
 import { BOXING_BANK } from '../server/boxing-bank.ts';
-const env=await launch({shots:'shots/boxing'});
+const env=await launch({shots:'shots/boxing',...(process.env.BOXING_BASE?{base:process.env.BOXING_BASE}:{})});
 const bank=Array.isArray(BOXING_BANK)?BOXING_BANK:Object.values(BOXING_BANK);
 try {
  const T=await env.newPage('profesor',1366,768),A=await env.newPage('jugador-a',1366,768),B=await env.newPage('jugador-b',390,844,true);
