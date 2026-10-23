@@ -14,6 +14,21 @@
     "sha256": "cd3ab02935a555dc18a8823220adef73e3d31977018ad748b7335501ff9aa02f"
   },
   {
+    "id": "akkusativ",
+    "title": "Mission Stadt · Akkusativ y preposiciones",
+    "description": "Akkusativ, Dativ, Wo/Wohin y un combate final de boxeo multijugador.",
+    "file": "/presentaciones/akkusativ.html",
+    "topics": [
+      "Akkusativ",
+      "Dativ",
+      "Preposiciones"
+    ],
+    "level": "A1–A2",
+    "source": "akkusativ.html",
+    "sha256": "78cc144a29a47a00fb9f1a15b22ac5c10fb6778f1b14731a2e83333d9e66527d",
+    "pdf": "/presentaciones/akkusativ.pdf"
+  },
+  {
     "id": "nebensaetze-perfekt",
     "title": "Warum? · Nebensätze y Perfekt",
     "description": "weil, obwohl, deshalb; haben/sein y el verbo al final.",

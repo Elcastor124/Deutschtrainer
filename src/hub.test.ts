@@ -10,6 +10,15 @@ function renderRoute(pathname: string, search = '') {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Student learning hub', () => {
+  it('makes the Dativ and Akkusativ review game discoverable from the homepage and topic', () => {
+    for (const path of ['/', '/tema/1']) {
+      const html = renderRoute(path);
+      expect(html).toContain('href="/boxeo"');
+      expect(html).toContain('Repaso de Dativ y Akkusativ');
+      expect(html).toContain('dos jugadores');
+    }
+  });
+
   it('opens the Explore catalog at the root with Tema 1 and navigation', () => {
     const html = renderRoute('/');
     expect(html).toContain('Explorar');

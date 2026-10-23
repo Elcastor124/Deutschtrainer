@@ -13,8 +13,8 @@ Incluye además un **modo práctica** para casa, que empieza por lo que cada alu
 
 La portada `/` es el hub de estudio. `/tema/1` reúne el itinerario de **vocabulario, Nebensätze, Perfekt y Dativ**. Los alumnos pueden abrir cada presentación interactiva en su propia pestaña y volver al catálogo sin perderlo.
 
-- **7 presentaciones HTML actuales** en `public/presentaciones/`; las copias antiguas y los scripts de generación no se publican como lecciones.
-- **4 PDF de clase** acompañan a sus presentaciones. Son los PDF ya existentes; no son exportaciones nuevas de los remasters.
+- **8 presentaciones HTML actuales** en `public/presentaciones/`; las copias antiguas y los scripts de generación no se publican como lecciones.
+- **5 PDF de clase** acompañan a sus presentaciones. Cuatro son los PDF ya existentes; Mission Stadt incluye su exportación actualizada y el apéndice de soluciones.
 - `/practica?tema=1` abre la práctica del Tema 1: conserva el banco preparado, los filtros por contenido y el historial de errores.
 - `/tema/1/taller` adapta las consignas originales a práctica individual: reescritura de las seis lecturas, historias con palabras dadas, escritura libre y ensayo de escenas. Guarda borradores y autoevaluaciones localmente; no finge corregir el alemán. Wort-Jenga sigue siendo una actividad de sala.
 - `/jugar` conserva el acceso del profesor y de los alumnos a las salas de clase.
@@ -75,6 +75,27 @@ El servidor necesita WebSockets (las tres opciones los admiten). Variables: `POR
 - Prioriza las preguntas falladas y vuelve a poner cada fallo unas preguntas después (repaso deliberado).
 - En el mismo navegador de clase, el historial se reconoce solo.
 - En otro ordenador, el alumno escribe su **código de alumno**, que aparece al final de la clase.
+
+## Boxen Arena · combate final de Akkusativ
+
+`/boxeo` es la actividad **Repaso de Dativ y Akkusativ**, accesible directamente desde la portada y Tema 1. Funciona para **profesor y dos jugadores**, también enlazada desde el final de **Mission Stadt**. No reemplaza el quiz BlackCard. Las partidas nuevas seleccionan solo ejercicios de Akkusativ, Dativ, preposiciones, pronombres y Wo/Wohin (30 ejercicios disponibles, 12 intercambios por partida), sin mezclar Perfekt ni Nebensätze.
+
+**Si la página no abre:** no ejecutes el HTML suelto como servidor del juego. Arranca `npm start` y abre la web en `http://localhost:4747/`; pulsa **Jugar al repaso de casos**. En un despliegue público, el enlace `/boxeo` usa el mismo servidor de la web. Sin un servidor Node activo, GitHub por sí solo no ejecuta el combate.
+
+1. Arranca la aplicación como siempre (`npm run build && npm start`).
+2. Abre Mission Stadt desde la biblioteca y pulsa **Abrir combate**, o entra directamente en `/boxeo`.
+3. El profesor crea sala. Los alumnos abren el enlace compartido y entran con nombre y código; no se crean cuentas ni contraseñas.
+4. El profesor empieza. Ambos reciben la misma pregunta; se espera a los dos sin premiar la velocidad.
+5. Acertar desbloquea una acción: jab, directo, crochet, defensa o esquiva. Fallar obliga a recuperar y ver la explicación. Las acciones elegidas permanecen ocultas al rival hasta resolverlas.
+6. El profesor controla la siguiente pregunta, pausa, reanudación y cierre de respuestas pendientes.
+
+**Reglas:** 100 puntos de salud, energía limitada y 12 intercambios como máximo. El jab causa 8 de daño y no lo evita la esquiva; el directo causa 12 y el crochet 16, pero ambos pueden esquivarse. Defender bloquea el 75 % del daño. El daño es simultáneo: no importa quién pulse primero. Al acabarse el combate gana quien tenga más salud; los aciertos desempatan. No hay violencia gráfica.
+
+El servidor calcula daños, aciertos, energía y estados, y guarda las salas de boxeo en `DATA_DIR/boxing.json`. Los clientes consultan el estado con autenticación cada 650 ms: no hay sincronización mediante `localStorage`. Este último solo guarda la sesión propia para recuperar al recargar. La conexión entre ordenadores exige que todos puedan alcanzar el mismo servidor; `localhost` solo sirve en el propio ordenador. En una wifi escolar puede haber aislamiento entre dispositivos.
+
+La lección sigue durando 60 minutos sin el bonus; el combate añade unos 10–12 minutos. Se conserva la versión original en `../akkusativ_sin_boxeo.html`.
+
+Pruebas: `npm test`, `node scripts/boxing-e2e.mjs`, `npm run build && node scripts/boxing-ui.mjs` (tres contextos de navegador reales).
 
 ## Plan de clase (120 min)
 

@@ -5,8 +5,8 @@ import { resolve } from 'node:path';
 const root=resolve(import.meta.dirname,'..');
 const entries=JSON.parse(readFileSync(resolve(root,'public/presentaciones/catalogo.json'),'utf8')) as {id:string;title:string;file:string;pdf?:string;topics:string[];sha256:string}[];
 describe('Biblioteca de presentaciones',()=>{
- it('incluye siete versiones actuales y cuatro PDF, sin backups',()=>{
-  expect(entries).toHaveLength(7);expect(entries.filter(e=>e.pdf)).toHaveLength(4);
+ it('incluye ocho versiones actuales y cinco PDF, sin backups',()=>{
+  expect(entries).toHaveLength(8);expect(entries.filter(e=>e.pdf)).toHaveLength(5);
   expect(new Set(entries.map(e=>e.id)).size).toBe(entries.length);
   expect(entries.some(e=>/backup|original|90min/i.test(e.file))).toBe(false);
  });

@@ -1,8 +1,10 @@
 import { followLearningLink } from '../components/LearningNav.tsx';
+import { BoxingActivity } from '../components/BoxingActivity.tsx';
 
 export const STUDY_TOPICS = [
   { title: 'Nebensätze', description: 'Conecta ideas con weil, obwohl, dass y wenn. Coloca el verbo al final.' },
   { title: 'Perfekt', description: 'Cuenta lo que has hecho: haben o sein + Partizip II.' },
+  { title: 'Akkusativ', description: 'Reconoce el complemento directo, usa den/einen y contrasta Wo/Wohin.' },
   { title: 'Dativ', description: 'Repasa artículos, preposiciones y situaciones del día a día.' },
   { title: 'Vocabulario', description: 'Aprende palabras con su artículo y úsalas en contexto.' },
 ];
@@ -27,6 +29,7 @@ export function Explore() {
           <a className="btn" href="/practica?tema=1" onClick={followLearningLink}>Ir a la práctica</a>
         </div>
       </section>
+      <BoxingActivity />
       <section className="learning-grid" aria-label="Qué quieres hacer">
         <article className="panel home-card">
           <span className="learning-eyebrow">01 · COMPRENDER</span>

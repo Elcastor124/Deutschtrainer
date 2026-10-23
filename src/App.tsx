@@ -1,4 +1,5 @@
 import { Home } from './views/Home.tsx';
+import { Boxing } from './views/Boxing.tsx';
 import { Explore } from './views/Explore.tsx';
 import { TopicOne } from './views/TopicOne.tsx';
 import { Workshop } from './views/Workshop.tsx';
@@ -10,6 +11,7 @@ import { usePath } from './util.ts';
 
 export function App() {
   const path = usePath();
+  if (/^\/boxeo\/?$/.test(path)) return <Boxing />;
   const m = /^\/(t|p|j)\/([A-Za-z0-9]{3,8})\/?$/.exec(path);
   const invited = path === '/' && !!new URLSearchParams(location.search).get('sala');
   let screen;

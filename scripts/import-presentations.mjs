@@ -8,6 +8,7 @@ const out = join(root, 'public/presentaciones');
 mkdirSync(out, { recursive: true });
 const rows = [
  ['bruecke-a1','index.html','Brücke A1 · Empieza aquí','Saludos, presentaciones, números, preguntas personales e idiomas.',['Präsens','Vocabulario','Conversación'],'A1'],
+ ['akkusativ','akkusativ.html','Mission Stadt · Akkusativ y preposiciones','Akkusativ, Dativ, Wo/Wohin y un combate final de boxeo multijugador.',['Akkusativ','Dativ','Preposiciones'],'A1–A2','Clase - Mission Stadt (Akkusativ y Dativ) - soluciones.pdf'],
  ['nebensaetze-perfekt','nebensatz-perfekt.html','Warum? · Nebensätze y Perfekt','weil, obwohl, deshalb; haben/sein y el verbo al final.',['Nebensätze','Perfekt'],'A1–A2','Clase - weil obwohl deshalb + Perfekt.pdf'],
  ['unterwegs','dativ.html','Unterwegs · Dativ + Perfekt','Artículos, pronombres y preposiciones de Dativ; viajes y frases combinadas.',['Dativ','Perfekt','Nebensätze'],'A1–A2','Clase - Unterwegs (Dativ + Perfekt).pdf'],
  ['bank','bank.html','Auf der Bank','Vocabulario del banco, trato formal y diálogos para situaciones reales.',['Vocabulario','Conversación'],'A2','Clase - Auf der Bank.pdf'],

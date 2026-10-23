@@ -2,6 +2,7 @@ import { PLAN } from '../../shared/rules.ts';
 import { followLearningLink } from '../components/LearningNav.tsx';
 import { STUDY_TOPICS } from './Explore.tsx';
 import { Presentations } from '../components/Presentations.tsx';
+import { BoxingActivity } from '../components/BoxingActivity.tsx';
 
 export function TopicOne() {
   return (
@@ -15,7 +16,7 @@ export function TopicOne() {
       <section className="stack learning-section" aria-labelledby="path-title">
         <h2 id="path-title">Ruta de estudio</h2>
         <ol className="learning-path">
-          <li><b>01 · Comprende</b><span>Repasa los cuatro bloques y sus presentaciones.</span></li>
+          <li><b>01 · Comprende</b><span>Repasa los bloques y sus presentaciones.</span></li>
           <li><b>02 · Practica</b><span>Responde sin límite de tiempo; filtra o combina todos los contenidos.</span></li>
           <li><b>03 · Aplica</b><span>Lleva lo aprendido al juego y a los talleres en una sala de clase.</span></li>
         </ol>
@@ -24,6 +25,7 @@ export function TopicOne() {
         {STUDY_TOPICS.map((topic) => <article className="panel home-card" key={topic.title}><h2 lang="de">{topic.title}</h2><p>{topic.description}</p></article>)}
       </section>
       <Presentations />
+      <BoxingActivity />
       <section className="panel learning-feature" aria-labelledby="practice-title">
         <div className="stack">
           <h2 id="practice-title">Practica Tema 1</h2>
