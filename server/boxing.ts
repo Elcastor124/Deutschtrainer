@@ -5,6 +5,26 @@ import { join, resolve } from 'node:path';
 import { BOXING_MOVES, type BoxingMove, type BoxingFighter, type BoxingPhase, type BoxingQuestion, type BoxingResolution, type BoxingView } from '../shared/boxing.ts';
 import { BOXING_BANK } from './boxing-bank.ts';
 
+const DECK_TOPICS = ['Akkusativ', 'Dativ', 'Präpositionen', 'Pronomen', 'Wo/Wohin'];
+function shuffled<T>(items: T[]): T[] {
+  const out = items.slice();
+  for (let i = out.length - 1; i > 0; i--) { const j = randomInt(i + 1); [out[i], out[j]] = [out[j], out[i]]; }
+  return out;
+}
+// Mazo equilibrado: rondas en las que cada tema de casos aparece una vez, en
+// orden aleatorio. Así ningún tema sale más de dos veces seguidas y no hay repetidas.
+function buildDeck(size: number): BoxingQuestion[] {
+  const buckets = new Map(DECK_TOPICS.map((t) => [t, shuffled(BOXING_BANK.filter((q) => q.topic === t))]));
+  const deck: BoxingQuestion[] = [];
+  while (deck.length < size && [...buckets.values()].some((b) => b.length)) {
+    for (const t of shuffled(DECK_TOPICS)) {
+      const q = buckets.get(t)!.pop();
+      if (q && deck.length < size) deck.push(q);
+    }
+  }
+  return deck;
+}
+
 interface Fighter extends Omit<BoxingFighter, 'connected' | 'answered' | 'lockedMove'> {
   token: string;
   lastSeen: number;
@@ -152,11 +172,7 @@ export function createBoxingHandler({ dataDir = process.env.DATA_DIR || resolve(
     if (a.type === 'start') {
       if (me) fail(403, 'Solo el profesor puede iniciar.');
       if (room.phase !== 'lobby' || room.fighters.length !== 2) fail(409, 'Espera a los dos boxeadores en el vestíbulo.');
-      room.deck = BOXING_BANK.filter((q) => ['Akkusativ', 'Dativ', 'Präpositionen', 'Pronomen', 'Wo/Wohin'].includes(q.topic));
-      for (let i = room.deck.length - 1; i > 0; i--) {
-        const j = randomInt(i + 1);
-        [room.deck[i], room.deck[j]] = [room.deck[j], room.deck[i]];
-      }
+      room.deck = buildDeck(room.maxExchanges);
       room.phase = 'question'; room.exchange = 1;
       return;
     }

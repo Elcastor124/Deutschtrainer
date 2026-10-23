@@ -55,10 +55,10 @@ async function harness(dataDir = mkdtempSync(join(process.env.TMPDIR || tmpdir()
 }
 
 describe('banco de boxeo', () => {
-  it('incluye al menos 36 ejercicios únicos con claves directas y explicaciones de los temas de la lección', async () => {
+  it('incluye al menos 140 ejercicios únicos con claves directas y explicaciones de los temas de la lección', async () => {
     const module = await import('../server/boxing-bank.ts').catch(() => undefined);
     const bank = module?.BOXING_BANK ?? [];
-    expect(bank.length).toBeGreaterThanOrEqual(36);
+    expect(bank.length).toBeGreaterThanOrEqual(140);
     expect(new Set(bank.map((q) => q.id)).size).toBe(bank.length);
     expect(new Set(bank.map((q) => q.prompt)).size).toBe(bank.length);
     expect(new Set(bank.map((q) => q.topic))).toEqual(new Set(['Akkusativ', 'Dativ', 'Präpositionen', 'Pronomen', 'Wo/Wohin', 'Perfekt', 'Nebensätze']));
@@ -80,6 +80,29 @@ describe('API autoritativa de boxeo', () => {
     const deck = disk.rooms[teacher.code].deck as { topic: string }[];
     expect(deck.length).toBeGreaterThanOrEqual(12);
     expect(new Set(deck.map((q) => q.topic))).toEqual(new Set(['Akkusativ', 'Dativ', 'Präpositionen', 'Pronomen', 'Wo/Wohin']));
+  });
+  it('cada combate sortea 12 preguntas sin repetir, equilibradas por tema y en orden variable', async () => {
+    const h = await harness();
+    const cases = ['Akkusativ', 'Dativ', 'Präpositionen', 'Pronomen', 'Wo/Wohin'];
+    const firstIds = new Set<string>();
+    const allIds = new Set<string>();
+    for (let r = 0; r < 20; r++) {
+      const { teacher } = await h.players();
+      expect((await h.action(teacher, { type: 'start' })).status).toBe(200);
+      const disk = JSON.parse(readFileSync(join(h.dataDir, 'boxing.json'), 'utf8'));
+      const deck = disk.rooms[teacher.code].deck as { id: string; topic: string }[];
+      expect(deck.length).toBe(12);
+      expect(new Set(deck.map((q) => q.id)).size).toBe(12);
+      for (const q of deck) { expect(cases).toContain(q.topic); allIds.add(q.id); }
+      expect(new Set(deck.map((q) => q.topic)).size).toBeGreaterThanOrEqual(4);
+      for (const t of cases) expect(deck.filter((q) => q.topic === t).length).toBeLessThanOrEqual(3);
+      for (let i = 2; i < deck.length; i++) {
+        expect(deck[i].topic === deck[i - 1].topic && deck[i].topic === deck[i - 2].topic).toBe(false);
+      }
+      firstIds.add(deck[0].id);
+    }
+    expect(firstIds.size).toBeGreaterThan(1);
+    expect(allIds.size).toBeGreaterThan(60);
   });
   it('devuelve 413 también con un cuerpo mayor que un paquete TCP, sin romper el socket', async () => {
     const h = await harness();
