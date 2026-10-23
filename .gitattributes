@@ -1,0 +1,2 @@
+# Published catalog hashes must match both Windows and Linux checkouts.
+public/presentaciones/*.html text eol=lf
