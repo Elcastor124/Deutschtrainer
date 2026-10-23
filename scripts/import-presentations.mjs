@@ -18,7 +18,7 @@ const rows = [
 ];
 const catalog = rows.map(([id,src,title,description,topics,level,pdf]) => {
  const input = resolve(source,src);
- let html = readFileSync(input,'utf8');
+ let html = readFileSync(input,'utf8').replace(/\r\n?/g,'\n');
  // El ejemplo público no necesita el nombre real del profesor.
  html = html.replaceAll('Ich heiße Álvaro Castro.', 'Ich heiße Alex Weber.');
  const localRefs = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/g)].map(m=>m[1]).filter(v=>! /^(?:https?:|data:|#|javascript:|mailto:)/i.test(v));
