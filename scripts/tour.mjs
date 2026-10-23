@@ -28,11 +28,11 @@ try {
   const T = await L.newPage('profesor', 1920, 1080);
   const A = await L.newPage('Ana', 1366, 768);
   const B = await L.newPage('Tomás', 390, 844, true);
-  await T.go('/');
+  await T.go('/jugar');
   await T.until(`!!document.querySelector('.matrix')`, 'home');
   await sleep(900);
   await shot(T, 'home');
-  await B.go('/');
+  await B.go('/jugar');
   await B.until(`!!document.querySelector('.matrix')`, 'home móvil');
   await sleep(700);
   await shot(B, 'home-movil');

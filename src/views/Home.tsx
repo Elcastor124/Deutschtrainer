@@ -68,8 +68,8 @@ export function Home() {
         </form>
         <section className="panel home-card">
           <h2><span className="idx">03</span>Práctica en casa</h2>
-          <p>Juega solo, sin tiempo. Primero salen las palabras y frases que fallaste en clase.</p>
-          <button className="btn lg" onClick={() => navigate('/practica')}>Practicar</button>
+          <p>Practica a tu ritmo, sin tiempo. Activa el repaso de errores si quieres reforzar lo que fallaste en clase. Necesita conexión con el servidor.</p>
+          <button className="btn lg" onClick={() => navigate('/practica?tema=1')}>Practicar Tema 1</button>
         </section>
       </div>
       <div className="ticker" aria-hidden="true">

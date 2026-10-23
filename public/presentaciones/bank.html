@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auf der Bank · Deutsch A2</title>
+<style>
+@import url('');
+:root{
+  --ink:#0f1729; --ink2:#1e293b; --paper:#fdfbf7;
+  --gold:#f5b942; --deep:#0b3a5c; --sea:#0e7490; --rose:#e11d48;
+  --mint:#10b981; --lav:#7c3aed; --dim:#64748b; --line:#e2e8f0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+  background:var(--paper);color:var(--ink);
+}
+/* ============ shell ============ */
+#deck{position:absolute;inset:0}
+.s{position:absolute;inset:0;padding:4.2vh 6vw;opacity:0;pointer-events:none;
+   display:flex;flex-direction:column;justify-content:center;
+   transition:opacity .45s ease, transform .45s cubic-bezier(.2,.75,.3,1);
+   transform:translateX(40px) scale(.985);overflow-y:auto}
+.s.on{opacity:1;pointer-events:auto;transform:none}
+.s.prev{transform:translateX(-40px) scale(.985)}
+.s::-webkit-scrollbar{width:6px}.s::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:9px}
+/* fondos por slide */
+.bg-cream{background:linear-gradient(135deg,#fdfbf7 0%,#fff8ec 100%)}
+.bg-deep{background:linear-gradient(140deg,#0b3a5c 0%,#0f1729 100%);color:#fff}
+.bg-sea{background:linear-gradient(140deg,#0e7490 0%,#155e75 100%);color:#fff}
+.bg-gold{background:linear-gradient(140deg,#fbbf24 0%,#f59e0b 100%);color:#3d2500}
+.bg-rose{background:linear-gradient(140deg,#e11d48 0%,#9f1239 100%);color:#fff}
+.bg-lav{background:linear-gradient(140deg,#7c3aed 0%,#4c1d95 100%);color:#fff}
+.bg-mint{background:linear-gradient(140deg,#10b981 0%,#047857 100%);color:#fff}
+.bg-ink{background:linear-gradient(140deg,#1e293b 0%,#0f1729 100%);color:#fff}
+/* ============ tipografía ============ */
+.eyebrow{font-size:clamp(11px,1.1vw,15px);letter-spacing:.42em;text-transform:uppercase;
+  font-weight:800;opacity:.62;margin-bottom:2.2vh}
+h1{font-size:clamp(44px,8.5vw,132px);line-height:.88;letter-spacing:-.045em;font-weight:900}
+h2{font-size:clamp(32px,5.2vw,74px);line-height:.95;letter-spacing:-.035em;font-weight:900}
+h3{font-size:clamp(20px,2.3vw,34px);font-weight:800;letter-spacing:-.02em}
+.lead{font-size:clamp(18px,2.1vw,32px);line-height:1.35;font-weight:500;opacity:.9;max-width:22ch}
+.lead.wide{max-width:34ch}
+.tiny{font-size:clamp(12px,1.15vw,17px);opacity:.6;font-weight:600;letter-spacing:.03em}
+.de{font-weight:800}
+.es{opacity:.72;font-weight:500}
+/* ============ layout ============ */
+.split{display:grid;grid-template-columns:1.05fr .95fr;gap:4vw;align-items:center;flex:1}
+.split.rev{grid-template-columns:.95fr 1.05fr}
+.stack{display:flex;flex-direction:column;gap:2.2vh}
+.row{display:flex;gap:1.4vw;flex-wrap:wrap;align-items:center}
+.center{align-items:center;justify-content:center;text-align:center}
+.grid{display:grid;gap:1.4vw}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}.g5{grid-template-columns:repeat(5,1fr)}
+/* ============ ilustración banco (CSS puro) ============ */
+.scene{position:relative;display:flex;align-items:flex-end;justify-content:center;
+  min-height:38vh;filter:drop-shadow(0 22px 40px rgba(11,58,92,.22))}
+.bank{position:relative;width:min(30vw,340px)}
+.roof{width:100%;height:0;border-left:calc(min(15vw,170px)) solid transparent;
+  border-right:calc(min(15vw,170px)) solid transparent;
+  border-bottom:calc(min(6vw,72px)) solid var(--deep)}
+.pill{background:var(--paper);height:calc(min(1.6vw,18px));border-radius:9px;margin:6px 8%}
+.cols{display:flex;justify-content:space-around;padding:0 6%}
+.col{width:14%;height:min(13vw,148px);background:linear-gradient(90deg,#155e75,#0b3a5c 40%,#155e75);
+  border-radius:6px 6px 0 0}
+.base{height:min(2.2vw,26px);background:var(--deep);border-radius:4px}
+.coin{position:absolute;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fde68a,var(--gold));
+  box-shadow:0 8px 18px rgba(245,185,66,.5);display:grid;place-items:center;font-weight:900;color:#7c4a03}
+.c1{width:min(6vw,74px);height:min(6vw,74px);font-size:min(2.6vw,30px);left:-4%;bottom:14%;animation:fl1 3.6s ease-in-out infinite}
+.c2{width:min(4.4vw,54px);height:min(4.4vw,54px);font-size:min(1.9vw,22px);right:-6%;bottom:36%;animation:fl1 4.4s ease-in-out infinite .6s}
+.c3{width:min(3.4vw,42px);height:min(3.4vw,42px);font-size:min(1.5vw,17px);right:6%;top:-4%;animation:fl1 5s ease-in-out infinite 1.2s}
+@keyframes fl1{50%{transform:translateY(-16px) rotate(8deg)}}
+.cardart{position:absolute;left:-12%;top:8%;width:min(13vw,150px);height:min(8.2vw,95px);
+  border-radius:12px;background:linear-gradient(130deg,#7c3aed,#4c1d95);
+  box-shadow:0 16px 34px rgba(76,29,149,.42);transform:rotate(-13deg);animation:fl1 5.6s ease-in-out infinite .3s;padding:12%}
+.cardart .chip{width:26%;height:22%;border-radius:4px;background:linear-gradient(135deg,#fde68a,#f59e0b)}
+.cardart .ln{height:12%;background:rgba(255,255,255,.5);border-radius:3px;margin-top:16%}
+.cardart .ln.short{width:52%}
+/* ============ tarjetas reveal ============ */
+.rv{background:#fff;border:2px solid var(--line);border-radius:22px;padding:2.4vh 1.6vw;
+  cursor:pointer;transition:.28s cubic-bezier(.2,.8,.3,1);position:relative;overflow:hidden;
+  box-shadow:0 3px 0 rgba(15,23,41,.05)}
+.rv:hover{transform:translateY(-5px);border-color:var(--deep);box-shadow:0 16px 30px rgba(11,58,92,.14)}
+.rv .front{font-size:clamp(17px,1.85vw,29px);font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.rv .art{font-size:clamp(26px,3vw,46px);line-height:1;margin-bottom:.8vh}
+.rv .back{max-height:0;opacity:0;overflow:hidden;transition:.3s;font-size:clamp(14px,1.45vw,23px);
+  color:var(--sea);font-weight:700}
+.rv.open{border-color:var(--mint);background:linear-gradient(160deg,#ecfdf5,#fff)}
+.rv.open .back{max-height:22vh;opacity:1;margin-top:1vh}
+.rv .der{position:absolute;top:10px;right:14px;font-size:11px;font-weight:900;letter-spacing:.18em;opacity:.35}
+/* sobre fondo oscuro */
+.dark .rv{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2);color:#fff;box-shadow:none}
+.dark .rv:hover{border-color:#fff;background:rgba(255,255,255,.16)}
+.dark .rv.open{background:rgba(255,255,255,.2);border-color:var(--gold)}
+.dark .rv .back{color:var(--gold)}
+/* ============ botones ============ */
+.b{border:none;font-family:inherit;font-weight:800;cursor:pointer;border-radius:99px;
+  padding:1.5vh 2.4vw;font-size:clamp(14px,1.45vw,21px);transition:.2s;background:var(--ink);color:#fff}
+.b:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(15,23,41,.25)}
+.b.g{background:var(--gold);color:#3d2500}
+.b.w{background:#fff;color:var(--ink)}
+.b.o{background:transparent;border:2px solid currentColor}
+.b.sm{padding:1vh 1.6vw;font-size:clamp(12px,1.2vw,17px)}
+/* ============ du/Sie ============ */
+.sit{background:#fff;border:3px solid var(--line);border-radius:24px;padding:2.6vh 1vw;text-align:center;
+  transition:.3s;position:relative}
+.sit .em{font-size:clamp(34px,4.4vw,68px);line-height:1;display:block;margin-bottom:1vh}
+.sit .nm{font-size:clamp(13px,1.35vw,21px);font-weight:800;margin-bottom:1.4vh;letter-spacing:-.01em}
+.sit .opts{display:flex;gap:.6vw;justify-content:center}
+.pick{border:2px solid var(--line);background:#fff;border-radius:12px;padding:.9vh 1.1vw;font-weight:900;
+  font-size:clamp(12px,1.25vw,19px);cursor:pointer;font-family:inherit;transition:.18s;color:var(--dim)}
+.pick:hover{border-color:var(--deep);color:var(--deep)}
+.sit.right{border-color:var(--mint);background:#ecfdf5}
+.sit.wrong{border-color:var(--rose);background:#fff1f2;animation:shake .4s}
+.pick.hit{background:var(--mint);border-color:var(--mint);color:#fff}
+.pick.miss{background:var(--rose);border-color:var(--rose);color:#fff}
+@keyframes shake{25%{transform:translateX(-9px)}75%{transform:translateX(9px)}}
+/* ============ möchte ============ */
+.formula{display:inline-flex;align-items:center;gap:1.2vw;flex-wrap:wrap;
+  font-size:clamp(24px,3.6vw,58px);font-weight:900;letter-spacing:-.03em}
+.slot{background:var(--gold);color:#3d2500;padding:.4vh 1.4vw;border-radius:16px;
+  box-shadow:0 8px 0 rgba(0,0,0,.14)}
+.slot.empty{background:rgba(255,255,255,.22);color:#fff;border:3px dashed rgba(255,255,255,.55);box-shadow:none}
+.exline{display:flex;align-items:center;gap:1vw;font-size:clamp(16px,1.85vw,30px);font-weight:700;
+  padding:1.4vh 0;border-bottom:1px solid rgba(255,255,255,.16)}
+.exline .k{font-size:clamp(20px,2.3vw,34px)}
+/* ============ builder ============ */
+.tiles{display:flex;gap:.7vw;flex-wrap:wrap;min-height:8vh;align-items:center}
+.tile{background:#fff;border:2px solid var(--line);border-radius:14px;padding:1.2vh 1.3vw;
+  font-size:clamp(15px,1.75vw,28px);font-weight:800;cursor:pointer;transition:.18s;font-family:inherit;color:var(--ink)}
+.tile:hover{border-color:var(--lav);transform:translateY(-4px)}
+.tile.used{opacity:.22;pointer-events:none;transform:none}
+.drop{min-height:9vh;border:3px dashed #cbd5e1;border-radius:20px;padding:1.4vh 1.4vw;
+  display:flex;gap:.6vw;flex-wrap:wrap;align-items:center;background:#fff}
+.drop.ok{border-color:var(--mint);border-style:solid;background:#ecfdf5}
+.drop.no{border-color:var(--rose);animation:shake .4s}
+.drop .tile{background:var(--lav);color:#fff;border-color:var(--lav)}
+.drop.ok .tile{background:var(--mint);border-color:var(--mint)}
+/* ============ diálogo ============ */
+.bub{max-width:74%;padding:1.2vh 1.5vw;border-radius:20px;font-size:clamp(14px,1.45vw,23px);
+  font-weight:700;line-height:1.22;position:relative;transition:.3s}
+.bub.emp{background:#fff;border:2px solid var(--line);border-bottom-left-radius:6px;align-self:flex-start}
+.bub.cli{background:var(--deep);color:#fff;border-bottom-right-radius:6px;align-self:flex-end;text-align:right}
+.bub .who{font-size:clamp(9px,.85vw,12px);letter-spacing:.2em;text-transform:uppercase;opacity:.55;
+  font-weight:900;margin-bottom:.3vh;display:block}
+.bub.hid .txt{filter:blur(9px);opacity:.42;cursor:pointer;user-select:none}
+.dlg{display:flex;flex-direction:column;gap:.9vh;flex:1;justify-content:center}
+/* ============ situación aleatoria ============ */
+.slot-big{background:rgba(255,255,255,.1);border:3px solid rgba(255,255,255,.26);border-radius:30px;
+  padding:4vh 3vw;text-align:center;min-height:34vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1.6vh}
+.slot-big .em{font-size:clamp(50px,8.5vw,130px);line-height:1}
+.slot-big .txt{font-size:clamp(22px,3.4vw,54px);font-weight:900;letter-spacing:-.03em}
+.pop{animation:pop .42s cubic-bezier(.2,1.5,.4,1)}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:none;opacity:1}}
+/* ============ hints ============ */
+.hint{background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.24);border-radius:20px;
+  padding:1.8vh 1.6vw;cursor:pointer;transition:.25s;text-align:center}
+.hint:hover{background:rgba(255,255,255,.2)}
+.hint .lbl{font-weight:900;letter-spacing:.2em;font-size:clamp(11px,1.05vw,15px);opacity:.75}
+.hint .val{max-height:0;opacity:0;overflow:hidden;transition:.3s;font-size:clamp(15px,1.7vw,26px);
+  font-weight:800;color:var(--gold)}
+.hint.open{background:rgba(255,255,255,.22);border-color:var(--gold)}
+.hint.open .val{max-height:20vh;opacity:1;margin-top:1vh}
+/* ============ checklist ============ */
+.ck{display:flex;align-items:center;gap:1.2vw;font-size:clamp(17px,2.1vw,33px);font-weight:800;
+  padding:1.5vh 1.8vw;border-radius:18px;background:rgba(255,255,255,.08);
+  border:2px solid rgba(255,255,255,.16);cursor:pointer;transition:.25s;opacity:.5}
+.ck .box{width:clamp(26px,2.6vw,42px);height:clamp(26px,2.6vw,42px);border-radius:10px;
+  border:3px solid rgba(255,255,255,.5);display:grid;place-items:center;flex:none;
+  font-size:clamp(15px,1.6vw,24px);transition:.25s;color:transparent}
+.ck.on{opacity:1;background:rgba(16,185,129,.24);border-color:var(--mint)}
+.ck.on .box{background:var(--mint);border-color:var(--mint);color:#fff}
+/* ============ HUD ============ */
+#num{position:fixed;bottom:2.4vh;right:2.6vw;font-size:clamp(11px,1.15vw,16px);font-weight:900;
+  letter-spacing:.2em;opacity:.38;z-index:20;pointer-events:none}
+#bar{position:fixed;top:0;left:0;height:4px;background:var(--gold);z-index:20;transition:width .45s cubic-bezier(.2,.8,.3,1)}
+#nav{position:fixed;bottom:2.4vh;left:2.6vw;display:flex;gap:.7vw;z-index:20}
+.nb{width:clamp(38px,3.4vw,50px);height:clamp(38px,3.4vw,50px);border-radius:50%;border:none;cursor:pointer;
+  background:rgba(127,127,127,.16);font-size:clamp(15px,1.5vw,21px);font-weight:900;color:inherit;
+  transition:.2s;font-family:inherit;display:grid;place-items:center}
+.nb:hover{background:rgba(127,127,127,.34);transform:scale(1.1)}
+#kb{position:fixed;bottom:2.4vh;left:50%;transform:translateX(-50%);font-size:clamp(10px,1vw,13px);
+  font-weight:700;letter-spacing:.12em;opacity:.3;z-index:20;pointer-events:none;text-transform:uppercase}
+.fade{animation:fade .5s}
+@keyframes fade{from{opacity:0;transform:translateY(18px)}}
+.d1{animation-delay:.06s;animation-fill-mode:backwards}
+.d2{animation-delay:.14s;animation-fill-mode:backwards}
+.d3{animation-delay:.22s;animation-fill-mode:backwards}
+.d4{animation-delay:.3s;animation-fill-mode:backwards}
+@media(max-width:900px){.split,.split.rev{grid-template-columns:1fr}.g5,.g4{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div id="bar" style="width:0"></div>
+<div id="deck">
+
+<!-- ===== 1 ===== -->
+<section class="s bg-cream">
+  <div class="split">
+    <div class="stack">
+      <div class="eyebrow fade">Deutsch · Lektion 6</div>
+      <h1 class="fade d1">AUF DER<br><span style="color:var(--gold)">BANK</span> 🏦</h1>
+      <p class="lead fade d2" style="margin-top:1vh">Heute gehen wir zur Bank.</p>
+      <div class="rv fade d3" onclick="rv(this)" style="max-width:26vw;margin-top:1.5vh">
+        <div class="front" style="color:var(--deep)">Was kann man in einer Bank machen?</div>
+        <div class="back">Geld abheben · Geld einzahlen · ein Konto eröffnen · eine Karte beantragen…</div>
+      </div>
+      <div class="tiny fade d4">Primero deja que lo diga él. Luego clic.</div>
+    </div>
+    <div class="scene fade d2">
+      <div class="bank">
+        <div class="cardart"><div class="chip"></div><div class="ln"></div><div class="ln short"></div></div>
+        <div class="roof"></div><div class="pill"></div>
+        <div class="cols"><div class="col"></div><div class="col"></div><div class="col"></div><div class="col"></div></div>
+        <div class="base"></div>
+        <div class="coin c1">€</div><div class="coin c2">€</div><div class="coin c3">€</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 2 ===== -->
+<section class="s bg-deep dark">
+  <div class="eyebrow fade">Letztes Mal · repaso</div>
+  <h2 class="fade d1" style="margin-bottom:3vh">VORSTELLUNGS&shy;GESPRÄCH 👔</h2>
+  <div class="grid g5 fade d2" style="gap:1.1vw">
+    <div class="rv" onclick="rv(this)"><div class="front">Wie heißen Sie?</div><div class="back">Ich heiße Alex Weber.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Wo wohnen Sie?</div><div class="back">Ich wohne in Sevilla.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Was sind Ihre Stärken?</div><div class="back">Ich bin fleißig und pünktlich.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Haben Sie Erfahrung?</div><div class="back">Ja, ein bisschen. / Nein, noch nicht.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Warum möchten Sie hier arbeiten?</div><div class="back">Weil ich Deutsch lernen möchte.</div></div>
+  </div>
+  <p class="tiny fade d3" style="margin-top:3vh;opacity:.55">Él responde primero → después clic para ver una opción</p>
+</section>
+
+<!-- ===== 3 ===== -->
+<section class="s bg-cream">
+  <div class="eyebrow fade">Die Brücke · la conexión</div>
+  <h2 class="fade d1">FORMELL SPRECHEN</h2>
+  <div class="grid g2 fade d2" style="margin:2.5vh 0 3vh">
+    <div style="background:#fff;border-radius:22px;padding:2.6vh 2vw;border-left:8px solid var(--deep)">
+      <div class="tiny">👔 Vorstellungsgespräch</div>
+      <div style="font-size:clamp(19px,2.4vw,38px);font-weight:900;margin-top:.8vh">Wie heißen <span style="color:var(--rose)">SIE</span>?</div>
+    </div>
+    <div style="background:#fff;border-radius:22px;padding:2.6vh 2vw;border-left:8px solid var(--gold)">
+      <div class="tiny">🏦 Bank</div>
+      <div style="font-size:clamp(19px,2.4vw,38px);font-weight:900;margin-top:.8vh">Wie kann ich <span style="color:var(--rose)">IHNEN</span> helfen?</div>
+    </div>
+  </div>
+  <div class="row fade d3" style="gap:2.5vw;margin-bottom:2.5vh">
+    <div><span style="font-size:clamp(20px,2.4vw,36px);font-weight:900;color:var(--lav)">du</span>
+      <span class="es" style="font-size:clamp(14px,1.5vw,22px)"> = informal</span></div>
+    <div><span style="font-size:clamp(20px,2.4vw,36px);font-weight:900;color:var(--rose)">Sie</span>
+      <span class="es" style="font-size:clamp(14px,1.5vw,22px)"> = formal (mayúscula siempre)</span></div>
+  </div>
+  <h3 class="fade d3" style="margin-bottom:1.6vh">DU oder SIE?</h3>
+  <div class="grid g4 fade d4" id="duSie">
+    <div class="sit"><span class="em">👨‍💼</span><div class="nm">Vorstellungs&shy;gespräch</div>
+      <div class="opts"><button class="pick" onclick="ds(this,0)">du</button><button class="pick" onclick="ds(this,1)">Sie</button></div></div>
+    <div class="sit"><span class="em">🏦</span><div class="nm">Bank</div>
+      <div class="opts"><button class="pick" onclick="ds(this,0)">du</button><button class="pick" onclick="ds(this,1)">Sie</button></div></div>
+    <div class="sit"><span class="em">👨‍🏫</span><div class="nm">Profesor</div>
+      <div class="opts"><button class="pick" onclick="ds(this,0)">du</button><button class="pick" onclick="ds(this,1)">Sie</button></div></div>
+    <div class="sit"><span class="em">🧑</span><div class="nm">Amigo</div>
+      <div class="opts"><button class="pick" onclick="ds(this,1)">du</button><button class="pick" onclick="ds(this,0)">Sie</button></div></div>
+  </div>
+</section>
+
+<!-- ===== 4 ===== -->
+<section class="s bg-gold">
+  <div class="split">
+    <div class="stack">
+      <div class="eyebrow fade">Situation</div>
+      <h2 class="fade d1">DU BIST IN<br>DEUTSCHLAND 🇩🇪</h2>
+      <div class="fade d2" style="font-size:clamp(18px,2.3vw,36px);font-weight:800;line-height:1.35;margin-top:1.5vh">
+        Du gehst zur Bank.<br>
+        Du möchtest ein <span style="background:#3d2500;color:var(--gold);padding:.2vh .9vw;border-radius:12px">Bankkonto</span> eröffnen.
+      </div>
+    </div>
+    <div class="stack center">
+      <div style="font-size:clamp(70px,13vw,190px);line-height:1;animation:fl1 4s ease-in-out infinite">🏦</div>
+      <div class="rv fade d3" onclick="rv(this)" style="width:100%;background:rgba(61,37,0,.1);border-color:rgba(61,37,0,.28)">
+        <div class="front">¿Qué necesitarías saber decir?</div>
+        <div class="back" style="color:#3d2500">Saludar · decir qué quieres · entender preguntas · dar tus datos · despedirte</div>
+      </div>
+      <div class="tiny">⏱ Déjale pensar 60 segundos antes de abrir</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 5 ===== -->
+<section class="s bg-cream">
+  <div class="eyebrow fade">Wortschatz</div>
+  <h2 class="fade d1" style="margin-bottom:2.5vh">DIE WÖRTER 📖</h2>
+  <div class="grid g5 fade d2" style="gap:1.1vw">
+    <div class="rv" onclick="rv(this)"><span class="der">DIE</span><div class="art">🏦</div><div class="front">die Bank</div><div class="back">el banco</div></div>
+    <div class="rv" onclick="rv(this)"><span class="der">DAS</span><div class="art">📊</div><div class="front">das Bankkonto</div><div class="back">la cuenta bancaria</div></div>
+    <div class="rv" onclick="rv(this)"><span class="der">DIE</span><div class="art">💳</div><div class="front">die Karte</div><div class="back">la tarjeta</div></div>
+    <div class="rv" onclick="rv(this)"><span class="der">DAS</span><div class="art">💶</div><div class="front">das Geld</div><div class="back">el dinero</div></div>
+    <div class="rv" onclick="rv(this)"><span class="der">DER</span><div class="art">🪪</div><div class="front">der Ausweis</div><div class="back">el DNI / carné</div></div>
+    <div class="rv" onclick="rv(this)"><span class="der">DER</span><div class="art">🛂</div><div class="front">der Reisepass</div><div class="back">el pasaporte</div></div>
+    <div class="rv" onclick="rv(this)"><span class="der">DIE</span><div class="art">✍️</div><div class="front">die Unterschrift</div><div class="back">la firma</div></div>
+    <div class="rv" onclick="rv(this)"><span class="der">DAS</span><div class="art">📄</div><div class="front">das Formular</div><div class="back">el formulario</div></div>
+    <div class="rv" onclick="rv(this)"><span class="der">DIE</span><div class="art">🏠</div><div class="front">die Adresse</div><div class="back">la dirección</div></div>
+    <div class="rv" onclick="rv(this)" style="background:linear-gradient(150deg,#0b3a5c,#155e75);color:#fff;border-color:var(--deep)">
+      <div class="art">💡</div><div class="front">Trick</div><div class="back" style="color:var(--gold)">-ung / -e / -schrift → meist DIE</div></div>
+  </div>
+  <p class="tiny fade d3" style="margin-top:2.5vh">Di la palabra en alemán → él adivina → clic para confirmar</p>
+</section>
+
+<!-- ===== 6 ===== -->
+<section class="s bg-sea dark">
+  <div class="eyebrow fade">Die Struktur des Tages</div>
+  <div class="formula fade d1" style="margin:1.5vh 0 3vh">
+    <span class="slot">ICH MÖCHTE</span><span style="opacity:.5">+</span><span class="slot empty">…</span>
+  </div>
+  <p class="lead wide fade d2" style="margin-bottom:2.5vh">
+    <span class="de">Ich möchte</span> = me gustaría / quiero <span style="opacity:.6">— siempre educado, nunca suena brusco</span></p>
+  <div class="fade d3" style="max-width:min(92vw,1100px)">
+    <div class="exline"><span class="k">🏦</span><span class="de">Ich möchte ein Konto eröffnen.</span><span class="es" style="margin-left:auto">abrir una cuenta</span></div>
+    <div class="exline"><span class="k">💶</span><span class="de">Ich möchte Geld abheben.</span><span class="es" style="margin-left:auto">sacar dinero</span></div>
+    <div class="exline"><span class="k">💰</span><span class="de">Ich möchte Geld einzahlen.</span><span class="es" style="margin-left:auto">ingresar dinero</span></div>
+    <div class="exline" style="border:none"><span class="k">💳</span><span class="de">Ich möchte eine neue Karte beantragen.</span><span class="es" style="margin-left:auto">pedir una tarjeta nueva</span></div>
+  </div>
+  <p class="tiny fade d4" style="margin-top:2.5vh;opacity:.6">⚡ El verbo se va AL FINAL. Que lo note él solo.</p>
+</section>
+
+<!-- ===== 7 ===== -->
+<section class="s bg-cream">
+  <div class="eyebrow fade">Mini-Spiel</div>
+  <h2 class="fade d1">WAS BEDEUTET DAS? 🤔</h2>
+  <p class="tiny fade d1" style="margin:1vh 0 2.5vh">Que lo deduzca. <b>ab</b> = quitar · <b>ein</b> = meter · <b>eröffnen</b> ≈ open</p>
+  <div class="grid g4 fade d2">
+    <div class="rv" onclick="rv(this)"><div class="art">💶⬇️</div><div class="front">Geld abheben</div><div class="back">sacar dinero</div></div>
+    <div class="rv" onclick="rv(this)"><div class="art">💰⬆️</div><div class="front">Geld einzahlen</div><div class="back">ingresar dinero</div></div>
+    <div class="rv" onclick="rv(this)"><div class="art">🏦✨</div><div class="front">ein Konto eröffnen</div><div class="back">abrir una cuenta</div></div>
+    <div class="rv" onclick="rv(this)"><div class="art">💳📝</div><div class="front">eine Karte beantragen</div><div class="back">solicitar una tarjeta</div></div>
+  </div>
+</section>
+
+<!-- ===== 8 ===== -->
+<section class="s bg-ink dark">
+  <div class="eyebrow fade">Was du hören wirst</div>
+  <h2 class="fade d1">DER BANK&shy;ANGESTELLTE 👨‍💼</h2>
+  <p class="tiny fade d1" style="margin:1vh 0 2.5vh;opacity:.6">Comprender, no memorizar. Léelas tú en voz alta.</p>
+  <div class="grid g3 fade d2" style="gap:1.2vw">
+    <div class="rv" onclick="rv(this)"><div class="front">Guten Morgen.<br>Wie kann ich Ihnen helfen?</div><div class="back">¿En qué puedo ayudarle?</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Haben Sie einen Ausweis?</div><div class="back">¿Tiene un documento?</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Wie ist Ihre Adresse?</div><div class="back">¿Cuál es su dirección?</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Unterschreiben Sie bitte hier.</div><div class="back">Firme aquí, por favor.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Brauchen Sie sonst noch etwas?</div><div class="back">¿Necesita algo más?</div></div>
+    <div class="rv" onclick="rv(this)" style="background:rgba(245,185,66,.16);border-color:var(--gold)">
+      <div class="front">Tus respuestas salvavidas</div><div class="back" style="color:#fff">Ja, hier bitte. · Nein, danke. · Wie bitte? · Noch einmal, bitte.</div></div>
+  </div>
+</section>
+
+<!-- ===== 9 ===== -->
+<section class="s bg-cream">
+  <div class="eyebrow fade">Spiel · Baue den Satz</div>
+  <h2 class="fade d1" style="margin-bottom:2vh">ORDNE DIE WÖRTER 🧩</h2>
+  <div class="row fade d1" style="gap:.6vw;margin-bottom:2vh">
+    <button class="b sm" onclick="bSet(0)">Satz 1</button>
+    <button class="b sm w" onclick="bSet(1)" style="border:2px solid var(--line)">Satz 2</button>
+    <button class="b sm w" onclick="bSet(2)" style="border:2px solid var(--line)">Satz 3</button>
+    <span class="tiny" style="margin-left:1vw">Clic en las palabras para ordenarlas · clic en la frase para quitar</span>
+  </div>
+  <div class="drop fade d2" id="drop" onclick="bPop()"></div>
+  <div class="tiles fade d2" id="tiles" style="margin-top:2vh"></div>
+  <div class="row fade d3" style="margin-top:2vh">
+    <button class="b" onclick="bCheck()">Prüfen ✓</button>
+    <button class="b w" onclick="bReset()" style="border:2px solid var(--line)">Nochmal ↺</button>
+    <button class="b g" onclick="bShow()">Lösung zeigen</button>
+    <div id="bMsg" style="font-size:clamp(16px,1.9vw,30px);font-weight:900;margin-left:1vw"></div>
+  </div>
+</section>
+
+<!-- ===== 10 ===== -->
+<section class="s bg-cream">
+  <div class="eyebrow fade">Mini-Dialog</div>
+  <h2 class="fade d1" style="margin-bottom:1vh">IN DER BANK 💬</h2>
+  <div class="row fade d1" style="margin-bottom:1vh">
+    <button class="b sm" onclick="dHide()">🙈 Ocultar al cliente</button>
+    <button class="b sm w" onclick="dAll()" style="border:2px solid var(--line)">👁 Mostrar todo</button>
+    <span class="tiny">1º leedlo juntos · 2º ocúltalo y que lo produzca él · clic en una frase borrosa para revelarla</span>
+  </div>
+  <div class="dlg fade d2" id="dlg">
+    <div class="bub emp"><span class="who">Bankangestellter</span><span class="txt">Guten Morgen. Wie kann ich Ihnen helfen?</span></div>
+    <div class="bub cli"><span class="who">Kunde</span><span class="txt">Guten Morgen. Ich möchte ein Konto eröffnen.</span></div>
+    <div class="bub emp"><span class="who">Bankangestellter</span><span class="txt">Natürlich. Haben Sie einen Ausweis?</span></div>
+    <div class="bub cli"><span class="who">Kunde</span><span class="txt">Ja. Hier, bitte.</span></div>
+    <div class="bub emp"><span class="who">Bankangestellter</span><span class="txt">Danke. Wie ist Ihre Adresse?</span></div>
+    <div class="bub cli"><span class="who">Kunde</span><span class="txt">Ich wohne in der Bahnhofstraße 12, in Berlin.</span></div>
+    <div class="bub emp"><span class="who">Bankangestellter</span><span class="txt">Unterschreiben Sie bitte hier. Brauchen Sie sonst noch etwas?</span></div>
+    <div class="bub cli"><span class="who">Kunde</span><span class="txt">Nein, danke. Auf Wiedersehen!</span></div>
+  </div>
+</section>
+
+<!-- ===== 11 ===== -->
+<section class="s bg-rose dark">
+  <div class="eyebrow fade">Problem 😈</div>
+  <h2 class="fade d1">ETWAS GEHT<br>SCHIEF…</h2>
+  <div class="grid g2 fade d2" style="margin-top:2vh">
+    <div>
+      <div style="font-size:clamp(34px,5vw,72px);line-height:1">💳❌</div>
+      <div style="font-size:clamp(17px,2vw,30px);font-weight:900;margin:.8vh 0 1.2vh">„Deine Karte funktioniert nicht."</div>
+      <div class="rv" onclick="rv(this)"><div class="front">¿Qué dices?</div>
+        <div class="back">Entschuldigung, meine Karte funktioniert nicht.<br>Ich habe ein Problem mit meiner Karte.</div></div>
+    </div>
+    <div>
+      <div style="font-size:clamp(34px,5vw,72px);line-height:1">💳🔍</div>
+      <div style="font-size:clamp(17px,2vw,30px);font-weight:900;margin:.8vh 0 1.2vh">„Du hast deine Karte verloren."</div>
+      <div class="rv" onclick="rv(this)"><div class="front">¿Qué dices?</div>
+        <div class="back">Ich habe meine Karte verloren.<br>Was soll ich jetzt machen?</div></div>
+    </div>
+  </div>
+  <p class="tiny fade d3" style="margin-top:1.8vh;opacity:.7">💡 <b>Entschuldigung</b> abre cualquier problema en alemán. Que se le quede.</p>
+</section>
+
+<!-- ===== 12 ===== -->
+<section class="s bg-lav dark">
+  <div class="eyebrow fade">Schnell! · produce la frase</div>
+  <h2 class="fade d1" style="margin-bottom:2vh">WAS MACHST DU? 🎲</h2>
+  <div class="slot-big fade d2" id="sBox">
+    <div class="em" id="sEm">🎰</div>
+    <div class="txt" id="sTx">Drück den Knopf</div>
+    <div id="sHint" style="font-size:clamp(14px,1.6vw,24px);font-weight:700;color:var(--gold);min-height:3vh"></div>
+  </div>
+  <div class="row fade d3" style="margin-top:2.5vh">
+    <button class="b g" onclick="sNext()">🎲 Situation (R)</button>
+    <button class="b o" onclick="sSol()">Lösung</button>
+  </div>
+</section>
+
+<!-- ===== 13 ===== -->
+<section class="s bg-ink dark">
+  <div class="split">
+    <div class="stack">
+      <div class="eyebrow fade">Final Boss 👑</div>
+      <h2 class="fade d1">ROLLENSPIEL</h2>
+      <div class="fade d2" style="margin-top:2vh;font-size:clamp(15px,1.75vw,27px);font-weight:700;line-height:1.7">
+        👨‍💼 <span style="opacity:.6">Profesor:</span> <b>Bankangestellter</b><br>
+        🧑 <span style="opacity:.6">Alumno:</span> <b>Kunde</b>
+      </div>
+      <div class="fade d3" style="background:rgba(245,185,66,.14);border:2px solid var(--gold);border-radius:20px;
+        padding:2.2vh 1.8vw;margin-top:2.5vh">
+        <div class="tiny" style="color:var(--gold);opacity:1">🎯 Geheime Mission</div>
+        <div style="font-size:clamp(17px,2.1vw,32px);font-weight:900;margin-top:.8vh" id="mission">Du möchtest ein Konto eröffnen.</div>
+      </div>
+      <div class="row fade d4" style="margin-top:2vh">
+        <button class="b g" onclick="scene(0)">Szene 1 🏦</button>
+        <button class="b o" onclick="scene(1)">Szene 2 💳❌</button>
+      </div>
+    </div>
+    <div class="stack">
+      <div style="font-size:clamp(50px,9vw,140px);text-align:center;line-height:1">🏦💬</div>
+      <div class="tiny" style="text-align:center;margin-bottom:1vh">Sin diálogo a la vista. Solo pistas si se atasca.</div>
+      <div class="hint" onclick="rv2(this)"><div class="lbl">HINT 1 · empezar</div><div class="val">Guten Morgen! Ich möchte…</div></div>
+      <div class="hint" onclick="rv2(this)"><div class="lbl">HINT 2 · te pide algo</div><div class="val">Ja, hier bitte. (Ausweis)</div></div>
+      <div class="hint" onclick="rv2(this)"><div class="lbl">HINT 3 · cerrar</div><div class="val">Nein, danke. Auf Wiedersehen!</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 14 ===== -->
+<section class="s bg-mint dark">
+  <div class="eyebrow fade">Heute kann ich…</div>
+  <h2 class="fade d1" style="margin-bottom:2.5vh">DEIN FORTSCHRITT ✅</h2>
+  <div class="grid g2 fade d2" style="gap:1vw">
+    <div class="ck" onclick="ck(this)"><div class="box">✓</div>formell sprechen (Sie)</div>
+    <div class="ck" onclick="ck(this)"><div class="box">✓</div>sagen, was ich möchte</div>
+    <div class="ck" onclick="ck(this)"><div class="box">✓</div>ein Konto eröffnen</div>
+    <div class="ck" onclick="ck(this)"><div class="box">✓</div>Geld abheben / einzahlen</div>
+    <div class="ck" onclick="ck(this)"><div class="box">✓</div>ein Problem erklären</div>
+    <div class="ck" onclick="ck(this)"><div class="box">✓</div>ein Gespräch in der Bank führen</div>
+  </div>
+  <div class="center" style="margin-top:4vh;text-align:center">
+    <div id="big" style="font-size:clamp(40px,8vw,120px);font-weight:900;letter-spacing:-.05em;line-height:1">SEHR GUT! 🇩🇪</div>
+    <div class="tiny" style="margin-top:1.5vh;opacity:.7">Hausaufgabe: escribe tu propio diálogo de banco (6 líneas)</div>
+  </div>
+</section>
+
+</div>
+
+<div id="nav">
+  <button class="nb" onclick="go(i-1)">←</button>
+  <button class="nb" onclick="go(i+1)">→</button>
+</div>
+<div id="kb">← → navegar · espacio revelar · F pantalla completa</div>
+<div id="num">1 / 14</div>
+
+<script>
+const S=[...document.querySelectorAll('#deck > .s')];let i=0;
+function go(n){
+  if(n<0||n>=S.length)return;
+  S[i].classList.remove('on');S[i].classList.toggle('prev',n>i);
+  i=n;S[i].classList.remove('prev');S[i].classList.add('on');S[i].scrollTop=0;
+  S[i].querySelectorAll('.fade').forEach(e=>{e.style.animation='none';void e.offsetWidth;e.style.animation=''});
+  document.getElementById('num').textContent=(i+1)+' / '+S.length;
+  document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+}
+function rv(e){e.classList.toggle('open')}
+function rv2(e){e.classList.toggle('open')}
+function ck(e){e.classList.toggle('on')}
+/* --- du/Sie --- */
+function ds(btn,ok){
+  const card=btn.closest('.sit');
+  card.querySelectorAll('.pick').forEach(b=>{b.classList.remove('hit','miss')});
+  card.classList.remove('right','wrong');void card.offsetWidth;
+  if(ok){btn.classList.add('hit');card.classList.add('right')}
+  else{btn.classList.add('miss');card.classList.add('wrong')}
+}
+/* --- Satzbau --- */
+const SENT=[
+ {w:["möchte","ich","Konto","ein","eröffnen"],a:"Ich möchte ein Konto eröffnen."},
+ {w:["Sie","einen","haben","Ausweis"],a:"Haben Sie einen Ausweis?"},
+ {w:["Geld","möchte","ich","abheben"],a:"Ich möchte Geld abheben."}
+];
+let bI=0,bPicked=[];
+function bSet(n){bI=n;bReset();
+  S[8].querySelectorAll('.b.sm').forEach((b,k)=>{
+    b.classList.toggle('w',k!==n);b.style.border=k!==n?'2px solid var(--line)':'none';});
+}
+function bReset(){
+  bPicked=[];const t=document.getElementById('tiles'),d=document.getElementById('drop');
+  d.className='drop fade d2';d.innerHTML='';document.getElementById('bMsg').textContent='';
+  const sh=[...SENT[bI].w].sort(()=>Math.random()-.5);
+  t.innerHTML=sh.map((w,k)=>`<button class="tile" data-w="${w}" onclick="bAdd(this)">${w}</button>`).join('');
+}
+function bAdd(el){
+  el.classList.add('used');bPicked.push(el.dataset.w);
+  const d=document.getElementById('drop');
+  d.innerHTML+=`<span class="tile">${el.dataset.w}</span>`;
+  d.className='drop fade d2';
+}
+function bPop(){
+  if(!bPicked.length)return;
+  const w=bPicked.pop();const d=document.getElementById('drop');
+  d.removeChild(d.lastElementChild);d.className='drop fade d2';
+  const t=[...document.querySelectorAll('#tiles .tile.used')].reverse().find(x=>x.dataset.w===w);
+  if(t)t.classList.remove('used');
+  document.getElementById('bMsg').textContent='';
+}
+function norm(s){return s.toLowerCase().replace(/[.?!]/g,'').replace(/\s+/g,' ').trim()}
+function bCheck(){
+  const d=document.getElementById('drop'),m=document.getElementById('bMsg');
+  const got=norm(bPicked.join(' ')),want=norm(SENT[bI].a);
+  d.classList.remove('ok','no');void d.offsetWidth;
+  if(got===want){d.classList.add('ok');m.textContent='✓ Richtig!';m.style.color='var(--mint)';}
+  else{d.classList.add('no');m.textContent='✗ Nochmal…';m.style.color='var(--rose)';}
+}
+function bShow(){
+  const d=document.getElementById('drop');
+  bPicked=SENT[bI].a.replace(/[.?]/g,'').split(' ');
+  d.innerHTML=bPicked.map(w=>`<span class="tile">${w}</span>`).join('');
+  d.className='drop ok';
+  document.querySelectorAll('#tiles .tile').forEach(t=>t.classList.add('used'));
+  const m=document.getElementById('bMsg');m.textContent='→ '+SENT[bI].a;m.style.color='var(--mint)';
+}
+/* --- Dialog --- */
+function dHide(){document.querySelectorAll('#dlg .bub.cli').forEach(b=>{
+  b.classList.add('hid');b.onclick=()=>b.classList.remove('hid');});}
+function dAll(){document.querySelectorAll('#dlg .bub').forEach(b=>b.classList.remove('hid'));}
+/* --- Situationen --- */
+const SIT=[
+ {e:"💳❌",t:"Karte funktioniert nicht",s:"Entschuldigung, meine Karte funktioniert nicht."},
+ {e:"💶",t:"Geld abheben",s:"Ich möchte Geld abheben, bitte."},
+ {e:"🏦",t:"Konto eröffnen",s:"Guten Tag. Ich möchte ein Konto eröffnen."},
+ {e:"💰",t:"Geld einzahlen",s:"Ich möchte 100 Euro einzahlen."},
+ {e:"❌💳",t:"Karte verloren",s:"Ich habe meine Karte verloren."},
+ {e:"📄",t:"Formular ausfüllen",s:"Können Sie mir helfen? Ich verstehe das Formular nicht."},
+ {e:"✍️",t:"Unterschreiben",s:"Wo muss ich unterschreiben?"},
+ {e:"💳📝",t:"neue Karte beantragen",s:"Ich möchte eine neue Karte beantragen."}
+];
+let sI=-1;
+function sNext(){
+  sI=Math.floor(Math.random()*SIT.length);const it=SIT[sI];
+  document.getElementById('sEm').textContent=it.e;
+  document.getElementById('sTx').textContent=it.t;
+  document.getElementById('sHint').textContent='';
+  const b=document.getElementById('sBox');b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop');
+}
+function sSol(){if(sI>=0)document.getElementById('sHint').textContent='💬 '+SIT[sI].s;}
+/* --- Rollenspiel --- */
+const MIS=["Du möchtest ein Konto eröffnen.","Deine Karte funktioniert nicht. Erkläre das Problem."];
+function scene(n){
+  document.getElementById('mission').textContent=MIS[n];
+  document.querySelectorAll('.hint').forEach(h=>h.classList.remove('open'));
+  const hv=n===0
+   ?["Guten Morgen! Ich möchte…","Ja, hier bitte. (Ausweis)","Nein, danke. Auf Wiedersehen!"]
+   :["Entschuldigung, ich habe ein Problem.","Meine Karte funktioniert nicht.","Was soll ich jetzt machen?"];
+  document.querySelectorAll('.hint .val').forEach((v,k)=>v.textContent=hv[k]);
+  const bs=S[12].querySelectorAll('.row .b');
+  bs[0].className=n===0?'b g':'b o';bs[1].className=n===1?'b g':'b o';
+}
+/* --- teclado --- */
+document.addEventListener('keydown',e=>{
+  const k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'){go(i+1);e.preventDefault()}
+  else if(k==='ArrowLeft'||k==='PageUp'){go(i-1);e.preventDefault()}
+  else if(k===' '){
+    e.preventDefault();
+    const hid=[...S[i].querySelectorAll('.rv:not(.open),.hint:not(.open)')];
+    if(hid.length)hid[0].classList.add('open'); else go(i+1);
+  }
+  else if(k==='r'||k==='R'){if(i===11)sNext();else if(i===8)bReset();}
+  else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  else if(k==='Home'){go(0)} else if(k==='End'){go(S.length-1)}
+});
+/* --- init --- */
+S[0].classList.add('on');bReset();sNext();
+document.getElementById('bar').style.width=(1/S.length*100)+'%';
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+[
+  {
+    "id": "bruecke-a1",
+    "title": "Brücke A1 · Empieza aquí",
+    "description": "Saludos, presentaciones, números, preguntas personales e idiomas.",
+    "file": "/presentaciones/bruecke-a1.html",
+    "topics": [
+      "Präsens",
+      "Vocabulario",
+      "Conversación"
+    ],
+    "level": "A1",
+    "source": "index.html",
+    "sha256": "cd3ab02935a555dc18a8823220adef73e3d31977018ad748b7335501ff9aa02f"
+  },
+  {
+    "id": "nebensaetze-perfekt",
+    "title": "Warum? · Nebensätze y Perfekt",
+    "description": "weil, obwohl, deshalb; haben/sein y el verbo al final.",
+    "file": "/presentaciones/nebensaetze-perfekt.html",
+    "topics": [
+      "Nebensätze",
+      "Perfekt"
+    ],
+    "level": "A1–A2",
+    "source": "nebensatz-perfekt.html",
+    "sha256": "c8e4f4c401512e01650029f03fd7b746789ca24f1aa8d945d5accc2eedbd3d34",
+    "pdf": "/presentaciones/nebensaetze-perfekt.pdf"
+  },
+  {
+    "id": "unterwegs",
+    "title": "Unterwegs · Dativ + Perfekt",
+    "description": "Artículos, pronombres y preposiciones de Dativ; viajes y frases combinadas.",
+    "file": "/presentaciones/unterwegs.html",
+    "topics": [
+      "Dativ",
+      "Perfekt",
+      "Nebensätze"
+    ],
+    "level": "A1–A2",
+    "source": "dativ.html",
+    "sha256": "6baceefdfcfd0d31c2095b73b72df6174bc42f0c43a7d764fd5213d63d44f2a4",
+    "pdf": "/presentaciones/unterwegs.pdf"
+  },
+  {
+    "id": "bank",
+    "title": "Auf der Bank",
+    "description": "Vocabulario del banco, trato formal y diálogos para situaciones reales.",
+    "file": "/presentaciones/bank.html",
+    "topics": [
+      "Vocabulario",
+      "Conversación"
+    ],
+    "level": "A2",
+    "source": "bank.html",
+    "sha256": "32d5237d4e531e7a6831fc94c85b5b15aeb7bfeac45eee9aa620d23ec0d9bc7a",
+    "pdf": "/presentaciones/bank.pdf"
+  },
+  {
+    "id": "krankenhaus",
+    "title": "Im Krankenhaus · Nebensätze",
+    "description": "Cuerpo y salud; weil, obwohl, dass, wenn y deshalb.",
+    "file": "/presentaciones/krankenhaus.html",
+    "topics": [
+      "Vocabulario",
+      "Nebensätze",
+      "Perfekt"
+    ],
+    "level": "A1–A2",
+    "source": "krankenhaus.html",
+    "sha256": "2ce4dd936a9b8e943248bf5035a9855a3b299b6a38c3a95f905766ad1a3f225d",
+    "pdf": "/presentaciones/krankenhaus.pdf"
+  },
+  {
+    "id": "sprache-in-bewegung",
+    "title": "Sprache in Bewegung",
+    "description": "Repaso interactivo de estructuras, ejercicios y diccionario.",
+    "file": "/presentaciones/sprache-in-bewegung.html",
+    "topics": [
+      "Vocabulario",
+      "Dativ",
+      "Perfekt",
+      "Nebensätze"
+    ],
+    "level": "A1–A2",
+    "source": "deutsch-trainer-120.html",
+    "sha256": "7efb631d599646fc61c28f934d4a10ccab8ca2837cede72d067ddfc7556a2543"
+  },
+  {
+    "id": "krankenhaus-remaster",
+    "title": "Krankenhaus · Lectura y repaso 3D",
+    "description": "Lectura de Leo, repaso de Dativ y Perfekt, ejercicios y vocabulario médico.",
+    "file": "/presentaciones/krankenhaus-remaster.html",
+    "topics": [
+      "Leseverstehen",
+      "Dativ",
+      "Perfekt",
+      "Nebensätze",
+      "Vocabulario"
+    ],
+    "level": "A1–A2",
+    "source": "IM_KRANKENHAUS_3D_DATIV_REMASTER.html",
+    "sha256": "12cbfe4605dfb3f2e119489e4df8e75f70d4d1af2c0a5df9276b912f831a6f09"
+  }
+]

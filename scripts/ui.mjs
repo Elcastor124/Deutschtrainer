@@ -80,7 +80,11 @@ async function useCard(p, item, target) {
   await p.until(`!!document.querySelector('.item-detail')`, 'menú de carta');
   if (target) await p.click('.item-detail .item-actions .btn'); else await p.click('.item-detail > .btn');
 }
-const teacherNext = (T) => T.click('.controls .btn.primary');
+const teacherNext = async (T) => {
+  // Each WebSocket client renders independently; a student's intro is not a teacher DOM barrier.
+  await T.until(`!!document.querySelector('.controls .btn.primary')`, 'siguiente disponible en el profesor');
+  return T.click('.controls .btn.primary');
+};
 async function reviewUI(T, verdicts) {
   while ((await st(T, 'v.phase')) === 'review') {
     const pid = await st(T, 'v.teacher.review[0].pid');
@@ -96,14 +100,14 @@ try {
   const B = await L.newPage('Tomás (móvil)', 390, 844, true);
 
   console.log('\n1 · Inicio, sala y entrada');
-  await T.go('/');
+  await T.go('/jugar');
   await T.until(`!!document.querySelector('.home-card .btn.primary')`, 'home');
   await T.click('.home-card .btn.primary');
   await T.until(`!!document.querySelector('.lobby-code')`, 'lobby');
   const code = await T.eval(`location.pathname.split('/').pop()`);
   ok(/^[A-Z0-9]{4}$/.test(code), `el botón «Crear sala» crea la sala ${code}`);
   for (const [p, name] of [[A, 'Ana'], [B, 'Tomás']]) {
-    await p.go('/');
+    await p.go('/jugar');
     await p.until(`!!document.querySelector('input[aria-label="Código de sala"]')`, 'home');
     await p.type('input[aria-label="Código de sala"]', code);
     await p.type('input[aria-label="Tu nombre"]', name);

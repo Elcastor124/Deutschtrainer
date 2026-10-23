@@ -4,6 +4,7 @@ import type { Topic } from '../../shared/types.ts';
 import { Net, useNet } from '../net.ts';
 import { navigate, profileId, store } from '../util.ts';
 import { PlayScreen } from './Player.tsx';
+import { followLearningLink } from '../components/LearningNav.tsx';
 
 type Hello = ConstructorParameters<typeof Net>[0];
 
@@ -12,7 +13,7 @@ export function Practice() {
   const [hello, setHello] = useState<Hello | null>(null);
   const [name, setName] = useState(store.get('bc:name') ?? '');
   const [topics, setTopics] = useState<Topic[]>([]);
-  const [focus, setFocus] = useState(true);
+  const [focus, setFocus] = useState(false);
   const [pcode, setPcode] = useState('');
   const myCode = store.get('bc:pcode');
 
@@ -27,8 +28,10 @@ export function Practice() {
   const toggle = (t: Topic) => setTopics((x) => (x.includes(t) ? x.filter((y) => y !== t) : [...x, t]));
   return (
     <form className="home" onSubmit={start} style={{ alignContent: 'start', paddingTop: '8vh' }}>
-      <h1 className="home-title" style={{ fontSize: 'clamp(2.2rem, 1.4rem + 4vw, 4.6rem)' }}>ÜBEN<b>// práctica</b></h1>
-      <p className="home-sub">15 preguntas sin tiempo. Si fallas una, vuelve a salir unas preguntas después. Las que fallaste en clase salen primero.</p>
+      <h1 className="home-title" style={{ fontSize: 'clamp(2.2rem, 1.4rem + 4vw, 4.6rem)' }}>Tema 1<b>// práctica</b></h1>
+      <p className="home-sub">Todo el banco de preguntas preparado, en sesiones de 15 preguntas sin tiempo. Si fallas una, vuelve a salir unas preguntas después. Puedes activar el repaso de errores o elegir contenidos.</p>
+      <p className="home-sub small">Necesitas conexión con el servidor. Los talleres de escritura y ensayo de escenas tienen su propio espacio de práctica.</p>
+      <div className="row"><a className="btn" href="/tema/1" onClick={followLearningLink}>Ver materiales de Tema 1</a><a className="btn" href="/tema/1/taller" onClick={followLearningLink}>Practicar escritura y escenas</a></div>
       {saved && (
         <div className="panel row" style={{ width: '100%' }}>
           <span>Tienes una práctica a medias.</span><span className="spacer" />

@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IM KRANKENHAUS · 3D & Dativ · Interactive German</title>
+<style>
+:root{
+  --navy:#0b1628; --ink:#0f172a; --paper:#f8fafc; --line:#e2e8f0; --dim:#64748b;
+  --teal:#14b8a6; --teal2:#0f766e; --coral:#f43f5e; --sky:#0ea5e9; --orange:#f97316;
+  --purple:#a855f7; --pink:#ec4899; --gold:#fbbf24; --mint:#10b981;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--navy);color:var(--ink)}
+
+/* ================= DECK + TRANSICIONES ================= */
+#deck{position:absolute;inset:0}
+section.slide{position:absolute;inset:0;padding:5vh 6vw 9vh;display:flex;flex-direction:column;justify-content:center;
+  overflow-y:auto;overflow-x:hidden;z-index:1;pointer-events:none;opacity:0;
+  clip-path:circle(0% at var(--cx,50%) 50%);
+  transition:clip-path .75s cubic-bezier(.7,0,.2,1),opacity .4s ease}
+section.slide.on{z-index:2;pointer-events:auto;opacity:1;clip-path:circle(160% at var(--cx,50%) 50%)}
+section.slide::-webkit-scrollbar{width:6px}section.slide::-webkit-scrollbar-thumb{background:rgba(127,127,127,.4);border-radius:9px}
+section.slide>*:not(.orbs){position:relative;z-index:1}
+
+/* entrada escalonada */
+.slide.on .a{animation:rise .75s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 75ms + 280ms)}
+@keyframes rise{from{opacity:0;transform:translateY(34px) scale(.97);filter:blur(6px)}}
+.slide.on .pop-in{animation:popIn .7s cubic-bezier(.2,1.6,.4,1) backwards;animation-delay:calc(var(--i,0) * 75ms + 280ms)}
+@keyframes popIn{from{opacity:0;transform:scale(.4) rotate(-8deg)}}
+
+/* fondos flotantes */
+.orbs{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.orbs span{position:absolute;font-weight:900;line-height:1;opacity:.08;animation:drift linear infinite}
+@keyframes drift{0%{transform:translateY(0) rotate(0)}50%{transform:translateY(-50px) rotate(90deg)}100%{transform:translateY(0) rotate(180deg)}}
+
+/* ================= FONDOS ================= */
+.bg-navy{background:radial-gradient(1200px 700px at 80% 10%,#134e4a 0%,transparent 60%),linear-gradient(140deg,#0b1628,#0f172a);color:#fff}
+.bg-clinic{background:linear-gradient(rgba(20,184,166,.06) 1px,transparent 1px) 0 0/44px 44px,
+  linear-gradient(90deg,rgba(20,184,166,.06) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(135deg,#f8fafc,#ecfeff);color:var(--ink)}
+.bg-teal{background:linear-gradient(140deg,#14b8a6,#0f4c5c);color:#fff}
+.bg-coral{background:linear-gradient(140deg,#f43f5e,#881337);color:#fff}
+.bg-sky{background:linear-gradient(140deg,#0ea5e9,#0c4a6e);color:#fff}
+.bg-pink{background:linear-gradient(140deg,#ec4899,#701a75);color:#fff}
+.bg-purple{background:linear-gradient(140deg,#8b5cf6,#3b0764);color:#fff}
+.bg-gold{background:linear-gradient(140deg,#fcd34d,#f59e0b);color:#3d2500}
+.bg-mint{background:linear-gradient(140deg,#10b981,#064e3b);color:#fff}
+
+/* ================= TIPOGRAFÍA ================= */
+.eyebrow{font-size:clamp(11px,1.1vw,15px);letter-spacing:.42em;text-transform:uppercase;font-weight:800;opacity:.65;margin-bottom:1.6vh}
+h1{font-size:clamp(50px,9.5vw,150px);line-height:.86;letter-spacing:-.05em;font-weight:900}
+h2{font-size:clamp(30px,4.6vw,68px);line-height:.95;letter-spacing:-.035em;font-weight:900}
+h3{font-size:clamp(18px,2vw,30px);font-weight:800;letter-spacing:-.02em}
+.lead{font-size:clamp(16px,1.95vw,29px);line-height:1.38;font-weight:600}
+.tiny{font-size:clamp(12px,1.1vw,16px);opacity:.66;font-weight:600}
+.row{display:flex;gap:1.1vw;flex-wrap:wrap;align-items:center}
+.grid{display:grid;gap:1.2vw}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.g5{grid-template-columns:repeat(5,1fr)}.g6{grid-template-columns:repeat(6,1fr)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:4vw;align-items:center}
+.mt1{margin-top:1.1vh}.mt2{margin-top:2.1vh}.mt3{margin-top:3.2vh}
+
+/* palabras clave */
+.k{font-weight:900;padding:.02em .38em;border-radius:.32em;color:#fff;white-space:nowrap;display:inline-block}
+.k.weil{background:var(--sky)}.k.obwohl{background:var(--orange)}.k.deshalb{background:var(--purple)}
+.k.dass{background:var(--teal)}.k.wenn{background:var(--pink)}
+.k.inv{background:#fff!important}
+.k.inv.weil{color:var(--sky)}.k.inv.dass{color:var(--teal2)}.k.inv.wenn{color:var(--pink)}
+.vb{font-weight:900;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:5px;color:var(--coral)}
+.bg-navy .vb,.bg-teal .vb,.bg-coral .vb,.bg-sky .vb,.bg-pink .vb,.bg-purple .vb,.bg-mint .vb{color:var(--gold)}
+
+/* ================= FRASES CON FICHAS ================= */
+.sent{display:flex;flex-wrap:wrap;gap:.55vw;align-items:center;font-size:clamp(19px,2.7vw,42px);font-weight:800;letter-spacing:-.02em}
+.tok{background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.26);border-radius:14px;padding:.5vh .9vw;display:inline-block}
+.bg-clinic .tok{background:#fff;border-color:var(--line)}
+.tok.v{background:var(--gold);border-color:var(--gold);color:#3d2500;box-shadow:0 6px 0 rgba(0,0,0,.16)}
+.tok.p{background:var(--mint);border-color:var(--mint);color:#fff}
+.tok.c-weil{background:var(--sky);border-color:var(--sky);color:#fff}
+.tok.c-obwohl{background:var(--orange);border-color:var(--orange);color:#fff}
+.tok.c-dass{background:#fff;border-color:#fff;color:var(--teal2)}
+.tok.c-wenn{background:#fff;border-color:#fff;color:var(--pink)}
+.tok.c-deshalb{background:var(--purple);border-color:var(--purple);color:#fff}
+.lbl{font-size:clamp(11px,1vw,14px);font-weight:900;letter-spacing:.18em;text-transform:uppercase;opacity:.7;margin-bottom:.8vh}
+.arrow{font-size:clamp(14px,1.5vw,22px);font-weight:800;opacity:.85;margin:1.3vh 0}
+
+/* pasos (espacio) */
+.step{opacity:.06;filter:blur(5px);transform:translateY(12px);cursor:pointer;transition:opacity .5s,filter .5s,transform .5s}
+.step.show{opacity:1;filter:none;transform:none;cursor:default}
+.step.show .tok{animation:tokIn .55s cubic-bezier(.2,1.4,.4,1) backwards;animation-delay:calc(var(--t,0) * 90ms)}
+@keyframes tokIn{from{opacity:0;transform:translateY(-26px) scale(.7)}}
+.step.show .tok.fly{animation:fly 1.15s cubic-bezier(.3,.9,.3,1) backwards;animation-delay:calc(var(--t,0) * 90ms + 200ms)}
+@keyframes fly{0%{opacity:0;transform:translate(-38vw,-9vh) rotate(-25deg) scale(1.3)}
+  55%{opacity:1;transform:translate(-4vw,-7vh) rotate(8deg) scale(1.15)}
+  78%{transform:translate(0,1vh) rotate(-2deg)}100%{transform:none}}
+
+/* ================= TARJETAS REVEAL ================= */
+.rv{background:#fff;border:2px solid var(--line);border-radius:20px;padding:2vh 1.4vw;cursor:pointer;
+  transition:transform .25s cubic-bezier(.2,.8,.3,1),box-shadow .25s,border-color .25s,background .25s;box-shadow:0 3px 0 rgba(15,23,41,.05)}
+.rv:hover{transform:translateY(-5px);border-color:var(--teal);box-shadow:0 16px 30px rgba(15,118,110,.18)}
+.rv .front{font-size:clamp(15px,1.6vw,25px);font-weight:800;line-height:1.25}
+.rv .back{max-height:0;opacity:0;overflow:hidden;transition:max-height .45s,opacity .45s,margin .45s;
+  font-size:clamp(14px,1.45vw,22px);color:var(--teal2);font-weight:700;line-height:1.35}
+.rv.open{border-color:var(--mint);background:linear-gradient(160deg,#ecfdf5,#fff)}
+.rv.open .back{max-height:30vh;opacity:1;margin-top:1vh}
+.rv .em{font-size:clamp(26px,3vw,46px);line-height:1;display:block;margin-bottom:.8vh;transition:transform .4s}
+.rv:hover .em{transform:scale(1.2) rotate(-8deg)}
+.dark .rv{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.24);color:#fff;box-shadow:none}
+.dark .rv:hover{border-color:#fff;background:rgba(255,255,255,.16)}
+.dark .rv.open{background:rgba(255,255,255,.2);border-color:var(--gold)}
+.dark .rv .back{color:var(--gold)}
+.bg-gold .rv{background:rgba(255,255,255,.55);border-color:rgba(61,37,0,.2)}
+.bg-gold .rv.open{background:#fff;border-color:#3d2500}
+.bg-gold .rv .back{color:#065f46}
+.wrong{text-decoration:line-through;text-decoration-color:var(--coral);text-decoration-thickness:3px}
+.rv:not(.open) .wrong{text-decoration:none}
+
+/* ================= FLIP 3D ================= */
+.flip{perspective:900px;cursor:pointer;min-height:15vh}
+.flip .in{position:relative;width:100%;height:100%;min-height:inherit;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.3,1.4,.4,1)}
+.flip.open .in{transform:rotateY(180deg)}
+.flip .f,.flip .b{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:20px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1.4vh 1vw}
+.flip .f{background:#fff;border:2px solid var(--line);box-shadow:0 8px 20px rgba(15,23,41,.07)}
+.flip .b{transform:rotateY(180deg);background:linear-gradient(150deg,var(--teal),var(--teal2));color:#fff}
+.flip:hover .f{border-color:var(--teal)}
+.flip .ico{font-size:clamp(28px,3.6vw,56px);line-height:1;margin-bottom:.6vh}
+.flip .w{font-size:clamp(15px,1.6vw,25px);font-weight:900;letter-spacing:-.02em}
+.flip .t{font-size:clamp(13px,1.35vw,21px);font-weight:700;opacity:.95;line-height:1.3}
+.der{color:#2563eb}.die{color:#e11d48}.das{color:#059669}
+.dark .flip .f{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff;box-shadow:none}
+.dark .flip .b{background:#fff;color:var(--ink)}
+.flip.tall{min-height:24vh}
+
+/* ================= BOTONES ================= */
+.b{border:none;font-family:inherit;font-weight:800;cursor:pointer;border-radius:99px;padding:1.3vh 2vw;
+  font-size:clamp(13px,1.35vw,20px);transition:.2s;background:var(--ink);color:#fff;position:relative;overflow:hidden}
+.b:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(15,23,41,.28)}
+.b:active{transform:scale(.96)}
+.b.g{background:var(--gold);color:#3d2500}.b.w{background:#fff;color:var(--ink);border:2px solid var(--line)}
+.b.t{background:var(--teal);color:#fff}
+.b.o{background:transparent;border:2px solid currentColor;color:inherit}
+.b.sm{padding:.9vh 1.3vw;font-size:clamp(12px,1.15vw,16px)}
+.b .rip{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:rip .6s ease-out;pointer-events:none}
+@keyframes rip{to{transform:scale(4);opacity:0}}
+
+/* ================= PORTADA ================= */
+.ecg{width:100%;height:16vh;margin:2vh 0 1vh}
+.ecg path{fill:none;stroke:var(--teal);stroke-width:4;stroke-linejoin:round;stroke-linecap:round;
+  stroke-dasharray:2600;stroke-dashoffset:2600;animation:ecg 3.2s linear infinite;filter:drop-shadow(0 0 8px var(--teal))}
+.ecg path.ghost{stroke:rgba(20,184,166,.15);animation:none;stroke-dashoffset:0;filter:none}
+@keyframes ecg{to{stroke-dashoffset:0}}
+.beat{display:inline-block;animation:beat 1.1s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.22)}30%{transform:scale(1)}45%{transform:scale(1.14)}}
+.chip{display:inline-block;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.26);border-radius:99px;
+  padding:.6vh 1vw;font-size:clamp(12px,1.2vw,18px);font-weight:700;margin:.3vh .2vw}
+.bg-clinic .chip{background:#fff;border-color:var(--line)}
+.cross{position:absolute!important;right:5vw;bottom:15vh;width:clamp(70px,9vw,140px);aspect-ratio:1;animation:spinfl 9s ease-in-out infinite}
+.cross::before,.cross::after{content:"";position:absolute;background:var(--coral);border-radius:14px;box-shadow:0 0 40px rgba(244,63,94,.6)}
+.cross::before{left:33%;right:33%;top:0;bottom:0}.cross::after{top:33%;bottom:33%;left:0;right:0}
+@keyframes spinfl{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-22px) rotate(12deg)}}
+
+/* ================= AMBULANCIA ================= */
+.road{position:relative;height:20vh;border-radius:24px;background:linear-gradient(#1e293b,#0f172a);overflow:hidden;margin-top:2.5vh;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.08)}
+.road::after{content:"";position:absolute;left:0;right:0;top:62%;height:6px;
+  background:repeating-linear-gradient(90deg,var(--gold) 0 70px,transparent 70px 140px);animation:roadmv .5s linear infinite}
+@keyframes roadmv{to{background-position:-140px 0}}
+.city{position:absolute;left:0;right:0;bottom:45%;height:45%;opacity:.28;
+  background:repeating-linear-gradient(90deg,#334155 0 50px,transparent 50px 70px,#475569 70px 110px,transparent 110px 130px);
+  animation:roadmv 3s linear infinite;-webkit-mask:linear-gradient(transparent 0 20%,#000 20%)}
+.amb{position:absolute;bottom:26%;font-size:clamp(50px,9vh,110px);line-height:1;animation:drive 5.5s linear infinite}
+@keyframes drive{0%{left:105%}100%{left:-22%}}
+.amb .sir{position:absolute;top:8%;left:42%;width:14%;aspect-ratio:1;border-radius:50%;animation:siren .5s steps(1) infinite}
+@keyframes siren{0%{background:#ef4444;box-shadow:0 0 34px 14px #ef4444}50%{background:#3b82f6;box-shadow:0 0 34px 14px #3b82f6}}
+.story{display:flex;gap:.8vw;align-items:center;flex-wrap:nowrap;font-size:clamp(14px,1.9vw,30px);font-weight:900;white-space:nowrap}
+.story .st{background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.22);border-radius:18px;padding:1.2vh 1.2vw;display:flex;align-items:center;gap:.6vw}
+.story .ar{opacity:.5}
+
+/* ================= JUEGO CONJUNCIONES ================= */
+.q{background:#fff;border:2px solid var(--line);border-radius:18px;padding:1.3vh 1.2vw;transition:border-color .25s,background .25s}
+.q .txt{font-size:clamp(14px,1.55vw,24px);font-weight:700;line-height:1.3}
+.q .gap{display:inline-block;min-width:4.6em;border-bottom:3px dashed #94a3b8;text-align:center;font-weight:900;transition:.3s}
+.q .opts{display:flex;gap:.4vw;margin-top:1vh;flex-wrap:wrap}
+.pick{border:2px solid var(--line);background:#fff;border-radius:10px;padding:.5vh .8vw;font-weight:900;
+  font-size:clamp(11px,1.1vw,16px);cursor:pointer;font-family:inherit;color:var(--dim);transition:.15s}
+.pick:hover{border-color:var(--teal);color:var(--teal2);transform:translateY(-2px)}
+.q.right{border-color:var(--mint);background:#ecfdf5}
+.q.right .gap{border-color:transparent;transform:scale(1.08)}
+.q.bad{border-color:var(--coral);background:#fff1f2;animation:shake .45s}
+.pick.hit{background:var(--mint);border-color:var(--mint);color:#fff}
+.pick.miss{background:var(--coral);border-color:var(--coral);color:#fff}
+@keyframes shake{20%{transform:translateX(-10px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+.score{font-size:clamp(16px,1.8vw,28px);font-weight:900;background:var(--ink);color:#fff;border-radius:14px;padding:.6vh 1.1vw;transition:transform .3s}
+.score.bump{transform:scale(1.25)}
+
+/* ================= TABLA RESUMEN ================= */
+.sum{width:100%;border-collapse:separate;border-spacing:0 .9vh;font-size:clamp(14px,1.65vw,26px)}
+.sum td{background:#fff;padding:1.4vh 1.2vw;vertical-align:middle}
+.sum td:first-child{border-radius:14px 0 0 14px;width:13%}
+.sum td:last-child{border-radius:0 14px 14px 0;width:17%}
+.sum .rule{font-size:clamp(11px,1.15vw,17px);font-weight:900;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+
+/* ================= BUILDER ================= */
+.builder .tabs{display:flex;gap:.5vw;flex-wrap:wrap;margin-bottom:1.6vh}
+.builder .tabs .b.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.tiles{display:flex;gap:.6vw;flex-wrap:wrap;min-height:7vh;align-items:center;margin-top:1.6vh}
+.tile{background:#fff;border:2px solid var(--line);border-radius:12px;padding:1vh 1.1vw;font-size:clamp(14px,1.65vw,26px);
+  font-weight:800;cursor:pointer;transition:.18s;font-family:inherit;color:var(--ink);box-shadow:0 4px 0 rgba(15,23,41,.06)}
+.tile:hover{border-color:var(--teal);transform:translateY(-4px) rotate(-2deg)}
+.tile.used{opacity:.18;pointer-events:none;transform:scale(.9)}
+.tiles .tile{animation:tokIn .45s cubic-bezier(.2,1.4,.4,1) backwards;animation-delay:calc(var(--t,0) * 50ms)}
+.drop{min-height:8.5vh;border:3px dashed #94a3b8;border-radius:18px;padding:1.2vh 1.2vw;display:flex;gap:.5vw;
+  flex-wrap:wrap;align-items:center;background:rgba(255,255,255,.8);cursor:pointer;transition:.3s}
+.drop .tile{background:var(--teal);color:#fff;border-color:var(--teal);pointer-events:none;animation:tokIn .35s cubic-bezier(.2,1.6,.4,1)}
+.drop.ok{border-color:var(--mint);border-style:solid;background:#ecfdf5;box-shadow:0 0 0 6px rgba(16,185,129,.18)}
+.drop.ok .tile{background:var(--mint);border-color:var(--mint)}
+.drop.no{border-color:var(--coral);animation:shake .45s}
+.bmsg{font-size:clamp(15px,1.7vw,26px);font-weight:900}
+
+/* ================= GENERADORES ================= */
+.stage{background:rgba(255,255,255,.1);border:3px solid rgba(255,255,255,.25);border-radius:28px;padding:3.2vh 2.5vw;
+  text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2vh;min-height:30vh}
+.stage .big{font-size:clamp(50px,8vw,120px);line-height:1}
+.stage .ttl{font-size:clamp(22px,3.2vw,50px);font-weight:900;letter-spacing:-.03em}
+.stage .sol{font-size:clamp(15px,1.8vw,27px);font-weight:800;color:var(--gold);min-height:1.3em;line-height:1.4}
+.enter{animation:cardIn .7s cubic-bezier(.2,1.3,.4,1)}
+@keyframes cardIn{0%{opacity:0;transform:perspective(900px) rotateY(80deg) scale(.8)}100%{opacity:1;transform:none}}
+.patient{display:grid;grid-template-columns:auto 1fr;gap:2vw;align-items:center;text-align:left;width:100%}
+.patient .face{font-size:clamp(70px,11vw,170px);line-height:1;animation:wob 2.4s ease-in-out infinite}
+@keyframes wob{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg) translateY(-6px)}}
+.field{font-size:clamp(12px,1.1vw,16px);font-weight:900;letter-spacing:.18em;text-transform:uppercase;opacity:.65;margin-top:1.2vh}
+.fval{font-size:clamp(20px,2.6vw,40px);font-weight:900;letter-spacing:-.02em}
+.miniecg{width:100%;height:7vh;margin-top:1vh}
+.miniecg path{fill:none;stroke:#6ee7b7;stroke-width:3;stroke-dasharray:1400;stroke-dashoffset:1400;animation:ecg 2.2s linear infinite}
+
+/* ================= BOSS ================= */
+.mission{background:rgba(251,191,36,.14);border:2px solid var(--gold);border-radius:20px;padding:2vh 1.6vw}
+.mission .txt{font-size:clamp(17px,2vw,30px);font-weight:900;min-height:2.6em;line-height:1.3}
+.mission .txt::after{content:"▍";animation:blink .8s steps(1) infinite;color:var(--gold)}
+@keyframes blink{50%{opacity:0}}
+.hint{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);border-radius:16px;padding:1.2vh 1.2vw;cursor:pointer;transition:.25s}
+.hint:hover{background:rgba(255,255,255,.16)}
+.hint .hl{font-weight:900;letter-spacing:.16em;font-size:clamp(10px,1vw,14px);opacity:.75}
+.hint .hv{max-height:0;opacity:0;overflow:hidden;transition:.35s;font-size:clamp(14px,1.55vw,23px);font-weight:800;color:var(--gold)}
+.hint.open{border-color:var(--gold);background:rgba(255,255,255,.18)}
+.hint.open .hv{max-height:16vh;opacity:1;margin-top:.6vh}
+
+/* ================= CHECKLIST ================= */
+.ck{display:flex;align-items:center;gap:1vw;font-size:clamp(14px,1.7vw,26px);font-weight:800;padding:1.1vh 1.3vw;border-radius:16px;
+  background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:.3s;opacity:.6}
+.ck .box{width:clamp(22px,2.3vw,36px);height:clamp(22px,2.3vw,36px);border-radius:9px;border:3px solid rgba(255,255,255,.55);
+  display:grid;place-items:center;flex:none;color:transparent;font-size:clamp(13px,1.4vw,21px);transition:.3s}
+.ck.on{opacity:1;background:rgba(16,185,129,.26);border-color:var(--mint)}
+.ck.on .box{background:var(--mint);border-color:var(--mint);color:#fff;animation:tick .45s cubic-bezier(.2,1.8,.4,1)}
+@keyframes tick{0%{transform:scale(.3) rotate(-30deg)}}
+.bg-clinic .ck{background:#fff;border-color:var(--line);color:var(--ink)}
+.bg-clinic .ck .box{border-color:#cbd5e1}
+.bg-clinic .ck.on{background:#ecfdf5;border-color:var(--mint)}
+.box2{background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.22);border-radius:20px;padding:1.8vh 1.5vw}
+.bg-clinic .box2{background:#fff;border-color:var(--line)}
+.warnbox{border-left:6px solid var(--gold);background:rgba(251,191,36,.16);border-radius:0 16px 16px 0;padding:1.4vh 1.3vw;
+  font-size:clamp(14px,1.55vw,23px);font-weight:700;line-height:1.4}
+.bg-clinic .warnbox{background:#fffbeb;color:#78350f}
+
+/* ================= HUD ================= */
+#bar{position:fixed;top:0;left:0;height:5px;background:linear-gradient(90deg,var(--teal),var(--sky),var(--pink));z-index:40;
+  transition:width .6s cubic-bezier(.2,.8,.2,1)}
+#bar::after{content:"❤";position:absolute;right:-9px;top:-9px;font-size:16px;color:var(--coral);animation:beat 1.1s infinite;
+  filter:drop-shadow(0 0 6px var(--coral))}
+#nav{position:fixed;bottom:2vh;left:2.4vw;display:flex;gap:.6vw;z-index:40}
+.nb{width:clamp(36px,3.2vw,48px);height:clamp(36px,3.2vw,48px);border-radius:50%;border:none;cursor:pointer;
+  background:rgba(127,127,127,.22);backdrop-filter:blur(6px);font-size:clamp(14px,1.4vw,20px);font-weight:900;color:#fff;font-family:inherit;transition:.2s}
+.nb:hover{background:rgba(127,127,127,.45);transform:scale(1.12)}
+#num{position:fixed;bottom:2.6vh;right:2.4vw;font-size:clamp(11px,1.1vw,15px);font-weight:900;letter-spacing:.2em;z-index:40;
+  pointer-events:none;background:rgba(15,23,42,.55);color:#fff;padding:.5vh .8vw;border-radius:99px}
+#timer{position:fixed;top:1.6vh;right:1.6vw;z-index:40;font-variant-numeric:tabular-nums;font-weight:900;
+  font-size:clamp(16px,1.8vw,26px);background:rgba(15,23,41,.82);color:#fff;border-radius:14px;padding:.6vh 1vw;cursor:pointer;
+  border:2px solid transparent;user-select:none;transition:.3s}
+#timer.run{border-color:var(--mint);box-shadow:0 0 18px rgba(16,185,129,.5)}
+#timer.low{border-color:var(--coral);animation:blink .8s infinite}
+#notes{position:fixed;left:0;right:0;bottom:0;z-index:35;background:rgba(15,23,41,.95);color:#fde68a;
+  padding:1.4vh 12vw 1.4vh 12vw;font-size:clamp(13px,1.3vw,18px);font-weight:600;transform:translateY(105%);transition:.35s}
+#notes.on{transform:none}#notes b{color:#fff}
+#hint{position:fixed;bottom:2.9vh;left:50%;transform:translateX(-50%);font-size:clamp(10px,.9vw,12px);font-weight:800;
+  letter-spacing:.12em;opacity:.35;z-index:40;pointer-events:none;text-transform:uppercase;white-space:nowrap;color:#94a3b8}
+#cf{position:fixed;inset:0;z-index:60;pointer-events:none}
+@media(max-width:900px){.split,.g3,.g4,.g5,.g6{grid-template-columns:1fr 1fr}}
+@media(max-height:780px){
+  section.slide{padding:3.5vh 5vw 8vh}
+  h2{font-size:clamp(26px,4vw,58px)}
+  .mt3{margin-top:2.2vh}.mt2{margin-top:1.5vh}
+  .q{padding:.9vh 1vw}.q .opts{margin-top:.6vh}
+  .ck{padding:.8vh 1.1vw}
+  .mission .txt{min-height:2.2em}
+  .hint{padding:.8vh 1vw}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+.code-art{position:relative;height:190px;min-height:150px;border:2px solid rgba(20,184,166,.25);border-radius:24px;background:linear-gradient(145deg,#ffffffcc,#ccfbf1);overflow:hidden;display:grid;place-items:center;isolation:isolate}.code-art::before{content:"";position:absolute;inset:18px;border:1px dashed rgba(15,118,110,.28);border-radius:50%;animation:spinfl 9s linear infinite}.code-art .heart{font-size:80px;filter:drop-shadow(0 8px 8px #0f766e44);animation:beat 1.1s ease-in-out infinite}.code-art .crossmini{position:absolute;width:74px;height:74px;right:24px;top:24px;transform:rotate(10deg)}.code-art .crossmini::before,.code-art .crossmini::after{content:"";position:absolute;background:var(--coral);border-radius:8px;box-shadow:0 0 18px #f43f5e88}.code-art .crossmini::before{left:29%;right:29%;top:0;bottom:0}.code-art .crossmini::after{top:29%;bottom:29%;left:0;right:0}.code-art .stetho{width:106px;height:112px;border:8px solid #0f766e;border-top-color:transparent;border-radius:0 0 55px 55px;position:relative;transform:rotate(-12deg);animation:floatst 3s ease-in-out infinite}.code-art .stetho::before{content:"";position:absolute;width:25px;height:25px;border:7px solid #0f766e;border-radius:50%;left:-18px;top:34px;background:#ccfbf1}.code-art .stetho::after{content:"";position:absolute;width:27px;height:27px;border-radius:50%;right:-18px;bottom:-12px;background:#fbbf24;box-shadow:0 0 15px #fbbf24aa}.code-art .pill{width:128px;height:54px;border-radius:35px;background:linear-gradient(90deg,#0ea5e9 0 50%,#f43f5e 50%);transform:rotate(-25deg);box-shadow:0 10px 15px #0f172a33;animation:pill 3s ease-in-out infinite}.code-art .ambulance{font-size:88px;animation:drive 4s linear infinite}.code-art small{position:absolute;bottom:10px;left:0;right:0;text-align:center;color:#0f766e;font-weight:900;letter-spacing:.12em;text-transform:uppercase;font-size:10px}@keyframes floatst{50%{transform:rotate(4deg) translateY(-10px)}}@keyframes pill{50%{transform:rotate(25deg) translateY(-12px)}}
+.mini-exercise{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2vw;margin-top:2vh}.mini-exercise .q{min-height:15vh}.mini-exercise .pick.selected{background:var(--teal);border-color:var(--teal);color:#fff}.mini-score{font-size:clamp(16px,1.8vw,28px);font-weight:900;background:var(--ink);color:#fff;border-radius:14px;padding:.6vh 1.1vw;display:inline-block}.teams-dialog{max-width:760px}.teams-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.team-card{border:2px solid var(--line);border-radius:18px;padding:18px;text-align:center;background:#fff}.team-card h3{margin-bottom:8px}.team-card output{display:block;font-size:76px;font-weight:900;color:var(--teal2);line-height:1;margin:8px 0 15px}.team-card.dani output{color:var(--coral)}.team-card button{border:0;border-radius:99px;background:var(--teal);color:#fff;font-weight:900;padding:10px 16px;cursor:pointer}.team-card.dani button{background:var(--coral)}.score-actions{display:flex;gap:9px;justify-content:center;margin-top:16px}.score-actions button{border:2px solid var(--line);border-radius:99px;background:#fff;padding:9px 15px;font-weight:800;cursor:pointer}@media(max-width:850px){.mini-exercise{grid-template-columns:1fr}.teams-grid{grid-template-columns:1fr}}
+
+/* ========================= 2026 REMASTER · CINEMATIC ========================= */
+:root{--navy:#070d19;--ink:#102036;--paper:#f5fafb;--line:#d8e8ea;--teal:#00d5c0;--teal2:#008b83;--coral:#fa647b;--sky:#37bafb;--orange:#ff9a5f;--purple:#ac8cff;--pink:#ff7dc6;--gold:#ffe08a;--mint:#16caa0}
+body{background:#070d19;font-family:Inter,"Segoe UI",system-ui,sans-serif}
+section.slide{isolation:isolate;transition:clip-path .9s cubic-bezier(.19,1,.22,1),opacity .5s ease; padding-top:5.4vh}
+section.slide::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 82% 16%,rgba(255,255,255,.075),transparent 44%);mix-blend-mode:screen}
+.bg-navy{background:radial-gradient(circle at 78% 34%,#11475b 0,transparent 35%),linear-gradient(155deg,#060c18 0%,#10192e 67%,#081019 100%)}
+.bg-clinic{background:linear-gradient(rgba(14,128,139,.04) 1px,transparent 1px) 0 0/46px 46px,linear-gradient(90deg,rgba(14,128,139,.04) 1px,transparent 1px) 0 0/46px 46px,radial-gradient(circle at 95% 0%,#c3f7f2,#f7fafc 58%,#f1f6ff)}
+.bg-purple{background:radial-gradient(circle at 80% 25%,#392970 0,transparent 50%),linear-gradient(135deg,#090e21,#1b123e)}
+.bg-teal{background:radial-gradient(circle at 86% 12%,#21ccb8 0,transparent 42%),linear-gradient(140deg,#0a4b53,#063942)}
+.bg-sky{background:radial-gradient(circle at 82% 30%,#037cb0,transparent 50%),linear-gradient(140deg,#073c63,#08233e)}
+.bg-pink{background:radial-gradient(circle at 80% 18%,#aa376e,transparent 45%),linear-gradient(135deg,#571d4e,#210f3f)}
+.bg-coral{background:radial-gradient(circle at 86% 24%,#fd587d,transparent 50%),linear-gradient(140deg,#772742,#391a39)}
+.bg-mint{background:radial-gradient(circle at 85% 23%,#0c9589,transparent 52%),linear-gradient(140deg,#064f51,#0a3238)}
+.bg-gold{background:radial-gradient(circle at 80% 25%,#fff4bd,transparent 55%),linear-gradient(125deg,#ffe3a1,#f1b962)}
+.eyebrow{font-size:clamp(10px,1vw,15px);letter-spacing:.35em}
+h1{letter-spacing:-.075em;font-size:clamp(54px,8.25vw,134px);text-wrap:balance;line-height:.91}
+h2{letter-spacing:-.055em;text-wrap:balance}
+.lead{letter-spacing:-.02em}
+.rv,.flip .f,.flip .b,.box2,.q,.mission,.hint,.stage,.code-art{backdrop-filter:blur(8px)}
+.rv,.flip .f,.q{box-shadow:0 9px 35px rgba(10,40,65,.07);border-color:rgba(11,98,104,.15)}
+.rv:hover,.flip:hover{filter:drop-shadow(0 10px 15px rgba(0,170,160,.12))}
+.dark .rv,.dark .flip .f,.dark .stage{box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 18px 45px rgba(0,0,0,.12)}
+.b{box-shadow:0 5px 18px rgba(0,0,0,.12);transition:transform .2s,background .2s,box-shadow .2s}
+.b:focus-visible,.pick:focus-visible,.nb:focus-visible,.rv:focus-visible{outline:3px solid #ffe08a;outline-offset:3px}
+.slide.on .a{animation:cinemaIn .68s cubic-bezier(.16,1,.3,1) backwards;animation-delay:calc(var(--i,0) * 55ms + 165ms)}
+@keyframes cinemaIn{from{opacity:0;transform:translateY(25px) scale(.985);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
+#nav{left:2.5vw;bottom:2.5vh;gap:9px}
+.nb{width:43px;height:43px;border:1px solid rgba(255,255,255,.35);background:rgba(15,28,45,.7)}
+#num{letter-spacing:.09em;font-variant-numeric:tabular-nums}
+#timer{border:1px solid rgba(255,255,255,.16)}
+#hint{letter-spacing:.07em;opacity:.48}
+.model3d{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.22);border-radius:22px;background:radial-gradient(ellipse at 50% 43%,rgba(18,229,212,.24),transparent 57%),linear-gradient(125deg,rgba(9,41,64,.94),rgba(3,18,31,.98));min-height:180px;touch-action:pan-y;box-shadow:inset 0 0 32px rgba(20,234,216,.08),0 17px 45px rgba(0,0,0,.15)}
+.model3d canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.model3d canvas:active{cursor:grabbing}
+.model3d::after{content:"3D · ARRASTRA PARA GIRAR";position:absolute;left:14px;bottom:11px;font-size:10px;letter-spacing:.15em;font-weight:900;color:rgba(172,253,242,.64);pointer-events:none}
+.model3d.hero{position:absolute!important;z-index:0!important;right:1.7vw;top:15vh;width:36vw;height:56vh;min-height:300px;border:0;background:radial-gradient(ellipse at 48% 45%,rgba(20,208,195,.16),transparent 58%);box-shadow:none;opacity:.94}
+.model3d.hero::after{left:auto;right:16px;bottom:9px}
+.model3d.hero canvas{filter:drop-shadow(0 0 32px rgba(31,231,217,.14))}
+.hero-front{position:relative;z-index:3!important;max-width:92%;text-shadow:0 3px 28px rgba(0,0,0,.25)}
+.hero-sub{max-width:53vw!important}
+.model3d.small{width:16vw;height:18vh;min-height:125px;position:absolute!important;top:7.5vh;right:5vw;z-index:0!important;border:1px solid rgba(25,167,155,.18)}
+.model3d.large{width:100%;height:34vh;min-height:240px}
+.model3d.lab{width:100%;height:29vh;min-height:210px}
+.model-panel{border-radius:24px;padding:12px;background:#fff;border:1px solid rgba(10,136,144,.16);box-shadow:0 10px 35px rgba(17,76,85,.08)}
+.model-panel .model3d{height:26vh;min-height:185px}
+.model-panel strong{color:#102036;display:block;text-align:center;margin:12px 0 5px;font-size:clamp(14px,1.4vw,21px)}
+.model-panel p{color:#658293;text-align:center;font-size:clamp(11px,1.05vw,14px);margin-bottom:6px}
+.prep-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2vw}
+.prep-card{border:1px solid rgba(255,255,255,.26);padding:1.7vh 1.4vw;border-radius:18px;background:rgba(255,255,255,.11);color:#fff;cursor:pointer;min-height:11.3vh;transition:.3s;position:relative;overflow:hidden}
+.prep-card:hover{transform:translateY(-3px);background:rgba(255,255,255,.18);border-color:#ffe08a}
+.prep-card b{font-size:clamp(21px,2.1vw,33px);color:#ffe08a}
+.prep-card span{display:block;opacity:.8;font-size:clamp(12px,1.15vw,18px);font-weight:700;margin-top:.25vh}
+.prep-card .answer{opacity:0;max-height:0;transition:opacity .25s,max-height .25s}
+.prep-card.open{background:rgba(0,213,192,.17);border-color:#00e4c6}
+.prep-card.open .answer{opacity:1;max-height:6vh}
+.case-pill{display:inline-flex;align-items:center;gap:.5em;padding:.35em .9em;border:1px solid rgba(0,136,135,.14);border-radius:999px;font-size:clamp(12px,1.2vw,17px);font-weight:900;background:#fff}
+.case-pill b{color:#008b83}
+.formula{border-radius:22px;background:#fff;border:2px solid #dcebec;padding:2vh 1.3vw;text-align:center}
+.formula .from{font-size:clamp(22px,2.7vw,40px);font-weight:900;color:#64748b}
+.formula .to{font-size:clamp(28px,3.2vw,47px);font-weight:900;color:#0e9891}
+.formula .arr{font-size:25px;color:#fa647b}
+.formula .ex{font-size:clamp(12px,1.05vw,16px);font-weight:700;margin-top:.5vh}
+.quiz-shell{max-width:1160px;width:100%}
+.quiz-progress{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:1vh 0 1.2vh;font-weight:900}
+.quiz-page{font-size:clamp(16px,1.55vw,23px)}
+.quiz-score{font-size:clamp(16px,1.65vw,25px);color:#00bf9e}
+.quiz-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2vw}
+.quiz-card{padding:2.2vh 1.4vw;border-radius:21px;background:rgba(255,255,255,.94);border:2px solid rgba(10,112,122,.15);box-shadow:0 10px 33px rgba(0,0,0,.06);min-height:30vh;display:flex;flex-direction:column;gap:1vh}
+.quiz-card strong{font-size:clamp(15px,1.65vw,25px);color:#0b2340;line-height:1.35}
+.quiz-card .q-options{display:flex;flex-wrap:wrap;gap:7px;margin:auto 0 .4vh}
+.quiz-card .q-options button{font-family:inherit;padding:.7vh .85vw;border:2px solid #e2e8f0;border-radius:10px;background:#fff;color:#0b2340;font-size:clamp(12px,1.15vw,16px);font-weight:900;cursor:pointer;transition:.2s}
+.quiz-card .q-options button:hover{transform:translateY(-2px);border-color:#14b8a6}
+.quiz-card .q-options button.correct{background:#a8ffe7;border-color:#16caa0;color:#065f46}
+.quiz-card .q-options button.wrong{background:#ffe3e8;border-color:#fa647b;color:#9f1239}
+.quiz-card .q-explain{min-height:3.4em;font-size:clamp(12px,1.05vw,16px);line-height:1.3;color:#0f766e;font-weight:750}
+.quiz-card.solved{border-color:#16caa0}
+.quiz-card .qnum{font-size:11px;letter-spacing:.12em;font-weight:900;color:#73929c}
+.quiz-switch{display:flex;align-items:center;gap:10px;margin-top:1.5vh}
+.path-chip{padding:1vh 1.2vw;border-radius:16px;background:#fff;border:1px solid #d6e8ec;font-weight:800;font-size:clamp(14px,1.4vw,21px);cursor:pointer;transition:.2s}
+.path-chip:hover{border-color:#00a6a4;transform:translateY(-3px)}
+.path-chip .path-back{display:none;color:#007f7c}
+.path-chip.open .path-back{display:block}
+.path-chip.open .path-front{display:none}
+.highlight-word{background:#ffe08a;border-radius:.25em;color:#102036;padding:.05em .25em}
+@media(max-width:1000px){.model3d.hero{opacity:.29;right:-8vw;top:26vh;width:48vw}.hero-sub{max-width:80vw!important}.quiz-cards{gap:8px}.quiz-card{padding:1.4vh .9vw;min-height:34vh}.model3d.small{opacity:.15}}
+@media(max-width:720px){.prep-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.quiz-cards{grid-template-columns:1fr}.quiz-card{min-height:0}.model-panel .model3d{min-height:130px}.model3d.hero{opacity:.22}}
+@media print{.model3d canvas{visibility:hidden}.model3d::before{content:"3D – vista en navegador";display:grid;place-items:center;position:absolute;inset:0;color:#fff}}
+@media(prefers-reduced-motion:reduce){.model3d canvas{cursor:default}}
+
+
+/* ===== FIX 3D con sentido ===== */
+.kbody{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.7fr);gap:1.6vw;align-items:stretch}
+.model3d.body{height:62vh;min-height:300px}
+.kbody .flip{min-height:17vh}
+.kbody .flip .ico{font-size:clamp(24px,2.6vw,42px)}
+.khgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:1.6vw;align-items:start}
+.model3d.hosp{height:56vh;min-height:280px}
+.khgrid .rv{padding:1.4vh 1vw}
+.khgrid .rv .em{font-size:clamp(22px,2.3vw,36px);margin-bottom:.4vh}
+.khgrid .rv .front{font-size:clamp(14px,1.4vw,22px)}
+.mlabel{position:absolute;top:12px;left:0;right:0;text-align:center;color:#bff;font-weight:900;font-size:clamp(12px,1.1vw,17px);letter-spacing:.04em;pointer-events:none}
+.q .txt,.quiz-card strong{color:#0b2340}
+.dark .q .txt{color:#0b2340}
+.model3d.xray{background:radial-gradient(ellipse at 50% 45%,rgba(120,190,255,.28),transparent 60%),linear-gradient(135deg,#071a33,#020812)}
+@media(max-height:780px){.model3d.body{height:58vh}.kbody .flip{min-height:15vh}.model3d.hosp{height:50vh}
+ #kq .q{padding:.8vh 1vw}#kq .q .txt{font-size:clamp(13px,1.35vw,20px)}#kq .q .opts{margin-top:.5vh}
+ .slide .box2 p{font-size:clamp(12px,1.15vw,17px)!important;line-height:1.35!important}.slide .ck{padding-top:.4vh;padding-bottom:.4vh}
+ .khgrid .rv{padding:.7vh .8vw}.khgrid .rv .em{font-size:22px}.khgrid{margin-top:1vh}}
+.khgrid .rv{padding:1.1vh .9vw}.khgrid .rv .em{margin-bottom:.2vh}
+
+/* ===== LESEVERSTEHEN ===== */
+.lgrid{display:grid;grid-template-columns:minmax(0,2.3fr) minmax(0,1fr);gap:1.8vw;align-items:start}
+.ltext{background:#fff;border:2px solid var(--line);border-radius:22px;padding:2.4vh 2vw;box-shadow:0 10px 30px rgba(10,40,65,.07)}
+.ltext p{font-size:clamp(15px,1.5vw,25px);line-height:1.6;font-weight:550;color:#102036;margin:0 0 1vh}
+.ltext p:last-child{margin-bottom:0}
+.ltext .gl{border-bottom:3px dotted #0e9891;cursor:pointer;transition:background .2s}
+.ltext .gl:hover{background:#e6fffb}
+.ltext .gl.seen{border-bottom-style:solid}
+.ltext .gl.act{background:#ffe08a;border-radius:4px}
+.ltext .gP,.ltext .gD,.ltext .gN{transition:background .35s,box-shadow .35s;border-radius:5px}
+.ltext.sP .gP{background:#c8f5e1;box-shadow:0 0 0 2px #c8f5e1}
+.ltext.sD .gD{background:#d4ebff;box-shadow:0 0 0 2px #d4ebff}
+.ltext.sN .gN{background:#ffd7b8;box-shadow:0 0 0 2px #ffd7b8;font-weight:800}
+.lpanel{display:flex;flex-direction:column}
+.ldict{background:#102036;color:#fff;border-radius:20px;padding:2vh 1.3vw;min-height:16vh;display:flex;flex-direction:column;justify-content:center}
+.ldict .lw{font-size:clamp(22px,2.4vw,38px);font-weight:900;color:#ffe08a;letter-spacing:-.02em;line-height:1.1}
+.ldict .lbase{font-size:clamp(13px,1.15vw,18px);font-weight:700;opacity:.8;margin-top:.4vh}
+.ldict .les{font-size:clamp(16px,1.55vw,25px);font-weight:800;margin-top:.8vh}
+.ldict.pop{animation:dictPop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes dictPop{from{transform:scale(.93);opacity:.4}}
+.lens{display:flex;flex-direction:column;gap:.7vh}
+.lchip{font:inherit;font-weight:900;font-size:clamp(13px,1.2vw,18px);padding:.9vh 1vw;border-radius:12px;border:2px solid #d6e8ec;background:#fff;color:#102036;cursor:pointer;text-align:left;transition:.2s}
+.lchip:hover{transform:translateX(3px)}
+.lchip::before{content:"○  "}.lchip.on::before{content:"●  "}
+.lchip.P.on{background:#c8f5e1;border-color:#16caa0}
+.lchip.D.on{background:#d4ebff;border-color:#37bafb}
+.lchip.N.on{background:#ffd7b8;border-color:#ff9a5f}
+.lqgrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:1.8vw;align-items:start}
+.lqcol{display:flex;flex-direction:column;gap:1vh}
+.lqcol .q{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5vh 1vw;padding:1.1vh 1.1vw}
+.lqcol .q .txt{flex:1 1 60%}
+.lqcol .q .opts{margin-top:0}
+.lqcol .q .why{width:100%;font-size:clamp(12px,1.05vw,16px);font-weight:800;color:#0f766e}
+.lqcol .q .why:empty{display:none}
+.lqcol .rv{padding:1.5vh 1.2vw}
+.lqcol .rv .front{font-size:clamp(14px,1.45vw,23px)}
+.quiz-card{min-height:40vh;padding:3vh 1.6vw}
+.quiz-card strong{font-size:clamp(18px,2.15vw,34px);line-height:1.3}
+.quiz-card .q-options button{font-size:clamp(15px,1.5vw,23px);padding:1vh 1.1vw}
+.quiz-card .q-explain{font-size:clamp(13px,1.2vw,19px)}
+.quiz-cards{margin-top:1vh}
+#kq .q .txt{font-size:clamp(15px,1.55vw,25px)}
+#kq .q{padding:1.2vh 1.2vw}
+@media(max-height:780px){#kq .q{padding:.6vh .9vw}#kq .q .txt{font-size:clamp(13px,1.3vw,19px)}#kq .q .opts{margin-top:.3vh}}
+@media(max-height:780px){.ltext{padding:1.6vh 1.5vw}.ltext p{font-size:clamp(14px,1.42vw,21px);line-height:1.5;margin-bottom:.6vh}.ldict{min-height:12vh}.lqcol .q{padding:.7vh .9vw}.lqcol .rv{padding:1vh 1vw}.lchip{padding:.6vh .8vw}}
+
+/* ===== PUNTOS ===== */
+.pts-dialog,.dict-dialog{position:fixed;inset:0;margin:auto!important;height:fit-content}
+.pts-dialog{width:min(860px,94vw);max-height:92vh;overflow:auto;border:none;border-radius:26px;padding:22px 26px;background:#0f1d2e;color:#fff;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.pts-dialog::backdrop{background:rgba(6,16,28,.55);backdrop-filter:blur(3px)}
+.pts-dialog button{font:inherit;cursor:pointer}
+.pts-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:14px}
+.pts-eyebrow{font-size:12px;letter-spacing:.18em;font-weight:900;color:#5eead4}
+.pts-head h2{font-size:30px;margin:2px 0 0;color:#fff}
+.pts-rw{display:flex;align-items:center;gap:6px;background:#17293f;border-radius:14px;padding:5px}
+.pts-rw span{font-size:12px;font-weight:800;opacity:.7;padding:0 6px;text-transform:uppercase;letter-spacing:.1em}
+.pts-rw button{border:0;border-radius:10px;padding:7px 13px;font-weight:900;background:transparent;color:#cfe;font-size:16px}
+.pts-rw button.on{background:#ffd166;color:#102036}
+.pts-teams{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pts-team{border-radius:20px;padding:12px 16px 14px;background:linear-gradient(160deg,#14b8a6,#0b7f86);text-align:center;border:3px solid transparent;transition:border-color .2s,transform .2s}
+.pts-team.dani{background:linear-gradient(160deg,#fb7185,#c2415d)}
+.pts-team.sel,.pts-row.sel{border-color:#ffd166;transform:translateY(-2px)}
+.pts-name{font:inherit;font-weight:900;font-size:19px;color:inherit;background:transparent;border:0;border-bottom:2px dashed rgba(255,255,255,.35);text-align:center;width:100%;padding:2px 4px;outline:none}
+.pts-name:focus{border-bottom-color:#ffd166;background:rgba(255,255,255,.08);border-radius:6px}
+.pts-team .pv{display:block;font-size:64px;font-weight:900;line-height:1.05;margin:4px 0 8px;font-variant-numeric:tabular-nums}
+.pv.flash{animation:pvFlash .7s cubic-bezier(.2,1.5,.4,1)}
+@keyframes pvFlash{0%{transform:scale(1.45);color:#ffd166;text-shadow:0 0 22px #ffd166}100%{transform:scale(1)}}
+.pts-btns{display:flex;gap:8px;justify-content:center}
+.pts-btns button,.pts-row button{border:0;border-radius:12px;padding:8px 14px;font-weight:900;font-size:16px;background:rgba(255,255,255,.18);color:#fff;transition:transform .12s}
+.pts-btns button.plus,.pts-row button.plus{background:#fff;color:#0f1d2e;min-width:64px}
+.pts-btns button:active,.pts-row button:active{transform:scale(.92)}
+.pts-sub{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 8px}
+.pts-sub b{font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:#9fdde0}
+.pts-add{display:flex;gap:8px}
+.pts-add input{font:inherit;font-size:16px;padding:8px 12px;border-radius:12px;border:2px solid #29425e;background:#0b1624;color:#fff;width:230px;outline:none}
+.pts-add input:focus{border-color:#5eead4}
+.pts-add button{border:0;border-radius:12px;padding:8px 14px;font-weight:900;background:#5eead4;color:#0f1d2e}
+.pts-list{display:flex;flex-direction:column;gap:6px;max-height:34vh;overflow:auto;padding:2px}
+.pts-row{display:grid;grid-template-columns:30px 1fr 64px auto auto auto;gap:8px;align-items:center;background:#17293f;border-radius:14px;padding:6px 10px;border:3px solid transparent}
+.pts-row .pts-name{text-align:left;font-size:17px;border-bottom-color:transparent}
+.pts-row .pts-name:hover{border-bottom-color:rgba(255,255,255,.25)}
+.pts-rank{font-weight:900;opacity:.5;text-align:center}
+.pts-row .pv{font-size:28px;font-weight:900;text-align:right;font-variant-numeric:tabular-nums;color:#ffd166}
+.pts-row .pts-del{background:transparent;color:#ff9fb0;padding:6px 8px}
+.pts-empty{opacity:.7;padding:14px;text-align:center;border:2px dashed #29425e;border-radius:14px}
+.pts-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.pts-keys{font-size:12px;opacity:.6;font-family:ui-monospace,Consolas,monospace}
+.pts-acts{display:flex;gap:6px}
+.pts-acts button{border:1px solid #29425e;background:#17293f;color:#fff;border-radius:11px;padding:7px 12px;font-weight:800}
+.pts-acts button:disabled{opacity:.35;cursor:default}
+.pts-msg{min-height:20px;margin:8px 0 0;text-align:center;font-weight:800;color:#5eead4}
+.pts-burst{position:fixed;transform:translate(-50%,-50%);font-weight:900;font-size:34px;color:#ffd166;pointer-events:none;animation:ptsUp .9s ease-out forwards;text-shadow:0 2px 12px rgba(0,0,0,.4)}
+@keyframes ptsUp{to{transform:translate(-50%,-160%);opacity:0}}
+#ptsHud{position:fixed;left:50%;transform:translateX(-50%);top:1.6vh;z-index:39;border:0;border-radius:999px;padding:6px 14px;font:inherit;font-weight:800;font-size:clamp(12px,.95vw,15px);background:rgba(15,29,46,.82);color:#fff;cursor:pointer;opacity:.55;transition:opacity .2s;white-space:nowrap}
+#ptsHud:hover{opacity:1}
+#ptsHud b{color:#ffd166;font-variant-numeric:tabular-nums}
+#ptsHud i{font-style:normal;opacity:.85}
+#ptsHud.flash{animation:hudFlash 1.2s ease-out}
+@keyframes hudFlash{0%{opacity:1;box-shadow:0 0 0 0 rgba(255,209,102,.8)}100%{opacity:.55;box-shadow:0 0 0 18px rgba(255,209,102,0)}}
+/* ===== DICCIONARIO ===== */
+.dict-dialog{border:0;padding:0;background:transparent;width:min(720px,94vw);max-height:92vh;overflow:visible;perspective:1400px}
+.dict-dialog::backdrop{background:rgba(7,13,25,.55);backdrop-filter:blur(4px)}
+.dict-dialog.in .dict-device{animation:devIn .55s cubic-bezier(.2,1.1,.3,1)}
+@keyframes devIn{from{transform:rotateX(24deg) rotateZ(-3deg) translateY(60px) scale(.9);opacity:0}}
+.dict-device{position:relative;overflow:hidden;background:linear-gradient(160deg,#16314d 0%,var(--ink) 55%,#0b1828 100%);border-radius:30px;padding:18px 20px 14px;color:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 40px 90px rgba(0,0,0,.45),0 0 0 2px rgba(0,213,192,.35);max-height:88vh;display:flex;flex-direction:column}
+.dict-device::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(90deg,var(--teal),var(--sky),var(--purple),var(--coral),var(--gold))}
+.dict-top{display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.16em;font-weight:900}
+.dict-led{width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 12px var(--teal);animation:led 2.4s infinite}
+@keyframes led{50%{opacity:.35}}
+.dict-brand{color:var(--teal)}
+.dict-count{margin-left:auto;color:#9fc3cc}
+.dict-x{border:0;background:rgba(255,255,255,.1);color:#fff;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px}
+.dict-x:hover{background:var(--coral)}
+.dict-screen{margin:12px 0 10px;background:#fff;border-radius:16px;padding:3px;box-shadow:0 0 0 3px rgba(0,213,192,.25)}
+.dict-screen:focus-within{box-shadow:0 0 0 3px var(--teal)}
+#dictQ{width:100%;box-sizing:border-box;font:inherit;font-size:clamp(20px,2vw,28px);font-weight:800;padding:11px 16px;border:0;border-radius:13px;background:transparent;color:var(--ink);outline:none;caret-color:var(--teal2)}
+#dictQ::placeholder{color:#9bb2ba}
+.dict-res{overflow:auto;display:flex;flex-direction:column;gap:8px;min-height:120px;padding-right:2px}
+.dc{background:var(--paper);color:var(--ink);border-radius:18px;padding:12px 16px;border-left:7px solid var(--teal)}
+.dc:has(.dc-art.der){border-left-color:var(--sky)}.dc:has(.dc-art.die){border-left-color:var(--coral)}.dc:has(.dc-art.das){border-left-color:var(--mint)}
+.dc.hit{animation:dictPop .35s cubic-bezier(.2,1.4,.4,1)}
+.dc-top{display:flex;align-items:center;gap:10px}
+.dc-w{font-size:clamp(22px,2.1vw,30px);font-weight:900;letter-spacing:-.01em}
+.dc-art{font-weight:900;font-size:16px;border-radius:9px;padding:3px 10px;color:#fff}
+.dc-art.der{background:var(--sky)}.dc-art.die{background:var(--coral)}.dc-art.das{background:var(--mint)}
+.dc-say{margin-left:auto;border:0;background:var(--teal2);color:#fff;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:16px}
+.dc-say:hover{background:var(--teal)}
+.dc-say.sm{margin-left:6px;width:26px;height:26px;font-size:12px;vertical-align:middle}
+.dc-say.off{opacity:.3}
+.dc-meta{font-size:14px;color:#5b7480;margin-top:2px;font-weight:600}
+.dc-es{font-size:clamp(17px,1.6vw,22px);font-weight:800;margin-top:4px;color:var(--teal2)}
+.dc-ex{font-size:15px;color:#334;margin-top:6px;font-style:italic;background:#fff;border-radius:10px;padding:5px 10px;display:inline-block}
+.dict-hint{color:#9fc3cc;font-size:15px;margin:6px 4px;font-weight:700}
+.dict-chips{display:flex;flex-wrap:wrap;gap:6px}
+.dict-chips button{border:0;background:rgba(0,213,192,.14);color:#dffaf6;border-radius:999px;padding:7px 14px;font:inherit;font-weight:800;cursor:pointer;transition:.15s}
+.dict-chips button:hover{background:var(--teal);color:var(--ink)}
+.dict-none{background:rgba(255,255,255,.06);border:2px dashed rgba(250,100,123,.5);border-radius:18px;padding:16px}
+.dn-t{font-size:20px;font-weight:900;color:var(--coral)}
+.dn-s{color:#9fc3cc;margin:4px 0 10px}
+.dict-none a{color:var(--gold);font-weight:800;text-decoration:none}
+.dict-none small{color:#9fc3cc;font-weight:600}
+.dc.online{border-left-color:var(--purple)}
+.dc-src{font-size:12px;font-weight:800;color:#7a6bb8;margin-top:6px}
+.dict-load{color:#cfe;font-weight:800;padding:18px 6px;display:flex;align-items:center;gap:6px}
+.dl-dot{width:9px;height:9px;border-radius:50%;background:var(--teal);animation:dl 1s infinite}
+.dl-dot:nth-child(2){animation-delay:.15s}.dl-dot:nth-child(3){animation-delay:.3s;margin-right:8px}
+@keyframes dl{50%{transform:translateY(-6px);opacity:.4}}
+.dict-foot{font-size:11px;color:#7fa3ad;text-align:center;margin-top:10px;letter-spacing:.06em;font-weight:700}
+@media(max-height:780px){.pts-dialog{padding:14px 18px}.pts-team .pv{font-size:46px}.pts-head h2{font-size:24px}.pts-list{max-height:28vh}.dc{padding:9px 13px}}
+@media(prefers-reduced-motion:reduce){.dict-dialog.in .dict-device,.pv.flash,#ptsHud.flash{animation:none}}
+@media print{#ptsHud{display:none}}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="timer" onclick="tgT()" title="Clic o T = iniciar/pausar">05:00</div>
+<canvas id="cf"></canvas>
+<div id="deck">
+<!-- 01 · PORTADA -->
+<section class="slide bg-navy dark" data-min="0–1" data-note="Portada. Mientras se sientan: «Wie geht&#39;s? Was hast du am Wochenende gemacht?» → ya están en Perfekt. Hoy: lectura, repaso exprés y vocabulario del hospital.">
+  <div class="model3d hero" data-scene="heart"><canvas aria-label="Corazón 3D que late al ritmo del electrocardiograma"></canvas></div><div class="cross pop-in" style="--i:2"></div>
+  <div class="eyebrow a"><span class="beat" style="font-size:1.6em;margin-right:.6em">🏥</span>Deutsch · Lektion 8 · 60 min</div>
+  <h1 class="a hero-front">IM<br>KRANKENHAUS</h1>
+  <svg class="ecg a" viewBox="0 0 1200 200" preserveAspectRatio="none">
+    <path class="ghost" d="M0 110 L260 110 L290 110 L310 80 L330 130 L350 20 L375 185 L395 110 L470 110 L495 90 L520 110 L700 110 L760 110 L780 80 L800 130 L820 20 L845 185 L865 110 L940 110 L965 90 L990 110 L1200 110"/>
+    <path d="M0 110 L260 110 L290 110 L310 80 L330 130 L350 20 L375 185 L395 110 L470 110 L495 90 L520 110 L700 110 L760 110 L780 80 L800 130 L820 20 L845 185 L865 110 L940 110 L965 90 L990 110 L1200 110"/>
+  </svg>
+  <p class="lead a hero-sub"><b>Lesen</b> · Wiederholung: <b>Dativ</b> · <b>Perfekt</b> · <b>Nebensätze</b> &nbsp;→&nbsp; <b style="color:var(--gold)">Neu: Krankenhaus</b></p>
+  <div class="row mt2 a">
+    <span class="chip">📖 Lesen</span><span class="chip">⚡ Dativ-Blitz</span><span class="chip">🔁 Wiederholung</span><span class="chip">🎮 Übungen</span><span class="chip">🫀 Der Körper</span><span class="chip">🏥 Im Krankenhaus</span><span class="chip">🚨 Notaufnahme</span><span class="chip">✍️ Schreiben</span>
+  </div>
+</section>
+
+<!-- 02 · LESEN -->
+<section class="slide bg-clinic" data-min="1–6" data-note="LESEN (5 min). 1) Lectura en silencio, 2 min (botón ⏱). 2) La lees tú en voz alta (o 🔊 si hay voz alemana). 3) Preguntan palabras → clic en las subrayadas y la traducción sale a la derecha. 4) Gafas de gramática: que encuentren ELLOS 3 Perfekt, 3 Dativ y los weil/dass/deshalb, y luego enciendes el color. Es el puente al repaso.">
+  <div class="eyebrow a">📖 Leseverstehen · A1–A2</div>
+  <h2 class="a">Leos verrückter Samstag 🚲</h2>
+  <div class="lgrid mt2">
+    <div class="ltext a" id="ltext">
+      <p>Letzten Samstag <span class="gP">ist</span> Leo um neun Uhr <span class="gP"><span class="gl" data-w="aufstehen · ist aufgestanden" data-es="levantarse">aufgestanden</span></span>. Er <span class="gP">hat</span> <span class="gD">mit seiner Schwester</span> <span class="gP"><span class="gl" data-w="frühstücken" data-es="desayunar">gefrühstückt</span></span> und dann <span class="gP">hat</span> er seinen Freund Tom <span class="gP"><span class="gl" data-w="anrufen · hat angerufen" data-es="llamar por teléfono">angerufen</span></span>. Die beiden <span class="gP">sind</span> <span class="gD">mit dem Fahrrad</span> <span class="gD">zum Park</span> <span class="gP">gefahren</span>, <span class="gN">weil</span> das <span class="gl" data-w="das Wetter" data-es="el tiempo (meteorológico)">Wetter</span> sehr schön <span class="gN">war</span>. Im Park <span class="gP">haben</span> sie Fußball <span class="gP">gespielt</span>.</p>
+      <p><span class="gD">Nach dem Spiel</span> hatte Leo <span class="gl" data-w="der Durst · Durst haben" data-es="la sed · tener sed">Durst</span>, <span class="gN">deshalb</span> <span class="gP">ist</span> er noch kurz <span class="gD">zum Kiosk</span> <span class="gP">gefahren</span>. Aber er <span class="gP">ist</span> zu schnell <span class="gP">gefahren</span> und <span class="gD">vom Fahrrad</span> <span class="gP"><span class="gl" data-w="fallen · ist gefallen" data-es="caerse">gefallen</span></span>! Sein Arm <span class="gP">hat</span> sehr <span class="gP"><span class="gl" data-w="wehtun · hat wehgetan" data-es="doler">wehgetan</span></span>. Tom <span class="gP">hat</span> <span class="gl" data-w="sofort" data-es="enseguida, inmediatamente">sofort</span> Leos Mutter <span class="gP">angerufen</span>. Sie <span class="gP">ist</span> <span class="gD">mit dem Auto</span> <span class="gP">gekommen</span> und zusammen <span class="gP">sind</span> sie <span class="gD">zum Krankenhaus</span> <span class="gP">gefahren</span>.</p>
+      <p>Dort <span class="gP">haben</span> sie zwei Stunden <span class="gP"><span class="gl" data-w="warten · hat gewartet" data-es="esperar">gewartet</span></span>. Die <span class="gl" data-w="die Ärztin" data-es="la médica">Ärztin</span> <span class="gP">hat</span> <span class="gP">gesagt</span>, <span class="gN">dass</span> Leos Arm <span class="gl" data-w="brechen → gebrochen" data-es="romper → roto">gebrochen</span> <span class="gN">ist</span>. Jetzt hat Leo einen <span class="gl" data-w="der Gips" data-es="la escayola">Gips</span> und kann zwei Wochen keinen Sport machen. Aber er ist nicht <span class="gl" data-w="traurig" data-es="triste">traurig</span>, <span class="gN">weil</span> seine Freunde ihn jeden Tag <span class="gN"><span class="gl" data-w="besuchen" data-es="visitar">besuchen</span></span>.</p>
+    </div>
+    <div class="lpanel a">
+      <div class="lbl">Wörterbuch</div>
+      <div class="ldict" id="ldict"><div class="lw">👆</div><div class="les">Klick auf ein unterstrichenes Wort</div></div>
+      <div class="lbl mt2">Grammatik-Brille 🔍</div>
+      <div class="lens">
+        <button class="lchip P" onclick="lens('P',this)">Perfekt</button>
+        <button class="lchip D" onclick="lens('D',this)">Dativ</button>
+        <button class="lchip N" onclick="lens('N',this)">weil · dass · deshalb</button>
+      </div>
+      <div class="row mt2"><button class="b t" onclick="setT(120);startT()">⏱ 2 min</button><button class="b o" onclick="readAloud()">🔊 Vorlesen</button></div>
+      <div class="tiny mt1" id="lmsg"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 · LESEN FRAGEN -->
+<section class="slide bg-sky dark" data-r="lReset" data-min="6–10" data-note="PREGUNTAS (4 min). Richtig/falsch: que lo justifiquen con la frase del texto antes de pulsar. W-Fragen: responden con frase COMPLETA (verbo al final tras weil/dass) y luego Espacio para girar. Si sobra tiempo: Bist du schon einmal vom Fahrrad gefallen? R reinicia.">
+  <div class="eyebrow a">📖 Leseverstehen · Fragen</div>
+  <div class="row a" style="justify-content:space-between"><h2>Hast du alles verstanden?</h2><div class="score" id="lScore">0 / 4</div></div>
+  <div class="lqgrid mt2">
+    <div>
+      <div class="lbl a">① Richtig oder falsch?</div>
+      <div class="lqcol" id="lq">
+        <div class="q a" data-a="R" data-why="✓ Richtig – um neun Uhr."><div class="txt">Leo ist um neun Uhr aufgestanden.</div><div class="opts"><button class="pick" data-v="R">richtig</button><button class="pick" data-v="F">falsch</button></div><div class="why"></div></div>
+        <div class="q a" data-a="F" data-why="✓ Falsch – mit dem Fahrrad."><div class="txt">Leo und Tom sind mit dem Bus zum Park gefahren.</div><div class="opts"><button class="pick" data-v="R">richtig</button><button class="pick" data-v="F">falsch</button></div><div class="why"></div></div>
+        <div class="q a" data-a="F" data-why="✓ Falsch – er hatte Durst."><div class="txt">Nach dem Spiel hatte Leo Hunger.</div><div class="opts"><button class="pick" data-v="R">richtig</button><button class="pick" data-v="F">falsch</button></div><div class="why"></div></div>
+        <div class="q a" data-a="R" data-why="✓ Richtig – zwei Stunden."><div class="txt">Im Krankenhaus haben sie zwei Stunden gewartet.</div><div class="opts"><button class="pick" data-v="R">richtig</button><button class="pick" data-v="F">falsch</button></div><div class="why"></div></div>
+      </div>
+      <p class="tiny a mt2" style="opacity:.85">💬 Und du? <b>Bist du schon einmal vom Fahrrad gefallen?</b></p>
+    </div>
+    <div>
+      <div class="lbl a">② Antworte mit einem ganzen Satz</div>
+      <div class="lqcol" id="lqw">
+        <div class="rv a" onclick="rv(this)"><div class="front">Warum sind Leo und Tom zum Park gefahren?</div><div class="back">Weil das Wetter sehr schön <span class="vb">war</span>.</div></div>
+        <div class="rv a" onclick="rv(this)"><div class="front">Wie ist Leos Mutter gekommen?</div><div class="back">Sie ist <b>mit dem Auto</b> gekommen.</div></div>
+        <div class="rv a" onclick="rv(this)"><div class="front">Was hat die Ärztin gesagt?</div><div class="back">Sie hat gesagt, dass Leos Arm gebrochen <span class="vb">ist</span>.</div></div>
+        <div class="rv a" onclick="rv(this)"><div class="front">Warum ist Leo nicht traurig?</div><div class="back">Weil seine Freunde ihn jeden Tag <span class="vb">besuchen</span>.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 · DATIV-BLITZ -->
+<section class="slide bg-purple dark" data-min="10–13" data-note="DATIV-BLITZ (3 min). Viene de la lectura: mit dem Fahrrad, nach dem Spiel, vom Fahrrad… Ritmo rápido: lees la tarjeta, 3 segundos para decir la forma, Espacio para girar. Si dudan, no expliques aún: la tabla viene justo después.">
+  <div class="eyebrow a">Warm-up · 3 Minuten</div>
+  <div class="row a" style="justify-content:space-between;align-items:flex-end"><h2>Dativ-Blitz ⚡</h2><span class="tiny" style="opacity:.8">3 Sekunden pro Karte! · Espacio = girar</span></div>
+  <div class="row a mt1" style="gap:.5vw"><span class="chip">aus</span><span class="chip">außer</span><span class="chip">bei</span><span class="chip">mit</span><span class="chip">nach</span><span class="chip">seit</span><span class="chip">von</span><span class="chip">zu</span><span class="chip">gegenüber</span><span class="chip" style="background:var(--gold);color:#3d2500;border-color:var(--gold)">+ DATIV</span></div>
+  <div class="grid g4 mt2" style="gap:1vw">
+    <div class="flip a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">mit ___ Bus</div><div class="t" style="opacity:.6">(der Bus)</div></div><div class="b"><div class="w">mit <u>dem</u> Bus</div><div class="t">der → dem</div></div></div></div><div class="flip a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">bei ___ Oma</div><div class="t" style="opacity:.6">(meine Oma)</div></div><div class="b"><div class="w">bei <u>meiner</u> Oma</div><div class="t">meine → meiner</div></div></div></div><div class="flip a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">aus ___ Haus</div><div class="t" style="opacity:.6">(das Haus)</div></div><div class="b"><div class="w">aus <u>dem</u> Haus</div><div class="t">das → dem</div></div></div></div><div class="flip a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">zu ___ Schule</div><div class="t" style="opacity:.6">(die Schule)</div></div><div class="b"><div class="w"><u>zur</u> Schule</div><div class="t">zu + der = zur</div></div></div></div><div class="flip a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">mit ___ Freunden</div><div class="t" style="opacity:.6">(die Freunde · Pl.)</div></div><div class="b"><div class="w">mit <u>den</u> Freunde<u>n</u></div><div class="t">Plural: den + -n</div></div></div></div><div class="flip a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">seit ___ Jahr</div><div class="t" style="opacity:.6">(ein Jahr)</div></div><div class="b"><div class="w">seit <u>einem</u> Jahr</div><div class="t">ein → einem</div></div></div></div><div class="flip a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">Das ist von ___.</div><div class="t" style="opacity:.6">(ich)</div></div><div class="b"><div class="w">Das ist von <u>mir</u>.</div><div class="t">ich → mir</div></div></div></div><div class="flip a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">Ich helfe ___.</div><div class="t" style="opacity:.6">(du)</div></div><div class="b"><div class="w">Ich helfe <u>dir</u>.</div><div class="t">helfen + Dativ</div></div></div></div>
+  </div>
+</section>
+
+<!-- 05 · REPASO DATIV -->
+<section class="slide bg-clinic" data-min="13–15" data-note="REPASO 1/3 · Dativ (2 min). Tapa la tabla y que te lo digan ellos: der→?, die→?, das→?, Plural→? Truco -m -r -m -n. Pronombres en voz alta y las 4 contracciones.">
+ <div class="eyebrow a">Wiederholung 1 · Dativ</div>
+ <h2 class="a">Wem? Wo? Woher? → <span style="color:#008b83">Dativ</span></h2>
+ <div class="grid g4 mt2">
+  <div class="formula a"><div class="from der">der</div><div class="arr">↓</div><div class="to">dem</div><div class="ex">mit <b>dem</b> Bus</div></div>
+  <div class="formula a"><div class="from die">die</div><div class="arr">↓</div><div class="to">der</div><div class="ex">bei <b>der</b> Oma</div></div>
+  <div class="formula a"><div class="from das">das</div><div class="arr">↓</div><div class="to">dem</div><div class="ex">aus <b>dem</b> Haus</div></div>
+  <div class="formula a"><div class="from" style="color:#ad67d7">die · Plural</div><div class="arr">↓</div><div class="to">den + n</div><div class="ex">mit <b>den</b> Freunde<b>n</b></div></div>
+ </div>
+ <div class="row a mt2" style="justify-content:center;gap:10px">
+  <span class="case-pill">ein → <b>einem</b> · eine → <b>einer</b></span><span class="case-pill">mein → <b>meinem</b> · meine → <b>meiner</b></span>
+ </div>
+ <div class="row a mt1" style="justify-content:center;gap:10px">
+  <span class="case-pill">ich → <b>mir</b></span><span class="case-pill">du → <b>dir</b></span><span class="case-pill">er → <b>ihm</b></span><span class="case-pill">sie → <b>ihr</b></span><span class="case-pill">wir → <b>uns</b></span><span class="case-pill">ihr → <b>euch</b></span><span class="case-pill">sie/Sie → <b>ihnen/Ihnen</b></span>
+ </div>
+ <div class="row a mt1" style="justify-content:center;gap:10px">
+  <span class="case-pill">bei dem → <b>beim</b></span><span class="case-pill">von dem → <b>vom</b></span><span class="case-pill">zu dem → <b>zum</b></span><span class="case-pill">zu der → <b>zur</b></span>
+ </div>
+ <div class="warnbox mt2 a">🧠 Truco: <b>-m · -r · -m · -n</b> &nbsp;(dem · der · dem · den) &nbsp;·&nbsp; <b>nach Hause</b> = a casa · <b>zu Hause</b> = en casa</div>
+</section>
+
+<!-- 06 · REPASO PERFEKT -->
+<section class="slide bg-sky dark" data-min="15–17" data-note="REPASO 2/3 · Perfekt (2 min). Espacio revela. Auxiliar en posición 2 y participio al FINAL. sein = movimiento A→B o cambio (+ bleiben, passieren). Un ejemplo de cada tipo de participio, sacado del texto de Leo si puede ser.">
+  <div class="eyebrow a">Wiederholung 2 · Perfekt</div>
+  <h2 class="a">Was hast du gemacht? ⏪</h2>
+  <div class="mt2 a"><div class="sent"><span class="tok">Ich</span><span class="tok v">habe</span><span class="tok">gestern mit meinem Bruder</span><span class="tok">Pizza</span><span class="tok p">gegessen.</span></div>
+   <div class="tiny mt1" style="opacity:.8">Hilfsverb auf Position 2 … Partizip ganz am Ende</div></div>
+  <div class="step grid g2 mt2">
+   <div class="box2"><div class="lbl">haben · casi todos</div><div class="lead">gemacht · gegessen · gesehen · geschrieben · gekauft · getrunken</div></div>
+   <div class="box2"><div class="lbl">sein · A → B / cambio</div><div class="lead">gefahren · gegangen · gekommen · gefallen<br><span style="opacity:.85">+ geblieben · passiert · gewesen</span></div></div>
+  </div>
+  <div class="step grid g4 mt2">
+   <div class="box2"><div class="lbl">ge- … -t</div><div class="lead">machen → <b>gemacht</b></div></div>
+   <div class="box2"><div class="lbl">ge- … -en</div><div class="lead">essen → <b>gegessen</b></div></div>
+   <div class="box2"><div class="lbl">trennbar</div><div class="lead">auf|stehen → <b>aufgestanden</b></div></div>
+   <div class="box2"><div class="lbl">ohne ge-</div><div class="lead">passieren → <b>passiert</b><br>vergessen → <b>vergessen</b></div></div>
+  </div>
+</section>
+
+<!-- 07 · REPASO NEBENSÄTZE -->
+<section class="slide bg-clinic" data-min="17–19" data-note="REPASO 3/3 · Nebensätze (2 min). Tapa la columna derecha y que digan la regla. Todo al final MENOS deshalb (posición 2). Última fila: Perfekt en subordinada → el auxiliar va lo ÚLTIMO.">
+  <div class="eyebrow a">Wiederholung 3 · Nebensätze</div>
+  <h2 class="a">Wo steht das Verb? 🧭</h2>
+  <table class="sum mt1">
+    <tr class="a"><td><span class="k weil">weil</span></td><td>Ich bin müde, weil ich schlecht geschlafen <span class="vb">habe</span>.</td><td class="rule" style="color:var(--sky)">Verb → Ende</td></tr>
+    <tr class="a"><td><span class="k obwohl">obwohl</span></td><td>Ich gehe raus, obwohl es <span class="vb">regnet</span>.</td><td class="rule" style="color:var(--orange)">Verb → Ende</td></tr>
+    <tr class="a"><td><span class="k dass">dass</span></td><td>Ich glaube, dass er krank <span class="vb">ist</span>.</td><td class="rule" style="color:var(--teal2)">Verb → Ende</td></tr>
+    <tr class="a"><td><span class="k wenn">wenn</span></td><td>Ruf mich an, wenn du Zeit <span class="vb">hast</span>.</td><td class="rule" style="color:var(--pink)">Verb → Ende</td></tr>
+    <tr class="a"><td><span class="k deshalb">deshalb</span></td><td>Es regnet. Deshalb <span class="vb">bleibe</span> ich zu Hause.</td><td class="rule" style="color:var(--purple)">Verb → Pos. 2</td></tr>
+    <tr class="a"><td>⭐ <span class="k wenn">Wenn…</span></td><td>Wenn ich Zeit <span class="vb">habe</span>, <span class="vb">spiele</span> ich Fußball.</td><td class="rule" style="color:var(--coral)">Verb , Verb</td></tr>
+    <tr class="a"><td>⭐ + Perfekt</td><td>…, weil ich den Bus verpasst <span class="vb">habe</span>.</td><td class="rule" style="color:var(--coral)">Hilfsverb → Ende</td></tr>
+  </table>
+</section>
+
+<!-- 08 · ÜBUNG DATIV -->
+<section class="slide bg-sky dark" data-r="dativPrepReset" data-min="19–23" data-note="EJERCICIO DATIV (9 · 3 niveles). Nivel 1: ¿qué preposición? Nivel 2: ¿qué artículo? (que digan antes el género). Nivel 3: mezcla con aus y zum. Los que acierten → P y punto. R reinicia.">
+ <div class="eyebrow a">Übung 1 · Dativ</div>
+ <h2 class="a">Präposition oder Artikel?</h2>
+ <div class="quiz-shell a">
+  <div class="quiz-progress"><span class="quiz-page" id="prepPage"></span><span class="quiz-score" id="prepScore">0 / 9</span></div>
+  <div class="quiz-cards" id="prepQuiz"></div>
+  <div class="quiz-switch"><button class="b o" onclick="dativNav('prep',-1)">← Zurück</button><button class="b g" onclick="dativNav('prep',1)">Weiter →</button><button class="b o" onclick="dativPrepReset()">↺ Neustart</button></div>
+ </div>
+</section>
+
+<!-- 09 · ÜBUNG PERFEKT -->
+<section class="slide bg-teal dark" data-r="perfReset" data-min="23–27" data-note="EJERCICIO PERFEKT (9 · 3 niveles). ¿haben o sein? y participio. Antes de pulsar, que digan el infinitivo. Ojo: bleiben va con SEIN; be-/ver- sin ge-; trennbar: an-ge-rufen. R reinicia.">
+ <div class="eyebrow a">Übung 2 · Perfekt</div>
+ <h2 class="a">haben oder sein? Welches Partizip?</h2>
+ <div class="quiz-shell a">
+  <div class="quiz-progress"><span class="quiz-page" id="perfPage"></span><span class="quiz-score" id="perfScore">0 / 9</span></div>
+  <div class="quiz-cards" id="perfQuiz"></div>
+  <div class="quiz-switch"><button class="b o" onclick="dativNav('perf',-1)">← Zurück</button><button class="b g" onclick="dativNav('perf',1)">Weiter →</button><button class="b o" onclick="perfReset()">↺ Neustart</button></div>
+ </div>
+</section>
+
+<!-- 10 · ÜBUNG NEBENSÄTZE -->
+<section class="slide bg-clinic" data-min="27–31" data-note="EJERCICIO NEBENSÄTZE (8). Cada uno lee la frase ENTERA en voz alta y elige. Si fallan, que expliquen por qué antes de reintentar. Con deshalb: verbo en posición 2.">
+  <div class="eyebrow a">Übung 3 · Nebensätze</div>
+  <div class="row a" style="justify-content:space-between"><h2>weil · obwohl · dass · wenn · deshalb?</h2><div class="score" id="kScore">0 / 8</div></div>
+  <div class="grid g2 mt2" id="kq" style="gap:1vh 1.2vw"></div>
+  <div class="row mt2 a"><button class="b w sm" onclick="kReset()">↺ Nochmal</button></div>
+</section>
+
+<!-- 11 · KÖRPER -->
+<section class="slide bg-clinic" data-min="31–34" data-note="NUEVO VOCABULARIO (empieza la parte del hospital). Clic/Espacio en una tarjeta → la parte se ilumina en el cuerpo 3D (para Rücken, el modelo se gira solo). Señala tu propio cuerpo, ellos repiten. Truco: casi todo es DER.">
+  <div class="eyebrow a">✨ Neu · Wortschatz 1</div>
+  <div class="row a" style="justify-content:space-between;align-items:flex-end"><h2>Der Körper 🫀</h2><div class="tiny"><b class="der">der</b> · <b class="die">die</b> · <b class="das">das</b> &nbsp;·&nbsp; clic = se ilumina</div></div>
+  <div class="kbody mt2">
+    <div class="model3d body a" data-scene="body"><canvas aria-label="Cuerpo humano 3D: se ilumina la parte elegida"></canvas></div>
+    <div class="grid g4" style="gap:.9vw">
+      <div class="flip a" data-part="kopf" data-label="der Kopf" onclick="rv(this)"><div class="in"><div class="f"><div class="ico">🧠</div><div class="w"><span class="der">der</span> Kopf</div></div><div class="b"><div class="w">la cabeza</div></div></div></div>
+      <div class="flip a" data-part="auge" data-label="das Auge" onclick="rv(this)"><div class="in"><div class="f"><div class="ico">👁️</div><div class="w"><span class="das">das</span> Auge</div></div><div class="b"><div class="w">el ojo</div><div class="t">pl. die Augen</div></div></div></div>
+      <div class="flip a" data-part="ohr" data-label="das Ohr" onclick="rv(this)"><div class="in"><div class="f"><div class="ico">👂</div><div class="w"><span class="das">das</span> Ohr</div></div><div class="b"><div class="w">la oreja</div><div class="t">pl. die Ohren</div></div></div></div>
+      <div class="flip a" data-part="nase" data-label="die Nase" onclick="rv(this)"><div class="in"><div class="f"><div class="ico">👃</div><div class="w"><span class="die">die</span> Nase</div></div><div class="b"><div class="w">la nariz</div></div></div></div>
+      <div class="flip a" data-part="zahn" data-label="der Zahn" onclick="rv(this)"><div class="in"><div class="f"><div class="ico">🦷</div><div class="w"><span class="der">der</span> Zahn</div></div><div class="b"><div class="w">el diente</div><div class="t">pl. die Zähne</div></div></div></div>
+      <div class="flip a" data-part="hals" data-label="der Hals" onclick="rv(this)"><div class="in"><div class="f"><div class="ico">🧣</div><div class="w"><span class="der">der</span> Hals</div></div><div class="b"><div class="w">cuello / garganta</div></div></div></div>
+      <div class="flip a" data-part="arm" data-label="der Arm" onclick="rv(this)"><div class="in"><div class="f"><div class="ico">💪</div><div class="w"><span class="der">der</span> Arm</div></div><div class="b"><div class="w">el brazo</div></div></div></div>
+      <div class="flip a" data-part="hand" data-label="die Hand" onclick="rv(this)"><div class="in"><div class="f"><div class="ico">✋</div><div class="w"><span class="die">die</span> Hand</div></div><div class="b"><div class="w">la mano</div><div class="t">pl. die Hände</div></div></div></div>
+      <div class="flip a" data-part="bauch" data-label="der Bauch" onclick="rv(this)"><div class="in"><div class="f"><div class="ico">🫃</div><div class="w"><span class="der">der</span> Bauch</div></div><div class="b"><div class="w">la barriga</div></div></div></div>
+      <div class="flip a" data-part="ruecken" data-label="der Rücken" onclick="rv(this)"><div class="in"><div class="f"><div class="ico">🎒</div><div class="w"><span class="der">der</span> Rücken</div></div><div class="b"><div class="w">la espalda</div></div></div></div>
+      <div class="flip a" data-part="bein" data-label="das Bein" onclick="rv(this)"><div class="in"><div class="f"><div class="ico">🦵</div><div class="w"><span class="das">das</span> Bein</div></div><div class="b"><div class="w">la pierna</div></div></div></div>
+      <div class="flip a" data-part="fuss" data-label="der Fuß" onclick="rv(this)"><div class="in"><div class="f"><div class="ico">🦶</div><div class="w"><span class="der">der</span> Fuß</div></div><div class="b"><div class="w">el pie</div><div class="t">pl. die Füße</div></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 · BESCHWERDEN -->
+<section class="slide bg-coral dark" data-r="pNext" data-min="34–37" data-note="Dos formas de decir que duele: Mir tut… weh (¡Dativ: mir!) y …schmerzen. Luego la ruleta (R): sale una parte del cuerpo → la dicen de las DOS formas. Plural: Mir tun die Füße weh.">
+  <div class="eyebrow a">✨ Neu · Wortschatz 2 · Beschwerden</div>
+  <h2 class="a">Was fehlt Ihnen? 🤒</h2>
+  <div class="split mt2" style="align-items:start">
+    <div>
+      <div class="box2 a"><div class="lbl">Forma 1 · Dativ: mir / dir / ihm</div>
+        <div class="lead"><b>Mir tut</b> der Kopf <b>weh</b>.</div>
+        <div class="lead"><b>Mir tun</b> die Füße <b>weh</b>. <span class="tiny">(plural)</span></div></div>
+      <div class="box2 a mt1"><div class="lbl">Forma 2 · parte + Schmerzen</div>
+        <div class="lead">Ich habe <b>Kopf</b>schmerzen · <b>Bauch</b>schmerzen · <b>Hals</b>schmerzen</div></div>
+      <div class="box2 a mt1"><div class="lbl">Además</div>
+        <div class="lead">Ich habe Fieber 🌡️ · Husten 😷 · Schnupfen 🤧</div>
+        <div class="lead">Mir ist schlecht 🤢 · Mir ist schwindelig 😵</div></div>
+    </div>
+    <div class="stage a" id="pBox">
+      <div class="big" id="pEm">🎰</div>
+      <div class="ttl" id="pTx">Wo tut es weh?</div>
+      <div class="sol" id="pSol"></div>
+      <div class="row" style="justify-content:center">
+        <button class="b g" onclick="pNext()">🎲 Körperteil (R)</button>
+        <button class="b o" onclick="pSol()">Lösung</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 · IM KRANKENHAUS -->
+<section class="slide bg-clinic" data-min="37–40" data-note="Vocabulario del hospital. El modelo 3D es «das Krankenhaus» con «der Krankenwagen» delante: arrástralo y pregunta Was ist das? Luego tú dices la palabra, ellos adivinan por el emoji, clic para confirmar. Clave: Notaufnahme, Röntgenbild, Rezept, Tablette.">
+  <div class="eyebrow a">✨ Neu · Wortschatz 3</div>
+  <h2 class="a">Im Krankenhaus 🏥</h2>
+  <div class="khgrid mt2">
+  <div class="model3d hosp a" data-scene="hospital"><canvas aria-label="Hospital 3D con ambulancia"></canvas><div class="mlabel">das Krankenhaus · der Krankenwagen</div></div>
+  <div class="grid g3" style="gap:.8vw">
+    <div class="rv a" onclick="rv(this)"><span class="em">🚨</span><div class="front"><span class="die">die</span> Notaufnahme</div><div class="back">urgencias</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">🚑</span><div class="front"><span class="der">der</span> Krankenwagen</div><div class="back">la ambulancia</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">👩‍⚕️</span><div class="front"><span class="der">der</span> Arzt / <span class="die">die</span> Ärztin</div><div class="back">el médico / la médica</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">🩻</span><div class="front"><span class="das">das</span> Röntgenbild</div><div class="back">la radiografía</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">🦴</span><div class="front"><span class="der">der</span> Gips</div><div class="back">la escayola</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">💉</span><div class="front"><span class="die">die</span> Spritze</div><div class="back">la inyección</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">📝</span><div class="front"><span class="das">das</span> Rezept</div><div class="back">la receta</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">💊</span><div class="front"><span class="die">die</span> Tablette</div><div class="back">la pastilla</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">⚕️</span><div class="front"><span class="die">die</span> Apotheke</div><div class="back">la farmacia</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">💳</span><div class="front"><span class="die">die</span> Versicherungs&shy;karte</div><div class="back">la tarjeta sanitaria</div></div>
+  </div>
+  </div>
+</section>
+
+<!-- 14 · UNTERSUCHUNG -->
+<section class="slide bg-clinic" data-min="40–42" data-note="Qué hace la médica. Cada modelo = una acción: abhören (el corazón late), röntgen (el hueso tiene una fractura roja → gebrochen), verschreiben (la pastilla). Que repitan la frase con Sie: Sie hört das Herz ab. Luego: Und was macht der Apotheker?">
+  <div class="eyebrow a">✨ Neu · Wortschatz 4</div>
+  <h2 class="a">Was macht die Ärztin? 🩺</h2>
+  <div class="grid g3 mt2">
+    <div class="model-panel a"><div class="model3d" data-scene="heart"><canvas aria-label="Corazón 3D latiendo"></canvas></div><strong>Sie hört das Herz ab.</strong><p>abhören · auscultar · <b>das Herz</b> = el corazón</p></div>
+    <div class="model-panel a"><div class="model3d xray" data-scene="bone"><canvas aria-label="Hueso 3D con fractura en rayos X"></canvas></div><strong>Sie macht ein Röntgenbild.</strong><p>Der Knochen ist <b>gebrochen</b> · el hueso está roto</p></div>
+    <div class="model-panel a"><div class="model3d" data-scene="pill"><canvas aria-label="Cápsula 3D"></canvas></div><strong>Sie verschreibt Tabletten.</strong><p>verschreiben · recetar · <b>das Rezept</b></p></div>
+  </div>
+  <div class="row mt2 a" style="justify-content:center"><span class="chip">untersuchen · examinar</span><span class="chip">messen · medir (Fieber)</span><span class="chip">eine Spritze geben · poner una inyección</span></div>
+</section>
+
+<!-- 15 · WORTSCHATZ-CHECK -->
+<section class="slide bg-purple dark" data-min="42–44" data-note="Comprobación del vocabulario nuevo + Dativ. Responden antes de pulsar. Con P das puntos por equipos.">
+  <div class="eyebrow a">Wortschatz-Check</div>
+  <div class="row a" style="justify-content:space-between"><h2>Medizin-Check</h2><span class="mini-score" id="hospitalScore">0 / 6</span></div>
+  <p class="tiny a">Wähle die richtige Antwort · Elige la respuesta correcta</p>
+  <div class="mini-exercise" id="hospitalExercise">
+    <div class="q a"><div class="txt">Mir ___ die Füße weh.</div><div class="opts"><button class="pick" data-answer="tun">tun</button><button class="pick" data-answer="tut">tut</button></div></div>
+    <div class="q a"><div class="txt">Ich fahre mit ___ Krankenwagen.</div><div class="opts"><button class="pick" data-answer="den">den</button><button class="pick" data-answer="dem">dem</button></div></div>
+    <div class="q a"><div class="txt">Die Ärztin macht ein ___ von meinem Arm.</div><div class="opts"><button class="pick" data-answer="Röntgenbild">Röntgenbild</button><button class="pick" data-answer="Rezept">Rezept</button></div></div>
+    <div class="q a"><div class="txt">Ich hole die Tabletten in ___ Apotheke.</div><div class="opts"><button class="pick" data-answer="dem">dem</button><button class="pick" data-answer="der">der</button></div></div>
+    <div class="q a"><div class="txt">Was bedeutet „die Notaufnahme“?</div><div class="opts"><button class="pick" data-answer="urgencias">urgencias</button><button class="pick" data-answer="farmacia">farmacia</button></div></div>
+    <div class="q a"><div class="txt">Mein Arm ist gebrochen. Ich bekomme ___.</div><div class="opts"><button class="pick" data-answer="eine Spritze">eine Spritze</button><button class="pick" data-answer="einen Gips">einen Gips</button></div></div>
+  </div>
+  <p id="hospitalFeedback" class="tiny" style="min-height:1.4em;margin-top:1.2vh"></p>
+</section>
+
+<!-- 16 · ÄRZTIN GESAGT -->
+<section class="slide bg-mint dark" data-min="44–46" data-note="dass + sollen para contar lo que ha dicho la médica. «soll» = debo (porque otro lo dice). Que lo transformen ellos antes del clic.">
+  <div class="eyebrow a">dass + sollen</div>
+  <h2 class="a">Was hat die Ärztin gesagt? 👩‍⚕️</h2>
+  <p class="lead a mt1">Die Ärztin sagt, <span class="k inv dass">dass</span> ich … <span class="vb">soll</span>. &nbsp;<span class="tiny" style="opacity:.8">soll = debo (porque otro lo dice)</span></p>
+  <div class="grid g2 mt3">
+    <div class="rv a" onclick="rv(this)"><span class="em">💧</span><div class="front">„Trinken Sie viel Wasser!"</div><div class="back">Sie sagt, dass ich viel Wasser trinken <span class="vb">soll</span>.</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">🛏️</span><div class="front">„Bleiben Sie drei Tage im Bett!"</div><div class="back">Sie sagt, dass ich drei Tage im Bett bleiben <span class="vb">soll</span>.</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">💊</span><div class="front">„Nehmen Sie zweimal am Tag eine Tablette!"</div><div class="back">Sie sagt, dass ich zweimal am Tag eine Tablette nehmen <span class="vb">soll</span>.</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">⚽</span><div class="front">„Machen Sie zwei Wochen keinen Sport!"</div><div class="back">Sie sagt, dass ich zwei Wochen keinen Sport machen <span class="vb">soll</span>.</div></div>
+  </div>
+</section>
+
+<!-- 17 · BOSS -->
+<section class="slide bg-navy dark" data-r="caseNext" data-min="46–51" data-note="FINAL BOSS (6 min). Tú eres el médico: Was ist passiert? · Wo tut es genau weh? · Seit wann? · Wie sind Sie hergekommen? (→ mit dem…) · Sie müssen… Marca la misión en directo.">
+  <div class="eyebrow a">Final Boss 👑 · Rollenspiel</div>
+  <div class="split" style="align-items:start">
+    <div>
+      <h2 class="a">In der Notaufnahme 🚨</h2>
+      <div class="tiny a mt1" style="opacity:.8">👩‍⚕️ Profe = Arzt / Ärztin · 🧑 Alumno = Patient</div>
+      <div class="mission a mt2">
+        <div class="lbl" style="color:var(--gold);opacity:1">🎯 Dein Fall</div>
+        <div class="txt" id="caseTx">Zieh einen Fall!</div>
+      </div>
+      <div class="row a mt2">
+        <button class="b g" onclick="caseNext()">🎲 Fall ziehen (R)</button>
+        <button class="b o" onclick="setT(180);startT()">⏱ 3 min</button>
+      </div>
+      <div class="mt2 a" style="display:flex;flex-direction:column;gap:.7vh" id="hints">
+        <div class="hint" onclick="rv(this)"><div class="hl">HINT 1 · Problem</div><div class="hv">…</div></div>
+        <div class="hint" onclick="rv(this)"><div class="hl">HINT 2 · weil / obwohl</div><div class="hv">…</div></div>
+        <div class="hint" onclick="rv(this)"><div class="hl">HINT 3 · Frage mit wenn</div><div class="hv">…</div></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.8vh" id="mis">
+      <div class="lbl a">Mission · marca en directo</div>
+      <div class="ck a" onclick="ck(this)"><div class="box">✓</div>👋 Begrüßen + „Mir tut … weh"</div>
+      <div class="ck a" onclick="ck(this)"><div class="box">✓</div>⏪ Erzählen, was passiert ist (Perfekt)</div>
+      <div class="ck a" onclick="ck(this)"><div class="box">✓</div>💬 Einen Grund geben: <span class="k weil">weil</span></div>
+      <div class="ck a" onclick="ck(this)"><div class="box">✓</div>⚡ <span class="k obwohl">obwohl</span> oder <span class="k deshalb">deshalb</span></div>
+      <div class="ck a" onclick="ck(this)"><div class="box">✓</div>❓ Eine Frage mit <span class="k wenn">wenn</span></div>
+      <div class="ck a" onclick="ck(this)"><div class="box">✓</div>👂 „Sie sagen, <span class="k dass">dass</span> ich … soll."</div>
+    </div>
+  </div>
+</section>
+
+<!-- 18 · SCHREIBEN -->
+<section class="slide bg-clinic" data-min="51–59" data-note="TEXTO FINAL (7–8 min). Pon el temporizador y pasea corrigiendo. Pueden inspirarse en la historia de Leo, pero con SU historia. Al terminar, cada uno lee 2 frases y el otro pregunta «Warum?».">
+  <div class="eyebrow a">Arbeitsphase · Schreiben ✍️</div>
+  <div class="split" style="align-items:start">
+    <div>
+      <h2 class="a">Mein Tag in der Notaufnahme</h2>
+      <p class="lead a mt1">Escribe <b>7–9 frases</b> (en Perfekt) sobre una visita al hospital — real o inventada.</p>
+      <div class="mt2" style="display:flex;flex-direction:column;gap:.7vh">
+        <div class="ck a" onclick="ck(this)"><div class="box">✓</div>1–2 × <span class="k weil">weil</span></div>
+        <div class="ck a" onclick="ck(this)"><div class="box">✓</div>1 × <span class="k obwohl">obwohl</span></div>
+        <div class="ck a" onclick="ck(this)"><div class="box">✓</div>1 × <span class="k dass">dass</span> + 1 × <span class="k wenn">wenn</span></div>
+        <div class="ck a" onclick="ck(this)"><div class="box">✓</div>1 × <span class="k deshalb">deshalb / deswegen</span> + 2 × <b>Dativ-Präposition</b></div>
+        <div class="ck a" onclick="ck(this)"><div class="box">✓</div>⭐ 1 frase que empiece por <b>Wenn…</b> o <b>Weil…</b></div>
+      </div>
+      <div class="row mt2 a">
+        <button class="b t" onclick="setT(420);startT()">⏱ 7 min</button>
+        <button class="b w" onclick="setT(600);startT()">⏱ 10 min</button>
+      </div>
+    </div>
+    <div class="box2 a">
+      <div class="lbl">Wortkiste</div>
+      <div><span class="chip">bin … gefallen</span><span class="chip">bin … hingefallen</span><span class="chip">bin … gefahren</span>
+        <span class="chip">habe mir … gebrochen</span><span class="chip">hat … wehgetan</span><span class="chip">habe … gewartet</span>
+        <span class="chip">hat … gesagt</span><span class="chip">habe … bekommen</span><span class="chip">die Notaufnahme</span>
+        <span class="chip">das Röntgenbild</span><span class="chip">der Gips</span><span class="chip">die Tablette</span></div>
+      <div class="lbl mt2">Modelo</div>
+      <p style="font-size:clamp(13px,1.35vw,20px);font-weight:600;line-height:1.55">Letzten Samstag <b>bin</b> ich vom Fahrrad <b>gefallen</b>, <span class="k weil">weil</span> ich zu schnell gefahren bin. Mein Arm hat sehr wehgetan. <span class="k deshalb">Deshalb</span> <b>bin</b> ich in die Notaufnahme <b>gefahren</b>. Ich habe zwei Stunden gewartet, <span class="k obwohl">obwohl</span> es sehr wehgetan hat. Die Ärztin hat gesagt, <span class="k dass">dass</span> mein Arm gebrochen ist. <span class="k wenn">Wenn</span> es wehtut, soll ich eine Tablette nehmen.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 19 · FIN -->
+<section class="slide bg-mint dark" data-min="59–60" data-note="Cierre (1 min): que marquen lo que ya dominan. Lo no marcado = repaso de la próxima clase. Explica los deberes.">
+  <div class="eyebrow a">Heute kann ich…</div>
+  <h2 class="a">Gute Besserung! 🎉</h2>
+  <div class="grid g2 mt3" style="gap:1vh 1vw" id="final" data-party="1">
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>einen Text lesen und verstehen 📖</div>
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>sagen, wo es wehtut</div>
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>erzählen, was passiert ist (Perfekt)</div>
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>mit <b>weil</b> und <b>obwohl</b> sprechen</div>
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>mit <b>dass</b> sagen, was der Arzt sagt</div>
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>mit <b>wenn</b> Bedingungen sagen</div>
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>mindestens 2 Dativ-Präpositionen korrekt benutzen</div>
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div><b>deshalb</b>: Verb auf Position 2</div>
+  </div>
+  <div class="box2 mt3 a"><div class="lbl">Hausaufgabe 📝</div>
+    <div class="lead">WhatsApp an deinen Lehrer: <b>Warum warst du nicht in der Schule?</b> 7 Sätze mit weil · dass · wenn · deshalb + 2 Präpositionen mit Dativ 📱</div></div>
+</section>
+
+</div>
+
+<div id="nav"><button class="nb" onclick="go(i-1)">←</button><button class="nb" onclick="go(i+1)">→</button></div>
+<div id="hint">← → diapositivas · Espacio revelar · R reiniciar/azar · T reloj · N notas · P puntos · D diccionario · F pantalla</div>
+<div id="num">1 / 19</div>
+<div id="notes"></div>
+
+<dialog id="teamsDialog" class="pts-dialog">
+ <div class="pts-head"><div><div class="pts-eyebrow">PUNKTE · tecla P</div><h2>Punktestand 🏆</h2></div>
+  <div class="pts-rw" role="group" aria-label="Premio"><span>Premio</span><button data-rw="1">+1</button><button data-rw="5">+5</button><button data-rw="10">+10</button></div></div>
+ <div class="pts-teams" id="ptsTeams"></div>
+ <div class="pts-sub"><b>Alumnos</b><form id="ptsAdd" class="pts-add"><input id="ptsNew" placeholder="Nombre del alumno…" maxlength="24" autocomplete="off"><button type="submit">+ Añadir</button></form></div>
+ <div class="pts-list" id="ptsList"></div>
+ <div class="pts-foot"><span class="pts-keys">↑↓ elegir · Enter +premio · ⌫ −1 · 1 / 5 / 0 = premio +1 / +5 / +10 · Esc cerrar</span>
+  <span class="pts-acts"><button id="undoTeam" onclick="undoTeamPoint()">↶ Deshacer</button><button onclick="resetTeamPoints()">Poner a cero</button><button onclick="toggleTeamDialog()">Cerrar</button></span></div>
+ <p id="teamMessage" class="pts-msg"></p>
+</dialog>
+<button id="ptsHud" onclick="toggleTeamDialog()" title="Puntos (P)"></button>
+<dialog id="dictDialog" class="dict-dialog" aria-label="Diccionario">
+ <div class="dict-device">
+  <div class="dict-top"><span class="dict-led"></span><span class="dict-brand">WÖRTERBUCH · DE ⇄ ES</span><span class="dict-count" id="dictCount"></span><button class="dict-x" onclick="closeDict()" aria-label="Cerrar">✕</button></div>
+  <div class="dict-screen">
+   <input id="dictQ" type="search" placeholder="Palabra en alemán o en español…" autocomplete="off" spellcheck="false" aria-label="Buscar palabra">
+  </div>
+  <div class="dict-res" id="dictRes" aria-live="polite"></div>
+  <div class="dict-foot">Enter buscar · Esc cerrar · glosario de clase sin internet · resto de palabras online</div>
+ </div>
+</dialog>
+
+<script>
+/* ================= NAVEGACIÓN ================= */
+const S=[...document.querySelectorAll('#deck > section.slide')];let i=0;
+function go(n){
+  if(n<0||n>=S.length)return;
+  try{speechSynthesis.cancel()}catch(e){}
+  const dir=n>=i?'92%':'8%';
+  S[n].style.setProperty('--cx',dir);
+  S[i].classList.remove('on');
+  i=n;S[i].classList.add('on');S[i].scrollTop=0;
+  S[i].querySelectorAll('.a,.pop-in').forEach((e,k)=>{if(!e.style.getPropertyValue('--i'))e.style.setProperty('--i',k)});
+  document.getElementById('num').textContent=(i+1)+' / '+S.length;
+  document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+  document.getElementById('notes').innerHTML='<b>⏱ min '+(S[i].dataset.min||'')+'</b> &nbsp;·&nbsp; '+(S[i].dataset.note||'');
+}
+function rv(e){e.classList.toggle('open');if(e.dataset&&e.dataset.part&&e.classList.contains('open'))bodyHL(e.dataset.part,e.dataset.label)}
+document.querySelectorAll('.step').forEach(s=>s.addEventListener('click',()=>s.classList.add('show')));
+/* índice de animación de fichas */
+document.querySelectorAll('.sent').forEach(s=>s.querySelectorAll('.tok').forEach((t,k)=>t.style.setProperty('--t',k)));
+/* fondos flotantes */
+S.forEach(s=>{const o=document.createElement('div');o.className='orbs';
+  for(let k=0;k<9;k++){const sp=document.createElement('span');sp.textContent=k%3?'+':'✚';
+    sp.style.cssText=`left:${Math.random()*95}%;top:${Math.random()*90}%;font-size:${30+Math.random()*90}px;animation-duration:${9+Math.random()*12}s;animation-delay:-${Math.random()*10}s`;
+    o.appendChild(sp)}
+  s.prepend(o)});
+/* efecto ripple en botones */
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('.b');if(!b)return;const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height);
+  const s=document.createElement('span');s.className='rip';s.style.cssText=`width:${d}px;height:${d}px;left:${e.clientX-r.left-d/2}px;top:${e.clientY-r.top-d/2}px`;
+  b.appendChild(s);setTimeout(()=>s.remove(),650)});
+
+/* ================= CONFETI ================= */
+const cv=document.getElementById('cf'),cx=cv.getContext('2d');let parts=[],loopOn=false;
+function rs(){cv.width=innerWidth;cv.height=innerHeight}rs();addEventListener('resize',rs);
+function boom(x=innerWidth/2,y=innerHeight/2,n=110){
+  const cols=['#14b8a6','#f43f5e','#fbbf24','#0ea5e9','#a855f7','#ec4899','#10b981','#ffffff'];
+  for(let k=0;k<n;k++){const a=Math.random()*Math.PI*2,s=3+Math.random()*10;
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-6,r:5+Math.random()*6,c:cols[k%cols.length],rot:Math.random()*6,vr:(Math.random()-.5)*.35,life:0,plus:Math.random()<.35})}
+  if(!loopOn){loopOn=true;requestAnimationFrame(loop)}}
+function boomAt(el,n){const r=el.getBoundingClientRect();boom(r.left+r.width/2,r.top+r.height/2,n)}
+function loop(){cx.clearRect(0,0,cv.width,cv.height);
+  parts.forEach(p=>{p.vy+=.26;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.life++;
+    cx.save();cx.globalAlpha=Math.max(0,1-p.life/150);cx.translate(p.x,p.y);cx.rotate(p.rot);cx.fillStyle=p.c;
+    if(p.plus){cx.fillRect(-p.r,-p.r/3,p.r*2,p.r/1.5);cx.fillRect(-p.r/3,-p.r,p.r/1.5,p.r*2)}else cx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);
+    cx.restore()});
+  parts=parts.filter(p=>p.life<150&&p.y<cv.height+60);
+  if(parts.length)requestAnimationFrame(loop);else{loopOn=false;cx.clearRect(0,0,cv.width,cv.height)}}
+
+/* ================= CHECKLISTS ================= */
+function ck(e){e.classList.toggle('on');
+  const par=e.parentElement,all=[...par.querySelectorAll('.ck')];
+  if(e.classList.contains('on')&&all.length&&all.every(x=>x.classList.contains('on')))boom(innerWidth/2,innerHeight/2,180);
+  else if(e.classList.contains('on'))boomAt(e,25)}
+
+/* ================= PANTOMIME / KÖRPERTEIL ================= */
+const PANTO=[
+ ["🧠","der Kopf","Mir tut der Kopf weh. · Ich habe Kopfschmerzen."],
+ ["🦷","der Zahn","Mir tut der Zahn weh. · Ich habe Zahnschmerzen."],
+ ["🧣","der Hals","Mir tut der Hals weh. · Ich habe Halsschmerzen."],
+ ["🍔","der Bauch","Mir tut der Bauch weh. · Ich habe Bauchschmerzen."],
+ ["🎒","der Rücken","Mir tut der Rücken weh. · Ich habe Rückenschmerzen."],
+ ["👂","das Ohr","Mir tut das Ohr weh. · Ich habe Ohrenschmerzen."],
+ ["🦶","die Füße","Mir tun die Füße weh. (plural → tun!)"],
+ ["👁️","die Augen","Mir tun die Augen weh. (plural → tun!)"],
+ ["💪","der Arm","Mir tut der Arm weh."],
+ ["🦵","das Bein","Mir tut das Bein weh."]
+];
+let pI=-1;
+function pRender(k){pI=k;document.getElementById('pEm').textContent=PANTO[k][0];document.getElementById('pTx').textContent=PANTO[k][1];
+  document.getElementById('pSol').textContent='';const b=document.getElementById('pBox');b.classList.remove('enter');void b.offsetWidth;b.classList.add('enter')}
+function pNext(){let k;do{k=Math.floor(Math.random()*PANTO.length)}while(k===pI);pRender(k)}
+function pSol(){if(pI>=0)document.getElementById('pSol').textContent='💬 '+PANTO[pI][2]}
+
+/* ================= JUEGO CONJUNCIONES ================= */
+const OPTS=['weil','obwohl','dass','wenn','deshalb'];
+const Q=[
+ {t:"Ich bin müde, ___ ich bis 2 Uhr mit meinen Freunden gespielt habe.",a:"weil"},
+ {t:"Meine Mutter sagt, ___ ich nach der Schule zu Hause bleiben muss.",a:"dass"},
+ {t:"___ ich Zeit habe, fahre ich zu meiner Oma.",a:"wenn"},
+ {t:"Er ist zur Schule gegangen, ___ er schlecht geschlafen hat.",a:"obwohl"},
+ {t:"Ich habe den Bus verpasst, ___ bin ich zu spät gekommen.",a:"deshalb"},
+ {t:"___ es geregnet hat, sind wir mit dem Fahrrad gefahren.",a:"obwohl"},
+ {t:"Ich weiß, ___ du heute keine Zeit hast.",a:"dass"},
+ {t:"___ ich krank bin, bleibe ich im Bett.",a:"wenn"}
+];
+const cap=s=>s[0].toUpperCase()+s.slice(1);
+function kRender(){const r=document.getElementById('kq');r.innerHTML='';
+  Q.forEach((q,k)=>{const d=document.createElement('div');d.className='q a';d.style.setProperty('--i',k+2);
+    d.innerHTML=`<div class="txt">${q.t.replace('___','<span class="gap">___</span>')}</div><div class="opts">${OPTS.map(o=>`<button class="pick" data-o="${o}">${o}</button>`).join('')}</div>`;
+    d.querySelectorAll('.pick').forEach(b=>b.onclick=()=>ans(d,q,b));r.appendChild(d)});
+  kScore()}
+function ans(d,q,b,quiet){
+  if(d.classList.contains('right'))return;
+  d.querySelectorAll('.pick').forEach(x=>x.classList.remove('hit','miss'));
+  d.classList.remove('bad');void d.offsetWidth;
+  if(b.dataset.o===q.a){d.classList.add('right');b.classList.add('hit');
+    const g=d.querySelector('.gap');g.textContent=q.t.startsWith('___')?cap(q.a):q.a;g.className='gap k '+q.a;
+    if(!quiet)boomAt(b,30)}
+  else{d.classList.add('bad');b.classList.add('miss')}
+  kScore(quiet)}
+function kScore(quiet){const n=document.querySelectorAll('#kq .q.right').length,el=document.getElementById('kScore');
+  el.textContent=n+' / '+Q.length;el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');
+  if(n===Q.length&&!quiet)boom(innerWidth/2,innerHeight/3,200)}
+function kReset(){kRender()}
+
+/* ================= BUILDER ================= */
+const SENT=[
+ {a:"Ich bin zu spät gekommen, weil ich den Bus verpasst habe.",alt:["Weil ich den Bus verpasst habe, bin ich zu spät gekommen."]},
+ {a:"Meine Mutter sagt, dass ich mit dem Fahrrad fahren soll.",alt:[]},
+ {a:"Wenn ich Zeit habe, gehe ich zu meinem Freund.",alt:["Ich gehe zu meinem Freund, wenn ich Zeit habe."]},
+ {a:"Ich habe Hunger, deshalb gehe ich zum Supermarkt.",alt:[],star:1},
+ {a:"Obwohl es geregnet hat, sind wir aus dem Haus gegangen.",alt:["Wir sind aus dem Haus gegangen, obwohl es geregnet hat."],star:1}
+];
+const norm=s=>s.toLowerCase().replace(/[.,?!]/g,'').replace(/\s+/g,' ').trim();
+const words=s=>s.replace(/[.,?!]/g,'').split(/\s+/).filter(Boolean);
+function shuffle(a){a=[...a];for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a}
+const BR=document.querySelector('.builder');
+function bInit(){if(!BR)return;BR._i=0;
+  BR.innerHTML='<div class="tabs"></div><div class="drop"></div><div class="tiles"></div>'+
+   '<div class="row mt2"><button class="b" data-a="check">Prüfen ✓</button><button class="b w" data-a="reset">Nochmal ↺</button>'+
+   '<button class="b g" data-a="show">Lösung</button><span class="bmsg"></span></div>';
+  SENT.forEach((s,k)=>{const b=document.createElement('button');b.className='b w sm';b.textContent=(s.star?'⭐ ':'')+'Satz '+(k+1);
+    b.onclick=()=>{BR._i=k;bReset()};BR.querySelector('.tabs').appendChild(b)});
+  BR.querySelector('.drop').onclick=bPop;
+  BR.querySelector('[data-a=check]').onclick=bCheck;
+  BR.querySelector('[data-a=reset]').onclick=bReset;
+  BR.querySelector('[data-a=show]').onclick=bShow;
+  bReset()}
+function bReset(){BR._picked=[];
+  BR.querySelectorAll('.tabs .b').forEach((b,k)=>b.classList.toggle('on',k===BR._i));
+  const d=BR.querySelector('.drop');d.className='drop';d.innerHTML='';BR.querySelector('.bmsg').textContent='';
+  const t=BR.querySelector('.tiles');t.innerHTML='';
+  const w=words(SENT[BR._i].a);let sh=shuffle(w),n=0;while(sh.join(' ')===w.join(' ')&&n++<10)sh=shuffle(w);
+  sh.forEach((x,k)=>{const b=document.createElement('button');b.className='tile';b.textContent=x;b.style.setProperty('--t',k);
+    b.onclick=()=>{b.classList.add('used');BR._picked.push(b);const s=document.createElement('span');s.className='tile';s.textContent=x;
+      d.appendChild(s);d.className='drop';BR.querySelector('.bmsg').textContent=''};t.appendChild(b)})}
+function bPop(){if(!BR._picked.length)return;BR._picked.pop().classList.remove('used');
+  const d=BR.querySelector('.drop');d.removeChild(d.lastElementChild);d.className='drop';BR.querySelector('.bmsg').textContent=''}
+function bCheck(){const s=SENT[BR._i],got=norm(BR._picked.map(b=>b.textContent).join(' '));
+  const ok=[s.a,...s.alt].some(x=>norm(x)===got),d=BR.querySelector('.drop'),m=BR.querySelector('.bmsg');
+  d.classList.remove('ok','no');void d.offsetWidth;
+  if(ok){d.classList.add('ok');m.textContent='✓ Richtig!';m.style.color='var(--mint)';boomAt(d,120)}
+  else{d.classList.add('no');m.textContent=BR._picked.length<words(s.a).length?'… faltan palabras':'✗ Nochmal!';m.style.color='var(--coral)'}}
+function bShow(){const s=SENT[BR._i],d=BR.querySelector('.drop');d.innerHTML='';
+  words(s.a).forEach(x=>{const e=document.createElement('span');e.className='tile';e.textContent=x;d.appendChild(e)});
+  d.className='drop ok';BR.querySelectorAll('.tiles .tile').forEach(t=>t.classList.add('used'));BR._picked=[];
+  const m=BR.querySelector('.bmsg');m.textContent='→ '+s.a;m.style.color='var(--mint)'}
+
+/* ================= DIAGNOSE ================= */
+const PAT=[
+ ["🤕","Kopfschmerzen","zu lange am Handy spielen","Ich habe Kopfschmerzen, weil ich zu lange am Handy gespielt habe.","Deshalb mache ich eine Pause."],
+ ["🤢","Bauchschmerzen","zu viel Eis essen","Ich habe Bauchschmerzen, weil ich zu viel Eis gegessen habe.","Deshalb esse ich heute nichts mehr."],
+ ["🦵","Das Bein ist gebrochen","beim Fußball hinfallen","Ich habe mir das Bein gebrochen, weil ich beim Fußball hingefallen bin.","Deshalb bekomme ich einen Gips."],
+ ["🤒","Fieber","ohne Jacke im Regen spazieren gehen","Ich habe Fieber, weil ich ohne Jacke im Regen spazieren gegangen bin.","Deshalb muss ich im Bett bleiben."],
+ ["🦷","Zahnschmerzen","zu viele Süßigkeiten essen","Ich habe Zahnschmerzen, weil ich zu viele Süßigkeiten gegessen habe.","Deshalb gehe ich zum Zahnarzt."],
+ ["😵","Mir ist schwindelig","nicht frühstücken","Mir ist schwindelig, weil ich nicht gefrühstückt habe.","Deshalb esse ich jetzt ein Brot."],
+ ["😷","Husten","die ganze Nacht draußen bleiben","Ich habe Husten, weil ich die ganze Nacht draußen geblieben bin.","Deshalb trinke ich heißen Tee."],
+ ["🧍","Rückenschmerzen","schwere Kisten tragen","Ich habe Rückenschmerzen, weil ich schwere Kisten getragen habe.","Deshalb mache ich heute keinen Sport."]
+];
+let dI=-1;
+function dRender(k){dI=k;const p=PAT[k];
+  document.getElementById('dEm').textContent=p[0];document.getElementById('dSy').textContent=p[1];
+  document.getElementById('dGr').textContent=p[2];document.getElementById('dSol').innerHTML='';
+  const b=document.getElementById('dBox');b.classList.remove('enter');void b.offsetWidth;b.classList.add('enter')}
+function dNext(){let k;do{k=Math.floor(Math.random()*PAT.length)}while(k===dI);dRender(k)}
+function dSol(){if(dI>=0)document.getElementById('dSol').innerHTML='① '+PAT[dI][3]+'<br>② '+PAT[dI][4]}
+
+/* ================= BOSS ================= */
+const CASES=[
+ {t:"🛹 Du bist beim Skaten hingefallen. Dein Arm tut sehr weh.",
+  h:["Guten Tag. Mir tut der Arm sehr weh.","Ich bin hingefallen, weil ich zu schnell gefahren bin.","Was soll ich machen, wenn es in der Nacht wehtut?"]},
+ {t:"🤒 Du hast seit zwei Tagen Fieber und Husten – obwohl du viel Tee getrunken hast.",
+  h:["Guten Tag. Ich habe seit zwei Tagen Fieber.","Ich habe immer noch Husten, obwohl ich viel Tee getrunken habe.","Muss ich im Bett bleiben, wenn ich Fieber habe?"]},
+ {t:"🍕 Du hast auf einer Party zu viel gegessen. Jetzt hast du starke Bauchschmerzen.",
+  h:["Guten Abend. Ich habe starke Bauchschmerzen.","Mir ist schlecht, weil ich auf der Party zu viel gegessen habe.","Darf ich etwas essen, wenn ich Hunger habe?"]}
+];
+let cI=-1,typeT=null;
+function caseRender(k,instant){cI=k;const c=CASES[k],el=document.getElementById('caseTx');
+  clearInterval(typeT);
+  document.querySelectorAll('#hints .hint').forEach((h,j)=>{h.classList.remove('open');h.querySelector('.hv').textContent=c.h[j]});
+  document.querySelectorAll('#mis .ck').forEach(x=>x.classList.remove('on'));
+  if(instant){el.textContent=c.t;return}
+  el.textContent='';let n=0;const ch=[...c.t];
+  typeT=setInterval(()=>{el.textContent=ch.slice(0,++n).join('');if(n>=ch.length)clearInterval(typeT)},28)}
+function caseNext(){let k;do{k=Math.floor(Math.random()*CASES.length)}while(k===cI);caseRender(k)}
+
+/* ================= TEMPORIZADOR ================= */
+let tTot=300,tLeft=300,tId=null;
+function paintT(){const e=document.getElementById('timer');
+  e.textContent=String(Math.floor(tLeft/60)).padStart(2,'0')+':'+String(tLeft%60).padStart(2,'0');e.classList.toggle('low',tLeft>0&&tLeft<=10)}
+function setT(n){stopT();tTot=n;tLeft=n;paintT()}
+function startT(){if(tId)return;if(tLeft<=0)tLeft=tTot;document.getElementById('timer').classList.add('run');
+  tId=setInterval(()=>{tLeft--;paintT();if(tLeft<=0){stopT();beep();boom(innerWidth-80,40,80)}},1000)}
+function stopT(){clearInterval(tId);tId=null;document.getElementById('timer').classList.remove('run','low')}
+function tgT(){tId?stopT():startT()}
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator(),g=c.createGain();
+  o.connect(g);g.connect(c.destination);o.frequency.value=660;g.gain.value=.15;o.start();setTimeout(()=>{o.stop();c.close()},500)}catch(e){}}
+
+/* ================= EJERCICIOS EXTRA ================= */
+const HOSPITAL_ANSWERS=['tun','dem','Röntgenbild','der','urgencias','einen Gips'];let hospitalCorrect=0,hospitalDone=new Set();
+document.querySelectorAll('#hospitalExercise .q').forEach((q,k)=>q.querySelectorAll('.pick').forEach(b=>b.onclick=()=>{
+  if(hospitalDone.has(k))return;
+  if(b.dataset.answer===HOSPITAL_ANSWERS[k]){hospitalDone.add(k);hospitalCorrect++;q.classList.add('right');b.classList.add('hit');q.querySelectorAll('.pick').forEach(x=>x.disabled=true);document.getElementById('hospitalFeedback').textContent='✓ Richtig! '+hospitalCorrect+' / 6';document.getElementById('hospitalScore').textContent=hospitalCorrect+' / 6';boomAt(b,24);if(hospitalCorrect===6)boom(innerWidth/2,innerHeight/3,140)}
+  else{b.classList.add('miss');q.classList.add('bad');document.getElementById('hospitalFeedback').textContent='Noch nicht. Versuch es noch einmal.'}
+}));
+
+/* ================= PUNTOS (P) · equipos + alumnos ================= */
+const PK={team:'krankenhaus-team-points',names:'krankenhaus-team-names',stu:'krankenhaus-students',rw:'krankenhaus-reward'};
+const ldS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
+const svS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const escH=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let teamPoints={robe:0,dani:0};{const s=ldS(PK.team,null);if(s&&Number.isInteger(s.robe)&&Number.isInteger(s.dani))teamPoints=s}
+let teamNames=Object.assign({robe:'Robe',dani:'Dani'},ldS(PK.names,{}));
+let students=(ldS(PK.stu,[])||[]).filter(s=>s&&typeof s.name==='string'&&Number.isInteger(s.pts)&&s.id);
+let reward=[1,5,10].includes(ldS(PK.rw,1))?ldS(PK.rw,1):1;
+const teamHistory=[];let ptsSel=0;
+function ptsSave(){svS(PK.team,teamPoints);svS(PK.names,teamNames);svS(PK.stu,students);svS(PK.rw,reward)}
+function ptsPush(){teamHistory.push(JSON.stringify({t:teamPoints,s:students}));if(teamHistory.length>300)teamHistory.shift()}
+function ptsRows(){return [['team','robe'],['team','dani'],...students.map(s=>['stu',s.id])]}
+function ptsName(kind,id){return kind==='team'?teamNames[id]:(students.find(s=>s.id===id)||{}).name}
+function addPts(kind,id,n){
+  if(kind==='team'){if(!(id in teamPoints))return;ptsPush();teamPoints[id]=Math.max(0,teamPoints[id]+n)}
+  else{const s=students.find(x=>x.id===id);if(!s)return;ptsPush();s.pts=Math.max(0,s.pts+n)}
+  const r=ptsRows().findIndex(x=>x[0]===kind&&x[1]===id);if(r>=0)ptsSel=r;
+  paintTeamPoints((n>0?'+':'−')+Math.abs(n)+' · '+ptsName(kind,id));
+  const el=document.querySelector(`#teamsDialog [data-k="${kind}:${id}"] .pv`);if(el){el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}
+  const hb=document.getElementById('ptsHud');hb.classList.remove('flash');void hb.offsetWidth;hb.classList.add('flash');
+  if(n>0&&document.getElementById('teamsDialog').open&&el)ptsBurst(el,n)}
+function ptsBurst(el,n){const r=el.getBoundingClientRect(),d=document.createElement('div');d.className='pts-burst';d.textContent='+'+n;
+  d.style.left=(r.left+r.width/2)+'px';d.style.top=r.top+'px';document.getElementById('teamsDialog').appendChild(d);setTimeout(()=>d.remove(),900)}
+function paintTeamPoints(message){
+  const rows=ptsRows();ptsSel=Math.max(0,Math.min(rows.length-1,ptsSel));
+  const sel=(k,id)=>{const r=rows[ptsSel];return r&&r[0]===k&&r[1]===id?' sel':''};
+  document.getElementById('ptsTeams').innerHTML=['robe','dani'].map(id=>`<div class="pts-team ${id}${sel('team',id)}" data-k="team:${id}">
+    <input class="pts-name" data-team="${id}" value="${escH(teamNames[id])}" maxlength="18" aria-label="Nombre del equipo">
+    <output class="pv">${teamPoints[id]}</output>
+    <div class="pts-btns"><button data-d="-1" aria-label="Restar 1">−1</button><button class="plus" data-d="+">+${reward}</button></div></div>`).join('');
+  const L=document.getElementById('ptsList');
+  L.innerHTML=students.length?students.map((s,k)=>`<div class="pts-row${sel('stu',s.id)}" data-k="stu:${s.id}">
+    <span class="pts-rank">${k+1}</span><input class="pts-name" data-stu="${s.id}" value="${escH(s.name)}" maxlength="24" aria-label="Nombre">
+    <output class="pv">${s.pts}</output><button data-d="-1" aria-label="Restar 1">−1</button><button class="plus" data-d="+">+${reward}</button><button class="pts-del" data-del aria-label="Quitar alumno">×</button></div>`).join('')
+    :'<div class="pts-empty">Aún no hay alumnos. Escribe un nombre arriba y pulsa <b>Enter</b>.</div>';
+  document.querySelectorAll('#teamsDialog [data-rw]').forEach(b=>b.classList.toggle('on',+b.dataset.rw===reward));
+  document.getElementById('undoTeam').disabled=!teamHistory.length;
+  document.getElementById('teamMessage').textContent=message||'';
+  const top=[...students].sort((a,b)=>b.pts-a.pts)[0];
+  document.getElementById('ptsHud').innerHTML=`🏆 <span>${escH(teamNames.robe)}</span> <b>${teamPoints.robe}</b> · <span>${escH(teamNames.dani)}</span> <b>${teamPoints.dani}</b>`+(top&&top.pts?` <i>· ⭐ ${escH(top.name)} ${top.pts}</i>`:'');
+  const sr=document.querySelector('#teamsDialog .sel');if(sr&&sr.scrollIntoView)sr.scrollIntoView({block:'nearest'});
+  ptsSave()}
+function addTeamPoint(team){addPts('team',team,reward)}
+function undoTeamPoint(){if(!teamHistory.length)return;const o=JSON.parse(teamHistory.pop());teamPoints=o.t;students=o.s;paintTeamPoints('Último cambio deshecho.')}
+function resetTeamPoints(){if(!confirm('¿Poner TODOS los puntos a cero? (equipos y alumnos)'))return;ptsPush();teamPoints={robe:0,dani:0};students.forEach(s=>s.pts=0);paintTeamPoints('Marcador a cero. Puedes deshacerlo con ↶.')}
+function toggleTeamDialog(){const d=document.getElementById('teamsDialog');if(d.open)d.close();else{if(document.getElementById('dictDialog').open)closeDict();paintTeamPoints();d.showModal();d.focus()}}
+(()=>{const d=document.getElementById('teamsDialog');
+  d.addEventListener('click',e=>{
+    const rw=e.target.closest('[data-rw]');if(rw){reward=+rw.dataset.rw;paintTeamPoints('Premio: +'+reward);return}
+    const row=e.target.closest('[data-k]');if(!row)return;const [kind,id]=row.dataset.k.split(':');
+    const b=e.target.closest('[data-d]');if(b){addPts(kind,id,b.dataset.d==='+'?reward:-1);return}
+    if(e.target.closest('[data-del]')){const s=students.find(x=>x.id===id);if(s&&confirm('¿Quitar a '+s.name+' de la lista?')){ptsPush();students=students.filter(x=>x.id!==id);paintTeamPoints(s.name+' quitado. ↶ lo recupera.')}return}
+    if(!e.target.closest('input')){ptsSel=ptsRows().findIndex(x=>x[0]===kind&&x[1]===id);paintTeamPoints()}});
+  d.addEventListener('change',e=>{const t=e.target;if(!t.classList.contains('pts-name'))return;const v=t.value.trim().slice(0,24);if(!v){paintTeamPoints();return}
+    if(t.dataset.team)teamNames[t.dataset.team]=v;else{const s=students.find(x=>x.id===t.dataset.stu);if(s)s.name=v}paintTeamPoints('Nombre guardado.')});
+  d.addEventListener('keydown',e=>{if(e.target.classList&&e.target.classList.contains('pts-name')&&e.key==='Enter'){e.preventDefault();e.target.blur()}});
+  document.getElementById('ptsAdd').addEventListener('submit',e=>{e.preventDefault();const inp=document.getElementById('ptsNew'),v=inp.value.trim().slice(0,24);if(!v)return;
+    ptsPush();students.push({id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:v,pts:0});inp.value='';ptsSel=ptsRows().length-1;paintTeamPoints(v+' añadido.')});
+})();
+function ptsKey(e){const k=e.key;
+  if(k==='ArrowDown'||k==='ArrowRight'){ptsSel=Math.min(ptsRows().length-1,ptsSel+1);paintTeamPoints();e.preventDefault()}
+  else if(k==='ArrowUp'||k==='ArrowLeft'){ptsSel=Math.max(0,ptsSel-1);paintTeamPoints();e.preventDefault()}
+  else if(k==='Enter'||k==='+'){const r=ptsRows()[ptsSel];if(r)addPts(r[0],r[1],reward);e.preventDefault()}
+  else if(k==='Backspace'||k==='-'||k==='Delete'){const r=ptsRows()[ptsSel];if(r)addPts(r[0],r[1],-1);e.preventDefault()}
+  else if(k==='1'||k==='5'||k==='0'){reward=k==='0'?10:+k;paintTeamPoints('Premio: +'+reward);e.preventDefault()}
+  else if((k==='z'||k==='Z')&&!e.repeat){undoTeamPoint();e.preventDefault()}}
+paintTeamPoints();
+
+/* ================= DICCIONARIO (D) · glosario local DE ⇄ ES ================= */
+const GLOS_RAW=`n|der|Kopf|die Köpfe|la cabeza|Mir tut der Kopf weh.
+n|das|Auge|die Augen|el ojo|Meine Augen tun weh.
+n|das|Ohr|die Ohren|la oreja · el oído|Mir tut das Ohr weh.
+n|die|Nase|die Nasen|la nariz|Meine Nase läuft.
+n|der|Zahn|die Zähne|el diente|Ich habe Zahnschmerzen.
+n|der|Hals|die Hälse|el cuello · la garganta|Ich habe Halsschmerzen.
+n|der|Arm|die Arme|el brazo|Mein Arm ist gebrochen.
+n|die|Hand|die Hände|la mano|Meine Hand tut weh.
+n|der|Bauch|die Bäuche|la barriga · el vientre|Mir tut der Bauch weh.
+n|der|Rücken|die Rücken|la espalda|Ich habe Rückenschmerzen.
+n|das|Bein|die Beine|la pierna|Mein Bein ist gebrochen.
+n|der|Fuß|die Füße|el pie|Mir tun die Füße weh.
+n|das|Knie|die Knie|la rodilla|Mein Knie tut weh.
+n|der|Finger|die Finger|el dedo|Mein Finger blutet.
+n|das|Herz|die Herzen|el corazón|Die Ärztin hört das Herz ab.
+n|der|Knochen|die Knochen|el hueso|Der Knochen ist gebrochen.
+n|der|Körper|die Körper|el cuerpo|Der Körper hat zwei Arme.
+n|der|Schmerz|die Schmerzen|el dolor|Ich habe Kopfschmerzen.
+n|das|Fieber|—|la fiebre|Ich habe Fieber.
+n|der|Husten|—|la tos|Ich habe Husten.
+n|der|Schnupfen|—|el resfriado (moqueo)|Ich habe Schnupfen.
+n|die|Erkältung|die Erkältungen|el resfriado|Ich habe eine Erkältung.
+n|das|Krankenhaus|die Krankenhäuser|el hospital|Wir fahren zum Krankenhaus.
+n|die|Notaufnahme|die Notaufnahmen|urgencias|Wir warten in der Notaufnahme.
+n|der|Krankenwagen|die Krankenwagen|la ambulancia|Der Krankenwagen kommt sofort.
+n|der|Arzt|die Ärzte|el médico|Ich gehe zum Arzt.
+n|die|Ärztin|die Ärztinnen|la médica|Die Ärztin untersucht mich.
+n|der|Patient|die Patienten|el paciente|Der Patient wartet.
+n|die|Patientin|die Patientinnen|la paciente|Die Patientin hat Fieber.
+n|das|Röntgenbild|die Röntgenbilder|la radiografía|Die Ärztin macht ein Röntgenbild.
+n|der|Gips|die Gipse|la escayola|Leo hat einen Gips.
+n|die|Spritze|die Spritzen|la inyección|Ich bekomme eine Spritze.
+n|das|Rezept|die Rezepte|la receta|Die Ärztin schreibt ein Rezept.
+n|die|Tablette|die Tabletten|la pastilla|Nehmen Sie eine Tablette!
+n|die|Apotheke|die Apotheken|la farmacia|Ich gehe zur Apotheke.
+n|die|Versicherungskarte|die Versicherungskarten|la tarjeta sanitaria|Haben Sie Ihre Versicherungskarte?
+n|der|Termin|die Termine|la cita|Ich habe um zehn Uhr einen Termin.
+n|das|Wartezimmer|die Wartezimmer|la sala de espera|Bitte warten Sie im Wartezimmer.
+n|der|Unfall|die Unfälle|el accidente|Ich hatte einen Unfall.
+n|das|Pflaster|die Pflaster|la tirita|Ich brauche ein Pflaster.
+n|das|Fahrrad|die Fahrräder|la bicicleta|Ich fahre mit dem Fahrrad.
+n|der|Bus|die Busse|el autobús|Ich fahre mit dem Bus.
+n|das|Auto|die Autos|el coche|Sie ist mit dem Auto gekommen.
+n|der|Zug|die Züge|el tren|Wir fahren mit dem Zug.
+n|der|Bahnhof|die Bahnhöfe|la estación de tren|Ich wohne gegenüber dem Bahnhof.
+n|die|Schule|die Schulen|el colegio|Ich gehe zur Schule.
+n|der|Park|die Parks|el parque|Wir spielen im Park.
+n|der|Kiosk|die Kioske|el quiosco|Er fährt zum Kiosk.
+n|der|Supermarkt|die Supermärkte|el supermercado|Wir gehen zum Supermarkt.
+n|das|Kino|die Kinos|el cine|Wir sind ins Kino gegangen.
+n|das|Wetter|—|el tiempo (meteorológico)|Das Wetter ist sehr schön.
+n|der|Durst|—|la sed|Ich habe Durst.
+n|der|Hunger|—|el hambre|Ich habe Hunger.
+n|das|Wasser|—|el agua|Trinken Sie viel Wasser!
+n|das|Bett|die Betten|la cama|Bleiben Sie drei Tage im Bett!
+n|der|Sport|—|el deporte|Er kann keinen Sport machen.
+n|der|Fußball|die Fußbälle|el fútbol · el balón|Sie haben Fußball gespielt.
+n|das|Spiel|die Spiele|el partido · el juego|Nach dem Spiel hatte Leo Durst.
+n|das|Handy|die Handys|el móvil|Sie hat ihr Handy vergessen.
+n|der|Brief|die Briefe|la carta|Der Brief ist von meiner Freundin.
+n|die|Nachricht|die Nachrichten|el mensaje · la noticia|Ich habe eine Nachricht geschrieben.
+n|der|Kuchen|die Kuchen|el pastel|Wir haben Kuchen gegessen.
+n|die|Mutter|die Mütter|la madre|Ich spreche mit meiner Mutter.
+n|der|Vater|die Väter|el padre|Ich fahre mit meinem Vater.
+n|die|Eltern|(nur Plural)|los padres|Ich wohne bei meinen Eltern.
+n|die|Schwester|die Schwestern|la hermana|Er hat mit seiner Schwester gefrühstückt.
+n|der|Bruder|die Brüder|el hermano|Ich spiele mit meinem Bruder.
+n|die|Oma|die Omas|la abuela|Ich bin bei meiner Oma.
+n|der|Opa|die Opas|el abuelo|Ich fahre zu meinem Opa.
+n|der|Freund|die Freunde|el amigo|Ich gehe zu meinem Freund.
+n|die|Freundin|die Freundinnen|la amiga|Der Brief ist von meiner Freundin.
+n|die|Tante|die Tanten|la tía|Ich wohne bei der Tante.
+n|das|Kind|die Kinder|el niño · la niña|Ich spiele mit den Kindern.
+n|der|Lehrer|die Lehrer|el profesor|Ich spreche mit meinem Lehrer.
+n|die|Lehrerin|die Lehrerinnen|la profesora|Die Lehrerin hilft mir.
+n|die|Familie|die Familien|la familia|Meine Familie kommt aus Spanien.
+n|der|Tag|die Tage|el día|Seine Freunde besuchen ihn jeden Tag.
+n|die|Woche|die Wochen|la semana|Seit einer Woche regnet es.
+n|das|Jahr|die Jahre|el año|Ich lerne seit zwei Jahren Deutsch.
+n|die|Stunde|die Stunden|la hora|Wir haben zwei Stunden gewartet.
+n|die|Uhr|die Uhren|el reloj · (Uhrzeit) en punto|Er ist um neun Uhr aufgestanden.
+n|das|Wochenende|die Wochenenden|el fin de semana|Am Wochenende bin ich bei meiner Oma.
+v|wehtun|hat wehgetan|doler (+ Dativ)|Mir tut der Arm weh.
+v|aufstehen|ist aufgestanden|levantarse|Ich stehe um sieben Uhr auf.
+v|frühstücken|hat gefrühstückt|desayunar|Wir frühstücken zusammen.
+v|anrufen|hat angerufen|llamar por teléfono|Ich rufe meine Mutter an.
+v|fahren|ist gefahren|ir (en vehículo) · conducir|Wir fahren mit dem Bus.
+v|fallen|ist gefallen|caer(se)|Er ist vom Fahrrad gefallen.
+v|brechen|hat gebrochen|romper(se)|Er hat sich den Arm gebrochen.
+v|warten|hat gewartet|esperar|Wir haben zwei Stunden gewartet.
+v|besuchen|hat besucht|visitar|Ich besuche meine Oma.
+v|helfen|hat geholfen|ayudar (+ Dativ)|Kannst du mir helfen?
+v|gehen|ist gegangen|ir (a pie)|Ich gehe zur Schule.
+v|kommen|ist gekommen|venir|Ich komme aus Spanien.
+v|bleiben|ist geblieben|quedarse|Ich bin zu Hause geblieben.
+v|passieren|ist passiert|pasar · ocurrir|Was ist passiert?
+v|spielen|hat gespielt|jugar|Wir haben Fußball gespielt.
+v|essen|hat gegessen|comer|Wir haben Kuchen gegessen.
+v|trinken|hat getrunken|beber|Trinken Sie viel Wasser!
+v|schreiben|hat geschrieben|escribir|Ich habe eine Nachricht geschrieben.
+v|schlafen|hat geschlafen|dormir|Er hat schlecht geschlafen.
+v|vergessen|hat vergessen|olvidar|Ich habe mein Handy vergessen.
+v|verpassen|hat verpasst|perder (el bus, el tren)|Ich habe den Bus verpasst.
+v|untersuchen|hat untersucht|examinar · reconocer|Die Ärztin untersucht den Patienten.
+v|abhören|hat abgehört|auscultar|Sie hört das Herz ab.
+v|verschreiben|hat verschrieben|recetar|Sie verschreibt Tabletten.
+v|messen|hat gemessen|medir|Sie misst das Fieber.
+v|nehmen|hat genommen|tomar · coger|Ich nehme eine Tablette.
+v|bekommen|hat bekommen|recibir · conseguir|Ich bekomme einen Gips.
+v|geben|hat gegeben|dar|Sie gibt mir eine Spritze.
+v|sagen|hat gesagt|decir|Die Ärztin hat gesagt, dass …
+v|regnen|hat geregnet|llover|Es hat geregnet.
+v|lernen|hat gelernt|aprender · estudiar|Ich lerne Deutsch.
+v|wohnen|hat gewohnt|vivir (residir)|Ich wohne bei meinen Eltern.
+v|sprechen|hat gesprochen|hablar|Ich spreche mit meinem Lehrer.
+v|machen|hat gemacht|hacer|Was hast du gestern gemacht?
+v|sehen|hat gesehen|ver|Ich habe einen Film gesehen.
+v|haben|hat gehabt|tener|Ich habe Fieber.
+v|sein|ist gewesen|ser · estar|Ich bin krank.
+v|sollen|hat gesollt|deber (porque otro lo dice)|Ich soll viel Wasser trinken.
+v|müssen|hat gemusst|tener que|Ich muss zum Arzt gehen.
+v|können|hat gekonnt|poder · saber hacer|Er kann keinen Sport machen.
+v|wissen|hat gewusst|saber|Ich weiß, dass du keine Zeit hast.
+p|aus|+ Dativ|de (origen) · de dentro de|Ich komme aus Spanien.
+p|außer|+ Dativ|excepto · aparte de|Außer meinem Bruder sind alle hier.
+p|bei|+ Dativ|en casa de · junto a · en (lugar de trabajo)|Ich bin bei meiner Oma.
+p|mit|+ Dativ|con · en (medio de transporte)|Ich fahre mit dem Bus.
+p|nach|+ Dativ|después de · a (ciudad/país)|Nach der Schule spiele ich Fußball.
+p|seit|+ Dativ|desde · desde hace|Ich lerne seit zwei Jahren Deutsch.
+p|von|+ Dativ|de · desde|Der Brief ist von meiner Freundin.
+p|zu|+ Dativ|a (personas, lugares)|Ich gehe zu meinem Freund.
+p|gegenüber|+ Dativ|enfrente de|Die Apotheke liegt gegenüber dem Bahnhof.
+p|zum|= zu dem|al (a + el)|Ich gehe zum Arzt.
+p|zur|= zu der|a la|Ich gehe zur Schule.
+p|beim|= bei dem|en el / en casa del|Ich bin beim Arzt.
+p|vom|= von dem|del|Er ist vom Fahrrad gefallen.
+k|weil|Nebensatz: verbo al final|porque|Ich bleibe zu Hause, weil ich krank bin.
+k|dass|Nebensatz: verbo al final|que|Sie sagt, dass ich im Bett bleiben soll.
+k|obwohl|Nebensatz: verbo al final|aunque|Ich gehe zur Schule, obwohl ich müde bin.
+k|wenn|Nebensatz: verbo al final|si · cuando|Wenn ich krank bin, gehe ich zum Arzt.
+k|deshalb|Adverb: verbo en posición 2|por eso|Ich war krank, deshalb bin ich zu Hause geblieben.
+k|und|Konjunktion|y|Ich habe Fieber und Husten.
+k|aber|Konjunktion|pero|Ich bin müde, aber ich lerne.
+r|mir|Dativ von ich|me · a mí|Mir tut der Kopf weh.
+r|dir|Dativ von du|te · a ti|Tut dir der Bauch weh?
+r|ihm|Dativ von er / es|le · a él|Ihm tut der Fuß weh.
+r|ihr|Dativ von sie (Sg.)|le · a ella|Ihr ist schlecht.
+r|uns|Dativ von wir|nos · a nosotros|Kannst du uns helfen?
+r|euch|Dativ von ihr|os · a vosotros|Wie geht es euch?
+r|ihnen|Dativ von sie (Pl.) · Ihnen = Sie|les · a ellos · a usted|Wie geht es Ihnen?
+a|krank|Adjektiv|enfermo|Ich bin krank.
+a|gesund|Adjektiv|sano|Bleib gesund!
+a|gebrochen|Partizip / Adjektiv|roto|Der Arm ist gebrochen.
+a|müde|Adjektiv|cansado|Ich bin sehr müde.
+a|traurig|Adjektiv|triste|Er ist nicht traurig.
+a|schlecht|Adjektiv|malo · mal|Mir ist schlecht.
+a|schwindelig|Adjektiv|mareado|Mir ist schwindelig.
+a|schnell|Adjektiv / Adverb|rápido|Er ist zu schnell gefahren.
+a|sofort|Adverb|enseguida · inmediatamente|Tom hat sofort angerufen.
+a|zusammen|Adverb|juntos|Sie sind zusammen gefahren.
+a|gestern|Adverb|ayer|Was hast du gestern gemacht?
+a|heute|Adverb|hoy|Heute habe ich keine Zeit.
+a|morgen|Adverb|mañana|Morgen gehe ich zum Arzt.
+a|letzten Samstag|Ausdruck|el sábado pasado|Letzten Samstag ist Leo um neun Uhr aufgestanden.
+x|Was fehlt Ihnen?|Ausdruck (formal)|¿Qué le pasa?|Was fehlt Ihnen? – Mir tut der Bauch weh.
+x|Wo tut es weh?|Ausdruck|¿Dónde le/te duele?|Wo tut es weh? – Hier, am Arm.
+x|Gute Besserung!|Ausdruck|¡Que te mejores!|Gute Besserung, Leo!`;
+const nzD=s=>String(s).toLowerCase().replace(/ß/g,'ss').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[„“"!?.,¿¡()]/g,' ').replace(/\s+/g,' ').trim();
+const GLOS=GLOS_RAW.split('\n').map(l=>{const p=l.split('|');
+  if(p[0]==='n')return{t:'n',art:p[1],w:p[2],pl:p[3],es:p[4],ex:p[5]};
+  return{t:p[0],w:p[1],info:p[2],es:p[3],ex:p[4]}});
+GLOS.forEach(e=>{e.forms=[];if(e.pl&&!/—|nur/.test(e.pl))e.forms.push(nzD(e.pl.replace(/^die /,'')));
+  if(e.t==='v'&&e.info){const pp=e.info.split(' ').pop();e.forms.push(nzD(pp))}
+  e.nw=nzD(e.w);e.nes=nzD(e.es)});
+const DTYPE={n:'Nomen',v:'Verb',p:'Präposition',k:'Konjunktion',r:'Pronomen',a:'Adjektiv · Adverb',x:'Ausdruck'};
+function dictSearch(q){
+  let n=nzD(q).replace(/^(der|die|das|den|dem|des|ein|eine|einen|einem|einer|el|la|los|las|un|una)\s+/,'');
+  if(!n)return[];const out=[];
+  for(const e of GLOS){let sc=0;const esw=e.nes.split(/[^a-z]+/).filter(Boolean);
+    if(e.nw===n)sc=100;else if(e.forms.includes(n))sc=95;else if(esw.includes(n)||e.nes===n)sc=90;
+    else if(e.nw.startsWith(n))sc=80-Math.min(20,e.nw.length-n.length);
+    else if(n.length>=3&&e.forms.some(f=>f.startsWith(n)))sc=65;
+    else if(n.length>=3&&esw.some(t=>t.startsWith(n)))sc=60;
+    else if(n.length>=4&&e.nw.includes(n))sc=55;
+    else if(n.length>=4&&n.includes(e.nw)&&e.nw.length>=4)sc=50;
+    if(sc)out.push([sc,e])}
+  return out.sort((a,b)=>b[0]-a[0]).slice(0,6).map(x=>x[1])}
+function dictCard(e){
+  const head=e.t==='n'?`<span class="dc-art ${e.art}">${e.art}</span>`:'';
+  const meta=e.t==='n'?`Nomen · ${e.pl==='—'?'sin plural':(e.pl.startsWith('(')?e.pl:'Pl. '+e.pl)}`:
+    e.t==='v'?`Verb · Perfekt: <b>${escH(e.info)}</b>`:`${DTYPE[e.t]} · ${escH(e.info)}`;
+  const say=(e.t==='n'?e.art+' ':'')+e.w;
+  return `<div class="dc"><div class="dc-top">${head}<span class="dc-w">${escH(e.w)}</span><button class="dc-say" data-say="${escH(say)}" aria-label="Escuchar">🔊</button></div>
+   <div class="dc-meta">${meta}</div><div class="dc-es">${escH(e.es)}</div>${e.ex?`<div class="dc-ex">„${escH(e.ex)}“ <button class="dc-say sm" data-say="${escH(e.ex)}" aria-label="Escuchar ejemplo">🔊</button></div>`:''}</div>`}
+function dictRun(){const q=document.getElementById('dictQ').value,box=document.getElementById('dictRes');
+  if(!q.trim()){const pick=['Kopf','Krankenhaus','wehtun','mit','weil','Ärztin','Gips','anrufen','Notaufnahme','mir'];
+    box.innerHTML='<div class="dict-hint">Escribe una palabra… o prueba:</div><div class="dict-chips">'+pick.map(w=>`<button data-q="${w}">${w}</button>`).join('')+'</div>';return}
+  const r=dictSearch(q);clearTimeout(dictT);dictSeq++;
+  if(r.length){box.innerHTML=r.map(dictCard).join('');return}
+  const key=nzD(q);
+  if(ONL_CACHE[key]){box.innerHTML=onlineCard(ONL_CACHE[key],q);return}
+  box.innerHTML=`<div class="dict-load"><span class="dl-dot"></span><span class="dl-dot"></span><span class="dl-dot"></span> Buscando „${escH(q.trim())}“ online…</div>`;
+  const my=dictSeq;dictT=setTimeout(()=>onlineLookup(q.trim(),my),550)}
+/* ---------- búsqueda online: Wiktionary (de) + MyMemory ---------- */
+let dictSeq=0,dictT=null;const ONL_CACHE=(()=>{try{return JSON.parse(localStorage.getItem('krankenhaus-dict-online'))||{}}catch(e){return{}}})();
+function fetchJ(url,ms=7000){const c=new AbortController();const to=setTimeout(()=>c.abort(),ms);return fetch(url,{signal:c.signal}).then(r=>{clearTimeout(to);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})}
+const wikiClean=s=>s.replace(/\{\{[^{}]*\}\}/g,'').replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g,'$1').replace(/'{2,}/g,'').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+async function wiktDE(word,depth=0){
+  const j=await fetchJ('https://de.wiktionary.org/w/api.php?action=parse&prop=wikitext&format=json&redirects=1&origin=*&page='+encodeURIComponent(word));
+  if(j.error)return null;
+  const all=j.parse.wikitext['*'],title=j.parse.title;
+  const m=all.split(/\n(?==+ *[^=\n]*\(\{\{Sprache\|)/).find(s=>/\{\{Sprache\|Deutsch\}\}/.test(s));if(!m)return null;
+  const ref=m.match(/\{\{Grundformverweis[^|}]*\|([^|}]+)/);
+  const wa=(m.match(/\{\{Wortart\|([^|}]+)\|Deutsch\}\}/)||[])[1]||'';
+  if(ref&&depth<1&&/Konjugierte|Deklinierte|Form/.test(wa)){const base=await wiktDE(ref[1].trim(),depth+1);if(base){base.from=title;return base}}
+  const g=(m.match(/\|Genus(?: 1)?=([mfn])/)||[])[1];
+  const pl=(m.match(/\|Nominativ Plural(?: 1)?=([^\n|]+)/)||[])[1];
+  const p2=(m.match(/\|Partizip II=([^\n|]+)/)||[])[1],hv=(m.match(/\|Hilfsverb=([^\n|]+)/)||[])[1];
+  const es=[...new Set([...m.matchAll(/\{\{Ü\|es\|([^|}]+)/g)].map(x=>x[1].trim()))].slice(0,5);
+  const bs=m.split(/\{\{Beispiele\}\}/)[1];let ex='';
+  if(bs){const l=bs.split('\n').find(l=>/^:\[\d/.test(l));if(l)ex=wikiClean(l.replace(/^:\[[^\]]*\]/,'')).replace(/^„|“$/g,'');if(ex.length>110)ex=''}
+  return{w:title,wa,art:g?{m:'der',f:'die',n:'das'}[g]:'',pl:pl&&pl.trim()!=='—'?pl.trim():'',p2:p2?p2.trim():'',hv:hv?hv.trim():'',es,ex,src:'Wiktionary'}}
+async function myMem(q,pair){const j=await fetchJ('https://api.mymemory.translated.net/get?q='+encodeURIComponent(q)+'&langpair='+pair);
+  const t=j&&j.responseData&&j.responseData.translatedText;if(!t||j.responseStatus!==200||/MYMEMORY WARNING|QUERY LENGTH/i.test(t))return'';return t.trim()}
+async function onlineLookup(q,my){
+  const box=document.getElementById('dictRes'),key=nzD(q);let res=null;
+  try{
+    const cands=[...new Set([q,q[0].toUpperCase()+q.slice(1),q.toLowerCase()])];
+    for(const c of cands){res=await wiktDE(c);if(res)break;if(my!==dictSeq)return}
+    if(res&&!res.es.length){const tr=await myMem(res.w,'de|es');if(tr)res.es=[tr],res.mt=true}
+    if(!res){const de=await myMem(q,'es|de');if(my!==dictSeq)return;
+      if(de&&nzD(de)!==key&&de.split(' ').length<=3){const w2=await wiktDE(de.replace(/^(der|die|das) /i,'')).catch(()=>null);
+        res=w2?Object.assign(w2,{fromEs:q}):{w:de,wa:'',art:'',pl:'',p2:'',hv:'',es:[q],ex:'',src:'MyMemory',mt:true,fromEs:q}}
+      else{const es=await myMem(q,'de|es');if(es&&nzD(es)!==key)res={w:q,wa:'',art:'',pl:'',p2:'',hv:'',es:[es],ex:'',src:'MyMemory',mt:true}}}
+    if(my!==dictSeq)return;
+    if(!res){box.innerHTML=noneCard(q,'No aparece ni en el glosario ni en Wiktionary. Revisa cómo se escribe.');return}
+    ONL_CACHE[key]=res;try{const k=Object.keys(ONL_CACHE);if(k.length>200)delete ONL_CACHE[k[0]];localStorage.setItem('krankenhaus-dict-online',JSON.stringify(ONL_CACHE))}catch(e){}
+    box.innerHTML=onlineCard(res,q);
+  }catch(err){if(my!==dictSeq)return;
+    box.innerHTML=noneCard(q,navigator.onLine===false?'Sin conexión a internet: solo funciona el glosario de la clase.':'No se ha podido conectar con el diccionario online ('+escH(err.name==='AbortError'?'tiempo agotado':err.message)+').')}}
+function noneCard(q,msg){return `<div class="dict-none"><div class="dn-t">Kein Eintrag für „${escH(q.trim())}“</div><div class="dn-s">${msg}</div>
+    <a href="https://dict.leo.org/spanisch-deutsch/${encodeURIComponent(q.trim())}" target="_blank" rel="noopener">Buscar en LEO ↗</a></div>`}
+function onlineCard(e,q){
+  const TYPES={Substantiv:'Nomen',Verb:'Verb',Adjektiv:'Adjektiv',Adverb:'Adverb',Präposition:'Präposition',Konjunktion:'Konjunktion',Subjunktion:'Konjunktion',Pronomen:'Pronomen'};
+  const wa=TYPES[e.wa]||e.wa||'';
+  let meta=[];if(wa)meta.push(wa);if(e.art&&e.pl)meta.push('Pl. die '+escH(e.pl));if(e.p2)meta.push('Perfekt: <b>'+escH((e.hv==='sein'?'ist ':'hat ')+e.p2)+'</b>');
+  const say=(e.art?e.art+' ':'')+e.w;
+  const note=e.from&&nzD(e.from)!==nzD(e.w)?`<div class="dc-meta">„${escH(e.from)}“ es una forma de <b>${escH(e.w)}</b></div>`:e.fromEs?`<div class="dc-meta">🇪🇸 „${escH(e.fromEs)}“ → 🇩🇪</div>`:'';
+  return `<div class="dc online"><div class="dc-top">${e.art?`<span class="dc-art ${e.art}">${e.art}</span>`:''}<span class="dc-w">${escH(e.w)}</span><button class="dc-say" data-say="${escH(say)}" aria-label="Escuchar">🔊</button></div>
+   ${note}${meta.length?`<div class="dc-meta">${meta.join(' · ')}</div>`:''}<div class="dc-es">${escH(e.es.join(' · ')||'—')}</div>
+   ${e.ex?`<div class="dc-ex">„${escH(e.ex)}“</div>`:''}
+   <div class="dc-src">🌐 online · ${e.src==='Wiktionary'?'Wiktionary':'MyMemory'}${e.mt?' · traducción automática, puede fallar':''}</div></div>`}
+function dictSay(t,btn){const s=window.speechSynthesis;if(!s){btn.title='Sin síntesis de voz';btn.classList.add('off');return}
+  const v=s.getVoices().find(v=>/^de([-_]|$)/i.test(v.lang));if(!v){btn.title='No hay voz alemana instalada';btn.classList.add('off');return}
+  s.cancel();const u=new SpeechSynthesisUtterance(t);u.voice=v;u.lang=v.lang;u.rate=.85;s.speak(u)}
+let lastGloss='';
+function openDict(pre){const d=document.getElementById('dictDialog'),inp=document.getElementById('dictQ');
+  if(document.getElementById('teamsDialog').open)document.getElementById('teamsDialog').close();
+  let q=pre;if(q==null){const sel=(getSelection()+'').trim();q=sel&&sel.length<40?sel:(S[i].querySelector('#ltext')&&lastGloss?lastGloss:'')}
+  inp.value=q;dictRun();document.getElementById('dictCount').textContent=GLOS.length+' Wörter';
+  d.showModal();d.classList.remove('in');void d.offsetWidth;d.classList.add('in');setTimeout(()=>{inp.focus();inp.select()},30)}
+function closeDict(){const d=document.getElementById('dictDialog');if(d.open)d.close();try{speechSynthesis.cancel()}catch(e){}}
+function toggleDict(){document.getElementById('dictDialog').open?closeDict():openDict()}
+(()=>{const inp=document.getElementById('dictQ'),box=document.getElementById('dictRes');
+  inp.addEventListener('input',dictRun);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();dictRun();const f=box.querySelector('.dc');if(f){f.classList.remove('hit');void f.offsetWidth;f.classList.add('hit')}}});
+  box.addEventListener('click',e=>{const c=e.target.closest('[data-q]');if(c){inp.value=c.dataset.q;dictRun();inp.focus();return}
+    const s=e.target.closest('[data-say]');if(s)dictSay(s.dataset.say,s)});
+  document.getElementById('dictDialog').addEventListener('click',e=>{if(e.target.id==='dictDialog')closeDict()});
+})();
+
+/* ================= TECLADO ================= */
+document.addEventListener('keydown',e=>{
+  const k=e.key;
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const typing=e.target&&e.target.closest&&e.target.closest('input,textarea,select,[contenteditable="true"]');
+  const openD=document.querySelector('dialog[open]');
+  if(typing)return;
+  if(openD){
+    if(openD.id==='teamsDialog'){if(k==='p'||k==='P'){e.preventDefault();if(!e.repeat)toggleTeamDialog();return}if(k==='d'||k==='D'){e.preventDefault();openDict();return}ptsKey(e);return}
+    if(openD.id==='dictDialog'){if((k==='d'||k==='D')&&!e.repeat){e.preventDefault();closeDict()}return}
+    return}
+  if(k==='p'||k==='P'){e.preventDefault();if(!e.repeat)toggleTeamDialog();return}
+  if((k==='d'||k==='D')&&!e.repeat){e.preventDefault();openDict();return}
+  if(k==='ArrowRight'||k==='PageDown'){go(i+1);e.preventDefault()}
+  else if(k==='ArrowLeft'||k==='PageUp'){go(i-1);e.preventDefault()}
+  else if(k===' '){e.preventDefault();
+    const nx=S[i].querySelector('.step:not(.show), .rv:not(.open), .flip:not(.open), .prep-card:not(.open), .path-chip:not(.open)');
+    if(nx){nx.classList.add(nx.classList.contains('step')?'show':'open');if(nx.dataset.part)bodyHL(nx.dataset.part,nx.dataset.label)}else go(i+1)}
+  else if(k==='r'||k==='R'){const r=S[i].dataset.r;if(r==='builder')bReset();else if(r&&window[r])window[r]()}
+  else if(k==='t'||k==='T')tgT();
+  else if(k==='n'||k==='N')document.getElementById('notes').classList.toggle('on');
+  else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  else if(k==='Home')go(0);else if(k==='End')go(S.length-1);
+});
+
+/* ================= MODO PDF ================= */
+function printPrep(){
+  document.getElementById('ptsHud').style.display='none';
+  parts=[];cx.clearRect(0,0,cv.width,cv.height);
+  document.querySelectorAll('.ecg path,.miniecg path').forEach(p=>p.style.strokeDashoffset=0);
+  document.querySelectorAll('.rv,.flip,.hint,.prep-card,.path-chip').forEach(e=>e.classList.add('open'));
+  document.querySelectorAll('.step').forEach(e=>e.classList.add('show'));
+  document.querySelectorAll('#kq .q').forEach((d,k)=>ans(d,Q[k],[...d.querySelectorAll('.pick')].find(x=>x.dataset.o===Q[k].a),true));
+  if(BR){BR._i=0;bReset();bShow();}
+  pRender(0);pSol();try{bodyHL('kopf','der Kopf')}catch(e){}
+  document.querySelectorAll('#perfQuiz,#prepQuiz,#artQuiz').forEach(()=>{});if(document.getElementById('dEm')){dRender(2);dSol();}try{lAll();document.getElementById('ltext').classList.add('sP','sD','sN');gloss(document.querySelector('#ltext .gl'))}catch(e){}caseRender(0,true);
+  document.querySelectorAll('#hints .hint').forEach(h=>h.classList.add('open'));
+}
+
+
+/* ================= DATIV ARENA · 9 PREPS / 9 ARTIKEL ================= */
+const DATIV_PREPS=[
+ {t:"Am Wochenende bin ich ___ meiner Oma.",a:"bei",o:["zu","bei","nach"],why:"Wo? – en casa de alguien: bei meiner Oma."},
+ {t:"Im Sommer fliegen wir ___ Berlin.",a:"nach",o:["zu","nach","mit"],why:"Ciudad sin artículo: nach Berlin."},
+ {t:"Ich lerne ___ zwei Jahren Deutsch.",a:"seit",o:["seit","nach","mit"],why:"Desde hace: seit zwei Jahren (Plural + n)."},
+ {t:"Ich fahre mit ___ Fahrrad. (das)",a:"dem",o:["das","dem","der"],why:"das Fahrrad → mit dem Fahrrad."},
+ {t:"Ich spiele mit ___ Kindern. (Plural)",a:"den",o:["die","dem","den"],why:"Plural: mit den Kindern (+ n)."},
+ {t:"Der Brief ist von ___ Freundin. (meine)",a:"meiner",o:["meine","meinem","meiner"],why:"meine (die Freundin) → von meiner Freundin."},
+ {t:"Meine Familie kommt ___ Spanien.",a:"aus",o:["von","aus","zu"],why:"Origen (país): aus Spanien."},
+ {t:"Ich gehe heute ___ Arzt. (der)",a:"zum",o:["zum","zur","beim"],why:"der Arzt → zu dem = zum Arzt."},
+ {t:"Nach ___ Schule spiele ich Fußball. (die)",a:"der",o:["die","der","dem"],why:"die Schule → nach der Schule."}
+];
+const DATIV_ART=[
+ {t:"Ich fahre mit ___ Fahrrad. (das)",a:"dem",o:["das","dem","der"],why:"das Fahrrad → mit dem Fahrrad."},
+ {t:"Ich wohne bei ___ Tante. (die)",a:"der",o:["die","dem","der"],why:"die Tante → bei der Tante."},
+ {t:"Wir gehen zu ___ Supermarkt. (der)",a:"dem",o:["den","dem","der"],why:"der Supermarkt → zu dem = zum Supermarkt."},
+ {t:"Ich spiele mit ___ Kindern. (Plural)",a:"den",o:["die","dem","den"],why:"Plural: mit den Kindern (+ n)."},
+ {t:"Seit ___ Woche regnet es. (eine)",a:"einer",o:["eine","einem","einer"],why:"eine → einer: seit einer Woche."},
+ {t:"Ich spreche mit ___ Lehrer. (mein)",a:"meinem",o:["meinen","meinem","meiner"],why:"mein (der Lehrer) → mit meinem Lehrer."},
+ {t:"Der Brief ist von ___ Freundin. (meine)",a:"meiner",o:["meine","meinem","meiner"],why:"meine (die Freundin) → von meiner Freundin."},
+ {t:"Ich wohne gegenüber ___ Park. (der)",a:"dem",o:["den","der","dem"],why:"der Park → gegenüber dem Park."},
+ {t:"Kannst du ___ helfen? (ich)",a:"mir",o:["mich","mir","ich"],why:"helfen + Dativ: ich → mir."}
+];
+const PERF=[
+ {t:"Ich ___ gestern mit dem Bus zur Schule gefahren.",a:"bin",o:["habe","bin","ist"],why:"fahren = movimiento A → B → sein."},
+ {t:"Wir ___ bei meiner Oma Kuchen gegessen.",a:"haben",o:["sind","haben","hat"],why:"essen → haben."},
+ {t:"Ich habe meiner Freundin eine Nachricht ___.",a:"geschrieben",o:["geschreibt","geschrieben","schreiben"],why:"schreiben → geschrieben (ge- … -en)."},
+ {t:"Ich ___ drei Stunden im Park geblieben.",a:"bin",o:["bin","habe","war"],why:"bleiben → sein (excepción a aprender)."},
+ {t:"Er ist heute um 7 Uhr ___.",a:"aufgestanden",o:["geaufstanden","aufgestanden","aufgesteht"],why:"trennbar: auf-ge-standen."},
+ {t:"Sie hat ihr Handy zu Hause ___.",a:"vergessen",o:["gevergessen","vergesst","vergessen"],why:"ver- → sin ge-: vergessen."},
+ {t:"Wir ___ am Samstag ins Kino gegangen.",a:"sind",o:["haben","sind","seid"],why:"gehen = movimiento → sein · wir sind."},
+ {t:"Tom hat Leos Mutter ___. (anrufen)",a:"angerufen",o:["geanrufen","angerufen","anrufte"],why:"trennbar: an-ge-rufen."},
+ {t:"Am Sonntag habe ich meine Oma ___. (besuchen)",a:"besucht",o:["gebesucht","besucht","besuchen"],why:"be- → sin ge-: besucht."}
+];
+const DQ={perf:{data:PERF,page:0,done:new Set(),el:'perfQuiz',pageEl:'perfPage',scoreEl:'perfScore'},prep:{data:DATIV_PREPS,page:0,done:new Set(),el:'prepQuiz',pageEl:'prepPage',scoreEl:'prepScore'},art:{data:DATIV_ART,page:0,done:new Set(),el:'artQuiz',pageEl:'artPage',scoreEl:'artScore'}};
+function dativRender(kind){
+ const q=DQ[kind],host=document.getElementById(q.el);if(!host)return;
+ host.innerHTML='';const first=q.page*3,last=Math.min(first+3,q.data.length);
+ for(let n=first;n<last;n++){
+  const item=q.data[n],div=document.createElement('div');div.className='quiz-card'+(q.done.has(n)?' solved':'');
+  div.innerHTML='<div class="qnum">AUFGABE '+(n+1)+' / '+q.data.length+'</div><strong>'+item.t.replace('___','<span style="color:#0aafa1;border-bottom:3px dashed #14b8a6">___</span>')+'</strong><div class="q-options"></div><div class="q-explain"></div>';
+  const opts=div.querySelector('.q-options'),feedback=div.querySelector('.q-explain');
+  item.o.forEach(option=>{const b=document.createElement('button');b.textContent=option;
+   if(q.done.has(n)&&option===item.a)b.className='correct';
+   b.disabled=q.done.has(n);
+   b.addEventListener('click',()=>{
+    if(q.done.has(n))return;
+    if(option===item.a){q.done.add(n);div.classList.add('solved');b.classList.add('correct');feedback.textContent='✓ '+item.why;
+      opts.querySelectorAll('button').forEach(x=>x.disabled=true);boomAt(b,24);
+      if(q.done.size===q.data.length)boom(innerWidth/2,innerHeight/3,165)}
+    else{b.classList.add('wrong');feedback.textContent='✗ Versuch es noch einmal. Begründe zuerst den Dativ!'}
+    document.getElementById(q.scoreEl).textContent=q.done.size+' / '+q.data.length;
+   });opts.appendChild(b)});
+  if(q.done.has(n))feedback.textContent='✓ '+item.why;
+  host.appendChild(div);
+ }
+ document.getElementById(q.pageEl).textContent='Level '+(q.page+1)+' / '+Math.ceil(q.data.length/3);
+ document.getElementById(q.scoreEl).textContent=q.done.size+' / '+q.data.length;
+}
+function dativNav(kind,by){const q=DQ[kind];q.page=Math.max(0,Math.min(Math.ceil(q.data.length/3)-1,q.page+by));dativRender(kind)}
+function dativPrepReset(){DQ.prep.page=0;DQ.prep.done.clear();dativRender('prep')}
+function perfReset(){DQ.perf.page=0;DQ.perf.done.clear();dativRender('perf')}
+function dativArtikelReset(){DQ.art.page=0;DQ.art.done.clear();dativRender('art')}
+
+/* ================= PROCEDURAL 3D ENGINE · ZERO DEPENDENCIES =================
+   Genuine 3D vertices, depth transforms, dynamic shading and perspective.
+   Rasterized into Canvas2D for full offline single-file portability.
+*/
+const MODEL_COLORS={heart:['#fb476f','#d9235c','#ff91a4'],skin:['#f7bd9b','#e4a481','#ffe1c6'],mint:['#42eadb','#079eab','#b9fff4'],coat:['#e4f9ff','#8ec5d5','#ffffff'],blue:['#2b90e3','#09549d','#82d5ff'],white:['#d0faff','#8bbcc8','#ffffff'],red:['#fa5d76','#ad2d50','#ffbac9'],glass:['#51e3ee','#11789c','#b3ffff']};
+const MC={};
+function modelColor(color,shade){const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16),f=Math.max(.18,Math.min(1.2,shade));return `rgb(${Math.min(255,Math.round(r*f))},${Math.min(255,Math.round(g*f))},${Math.min(255,Math.round(b*f))})`}
+function triangle(a,b,c,color,out){out.push({p:[a,b,c],color})}
+function quad(a,b,c,d,color,out){triangle(a,b,c,color,out);triangle(a,c,d,color,out)}
+function cube(x,y,z,w,h,d,color,out){const X=[x-w/2,x+w/2],Y=[y-h/2,y+h/2],Z=[z-d/2,z+d/2];const v=(i,j,k)=>[X[i],Y[j],Z[k]];
+ quad(v(0,0,1),v(1,0,1),v(1,1,1),v(0,1,1),color,out);
+ quad(v(1,0,0),v(0,0,0),v(0,1,0),v(1,1,0),color,out);
+ quad(v(0,0,0),v(0,0,1),v(0,1,1),v(0,1,0),color,out);
+ quad(v(1,0,1),v(1,0,0),v(1,1,0),v(1,1,1),color,out);
+ quad(v(0,1,1),v(1,1,1),v(1,1,0),v(0,1,0),color,out);
+ quad(v(0,0,0),v(1,0,0),v(1,0,1),v(0,0,1),color,out)}
+function ellipsoid(cx,cy,cz,rx,ry,rz,color,out,nu=20,nv=12){const point=(u,v)=>{
+ const phi=u*2*Math.PI,theta=v*Math.PI;return[cx+rx*Math.sin(theta)*Math.cos(phi),cy+ry*Math.cos(theta),cz+rz*Math.sin(theta)*Math.sin(phi)]};
+ for(let j=0;j<nv;j++)for(let k=0;k<nu;k++){const u=k/nu,v=j/nv,U=(k+1)/nu,V=(j+1)/nv;
+ quad(point(u,v),point(U,v),point(U,V),point(u,V),color,out)}}
+function heartMesh(out){const N=54,R=9;
+ const curve=a=>{const x=16*Math.sin(a)**3/19,y=(13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a))/18;return[x,y+.08]};
+ for(const sg of [-1,1])for(let j=0;j<R;j++)for(let k=0;k<N;k++){
+  const a=k/N*Math.PI*2,b=(k+1)/N*Math.PI*2,r=j/R,R2=(j+1)/R;
+  const p=(t,u)=>{const [x,y]=curve(u);return [x*t,y*t,sg*(.06+.61*Math.pow(1-t*t,.65))]};
+  quad(p(r,a),p(R2,a),p(R2,b),p(r,b),sg===1?'#ef416a':'#a92151',out)
+ }
+ // rim is continuous at tip / silhouette
+ for(let k=0;k<N;k++){const a=k/N*Math.PI*2,b=(k+1)/N*Math.PI*2,[x1,y1]=curve(a),[x2,y2]=curve(b);
+  quad([x1,y1,-.06],[x2,y2,-.06],[x2,y2,.06],[x1,y1,.06],'#c43259',out)}
+}
+function pillMesh(out){const steps=30,round=7,rad=.43,body=.64;
+ // capsule runs along horizontal X, with rounded ends and two vivid color halves.
+ const rings=[];
+ for(let side of [-1,1])for(let i=0;i<=round;i++){
+  const a=i/round*Math.PI/2;const x=side*(body+rad*Math.sin(a)),r=rad*Math.cos(a);
+  rings.push({x,r,c:side<0?'#46dfeb':'#f76582'})}
+ rings.push({x:0,r:rad,c:'#fff6f5'});rings.sort((a,b)=>a.x-b.x);
+ for(let j=0;j<rings.length-1;j++)for(let i=0;i<steps;i++){
+  const a=i/steps*Math.PI*2,b=(i+1)/steps*Math.PI*2,r1=rings[j],r2=rings[j+1];
+  const pt=(r,t)=>[r.x,r.r*Math.cos(t),r.r*Math.sin(t)];
+  quad(pt(r1,a),pt(r2,a),pt(r2,b),pt(r1,b),r1.x<-.01?'#38b6db':r1.x>.01?'#ee5277':'#f5f8f9',out)
+ }
+}
+function sceneCreate(kind){const out=[];
+ if(kind==='heart'){heartMesh(out);return out}
+ if(kind==='pill'){pillMesh(out);return out}
+ if(kind==='body'){
+  // Paciente (camiseta + vaqueros) con cada parte etiquetada para iluminarla
+  const P=(part,fn)=>{const s=out.length;fn();for(let n=s;n<out.length;n++)out[n].part=typeof part==='function'?part(out[n]):part};
+  const cen=f=>[(f.p[0][0]+f.p[1][0]+f.p[2][0])/3,(f.p[0][1]+f.p[1][1]+f.p[2][1])/3,(f.p[0][2]+f.p[1][2]+f.p[2][2])/3];
+  P('kopf',()=>{ellipsoid(0,1.07,0,.34,.4,.31,'#f4bd9d',out,18,10);ellipsoid(0,1.36,-.06,.35,.2,.28,'#5a3825',out,18,9)});
+  P('ohr',()=>{ellipsoid(-.34,1.06,0,.06,.11,.06,'#e9a98a',out,10,6);ellipsoid(.34,1.06,0,.06,.11,.06,'#e9a98a',out,10,6)});
+  P('auge',()=>{ellipsoid(-.12,1.12,.27,.065,.05,.04,'#ffffff',out,12,7);ellipsoid(.12,1.12,.27,.065,.05,.04,'#ffffff',out,12,7);
+                ellipsoid(-.12,1.12,.305,.032,.032,.02,'#1d3557',out,10,6);ellipsoid(.12,1.12,.305,.032,.032,.02,'#1d3557',out,10,6)});
+  P('nase',()=>ellipsoid(0,1.0,.31,.05,.07,.06,'#ec9f80',out,10,6));
+  P('zahn',()=>{ellipsoid(0,.88,.27,.11,.045,.045,'#b8434f',out,12,6);ellipsoid(0,.895,.305,.08,.022,.02,'#ffffff',out,10,5)});
+  P('hals',()=>ellipsoid(0,.68,0,.14,.17,.13,'#e8ad8c',out,14,8));
+  P(f=>{const c=cen(f);return c[2]<-.04?'ruecken':(c[1]<.18&&c[2]>.04?'bauch':'torso')},()=>ellipsoid(0,.18,0,.52,.6,.29,'#19b3a6',out,22,14));
+  P('arm',()=>{ellipsoid(-.6,.44,0,.17,.24,.17,'#19b3a6',out,12,8);ellipsoid(.6,.44,0,.17,.24,.17,'#19b3a6',out,12,8);
+               ellipsoid(-.7,.02,.02,.12,.34,.12,'#f2b896',out,12,8);ellipsoid(.7,.02,.02,.12,.34,.12,'#f2b896',out,12,8)});
+  P('hand',()=>{ellipsoid(-.74,-.43,.04,.11,.14,.09,'#f2b896',out,12,7);ellipsoid(.74,-.43,.04,.11,.14,.09,'#f2b896',out,12,7)});
+  P('bein',()=>{ellipsoid(-.22,-.88,0,.19,.52,.19,'#2c5d93',out,14,9);ellipsoid(.22,-.88,0,.19,.52,.19,'#2c5d93',out,14,9)});
+  P('fuss',()=>{ellipsoid(-.23,-1.44,.1,.17,.1,.3,'#203049',out,12,7);ellipsoid(.23,-1.44,.1,.17,.1,.3,'#203049',out,12,7)});
+  return out
+ }
+ if(kind==='bone'){
+  // hueso con una fractura roja en el centro (gebrochen)
+  ellipsoid(0,.47,0,.13,.42,.13,'#eaf4ff',out,16,9);
+  ellipsoid(0,-.47,0,.13,.42,.13,'#eaf4ff',out,16,9);
+  for(const y of [-.92,.92])for(const x of [-.13,.13])ellipsoid(x,y,0,.17,.16,.15,'#f4f9ff',out,14,8);
+  cube(.02,.02,0,.34,.05,.3,'#ff3b5c',out);
+  return out
+ }
+ if(kind==='hospital'){
+  cube(0,0,0,2.7,2.16,1.2,'#d3eff7',out);
+  cube(0,-1.18,.04,3.15,.24,1.4,'#173c61',out);
+  cube(0,1.2,0,3,.2,1.45,'#4dcbd7',out);
+  cube(0,.75,.7,.19,.72,.13,'#fb5678',out);
+  cube(0,.75,.75,.72,.19,.13,'#fb5678',out);
+  for(let floor=0;floor<2;floor++)for(let j=0;j<3;j++){
+   const xx=(j-1)*.76,yy=.3-floor*.73;
+   cube(xx,yy,.64,.44,.42,.075,'#2689ae',out);
+  }
+  cube(0,-.74,.7,.75,.54,.09,'#176483',out);
+  cube(0,-.95,.765,.22,.1,.06,'#e1fdff',out);
+  cube(-1.78,-1.22,.55,.85,.43,.5,'#d7f5f6',out);
+  cube(-1.8,-1.02,.55,.29,.14,.56,'#e9fbff',out);
+  ellipsoid(-2.02,-1.51,.82,.16,.16,.13,'#132944',out,14,8);
+  ellipsoid(-1.52,-1.51,.82,.16,.16,.13,'#132944',out,14,8);
+  return out
+ }
+ return out
+}
+function modelRotate(p,yaw,pitch){const c=Math.cos(yaw),s=Math.sin(yaw),v=Math.cos(pitch),t=Math.sin(pitch);
+ const x=p[0]*c-p[2]*s,z=p[0]*s+p[2]*c;return[x,p[1]*v-z*t,p[1]*t+z*v]}
+function modelPaint(m,tm){const {canvas,ctx,mesh,kind}=m;
+ const rect=canvas.getBoundingClientRect();if(rect.width<10||rect.height<10)return;
+ const dpr=Math.min(1.6,window.devicePixelRatio||1),w=Math.floor(rect.width*dpr),h=Math.floor(rect.height*dpr);
+ if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}
+ ctx.clearRect(0,0,w,h);
+ if(m.tgt!=null){m.yaw+=(m.tgt-m.yaw)*.12;if(Math.abs(m.tgt-m.yaw)<.01)m.tgt=null}
+ const sw=kind==='hospital'?.4:kind==='body'?.35:kind==='bone'?.9:.55;
+ const yy=Math.sin(tm*.00033)*sw+m.yaw+(kind==='bone'?.6:0),pitch=.12+Math.sin(tm*.00045)*.07+m.pitch;
+ let scale=Math.min(w/2,h/2)*(kind==='hospital'?.46:kind==='body'?.62:kind==='bone'?.82:.97);
+ if(kind==='heart'){const ph=(tm/850)%1;scale*=1+.07*Math.exp(-Math.pow((ph-.08)/.05,2))+.04*Math.exp(-Math.pow((ph-.24)/.05,2))}
+ // soft neon floor/rings add depth context
+ ctx.save();ctx.translate(w/2,h*.52);
+ for(let j=0;j<3;j++){ctx.beginPath();ctx.ellipse(0,h*.34-j*4,scale*(.85+j*.18),scale*(.11+j*.012),0,0,Math.PI*2);ctx.strokeStyle=`rgba(47,238,220,${.24-j*.064})`;ctx.lineWidth=1.6*dpr;ctx.stroke()}
+ ctx.restore();
+ const fs=[];
+ const zc=kind==='body'?-.1:kind==='hospital'?.2:0;
+ for(const f of mesh){
+  const a=modelRotate(f.p[0],yy,pitch),b=modelRotate(f.p[1],yy,pitch),c=modelRotate(f.p[2],yy,pitch);
+  a[1]-=zc;b[1]-=zc;c[1]-=zc;
+  const edge1=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],edge2=[c[0]-a[0],c[1]-a[1],c[2]-a[2]];
+  const normal=[edge1[1]*edge2[2]-edge1[2]*edge2[1],edge1[2]*edge2[0]-edge1[0]*edge2[2],edge1[0]*edge2[1]-edge1[1]*edge2[0]];
+  const nl=Math.hypot(...normal)||1;
+  const lx=-.44,ly=.75,lz=1.05;
+  const light=(normal[0]*lx+normal[1]*ly+normal[2]*lz)/nl;
+  const lum=.63+.29*Math.abs(light)+.09*(a[2]+b[2]+c[2]+3)/6;
+  const pp=[a,b,c].map(p=>{const zz=5.9-p[2],m=4.9/zz;return[w/2+p[0]*scale*m,h*.49-p[1]*scale*m]});
+  let col=modelColor(f.color,lum);
+  if(m.hl){if(f.part===m.hl)col=modelColor('#ffcf3f',lum*(1.05+.12*Math.sin(tm*.008)));else col=modelColor(f.color,lum*.62)}
+  fs.push({p:pp,z:(a[2]+b[2]+c[2])/3,color:col})
+ }
+ fs.sort((a,b)=>a.z-b.z);
+ for(const f of fs){const p=f.p;ctx.beginPath();ctx.moveTo(p[0][0],p[0][1]);ctx.lineTo(p[1][0],p[1][1]);ctx.lineTo(p[2][0],p[2][1]);ctx.closePath();ctx.fillStyle=f.color;ctx.fill();ctx.strokeStyle=f.color;ctx.lineWidth=.6;ctx.stroke()}
+ if(m.label){ctx.font=`900 ${Math.round(Math.max(16,w*.07))}px Inter,Segoe UI,sans-serif`;ctx.textAlign='center';const tw=ctx.measureText(m.label).width;ctx.fillStyle='rgba(255,207,63,.95)';ctx.beginPath();ctx.roundRect(w/2-tw/2-14*dpr,h*.035,tw+28*dpr,w*.1,12*dpr);ctx.fill();ctx.fillStyle='#2a1d00';ctx.fillText(m.label,w/2,h*.035+w*.073)}
+}
+let modelStart=performance.now();
+function bodyHL(part,label){Object.values(MC).forEach(m=>{if(m.kind!=='body')return;m.hl=part;m.label=label||'';m.tgt=part==='ruecken'?Math.PI:0})}
+function initModels(){document.querySelectorAll('.model3d[data-scene]').forEach(box=>{
+ const canvas=box.querySelector('canvas');if(!canvas)return;
+ const kind=box.dataset.scene,ctx=canvas.getContext('2d',{alpha:true});if(!ctx)return;
+ const m={canvas,ctx,kind,mesh:sceneCreate(kind),yaw:0,pitch:0,drag:false,oldX:0,oldY:0};
+ canvas.addEventListener('pointerdown',e=>{m.drag=true;m.oldX=e.clientX;m.oldY=e.clientY;canvas.setPointerCapture(e.pointerId)});
+ canvas.addEventListener('pointermove',e=>{if(!m.drag)return;m.yaw+=(e.clientX-m.oldX)*.012;m.pitch=Math.max(-.45,Math.min(.45,m.pitch+(e.clientY-m.oldY)*.006));m.oldX=e.clientX;m.oldY=e.clientY});
+ canvas.addEventListener('pointerup',()=>m.drag=false);canvas.addEventListener('pointercancel',()=>m.drag=false);
+ MC[Object.keys(MC).length]=m
+ });
+ let last=0;function tick(t){if(t-last>=35){last=t;const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  Object.values(MC).forEach(m=>{if(m.canvas.closest('.slide')?.classList.contains('on'))modelPaint(m,reduced?0:t-modelStart)})}
+  requestAnimationFrame(tick)}requestAnimationFrame(tick)
+}
+initModels();dativRender('prep');dativRender('art');dativRender('perf');
+/* Accessibility for new reveal cards */
+document.querySelectorAll('.prep-card,.path-chip').forEach(e=>e.addEventListener('keydown',ev=>{if(ev.key==='Enter'){rv(e);ev.preventDefault()}}));
+
+/* ================= LESEVERSTEHEN ================= */
+function gloss(el){lastGloss=(el.dataset.w||el.textContent).split(' ·')[0].split(' →')[0].replace(/^(der|die|das) /,'').trim();document.querySelectorAll('#ltext .gl.act').forEach(x=>x.classList.remove('act'));el.classList.add('act','seen');
+  const d=document.getElementById('ldict');d.innerHTML='<div class="lw"></div><div class="lbase"></div><div class="les"></div>';
+  d.querySelector('.lw').textContent=el.textContent;
+  d.querySelector('.lbase').textContent=el.dataset.w===el.textContent?'':'← '+el.dataset.w;
+  d.querySelector('.les').textContent='🇪🇸 '+el.dataset.es;
+  d.classList.remove('pop');void d.offsetWidth;d.classList.add('pop')}
+document.querySelectorAll('#ltext .gl').forEach(g=>g.addEventListener('click',e=>{e.stopPropagation();gloss(g)}));
+function lens(k,b){const t=document.getElementById('ltext');t.classList.toggle('s'+k);b.classList.toggle('on',t.classList.contains('s'+k))}
+function readAloud(){const m=document.getElementById('lmsg'),s=window.speechSynthesis;
+  if(!s){m.textContent='Este navegador no tiene síntesis de voz: léelo tú 🙂';return}
+  if(s.speaking){s.cancel();m.textContent='';return}
+  const v=s.getVoices().find(v=>/^de([-_]|$)/i.test(v.lang));
+  if(!v){m.textContent='No hay voz alemana instalada en este ordenador: léelo tú 🙂';return}
+  const u=new SpeechSynthesisUtterance(document.getElementById('ltext').innerText);u.voice=v;u.lang=v.lang;u.rate=.88;s.speak(u);
+  m.textContent='🔊 '+v.name+' · clic otra vez = parar'}
+try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
+function lAnswer(q,b,quiet){if(q.classList.contains('right'))return;
+  q.querySelectorAll('.pick').forEach(x=>x.classList.remove('miss'));q.classList.remove('bad');void q.offsetWidth;
+  if(b.dataset.v===q.dataset.a){q.classList.add('right');b.classList.add('hit');q.querySelector('.why').textContent=q.dataset.why;if(!quiet)boomAt(b,25)}
+  else{q.classList.add('bad');b.classList.add('miss')}
+  const n=document.querySelectorAll('#lq .q.right').length,sc=document.getElementById('lScore');
+  sc.textContent=n+' / 4';sc.classList.remove('bump');void sc.offsetWidth;sc.classList.add('bump');
+  if(n===4&&!quiet)boom(innerWidth/2,innerHeight/3,150)}
+document.querySelectorAll('#lq .q').forEach(q=>q.querySelectorAll('.pick').forEach(b=>b.onclick=()=>lAnswer(q,b)));
+function lReset(){document.querySelectorAll('#lq .q').forEach(q=>{q.classList.remove('right','bad');q.querySelectorAll('.pick').forEach(x=>x.classList.remove('hit','miss'));q.querySelector('.why').textContent=''});
+  document.querySelectorAll('#lqw .rv').forEach(r=>r.classList.remove('open'));document.getElementById('lScore').textContent='0 / 4'}
+function lAll(){document.querySelectorAll('#lq .q').forEach(q=>lAnswer(q,q.querySelector('.pick[data-v="'+q.dataset.a+'"]'),true))}
+
+/* ================= INIT ================= */
+kRender();bInit();go(0);paintT();
+</script>
+</body>
+</html>

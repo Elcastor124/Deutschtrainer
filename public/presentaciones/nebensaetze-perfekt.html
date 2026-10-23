@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Warum? · weil, obwohl, deshalb & Perfekt</title>
+<style>
+:root{
+  --ink:#0f1729; --paper:#fdfbf7; --gold:#f5b942; --deep:#0b3a5c; --sea:#0e7490;
+  --rose:#e11d48; --mint:#10b981; --lav:#7c3aed; --dim:#64748b; --line:#e2e8f0;
+  --weil:#0ea5e9; --obwohl:#f97316; --deshalb:#a855f7; --verb:#e11d48;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--ink)}
+#deck{position:absolute;inset:0}
+section.slide{position:absolute;inset:0;padding:4.5vh 6vw 8vh;opacity:0;pointer-events:none;
+  display:flex;flex-direction:column;justify-content:center;overflow-y:auto;
+  transition:opacity .4s ease,transform .4s cubic-bezier(.2,.75,.3,1);transform:translateX(40px) scale(.985)}
+section.slide.on{opacity:1;pointer-events:auto;transform:none}
+section.slide.prev{transform:translateX(-40px) scale(.985)}
+section.slide::-webkit-scrollbar{width:6px}section.slide::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:9px}
+/* fondos */
+.bg-cream{background:linear-gradient(135deg,#fdfbf7,#fff6e6)}
+.bg-deep{background:linear-gradient(140deg,#0b3a5c,#0f1729);color:#fff}
+.bg-sky{background:linear-gradient(140deg,#0284c7,#0c4a6e);color:#fff}
+.bg-orange{background:linear-gradient(140deg,#f97316,#9a3412);color:#fff}
+.bg-lav{background:linear-gradient(140deg,#7c3aed,#3b0764);color:#fff}
+.bg-rose{background:linear-gradient(140deg,#e11d48,#881337);color:#fff}
+.bg-mint{background:linear-gradient(140deg,#10b981,#065f46);color:#fff}
+.bg-ink{background:linear-gradient(140deg,#1e293b,#0f1729);color:#fff}
+.bg-gold{background:linear-gradient(140deg,#fbbf24,#d97706);color:#3d2500}
+/* tipografía */
+.eyebrow{font-size:clamp(11px,1.1vw,15px);letter-spacing:.4em;text-transform:uppercase;font-weight:800;opacity:.62;margin-bottom:1.6vh}
+h1{font-size:clamp(48px,9vw,140px);line-height:.88;letter-spacing:-.045em;font-weight:900}
+h2{font-size:clamp(30px,4.6vw,66px);line-height:.95;letter-spacing:-.035em;font-weight:900}
+h3{font-size:clamp(18px,2vw,30px);font-weight:800;letter-spacing:-.02em}
+.lead{font-size:clamp(17px,2vw,30px);line-height:1.35;font-weight:600;opacity:.9}
+.tiny{font-size:clamp(12px,1.1vw,16px);opacity:.62;font-weight:600}
+.es{opacity:.7;font-weight:500}
+.row{display:flex;gap:1.2vw;flex-wrap:wrap;align-items:center}
+.grid{display:grid;gap:1.2vw}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:4vw;align-items:center}
+.mt1{margin-top:1.2vh}.mt2{margin-top:2.2vh}.mt3{margin-top:3.2vh}
+/* palabras clave */
+.k{font-weight:900;padding:0 .35em;border-radius:.3em;color:#fff;white-space:nowrap}
+.k.weil{background:var(--weil)}.k.obwohl{background:var(--obwohl)}.k.deshalb{background:var(--deshalb)}
+.vb{color:var(--verb);font-weight:900;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:5px}
+.dark .vb,.bg-deep .vb,.bg-ink .vb,.bg-sky .vb,.bg-lav .vb,.bg-orange .vb,.bg-rose .vb,.bg-mint .vb{color:var(--gold)}
+/* frases con fichas */
+.sent{display:flex;flex-wrap:wrap;gap:.55vw;align-items:center;font-size:clamp(20px,2.9vw,44px);font-weight:800;letter-spacing:-.02em}
+.tok{background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.25);border-radius:14px;padding:.5vh .9vw}
+.bg-cream .tok{background:#fff;border-color:var(--line)}
+.tok.v{background:var(--gold);border-color:var(--gold);color:#3d2500;box-shadow:0 6px 0 rgba(0,0,0,.15)}
+.tok.w{background:var(--weil);border-color:var(--weil);color:#fff}
+.tok.o{background:var(--obwohl);border-color:var(--obwohl);color:#fff}
+.tok.d{background:var(--deshalb);border-color:var(--deshalb);color:#fff}
+.tok.p{background:var(--mint);border-color:var(--mint);color:#fff}
+.lbl{font-size:clamp(11px,1vw,14px);font-weight:900;letter-spacing:.18em;text-transform:uppercase;opacity:.65;margin-bottom:.8vh}
+.arrow{font-size:clamp(14px,1.5vw,22px);font-weight:800;opacity:.8;margin:1.2vh 0}
+/* pasos */
+.step{opacity:.07;cursor:pointer;transition:.35s;transform:translateY(8px)}
+.step.show{opacity:1;transform:none;cursor:default}
+/* reveal */
+.rv{background:#fff;border:2px solid var(--line);border-radius:20px;padding:2vh 1.4vw;cursor:pointer;
+  transition:.25s cubic-bezier(.2,.8,.3,1);box-shadow:0 3px 0 rgba(15,23,41,.05)}
+.rv:hover{transform:translateY(-4px);border-color:var(--deep);box-shadow:0 14px 28px rgba(11,58,92,.14)}
+.rv .front{font-size:clamp(15px,1.65vw,26px);font-weight:800;line-height:1.25}
+.rv .back{max-height:0;opacity:0;overflow:hidden;transition:.3s;font-size:clamp(14px,1.5vw,23px);color:var(--sea);font-weight:700;line-height:1.35}
+.rv.open{border-color:var(--mint);background:linear-gradient(160deg,#ecfdf5,#fff)}
+.rv.open .back{max-height:30vh;opacity:1;margin-top:1vh}
+.dark .rv{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.22);color:#fff;box-shadow:none}
+.dark .rv:hover{border-color:#fff;background:rgba(255,255,255,.15)}
+.dark .rv.open{background:rgba(255,255,255,.18);border-color:var(--gold)}
+.dark .rv .back{color:var(--gold)}
+.wrong{text-decoration:line-through;text-decoration-color:var(--rose);text-decoration-thickness:3px}
+.rv:not(.open) .wrong{text-decoration:none}
+/* botones */
+.b{border:none;font-family:inherit;font-weight:800;cursor:pointer;border-radius:99px;padding:1.3vh 2vw;
+  font-size:clamp(13px,1.35vw,20px);transition:.2s;background:var(--ink);color:#fff}
+.b:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(15,23,41,.25)}
+.b.g{background:var(--gold);color:#3d2500}.b.w{background:#fff;color:var(--ink);border:2px solid var(--line)}
+.b.o{background:transparent;border:2px solid currentColor;color:inherit}
+.b.sm{padding:.9vh 1.3vw;font-size:clamp(12px,1.15vw,16px)}
+/* juego de elección */
+.q{display:flex;align-items:center;gap:1vw;background:#fff;border:2px solid var(--line);border-radius:18px;
+  padding:1.3vh 1.3vw;font-size:clamp(15px,1.7vw,26px);font-weight:700;transition:.25s}
+.q .txt{flex:1}.q .gap{display:inline-block;min-width:5.5em;border-bottom:3px dashed #94a3b8;text-align:center;font-weight:900}
+.q .opts{display:flex;gap:.5vw}
+.pick{border:2px solid var(--line);background:#fff;border-radius:12px;padding:.7vh 1vw;font-weight:900;
+  font-size:clamp(12px,1.25vw,19px);cursor:pointer;font-family:inherit;color:var(--dim);transition:.15s}
+.pick:hover{border-color:var(--deep);color:var(--deep)}
+.q.right{border-color:var(--mint);background:#ecfdf5}
+.q.bad{border-color:var(--rose);background:#fff1f2;animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.scorebox{font-size:clamp(14px,1.5vw,22px);font-weight:900}
+/* tabla posiciones */
+.pos{width:100%;border-collapse:separate;border-spacing:.5vw .8vh;font-size:clamp(16px,2.1vw,32px);font-weight:800}
+.pos th{font-size:clamp(10px,1vw,14px);letter-spacing:.18em;text-transform:uppercase;opacity:.6;font-weight:900;text-align:left;padding:0 .8vw}
+.pos td{background:rgba(255,255,255,.1);border-radius:12px;padding:1vh .9vw}
+.pos td.p2{background:var(--gold);color:#3d2500}
+.pos td.empty{background:transparent}
+/* tabla resumen */
+.sum{width:100%;border-collapse:collapse;font-size:clamp(15px,1.75vw,27px)}
+.sum td{padding:1.6vh 1vw;border-bottom:2px solid var(--line);vertical-align:middle}
+.sum td:first-child{width:14%}
+.sum .rule{font-size:clamp(12px,1.25vw,18px);font-weight:900;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+/* builder */
+.builder .tabs{display:flex;gap:.5vw;flex-wrap:wrap;margin-bottom:1.6vh}
+.builder .tabs .b.on{background:var(--lav);color:#fff;border-color:var(--lav)}
+.tiles{display:flex;gap:.6vw;flex-wrap:wrap;min-height:7vh;align-items:center;margin-top:1.6vh}
+.tile{background:#fff;border:2px solid var(--line);border-radius:12px;padding:1vh 1.1vw;font-size:clamp(14px,1.65vw,26px);
+  font-weight:800;cursor:pointer;transition:.15s;font-family:inherit;color:var(--ink)}
+.tile:hover{border-color:var(--lav);transform:translateY(-3px)}
+.tile.used{opacity:.2;pointer-events:none}
+.drop{min-height:8.5vh;border:3px dashed #cbd5e1;border-radius:18px;padding:1.2vh 1.2vw;display:flex;gap:.5vw;
+  flex-wrap:wrap;align-items:center;background:#fff;cursor:pointer}
+.drop .tile{background:var(--lav);color:#fff;border-color:var(--lav);pointer-events:none}
+.drop.ok{border-color:var(--mint);border-style:solid;background:#ecfdf5}.drop.ok .tile{background:var(--mint);border-color:var(--mint)}
+.drop.no{border-color:var(--rose);animation:shake .4s}
+.bmsg{font-size:clamp(15px,1.7vw,26px);font-weight:900}
+/* hat/ist */
+.arena{background:rgba(255,255,255,.1);border:3px solid rgba(255,255,255,.25);border-radius:28px;padding:3.5vh 3vw;text-align:center}
+.arena .inf{font-size:clamp(46px,7.5vw,112px);font-weight:900;letter-spacing:-.04em;line-height:1}
+.arena .tr{font-size:clamp(14px,1.6vw,24px);opacity:.7;font-weight:600;margin-top:.6vh}
+.arena .res{font-size:clamp(22px,3.2vw,50px);font-weight:900;min-height:1.3em;margin-top:1.4vh}
+.big2{font-size:clamp(20px,2.6vw,40px)!important;padding:1.6vh 3.2vw!important}
+/* ausreden */
+.excuse{background:rgba(255,255,255,.1);border:3px solid rgba(255,255,255,.26);border-radius:28px;padding:4vh 3vw;text-align:center;
+  min-height:30vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4vh}
+.excuse .em{font-size:clamp(46px,7vw,100px);line-height:1}
+.excuse .txt{font-size:clamp(22px,3.3vw,52px);font-weight:900;letter-spacing:-.03em}
+.excuse .sol{font-size:clamp(15px,1.8vw,27px);font-weight:700;color:var(--gold);min-height:1.4em}
+.pop{animation:pop .4s cubic-bezier(.2,1.5,.4,1)}@keyframes pop{0%{transform:scale(.6);opacity:0}}
+/* checklist */
+.ck{display:flex;align-items:center;gap:1vw;font-size:clamp(15px,1.8vw,28px);font-weight:800;padding:1.3vh 1.5vw;border-radius:16px;
+  background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.18);cursor:pointer;transition:.25s;opacity:.55}
+.ck .box{width:clamp(24px,2.4vw,38px);height:clamp(24px,2.4vw,38px);border-radius:9px;border:3px solid rgba(255,255,255,.5);
+  display:grid;place-items:center;flex:none;color:transparent;font-size:clamp(14px,1.5vw,22px)}
+.ck.on{opacity:1;background:rgba(16,185,129,.25);border-color:var(--mint)}.ck.on .box{background:var(--mint);border-color:var(--mint);color:#fff}
+.bg-cream .ck{background:#fff;border-color:var(--line);color:var(--ink)}
+.bg-cream .ck .box{border-color:#cbd5e1}
+.bg-cream .ck.on{background:#ecfdf5;border-color:var(--mint)}
+.chip{display:inline-block;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:99px;
+  padding:.6vh 1vw;font-size:clamp(12px,1.25vw,18px);font-weight:700;margin:.3vh .2vw}
+.bg-cream .chip{background:#fff;border-color:var(--line)}
+.box2{background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.22);border-radius:20px;padding:2vh 1.6vw}
+.bg-cream .box2{background:#fff;border-color:var(--line)}
+.warnbox{border-left:6px solid var(--gold);background:rgba(245,185,66,.14);border-radius:0 16px 16px 0;padding:1.6vh 1.4vw;
+  font-size:clamp(14px,1.6vw,24px);font-weight:700}
+/* HUD */
+#bar{position:fixed;top:0;left:0;height:4px;background:var(--gold);z-index:30;transition:width .4s}
+#nav{position:fixed;bottom:2vh;left:2.4vw;display:flex;gap:.6vw;z-index:30}
+.nb{width:clamp(36px,3.2vw,48px);height:clamp(36px,3.2vw,48px);border-radius:50%;border:none;cursor:pointer;
+  background:rgba(127,127,127,.18);font-size:clamp(14px,1.4vw,20px);font-weight:900;color:inherit;font-family:inherit}
+.nb:hover{background:rgba(127,127,127,.35)}
+#num{position:fixed;bottom:2.6vh;right:2.4vw;font-size:clamp(11px,1.1vw,15px);font-weight:900;letter-spacing:.2em;opacity:.4;z-index:30;pointer-events:none}
+#timer{position:fixed;top:1.6vh;right:1.6vw;z-index:30;font-variant-numeric:tabular-nums;font-weight:900;
+  font-size:clamp(16px,1.8vw,26px);background:rgba(15,23,41,.82);color:#fff;border-radius:14px;padding:.6vh 1vw;cursor:pointer;
+  border:2px solid transparent;user-select:none}
+#timer.run{border-color:var(--mint)}#timer.low{border-color:var(--rose);animation:blink .8s infinite}
+@keyframes blink{50%{opacity:.4}}
+#notes{position:fixed;left:0;right:0;bottom:0;z-index:25;background:rgba(15,23,41,.94);color:#fde68a;
+  padding:1.4vh 6vw 1.4vh 12vw;font-size:clamp(13px,1.3vw,18px);font-weight:600;transform:translateY(100%);transition:.3s}
+#notes.on{transform:none}
+#notes b{color:#fff}
+#hint{position:fixed;bottom:2.8vh;left:50%;transform:translateX(-50%);font-size:clamp(10px,.9vw,12px);font-weight:800;
+  letter-spacing:.12em;opacity:.3;z-index:30;pointer-events:none;text-transform:uppercase;white-space:nowrap}
+@media(max-width:900px){.split,.g3,.g4{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="timer" onclick="tgT()" title="Clic o T = iniciar/pausar">05:00</div>
+<div id="deck">
+
+<!-- 1 PORTADA -->
+<section class="slide bg-ink dark" data-min="0" data-note="Portada. Pon en marcha: pregunta rápida «¿Qué tal el finde?» en alemán mientras se sientan.">
+  <div class="eyebrow">Deutsch · Grammatik · ca. 50 min</div>
+  <h1>WARUM?<br><span style="color:var(--gold)">DESHALB!</span></h1>
+  <p class="lead mt2">Nebensätze mit <span class="k weil">weil</span> und <span class="k obwohl">obwohl</span> · <span class="k deshalb">deshalb / deswegen</span> · das <b style="color:var(--mint)">Perfekt</b></p>
+  <div class="row mt3">
+    <span class="chip">1 · Gründe geben</span><span class="chip">2 · Gegensätze</span><span class="chip">3 · Folgen</span>
+    <span class="chip">4 · Die Vergangenheit</span><span class="chip">5 · Alles zusammen</span><span class="chip">6 · Jetzt ihr! ✍️</span>
+  </div>
+</section>
+
+<!-- 2 WARM-UP -->
+<section class="slide bg-cream" data-min="0–3" data-note="Diagnóstico. NO corrijas aún: apunta cómo ordenan el verbo tras «weil» y si usan Perfekt. Esos errores son tu material para la Fehlerjagd.">
+  <div class="eyebrow">Warm-up · 3 Minuten</div>
+  <h2>Zwei Fragen 🎤</h2>
+  <div class="grid g2 mt3">
+    <div class="rv" onclick="rv(this)">
+      <div class="front" style="font-size:clamp(22px,3vw,46px)">Warum lernst du Deutsch?</div>
+      <div class="back">Ich lerne Deutsch, <b>weil</b> ich in Deutschland studieren <b>möchte</b>.</div>
+    </div>
+    <div class="rv" onclick="rv(this)">
+      <div class="front" style="font-size:clamp(22px,3vw,46px)">Was hast du am Wochenende gemacht?</div>
+      <div class="back">Ich <b>habe</b> Fußball <b>gespielt</b> und ich <b>bin</b> ins Kino <b>gegangen</b>.</div>
+    </div>
+  </div>
+  <p class="tiny mt3">Primero responden ellos como puedan → después clic para ver un modelo.</p>
+</section>
+
+<!-- 3 WEIL -->
+<section class="slide bg-sky dark" data-min="3–8" data-note="Pulsa ESPACIO para ir mostrando cada paso. Pregunta: «¿Qué le ha pasado a 'mag'?» Que lo descubran ellos. Regla: coma + weil + verbo al FINAL.">
+  <div class="eyebrow">Teil 1 · Gründe geben</div>
+  <h2><span class="k weil">weil</span> = porque</h2>
+  <div class="mt3">
+    <div class="lbl">Zwei Sätze</div>
+    <div class="sent"><span class="tok">Ich lerne Deutsch.</span><span class="tok">Ich</span><span class="tok v">mag</span><span class="tok">die Sprache.</span></div>
+  </div>
+  <div class="step arrow">⬇ Verbinden mit <b>weil</b> … ¿y el verbo?</div>
+  <div class="step">
+    <div class="sent"><span class="tok">Ich lerne Deutsch,</span><span class="tok w">weil</span><span class="tok">ich</span><span class="tok">die Sprache</span><span class="tok v">mag.</span></div>
+  </div>
+  <div class="step warnbox mt2">📌 <b>, weil</b> + Subjekt + … + <span class="vb">VERB am Ende</span> &nbsp;·&nbsp; Coma siempre antes de <i>weil</i>.</div>
+  <div class="grid g3 mt2">
+    <div class="rv" onclick="rv(this)"><div class="front">Ich bleibe zu Hause. Ich bin krank.</div><div class="back">Ich bleibe zu Hause, weil ich krank <span class="vb">bin</span>.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Ich trinke Kaffee. Ich bin müde.</div><div class="back">Ich trinke Kaffee, weil ich müde <span class="vb">bin</span>.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">⭐ Er kommt nicht. Er muss arbeiten.</div><div class="back">Er kommt nicht, weil er arbeiten <span class="vb">muss</span>.<br><small>Modalverb = el ÚLTIMO de todos</small></div></div>
+  </div>
+</section>
+
+<!-- 4 OBWOHL -->
+<section class="slide bg-orange dark" data-min="8–12" data-note="Idea clave: weil = lógico, obwohl = sorpresa/contra lo esperado. Misma regla de orden: verbo al final. Que inventen ellos un ejemplo propio antes de pasar.">
+  <div class="eyebrow">Teil 2 · Gegensätze</div>
+  <h2><span class="k obwohl" style="background:#fff;color:var(--obwohl)">obwohl</span> = aunque</h2>
+  <div class="mt3">
+    <div class="sent"><span class="tok">Es</span><span class="tok v">regnet.</span><span class="tok">Ich gehe spazieren.</span><span style="font-size:.8em">🌧️🚶</span></div>
+  </div>
+  <div class="step arrow">⬇ ¿Lógico? No… ¡sorpresa!</div>
+  <div class="step"><div class="sent"><span class="tok">Ich gehe spazieren,</span><span class="tok" style="background:#fff;color:var(--obwohl)">obwohl</span><span class="tok">es</span><span class="tok v">regnet.</span></div></div>
+  <div class="step grid g2 mt2">
+    <div class="box2"><div class="lbl">weil</div><div class="lead">✔ lógico: Ich esse, weil ich Hunger habe.</div></div>
+    <div class="box2"><div class="lbl">obwohl</div><div class="lead">⚡ sorpresa: Ich esse, obwohl ich keinen Hunger habe.</div></div>
+  </div>
+  <div class="grid g3 mt2">
+    <div class="rv" onclick="rv(this)"><div class="front">Ich gehe zur Schule. Ich bin krank.</div><div class="back">Ich gehe zur Schule, obwohl ich krank <span class="vb">bin</span>.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Er spielt Fußball. Es ist sehr kalt.</div><div class="back">Er spielt Fußball, obwohl es sehr kalt <span class="vb">ist</span>.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Sie lernt nicht. Morgen hat sie eine Prüfung.</div><div class="back">Sie lernt nicht, obwohl sie morgen eine Prüfung <span class="vb">hat</span>.</div></div>
+  </div>
+</section>
+
+<!-- 5 JUEGO WEIL/OBWOHL -->
+<section class="slide bg-cream" data-min="12–15" data-note="Juego rápido. Uno lee la frase entera EN VOZ ALTA y elige. Alterna alumno en cada frase. Pide que justifiquen: «¿lógico o sorpresa?»">
+  <div class="eyebrow">Spiel · weil oder obwohl?</div>
+  <div class="row" style="justify-content:space-between"><h2>Logisch ✔ oder Überraschung ⚡?</h2><div class="scorebox" id="sc1">0 / 6</div></div>
+  <div class="grid g2 mt2" id="game1" style="gap:1vh 1.2vw">
+    <div class="q"><span class="txt">Ich trage eine Jacke, <span class="gap">___</span> es kalt ist.</span><span class="opts"><button class="pick" onclick="ch(this,1)">weil</button><button class="pick" onclick="ch(this,0)">obwohl</button></span></div>
+    <div class="q"><span class="txt">Ich trage ein T-Shirt, <span class="gap">___</span> es kalt ist.</span><span class="opts"><button class="pick" onclick="ch(this,0)">weil</button><button class="pick" onclick="ch(this,1)">obwohl</button></span></div>
+    <div class="q"><span class="txt">Er lernt viel, <span class="gap">___</span> er gute Noten haben will.</span><span class="opts"><button class="pick" onclick="ch(this,1)">weil</button><button class="pick" onclick="ch(this,0)">obwohl</button></span></div>
+    <div class="q"><span class="txt">Sie ist müde, <span class="gap">___</span> sie zehn Stunden geschlafen hat.</span><span class="opts"><button class="pick" onclick="ch(this,0)">weil</button><button class="pick" onclick="ch(this,1)">obwohl</button></span></div>
+    <div class="q"><span class="txt">Wir gehen ins Kino, <span class="gap">___</span> wir Zeit haben.</span><span class="opts"><button class="pick" onclick="ch(this,1)">weil</button><button class="pick" onclick="ch(this,0)">obwohl</button></span></div>
+    <div class="q"><span class="txt">Ich esse den Salat, <span class="gap">___</span> ich ihn nicht mag.</span><span class="opts"><button class="pick" onclick="ch(this,0)">weil</button><button class="pick" onclick="ch(this,1)">obwohl</button></span></div>
+  </div>
+  <div class="row mt2"><button class="b w sm" onclick="resetGame('game1')">↺ Nochmal</button></div>
+</section>
+
+<!-- 6 DESHALB -->
+<section class="slide bg-lav dark" data-min="15–20" data-note="LO MÁS IMPORTANTE DEL DÍA: deshalb NO es Nebensatz. El verbo se queda en posición 2 y el sujeto salta detrás. Muéstralo con la tabla. Deswegen = deshalb (idéntico).">
+  <div class="eyebrow">Teil 3 · Folgen</div>
+  <h2><span class="k deshalb" style="background:#fff;color:var(--deshalb)">deshalb</span> = <span class="k deshalb" style="background:#fff;color:var(--deshalb)">deswegen</span> = por eso</h2>
+  <div class="warnbox mt2">⚠️ ¡Trampa! <b>deshalb</b> NO es Nebensatz → el verbo se queda en la <b>posición 2</b> y el sujeto va <b>detrás</b>.</div>
+  <table class="pos mt2">
+    <tr><th>Pos. 1</th><th>Pos. 2 · Verb</th><th>…</th></tr>
+    <tr><td>Ich</td><td class="p2">bleibe</td><td>zu Hause.</td></tr>
+    <tr class="step"><td>Heute</td><td class="p2">bleibe</td><td>ich zu Hause.</td></tr>
+    <tr class="step"><td>Es regnet. <b>Deshalb</b></td><td class="p2">bleibe</td><td>ich zu Hause.</td></tr>
+  </table>
+  <div class="step grid g2 mt2">
+    <div class="box2"><div class="lbl">weil → da la CAUSA</div><div class="lead">Folge, <span class="k weil">weil</span> Grund.</div></div>
+    <div class="box2"><div class="lbl">deshalb → da la CONSECUENCIA</div><div class="lead">Grund. <span class="k deshalb">Deshalb</span> Folge.</div></div>
+  </div>
+  <div class="grid g2 mt2">
+    <div class="rv" onclick="rv(this)"><div class="front">Ich bin müde. (ins Bett gehen)</div><div class="back">Ich bin müde. Deshalb <span class="vb">gehe</span> ich ins Bett.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Ich habe Hunger. (eine Pizza essen)</div><div class="back">Ich habe Hunger, deswegen <span class="vb">esse</span> ich eine Pizza.</div></div>
+  </div>
+</section>
+
+<!-- 7 RESUMEN -->
+<section class="slide bg-cream" data-min="20–22" data-note="Foto mental. Pregunta: ¿dónde va el verbo en cada caso? Que lo digan sin mirar la columna de la derecha (tápala con la mano si hace falta).">
+  <div class="eyebrow">Die große Übersicht</div>
+  <h2>¿Dónde va el verbo? 🧭</h2>
+  <table class="sum mt2">
+    <tr><td><span class="k weil">weil</span></td><td>Ich bleibe zu Hause, weil ich krank <span class="vb">bin</span>.</td><td class="rule" style="color:var(--weil)">Verb → Ende</td></tr>
+    <tr><td><span class="k obwohl">obwohl</span></td><td>Ich gehe raus, obwohl ich krank <span class="vb">bin</span>.</td><td class="rule" style="color:var(--obwohl)">Verb → Ende</td></tr>
+    <tr><td><span class="k deshalb">deshalb</span></td><td>Ich bin krank. Deshalb <span class="vb">bleibe</span> ich zu Hause.</td><td class="rule" style="color:var(--deshalb)">Verb → Pos. 2</td></tr>
+    <tr><td>⭐ <span class="k weil">Weil…</span></td><td>Weil ich krank <span class="vb">bin</span>, <span class="vb">bleibe</span> ich zu Hause.</td><td class="rule" style="color:var(--rose)">Verb , Verb</td></tr>
+  </table>
+  <p class="tiny mt2">💡 Truco: <b>weil / obwohl</b> mandan el verbo a casa (al final). <b>deshalb</b> se sienta en la silla 1 y el verbo sigue en la 2.</p>
+</section>
+
+<!-- 8 UMFORMEN -->
+<section class="slide bg-deep dark" data-min="22–25" data-note="Cada frase: un alumno la dice con weil, el otro con deshalb. Luego intercambian. Clic solo para comprobar.">
+  <div class="eyebrow">Umformen · weil ⇄ deshalb</div>
+  <h2>Ein Grund, zwei Sätze 🔄</h2>
+  <div class="grid g2 mt3">
+    <div class="rv" onclick="rv(this)"><div class="front">🍎 Ich habe Hunger. → einen Apfel essen</div><div class="back">Ich esse einen Apfel, weil ich Hunger habe.<br>Ich habe Hunger. Deshalb esse ich einen Apfel.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">☀️ Es ist heiß. → schwimmen gehen</div><div class="back">Wir gehen schwimmen, weil es heiß ist.<br>Es ist heiß. Deshalb gehen wir schwimmen.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">📱 Mein Handy ist kaputt. → ein neues kaufen</div><div class="back">Ich kaufe ein neues Handy, weil meins kaputt ist.<br>Mein Handy ist kaputt. Deswegen kaufe ich ein neues.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">🤒 Ich bin krank. → nicht zur Schule gehen</div><div class="back">Ich gehe nicht zur Schule, weil ich krank bin.<br>Ich bin krank. Deshalb gehe ich nicht zur Schule.</div></div>
+  </div>
+</section>
+
+<!-- 9 BUILDER 1 -->
+<section class="slide bg-cream" data-min="25–28" data-note="Constructor. Clic en las fichas para ordenar; clic en la frase para quitar la última. Las frases que empiezan con Weil/Obwohl también valen si son correctas.">
+  <div class="eyebrow">Spiel · Baue den Satz</div>
+  <h2>Ordne die Wörter 🧩</h2>
+  <div class="builder mt2" data-set="neben"></div>
+</section>
+
+<!-- 10 PERFEKT -->
+<section class="slide bg-mint dark" data-min="28–31" data-note="Perfekt = el pasado hablado. Muestra la 'Satzklammer': auxiliar en posición 2, participio al FINAL. Pregunta de vuelta: «Was hast du gestern gemacht?»">
+  <div class="eyebrow">Teil 4 · Die Vergangenheit</div>
+  <h2>Das PERFEKT ⏪</h2>
+  <p class="lead mt1">En alemán hablado, el Perfekt es <b>EL</b> pasado. Casi siempre.</p>
+  <div class="mt3">
+    <div class="lbl">La pinza (Satzklammer)</div>
+    <div class="sent"><span class="tok">Ich</span><span class="tok v">habe</span><span class="tok">gestern Pizza</span><span class="tok p">gegessen.</span></div>
+  </div>
+  <div class="step warnbox mt2">📌 <b>haben / sein</b> (Pos. 2) + … + <b>Partizip II</b> (al final)</div>
+  <div class="grid g3 mt2">
+    <div class="step box2"><div class="lead">Ich <b>habe</b> Fußball <b style="color:var(--gold)">gespielt</b>.</div></div>
+    <div class="step box2"><div class="lead">Wir <b>sind</b> nach Madrid <b style="color:var(--gold)">gefahren</b>.</div></div>
+    <div class="step box2"><div class="lead"><b>Hast</b> du Deutsch <b style="color:var(--gold)">gelernt</b>?</div></div>
+  </div>
+</section>
+
+<!-- 11 PARTIZIP -->
+<section class="slide bg-cream" data-min="31–35" data-note="4 familias. Enseña 1 ejemplo, que adivinen los demás antes del clic. Lo irregular se memoriza: no expliques más de 30 s.">
+  <div class="eyebrow">Das Partizip II</div>
+  <h2>4 Familien 👨‍👩‍👧‍👦</h2>
+  <div class="grid g4 mt3">
+    <div class="rv" onclick="rv(this)"><div class="lbl" style="color:var(--sea)">1 · regelmäßig</div><div class="front">ge + … + t</div><div class="tiny mt1">machen · spielen · kaufen · arbeiten</div>
+      <div class="back">gemacht · gespielt · gekauft · gearbeitet</div></div>
+    <div class="rv" onclick="rv(this)"><div class="lbl" style="color:var(--obwohl)">2 · unregelmäßig</div><div class="front">ge + … + en</div><div class="tiny mt1">essen · trinken · schreiben · sehen</div>
+      <div class="back">gegessen · getrunken · geschrieben · gesehen</div></div>
+    <div class="rv" onclick="rv(this)"><div class="lbl" style="color:var(--deshalb)">3 · trennbar</div><div class="front">auf-<b>ge</b>-…</div><div class="tiny mt1">aufstehen · einkaufen · fernsehen · anrufen</div>
+      <div class="back">aufgestanden · eingekauft · ferngesehen · angerufen</div></div>
+    <div class="rv" onclick="rv(this)"><div class="lbl" style="color:var(--rose)">4 · ohne ge-</div><div class="front">-ieren · be- · ver-</div><div class="tiny mt1">studieren · telefonieren · besuchen · verstehen</div>
+      <div class="back">studiert · telefoniert · besucht · verstanden</div></div>
+  </div>
+</section>
+
+<!-- 12 HABEN/SEIN -->
+<section class="slide bg-ink dark" data-min="35–37" data-note="Regla simple: SEIN = me muevo de A a B, o cambio de estado (+ sein, bleiben, passieren). Todo lo demás, HABEN (≈ 90%).">
+  <div class="eyebrow">haben oder sein?</div>
+  <h2>90 % <span style="color:var(--mint)">haben</span> · 10 % <span style="color:var(--gold)">sein</span></h2>
+  <div class="grid g2 mt3">
+    <div class="box2" style="border-color:var(--gold)">
+      <h3 style="color:var(--gold)">SEIN 🚶➡️📍</h3>
+      <p class="lead mt1">Movimiento A → B</p><div class="tiny mt1" style="opacity:.85">gehen · fahren · fliegen · kommen · laufen</div>
+      <p class="lead mt2">Cambio de estado</p><div class="tiny mt1" style="opacity:.85">aufstehen · einschlafen · werden</div>
+      <p class="lead mt2">+ los 3 raros</p><div class="tiny mt1" style="opacity:.85">sein → gewesen · bleiben → geblieben · passieren → passiert</div>
+    </div>
+    <div class="box2" style="border-color:var(--mint)">
+      <h3 style="color:var(--mint)">HABEN ✅</h3>
+      <p class="lead mt1">Todo lo demás</p>
+      <div class="tiny mt1" style="opacity:.85">essen · spielen · lernen · sehen · schlafen · kaufen · machen…</div>
+      <div class="step warnbox mt3" style="color:#fff">🤔 Ich <b>habe</b> geschlafen — pero Ich <b>bin</b> eingeschlafen. ¿Por qué?</div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 HAT/IST GAME -->
+<section class="slide bg-sky dark" data-min="37–40" data-note="Juego rápido: sale un verbo → el alumno dice la frase entera en voz alta («ich bin gefahren») ANTES de pulsar. Alterna alumno. R = otro verbo.">
+  <div class="eyebrow">Blitz-Spiel · R = neues Verb</div>
+  <div class="row" style="justify-content:space-between"><h2>haben oder sein? ⚡</h2><div class="scorebox" id="hsScore">✔ 0 · ✘ 0</div></div>
+  <div class="arena mt2">
+    <div class="inf" id="hsInf">fahren</div>
+    <div class="tr" id="hsTr">conducir / ir en vehículo</div>
+    <div class="row mt2" style="justify-content:center">
+      <button class="b g big2" onclick="hsAns('haben')">ich habe …</button>
+      <button class="b w big2" onclick="hsAns('sein')">ich bin …</button>
+    </div>
+    <div class="res" id="hsRes"></div>
+  </div>
+  <div class="row mt2"><button class="b o" onclick="hsNext()">🎲 Nächstes Verb (R)</button></div>
+</section>
+
+<!-- 14 KOMBI -->
+<section class="slide bg-rose dark" data-min="40–43" data-note="El gran final de gramática: en el Nebensatz el AUXILIAR se va al último lugar, detrás del participio. Con deshalb, el auxiliar en posición 2.">
+  <div class="eyebrow">Teil 5 · Alles zusammen</div>
+  <h2>Nebensatz + Perfekt 🔥</h2>
+  <div class="mt3">
+    <div class="lbl">weil + Perfekt → el auxiliar, el ÚLTIMO</div>
+    <div class="sent"><span class="tok">Ich bin müde,</span><span class="tok w">weil</span><span class="tok">ich</span><span class="tok">schlecht</span><span class="tok p">geschlafen</span><span class="tok v">habe.</span></div>
+  </div>
+  <div class="step mt2">
+    <div class="lbl">obwohl + Perfekt</div>
+    <div class="sent" style="font-size:clamp(17px,2.3vw,36px)"><span class="tok">Ich habe die Prüfung bestanden,</span><span class="tok o">obwohl</span><span class="tok">ich wenig</span><span class="tok p">gelernt</span><span class="tok v">habe.</span></div>
+  </div>
+  <div class="step mt2">
+    <div class="lbl">deshalb + Perfekt → auxiliar en Pos. 2</div>
+    <div class="sent" style="font-size:clamp(17px,2.3vw,36px)"><span class="tok">Ich habe viel gelernt.</span><span class="tok d">Deshalb</span><span class="tok v">habe</span><span class="tok">ich eine gute Note</span><span class="tok p">bekommen.</span></div>
+  </div>
+</section>
+
+<!-- 15 BUILDER 2 -->
+<section class="slide bg-cream" data-min="43–46" data-note="Mismo constructor, ahora con Perfekt. Fíjate en que pongan el auxiliar al final tras weil/obwohl.">
+  <div class="eyebrow">Spiel · Baue den Satz · Level 2</div>
+  <h2>Mit Perfekt 🧩🔥</h2>
+  <div class="builder mt2" data-set="combo"></div>
+</section>
+
+<!-- 16 FEHLERJAGD -->
+<section class="slide bg-gold" data-min="46–49" data-note="Cada tarjeta tiene UN error. Que lo encuentren y lo digan corregido antes del clic. Punto por error cazado si quieres competición.">
+  <div class="eyebrow">Fehlerjagd 🕵️</div>
+  <h2>Finde den Fehler!</h2>
+  <div class="grid g4 mt3">
+    <div class="rv" onclick="rv(this)"><div class="front">Ich lerne Deutsch, weil ich <span class="wrong">mag die Sprache</span>.</div><div class="back">… weil ich die Sprache mag.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Es regnet. Deshalb <span class="wrong">ich bleibe</span> zu Hause.</div><div class="back">Deshalb bleibe ich zu Hause.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Ich <span class="wrong">habe</span> nach Berlin gefahren.</div><div class="back">Ich bin nach Berlin gefahren.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Wir haben Pizza <span class="wrong">gegesst</span>.</div><div class="back">Wir haben Pizza gegessen.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Ich bin müde, weil ich <span class="wrong">habe schlecht geschlafen</span>.</div><div class="back">… weil ich schlecht geschlafen habe.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Ich <span class="wrong">habe</span> um 7 Uhr aufgestanden.</div><div class="back">Ich bin um 7 Uhr aufgestanden.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Er hat Medizin <span class="wrong">gestudiert</span>.</div><div class="back">Er hat Medizin studiert.</div></div>
+    <div class="rv" onclick="rv(this)"><div class="front">Obwohl es kalt ist, <span class="wrong">ich gehe</span> schwimmen.</div><div class="back">Obwohl es kalt ist, gehe ich schwimmen.</div></div>
+  </div>
+</section>
+
+<!-- 17 AUSREDEN -->
+<section class="slide bg-lav dark" data-min="49–53" data-note="ARBEITSPHASE 1 (oral). Tú eres el profe enfadado. Pregunta → 30 s → excusa con weil + Perfekt. Cuanto más absurda, mejor. Bonus: el otro reacciona con «Obwohl…?» o «Und deshalb…?».">
+  <div class="eyebrow">Arbeitsphase 1 · Sprechen · 30 Sekunden</div>
+  <h2>Die beste Ausrede 😅</h2>
+  <p class="tiny mt1" style="opacity:.8">Responde con <b>weil + Perfekt</b>. Cuanto más loca la excusa, mejor.</p>
+  <div class="excuse mt2" id="exBox">
+    <div class="em" id="exEm">😠</div>
+    <div class="txt" id="exTx">Drück den Knopf!</div>
+    <div class="sol" id="exSol"></div>
+  </div>
+  <div class="row mt2">
+    <button class="b g" onclick="exNext()">🎲 Neue Frage (R)</button>
+    <button class="b o" onclick="setT(30);startT()">⏱ 30 s</button>
+    <button class="b o" onclick="exSol()">💡 Beispiel</button>
+  </div>
+</section>
+
+<!-- 18 SCHREIBEN -->
+<section class="slide bg-cream" data-min="53–60" data-note="ARBEITSPHASE 2 (escrito, 7-8 min). Pon el temporizador. Mientras escriben, pasea y corrige en directo. Al final cada uno lee 2 frases y el otro pregunta «Warum?».">
+  <div class="eyebrow">Arbeitsphase 2 · Schreiben</div>
+  <div class="split" style="align-items:start">
+    <div>
+      <h2>Mein verrücktes Wochenende ✍️</h2>
+      <p class="lead mt1">Escribe <b>6–8 frases en Perfekt</b> sobre un fin de semana (real o inventado).</p>
+      <div class="mt2" style="display:flex;flex-direction:column;gap:.8vh">
+        <div class="ck" onclick="ck(this)"><div class="box">✓</div>2 × <span class="k weil">weil</span></div>
+        <div class="ck" onclick="ck(this)"><div class="box">✓</div>1 × <span class="k obwohl">obwohl</span></div>
+        <div class="ck" onclick="ck(this)"><div class="box">✓</div>1 × <span class="k deshalb">deshalb / deswegen</span></div>
+        <div class="ck" onclick="ck(this)"><div class="box">✓</div>mín. 2 verbos con <b>sein</b></div>
+        <div class="ck" onclick="ck(this)"><div class="box">✓</div>⭐ 1 frase que empiece con <b>Weil…</b></div>
+      </div>
+      <div class="row mt2">
+        <button class="b" onclick="setT(420);startT()">⏱ 7 min</button>
+        <button class="b w" onclick="setT(600);startT()">⏱ 10 min</button>
+      </div>
+    </div>
+    <div class="box2">
+      <div class="lbl">Wortkiste · ideas</div>
+      <div><span class="chip">bin … gefahren</span><span class="chip">bin … gegangen</span><span class="chip">bin … aufgestanden</span>
+        <span class="chip">bin … geblieben</span><span class="chip">bin … eingeschlafen</span><span class="chip">habe … getroffen</span>
+        <span class="chip">habe … gegessen</span><span class="chip">habe … gesehen</span><span class="chip">habe … gespielt</span>
+        <span class="chip">habe … eingekauft</span><span class="chip">habe … vergessen</span><span class="chip">habe … verloren</span></div>
+      <div class="lbl mt2">Modelo</div>
+      <p style="font-size:clamp(14px,1.45vw,21px);font-weight:600;line-height:1.5">Am Samstag <b>bin</b> ich um 12 Uhr <b>aufgestanden</b>, <span class="k weil">weil</span> ich bis 3 Uhr Netflix <b>gesehen habe</b>. <span class="k obwohl">Obwohl</span> es geregnet hat, <b>bin</b> ich an den Strand <b>gefahren</b>. Ich habe meinen Schlüssel verloren. <span class="k deshalb">Deshalb</span> <b>bin</b> ich bei einem Freund <b>geblieben</b>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 19 FIN -->
+<section class="slide bg-mint dark" data-min="60" data-note="Cierre: que marquen ellos mismos lo que sienten que ya saben. Lo que no marquen = repaso de la próxima clase.">
+  <div class="eyebrow">Heute kann ich…</div>
+  <h2>Geschafft! 🎉</h2>
+  <div class="grid g2 mt3" style="gap:1vh 1vw">
+    <div class="ck" onclick="ck(this)"><div class="box">✓</div>mit <b>weil</b> einen Grund geben</div>
+    <div class="ck" onclick="ck(this)"><div class="box">✓</div>mit <b>obwohl</b> einen Gegensatz sagen</div>
+    <div class="ck" onclick="ck(this)"><div class="box">✓</div>mit <b>deshalb</b> eine Folge sagen</div>
+    <div class="ck" onclick="ck(this)"><div class="box">✓</div>das <b>Partizip II</b> bilden</div>
+    <div class="ck" onclick="ck(this)"><div class="box">✓</div><b>haben</b> oder <b>sein</b> wählen</div>
+    <div class="ck" onclick="ck(this)"><div class="box">✓</div>Nebensatz + Perfekt kombinieren</div>
+  </div>
+  <div class="box2 mt3"><div class="lbl">Hausaufgabe 📝</div>
+    <div class="lead">5 Ausreden mit <b>weil + Perfekt</b> · 3 Sätze mit <b>deshalb</b> · 1 mit <b>obwohl</b></div></div>
+</section>
+
+</div>
+
+<div id="nav"><button class="nb" onclick="go(i-1)">←</button><button class="nb" onclick="go(i+1)">→</button></div>
+<div id="hint">Espacio paso · R azar · T reloj · N notas · F full</div>
+<div id="num">1 / 19</div>
+<div id="notes"></div>
+
+<script>
+const S=[...document.querySelectorAll('#deck > section.slide')];let i=0;
+function go(n){
+  if(n<0||n>=S.length)return;
+  S[i].classList.remove('on');S[i].classList.toggle('prev',n>i);
+  i=n;S[i].classList.remove('prev');S[i].classList.add('on');S[i].scrollTop=0;
+  document.getElementById('num').textContent=(i+1)+' / '+S.length;
+  document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+  const m=S[i].dataset.min,no=S[i].dataset.note||'';
+  document.getElementById('notes').innerHTML='<b>⏱ min '+m+'</b> &nbsp;·&nbsp; '+no;
+}
+function rv(e){e.classList.toggle('open')}
+function ck(e){e.classList.toggle('on')}
+document.querySelectorAll('.step').forEach(s=>s.addEventListener('click',()=>s.classList.add('show')));
+
+/* ---- juego de elección ---- */
+function ch(btn,ok){
+  const q=btn.closest('.q');if(q.classList.contains('right'))return;
+  q.querySelectorAll('.pick').forEach(b=>b.style.cssText='');
+  q.classList.remove('bad');void q.offsetWidth;
+  if(ok){q.classList.add('right');btn.style.cssText='background:var(--mint);color:#fff;border-color:var(--mint)';
+    q.querySelector('.gap').textContent=btn.textContent;q.querySelector('.gap').style.color='var(--mint)';}
+  else{q.classList.add('bad');btn.style.cssText='background:var(--rose);color:#fff;border-color:var(--rose)';}
+  const root=q.parentElement;
+  document.getElementById('sc1').textContent=root.querySelectorAll('.q.right').length+' / '+root.querySelectorAll('.q').length;
+}
+function resetGame(id){
+  const r=document.getElementById(id);
+  r.querySelectorAll('.q').forEach(q=>{q.classList.remove('right','bad');q.querySelector('.gap').textContent='___';q.querySelector('.gap').style.color='';
+    q.querySelectorAll('.pick').forEach(b=>b.style.cssText='')});
+  document.getElementById('sc1').textContent='0 / '+r.querySelectorAll('.q').length;
+}
+
+/* ---- constructor de frases ---- */
+const SETS={
+ neben:[
+  {a:"Ich lerne Deutsch, weil ich in Berlin studieren möchte.",alt:["Weil ich in Berlin studieren möchte, lerne ich Deutsch."]},
+  {a:"Ich gehe spazieren, obwohl es regnet.",alt:["Obwohl es regnet, gehe ich spazieren."]},
+  {a:"Ich bin müde, deshalb gehe ich ins Bett.",alt:[]},
+  {a:"Weil ich Hunger habe, esse ich eine Pizza.",alt:["Ich esse eine Pizza, weil ich Hunger habe."],star:1}
+ ],
+ combo:[
+  {a:"Ich bin müde, weil ich schlecht geschlafen habe.",alt:["Weil ich schlecht geschlafen habe, bin ich müde."]},
+  {a:"Er ist zu spät gekommen, weil er den Bus verpasst hat.",alt:["Weil er den Bus verpasst hat, ist er zu spät gekommen."]},
+  {a:"Ich habe die Prüfung bestanden, obwohl ich wenig gelernt habe.",alt:["Obwohl ich wenig gelernt habe, habe ich die Prüfung bestanden."]},
+  {a:"Ich habe viel gelernt, deshalb habe ich eine gute Note bekommen.",alt:[],star:1}
+ ]
+};
+const norm=s=>s.toLowerCase().replace(/[.,?!]/g,'').replace(/\s+/g,' ').trim();
+const words=s=>s.replace(/[.,?!]/g,'').split(/\s+/).filter(Boolean);
+function shuffle(a){a=[...a];for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a}
+function initBuilder(root){
+  root._set=SETS[root.dataset.set];root._i=0;
+  root.innerHTML='<div class="tabs"></div><div class="drop"></div><div class="tiles"></div>'+
+   '<div class="row mt2"><button class="b" data-a="check">Prüfen ✓</button><button class="b w" data-a="reset">Nochmal ↺</button>'+
+   '<button class="b g" data-a="show">Lösung</button><span class="bmsg"></span></div>';
+  const tabs=root.querySelector('.tabs');
+  root._set.forEach((s,k)=>{const b=document.createElement('button');b.className='b w sm';b.textContent=(s.star?'⭐ ':'')+'Satz '+(k+1);
+    b.onclick=()=>{root._i=k;bReset(root)};tabs.appendChild(b)});
+  root.querySelector('.drop').onclick=()=>bPop(root);
+  root.querySelector('[data-a=check]').onclick=()=>bCheck(root);
+  root.querySelector('[data-a=reset]').onclick=()=>bReset(root);
+  root.querySelector('[data-a=show]').onclick=()=>bShow(root);
+  bReset(root);
+}
+function bReset(root){
+  root._picked=[];
+  root.querySelectorAll('.tabs .b').forEach((b,k)=>b.classList.toggle('on',k===root._i));
+  const d=root.querySelector('.drop');d.className='drop';d.innerHTML='';
+  root.querySelector('.bmsg').textContent='';
+  const t=root.querySelector('.tiles');t.innerHTML='';
+  let w=words(root._set[root._i].a);
+  // la primera palabra en minúscula para no regalar el comienzo (salvo "Ich" / sustantivos: se queda igual)
+  let sh=shuffle(w);let tries=0;while(sh.join(' ')===w.join(' ')&&tries++<10)sh=shuffle(w);
+  sh.forEach(x=>{const b=document.createElement('button');b.className='tile';b.textContent=x;
+    b.onclick=()=>{b.classList.add('used');root._picked.push(b);const s=document.createElement('span');s.className='tile';s.textContent=x;
+      d.appendChild(s);d.className='drop';root.querySelector('.bmsg').textContent='';};t.appendChild(b)});
+}
+function bPop(root){
+  if(!root._picked.length)return;
+  root._picked.pop().classList.remove('used');
+  const d=root.querySelector('.drop');d.removeChild(d.lastElementChild);d.className='drop';
+  root.querySelector('.bmsg').textContent='';
+}
+function bCheck(root){
+  const s=root._set[root._i],got=norm(root._picked.map(b=>b.textContent).join(' '));
+  const ok=[s.a,...s.alt].some(x=>norm(x)===got);
+  const d=root.querySelector('.drop'),m=root.querySelector('.bmsg');
+  d.classList.remove('ok','no');void d.offsetWidth;
+  if(ok){d.classList.add('ok');m.textContent='✓ Richtig!';m.style.color='var(--mint)'}
+  else{d.classList.add('no');m.textContent=root._picked.length<words(s.a).length?'… faltan palabras':'✗ Nochmal!';m.style.color='var(--rose)'}
+}
+function bShow(root){
+  const s=root._set[root._i],d=root.querySelector('.drop');
+  d.innerHTML='';words(s.a).forEach(x=>{const e=document.createElement('span');e.className='tile';e.textContent=x;d.appendChild(e)});
+  d.className='drop ok';root.querySelectorAll('.tiles .tile').forEach(t=>t.classList.add('used'));
+  root._picked=[];const m=root.querySelector('.bmsg');m.textContent='→ '+s.a;m.style.color='var(--mint)';
+}
+document.querySelectorAll('.builder').forEach(initBuilder);
+
+/* ---- haben/sein ---- */
+const VERBS=[
+ ["machen","haben","gemacht","hacer"],["spielen","haben","gespielt","jugar"],["kaufen","haben","gekauft","comprar"],
+ ["arbeiten","haben","gearbeitet","trabajar"],["lernen","haben","gelernt","aprender / estudiar"],["essen","haben","gegessen","comer"],
+ ["trinken","haben","getrunken","beber"],["sehen","haben","gesehen","ver"],["schreiben","haben","geschrieben","escribir"],
+ ["lesen","haben","gelesen","leer"],["schlafen","haben","geschlafen","dormir"],["treffen","haben","getroffen","quedar con / encontrar"],
+ ["finden","haben","gefunden","encontrar"],["bekommen","haben","bekommen","recibir"],["vergessen","haben","vergessen","olvidar"],
+ ["verstehen","haben","verstanden","entender"],["besuchen","haben","besucht","visitar"],["studieren","haben","studiert","estudiar (carrera)"],
+ ["telefonieren","haben","telefoniert","hablar por teléfono"],["einkaufen","haben","eingekauft","hacer la compra"],
+ ["fernsehen","haben","ferngesehen","ver la tele"],["anrufen","haben","angerufen","llamar"],["haben","haben","gehabt","tener"],
+ ["verlieren","haben","verloren","perder"],
+ ["gehen","sein","gegangen","ir (a pie)"],["fahren","sein","gefahren","ir en vehículo"],["kommen","sein","gekommen","venir"],
+ ["fliegen","sein","geflogen","volar"],["laufen","sein","gelaufen","correr / andar"],["schwimmen","sein","geschwommen","nadar"],
+ ["aufstehen","sein","aufgestanden","levantarse"],["einschlafen","sein","eingeschlafen","dormirse"],["bleiben","sein","geblieben","quedarse"],
+ ["sein","sein","gewesen","ser / estar"],["werden","sein","geworden","llegar a ser"],["passieren","sein","passiert","pasar / ocurrir"],
+ ["reisen","sein","gereist","viajar"],["umziehen","sein","umgezogen","mudarse"]
+];
+let hsCur=null,hsDone=false,hsOk=0,hsBad=0,hsLast=-1;
+function hsNext(){
+  let k;do{k=Math.floor(Math.random()*VERBS.length)}while(k===hsLast);hsLast=k;
+  hsCur=VERBS[k];hsDone=false;
+  document.getElementById('hsInf').textContent=hsCur[0];
+  document.getElementById('hsTr').textContent=hsCur[3];
+  document.getElementById('hsRes').textContent='';
+  const e=document.getElementById('hsInf');e.classList.remove('pop');void e.offsetWidth;e.classList.add('pop');
+}
+function hsAns(aux){
+  if(!hsCur||hsDone)return;hsDone=true;
+  const ok=aux===hsCur[1],full='ich '+(hsCur[1]==='haben'?'habe':'bin')+' '+hsCur[2];
+  const r=document.getElementById('hsRes');
+  r.textContent=(ok?'✔ ':'✘ ')+full;r.style.color=ok?'#6ee7b7':'#fda4af';
+  ok?hsOk++:hsBad++;
+  document.getElementById('hsScore').textContent='✔ '+hsOk+' · ✘ '+hsBad;
+}
+
+/* ---- ausreden ---- */
+const EX=[
+ ["⏰","Warum bist du zu spät gekommen?","Weil mein Wecker nicht geklingelt hat."],
+ ["📚","Warum hast du die Hausaufgaben nicht gemacht?","Weil mein Hund meine Hausaufgaben gegessen hat."],
+ ["📵","Warum hast du mich nicht angerufen?","Weil ich mein Handy im Bus vergessen habe."],
+ ["🍕","Warum hast du so viel Pizza gegessen?","Weil ich den ganzen Tag nichts gegessen habe."],
+ ["🎉","Warum bist du nicht zur Party gekommen?","Weil ich den ganzen Abend gelernt habe."],
+ ["😴","Warum bist du so müde?","Weil ich bis 4 Uhr Netflix gesehen habe."],
+ ["💤","Warum hast du im Unterricht geschlafen?","Weil ich in der Nacht nicht geschlafen habe."],
+ ["📉","Warum hast du nicht gelernt?","Weil ich das Buch in der Schule vergessen habe."],
+ ["🔑","Warum bist du nicht nach Hause gegangen?","Weil ich meinen Schlüssel verloren habe."],
+ ["🏖️","Warum bist du am Montag nicht gekommen?","Weil ich am Wochenende nach Portugal gefahren bin."]
+];
+let exI=-1;
+function exNext(){
+  let k;do{k=Math.floor(Math.random()*EX.length)}while(k===exI);exI=k;
+  document.getElementById('exEm').textContent=EX[k][0];document.getElementById('exTx').textContent=EX[k][1];
+  document.getElementById('exSol').textContent='';
+  const b=document.getElementById('exBox');b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop');
+}
+function exSol(){if(exI>=0)document.getElementById('exSol').textContent='💬 '+EX[exI][2]}
+
+/* ---- temporizador ---- */
+let tTot=300,tLeft=300,tId=null;
+function paintT(){const e=document.getElementById('timer');
+  e.textContent=String(Math.floor(tLeft/60)).padStart(2,'0')+':'+String(tLeft%60).padStart(2,'0');
+  e.classList.toggle('low',tLeft>0&&tLeft<=10);}
+function setT(n){stopT();tTot=n;tLeft=n;paintT()}
+function startT(){if(tId)return;if(tLeft<=0)tLeft=tTot;document.getElementById('timer').classList.add('run');
+  tId=setInterval(()=>{tLeft--;paintT();if(tLeft<=0){stopT();beep()}},1000)}
+function stopT(){clearInterval(tId);tId=null;document.getElementById('timer').classList.remove('run','low')}
+function tgT(){tId?stopT():startT()}
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator(),g=c.createGain();
+  o.connect(g);g.connect(c.destination);o.frequency.value=660;g.gain.value=.15;o.start();setTimeout(()=>{o.stop();c.close()},500)}catch(e){}}
+
+/* ---- teclado ---- */
+document.addEventListener('keydown',e=>{
+  const k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'){go(i+1);e.preventDefault()}
+  else if(k==='ArrowLeft'||k==='PageUp'){go(i-1);e.preventDefault()}
+  else if(k===' '){e.preventDefault();
+    const nxt=S[i].querySelector('.step:not(.show), .rv:not(.open)');
+    if(nxt){nxt.classList.add(nxt.classList.contains('step')?'show':'open')}else go(i+1);}
+  else if(k==='r'||k==='R'){const id=S[i].querySelector('#hsInf')?'hs':S[i].querySelector('#exBox')?'ex':null;
+    if(id==='hs')hsNext();else if(id==='ex')exNext();else{const b=S[i].querySelector('.builder');if(b)bReset(b)}}
+  else if(k==='t'||k==='T'){tgT()}
+  else if(k==='n'||k==='N'){document.getElementById('notes').classList.toggle('on')}
+  else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  else if(k==='Home'){go(0)}else if(k==='End'){go(S.length-1)}
+});
+S[0].classList.add('on');go(0);paintT();hsNext();
+</script>
+</body>
+</html>

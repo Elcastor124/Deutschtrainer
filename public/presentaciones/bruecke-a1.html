@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brücke A1 · Clase puente de alemán</title>
+<style>
+:root{
+  --bg:#0c0f16; --bg2:#121724; --card:#181f30; --card2:#1f2839;
+  --line:#2b3448; --txt:#eef2ff; --dim:#94a3b8;
+  --neu:#38bdf8; --weiter:#f472b6; --ok:#34d399; --warn:#fbbf24;
+  --acc:#a78bfa;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:radial-gradient(1200px 700px at 50% -10%,#1b2338 0%,var(--bg) 60%);
+  color:var(--txt);font-family:"Inter","Segoe UI",system-ui,sans-serif;
+  overflow:hidden;
+}
+/* ---------- HUD ---------- */
+#hud{position:fixed;top:0;left:0;right:0;height:62px;display:flex;align-items:center;
+  gap:14px;padding:0 18px;background:rgba(12,15,22,.82);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);z-index:50}
+.brand{font-weight:800;letter-spacing:.5px;font-size:15px;color:var(--acc);white-space:nowrap}
+.sp{flex:1}
+.score{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:6px 10px;cursor:pointer;user-select:none;transition:.15s}
+.score:hover{border-color:var(--acc)}
+.score .nm{font-size:13px;color:var(--dim);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.score .pt{font-size:22px;font-weight:800;min-width:30px;text-align:center}
+.score.a .pt{color:var(--neu)} .score.b .pt{color:var(--weiter)}
+.score.bump{transform:scale(1.12)}
+#timer{font-variant-numeric:tabular-nums;font-size:26px;font-weight:800;background:var(--card);
+  border:1px solid var(--line);border-radius:12px;padding:4px 14px;cursor:pointer;min-width:104px;text-align:center}
+#timer.run{border-color:var(--ok);color:var(--ok)}
+#timer.low{border-color:#ef4444;color:#ef4444;animation:pulse .8s infinite}
+@keyframes pulse{50%{opacity:.45}}
+.btn{background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:12px;
+  padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit}
+.btn:hover{border-color:var(--acc);background:var(--card2)}
+.btn.big{padding:14px 22px;font-size:17px;border-radius:14px}
+.btn.pri{background:linear-gradient(135deg,#6d28d9,#7c3aed);border-color:#8b5cf6}
+#pos{font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+/* ---------- progreso ---------- */
+#prog{position:fixed;top:62px;left:0;height:3px;background:linear-gradient(90deg,var(--neu),var(--acc),var(--weiter));
+  z-index:50;transition:width .35s ease}
+/* ---------- slides ---------- */
+#stage{position:absolute;top:65px;left:0;right:0;bottom:0;overflow:hidden}
+.slide{position:absolute;inset:0;padding:26px 40px 30px;overflow-y:auto;
+  opacity:0;transform:translateY(26px) scale(.99);pointer-events:none;transition:.32s cubic-bezier(.2,.7,.3,1)}
+.slide.on{opacity:1;transform:none;pointer-events:auto}
+.slide::-webkit-scrollbar{width:8px}.slide::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+.kicker{font-size:13px;letter-spacing:2.5px;text-transform:uppercase;color:var(--acc);font-weight:700;margin-bottom:6px}
+h1{font-size:clamp(30px,4.2vw,50px);line-height:1.08;margin-bottom:10px;letter-spacing:-1px}
+h2{font-size:clamp(24px,3vw,36px);margin-bottom:8px;letter-spacing:-.5px}
+.sub{color:var(--dim);font-size:17px;margin-bottom:20px;max-width:900px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px}
+.card h3{font-size:19px;margin-bottom:10px}
+.pane{border-radius:20px;padding:22px;border:2px solid}
+.pane.neu{border-color:rgba(56,189,248,.5);background:linear-gradient(160deg,rgba(56,189,248,.10),rgba(56,189,248,.02))}
+.pane.weiter{border-color:rgba(244,114,182,.5);background:linear-gradient(160deg,rgba(244,114,182,.10),rgba(244,114,182,.02))}
+.tag{display:inline-block;font-size:12px;font-weight:800;letter-spacing:1.6px;padding:5px 12px;border-radius:99px;margin-bottom:12px}
+.tag.neu{background:var(--neu);color:#06283b}.tag.weiter{background:var(--weiter);color:#4a0f2c}
+.tag.both{background:var(--acc);color:#2a0f52}
+ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+li{font-size:17px;line-height:1.45;padding-left:18px;position:relative}
+li::before{content:"▸";position:absolute;left:0;color:var(--acc)}
+.de{font-weight:700;color:#fff}
+.es{color:var(--dim);font-size:.88em}
+/* reveal */
+.rev{cursor:pointer;border-radius:12px;padding:12px 16px;background:var(--card2);border:1px dashed var(--line);
+  transition:.2s;user-select:none}
+.rev:hover{border-color:var(--acc)}
+.rev .q{font-size:19px;font-weight:700}
+.rev .a{max-height:0;overflow:hidden;opacity:0;transition:.3s;color:var(--ok);font-size:18px;font-weight:600}
+.rev.open{border-style:solid;border-color:var(--ok);background:rgba(52,211,153,.08)}
+.rev.open .a{max-height:180px;opacity:1;margin-top:8px}
+.rev .hint{font-size:12px;color:var(--dim);margin-top:4px}
+/* juego */
+.stagebox{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px;text-align:center}
+.bigtxt{font-size:clamp(40px,7vw,86px);font-weight:800;letter-spacing:-2px;line-height:1.05}
+.bigtxt.small{font-size:clamp(26px,3.4vw,42px);letter-spacing:-1px}
+.who{font-size:20px;font-weight:800;padding:8px 18px;border-radius:99px;display:inline-block;margin-bottom:14px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.center{justify-content:center}
+.chip{background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:8px 16px;font-size:16px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:17px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font-size:13px;letter-spacing:1px;text-transform:uppercase}
+td.de{color:#fff}
+.note{border-left:3px solid var(--warn);background:rgba(251,191,36,.08);padding:12px 16px;border-radius:0 12px 12px 0;
+  color:#fde68a;font-size:15px;margin-top:14px}
+.tbar{position:fixed;bottom:0;left:0;right:0;padding:10px 18px;background:rgba(12,15,22,.85);
+  backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;z-index:50}
+.tbar .tip{font-size:13px;color:var(--dim)}
+#stage{bottom:56px}
+/* overlay ayuda */
+#help{position:fixed;inset:0;background:rgba(6,8,13,.88);z-index:99;display:none;align-items:center;justify-content:center}
+#help.on{display:flex}
+#help .box{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:30px;max-width:640px}
+kbd{background:var(--card2);border:1px solid var(--line);border-bottom-width:3px;border-radius:7px;
+  padding:2px 9px;font-family:ui-monospace,monospace;font-size:14px}
+#help td{font-size:16px}
+input.nm{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:12px;
+  padding:12px 16px;font-size:18px;font-family:inherit;width:100%}
+.flash{animation:fl .5s}
+@keyframes fl{0%{transform:scale(.92);opacity:.2}100%{transform:none;opacity:1}}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div class="brand">BRÜCKE&nbsp;A1</div>
+  <div class="score a" onclick="pt('a',1)" oncontextmenu="pt('a',-1);return false" id="sa">
+    <span class="nm" id="na">Alumno A</span><span class="pt" id="pa">0</span>
+  </div>
+  <div class="score b" onclick="pt('b',1)" oncontextmenu="pt('b',-1);return false" id="sb">
+    <span class="nm" id="nb">Alumno B</span><span class="pt" id="pb">0</span>
+  </div>
+  <div id="timer" onclick="tgTimer()">00:60</div>
+  <button class="btn" onclick="setT(30)">30s</button>
+  <button class="btn" onclick="setT(60)">60s</button>
+  <button class="btn" onclick="setT(120)">2m</button>
+  <div class="sp"></div>
+  <button class="btn" onclick="randStudent()">🎲 Alumno</button>
+  <button class="btn" onclick="toggleHelp()">? Ayuda</button>
+  <div id="pos">1 / 12</div>
+</div>
+<div id="prog" style="width:0"></div>
+
+<div id="stage">
+
+<!-- 0 PORTADA -->
+<section class="slide">
+  <div style="max-width:960px;margin:4vh auto 0">
+    <div class="kicker">Clase puente · 60 minutos · Nivel A1</div>
+    <h1>Zwei Schüler.<br>Ein Thema.<br><span style="color:var(--acc)">Zwei Tiefen.</span></h1>
+    <p class="sub">Hoy trabajamos un solo tema — <strong>presentarse y preguntar datos personales</strong> — pero cada uno a su nivel. Azul = empieza hoy. Rosa = continúa.</p>
+    <div class="grid g2" style="margin-top:20px">
+      <div class="pane neu">
+        <span class="tag neu">NEU · empieza hoy</span>
+        <input class="nm" id="ina" placeholder="Nombre del alumno nuevo" oninput="setName('a',this.value)">
+        <ul style="margin-top:14px">
+          <li>Saludar y despedirse</li><li>Decir nombre, edad, origen</li><li>Números 0–20</li><li>Entender 4 preguntas clave</li>
+        </ul>
+      </div>
+      <div class="pane weiter">
+        <span class="tag weiter">WEITER · 6ª clase</span>
+        <input class="nm" id="inb" placeholder="Nombre del alumno antiguo" oninput="setName('b',this.value)">
+        <ul style="margin-top:14px">
+          <li>Preguntar él mismo (du-Form)</li><li>Unir frases: und / aber</li><li>Verbos: wohnen, sprechen, mögen</li><li>Hablar 30s sin parar</li>
+        </ul>
+      </div>
+    </div>
+    <div class="row center" style="margin-top:26px">
+      <button class="btn big pri" onclick="go(1)">Empezar clase →</button>
+    </div>
+  </div>
+</section>
+
+<!-- 1 DIAGNÓSTICO -->
+<section class="slide">
+  <div class="kicker">0–5 min · Diagnóstico camuflado</div>
+  <h2>🎲 Blitz-Check</h2>
+  <p class="sub">No es examen: es un juego. Pulsa la ruleta, di quién responde y cuenta el punto. <strong>Objetivo real:</strong> descubrir qué recuerda el antiguo y qué deduce el nuevo. Nadie pierde puntos por fallar.</p>
+  <div class="stagebox">
+    <div class="who" id="bcWho" style="background:var(--card2)">Pulsa para empezar</div>
+    <div class="bigtxt small" id="bcQ">Blitz-Check</div>
+    <div style="color:var(--ok);font-size:20px;font-weight:700;margin-top:14px;min-height:28px" id="bcA"></div>
+    <div class="row center" style="margin-top:22px">
+      <button class="btn big pri" onclick="bcNext()">Siguiente pregunta (R)</button>
+      <button class="btn big" onclick="bcShow()">Mostrar respuesta</button>
+    </div>
+  </div>
+  <div class="note">👨‍🏫 <strong>Anota mentalmente 3 cosas:</strong> ¿el antiguo produce frases o solo palabras? ¿usa <em>du</em>? ¿el nuevo imita bien la pronunciación? Eso decide cuánto aprietas en la slide 6.</div>
+</section>
+
+<!-- 2 BASE: SALUDOS -->
+<section class="slide">
+  <div class="kicker">5–15 min · Base común</div>
+  <h2>Begrüßungen — los 8 imprescindibles</h2>
+  <p class="sub">Clic en cada tarjeta para revelar. Regla de oro: <strong>tú lo dices una vez, ellos lo repiten dos</strong>. Nada de explicar gramática aquí.</p>
+  <div class="grid g4">
+    <div class="rev" onclick="rv(this)"><div class="q">Hallo</div><div class="a">Hola (siempre vale)</div></div>
+    <div class="rev" onclick="rv(this)"><div class="q">Guten Morgen</div><div class="a">Buenos días (hasta ~11h)</div></div>
+    <div class="rev" onclick="rv(this)"><div class="q">Guten Tag</div><div class="a">Buenos días/tardes (formal)</div></div>
+    <div class="rev" onclick="rv(this)"><div class="q">Guten Abend</div><div class="a">Buenas noches (al llegar)</div></div>
+    <div class="rev" onclick="rv(this)"><div class="q">Tschüss</div><div class="a">Adiós (informal)</div></div>
+    <div class="rev" onclick="rv(this)"><div class="q">Auf Wiedersehen</div><div class="a">Hasta la vista (formal)</div></div>
+    <div class="rev" onclick="rv(this)"><div class="q">Bis morgen</div><div class="a">Hasta mañana</div></div>
+    <div class="rev" onclick="rv(this)"><div class="q">Wie geht's?</div><div class="a">¿Qué tal? → Gut, danke. Und dir?</div></div>
+  </div>
+  <div class="grid g2" style="margin-top:18px">
+    <div class="pane neu"><span class="tag neu">NEU</span><ul>
+      <li>Repite cada palabra 2×, mirando a los ojos</li>
+      <li>Ronda: te saluda con 3 formas distintas</li></ul></div>
+    <div class="pane weiter"><span class="tag weiter">WEITER</span><ul>
+      <li>¿Cuál usarías a las 8:00 con tu profesor?</li>
+      <li>Diálogo completo: saludo + <span class="de">Wie geht's?</span> + respuesta + despedida</li></ul></div>
+  </div>
+</section>
+
+<!-- 3 BASE: 4 PREGUNTAS -->
+<section class="slide">
+  <div class="kicker">5–15 min · Base común · El núcleo del día</div>
+  <h2>Die 4 Fragen · Las 4 preguntas</h2>
+  <p class="sub">Todo lo demás de hoy cuelga de aquí. Revela una a una y haz que <em>los dos</em> contesten antes de pasar.</p>
+  <div class="grid g2">
+    <div class="rev" onclick="rv(this)"><div class="q">Wie heißt du?</div><div class="hint">¿Cómo te llamas?</div><div class="a">→ Ich heiße Pablo.</div></div>
+    <div class="rev" onclick="rv(this)"><div class="q">Wie alt bist du?</div><div class="hint">¿Cuántos años tienes?</div><div class="a">→ Ich bin 16 Jahre alt.</div></div>
+    <div class="rev" onclick="rv(this)"><div class="q">Woher kommst du?</div><div class="hint">¿De dónde vienes?</div><div class="a">→ Ich komme aus Spanien.</div></div>
+    <div class="rev" onclick="rv(this)"><div class="q">Wo wohnst du?</div><div class="hint">¿Dónde vives?</div><div class="a">→ Ich wohne in Sevilla.</div></div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <h3>El patrón que deben ver solos</h3>
+    <table>
+      <tr><th>Pregunta (du)</th><th>Respuesta (ich)</th></tr>
+      <tr><td class="de">Wie heiß<span style="color:var(--warn)">t</span> du?</td><td class="de">Ich heiß<span style="color:var(--warn)">e</span>…</td></tr>
+      <tr><td class="de">Wo wohn<span style="color:var(--warn)">st</span> du?</td><td class="de">Ich wohn<span style="color:var(--warn)">e</span>…</td></tr>
+      <tr><td class="de">Woher komm<span style="color:var(--warn)">st</span> du?</td><td class="de">Ich komm<span style="color:var(--warn)">e</span>…</td></tr>
+      <tr><td class="de">Wie alt <span style="color:var(--warn)">bist</span> du?</td><td class="de">Ich <span style="color:var(--warn)">bin</span>… <span class="es">(sein es irregular)</span></td></tr>
+    </table>
+    <div class="note">Pregunta socrática, no expliques: «¿Qué le pasa al final del verbo cuando digo <em>ich</em>? ¿Y con <em>du</em>?» — Que lo diga el antiguo. Si no le sale, lo dice el nuevo. 30 segundos máximo.</div>
+  </div>
+</section>
+
+<!-- 4 DIFERENCIADA -->
+<section class="slide">
+  <div class="kicker">15–25 min · Trabajo diferenciado · EN PARALELO</div>
+  <h2>Cada uno en su carril</h2>
+  <p class="sub">Arranca al nuevo con su tarea (2 min contigo), luego pasa al antiguo. Ve alternando. Temporizador a 8 minutos.</p>
+  <div class="grid g2">
+    <div class="pane neu">
+      <span class="tag neu">NEU · mientras tanto</span>
+      <h3>Steckbrief básico</h3>
+      <ul>
+        <li>Escribe y lee en voz alta 4 frases:</li>
+        <li class="de">Ich heiße ______.</li>
+        <li class="de">Ich bin ______ Jahre alt.</li>
+        <li class="de">Ich komme aus Spanien.</li>
+        <li class="de">Ich wohne in Sevilla.</li>
+      </ul>
+      <div class="note" style="border-color:var(--neu);background:rgba(56,189,248,.08);color:#bae6fd">
+        Meta mínima de hoy: decir estas 4 frases <strong>sin leer</strong>. Si lo consigue, la clase ya ha sido un éxito para él.</div>
+    </div>
+    <div class="pane weiter">
+      <span class="tag weiter">WEITER · reto real</span>
+      <h3>Verbinden — unir frases</h3>
+      <ul>
+        <li>Convierte las 4 frases en <strong>2</strong> usando <span class="de">und</span> / <span class="de">aber</span>:</li>
+        <li class="de">Ich heiße X <span style="color:var(--warn)">und</span> ich bin 16 Jahre alt.</li>
+        <li class="de">Ich komme aus Spanien <span style="color:var(--warn)">und</span> wohne in Sevilla.</li>
+        <li>Añade 2 datos nuevos tuyos:</li>
+        <li class="de">Ich spreche Spanisch und ein bisschen Deutsch.</li>
+        <li class="de">Ich mag Fußball, <span style="color:var(--warn)">aber</span> ich mag Tennis nicht.</li>
+      </ul>
+      <div class="note" style="border-color:var(--weiter);background:rgba(244,114,182,.08);color:#fbcfe8">
+        ⚠️ <strong>Punto de ajuste:</strong> si ya domina und/aber, sustituye por <em>denn</em> (porque) o <em>Ich möchte…</em>. Ver slide final.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 ZAHLEN + DUELL -->
+<section class="slide">
+  <div class="kicker">25–35 min · Juego conjunto</div>
+  <h2>🔢 Zahlen-Duell</h2>
+  <p class="sub">Los dos compiten en igualdad: el nuevo puede ganar aquí, y eso importa. Sale un número → el primero que lo dice en alemán se lleva el punto.</p>
+  <div class="grid g2" style="align-items:start">
+    <div class="stagebox">
+      <div class="bigtxt" id="znum">?</div>
+      <div style="color:var(--ok);font-size:26px;font-weight:700;margin-top:10px;min-height:34px" id="zword"></div>
+      <div class="row center" style="margin-top:20px">
+        <button class="btn big pri" onclick="zNext()">Nuevo número (R)</button>
+        <button class="btn big" onclick="zShow()">Revelar</button>
+      </div>
+      <div class="row center" style="margin-top:10px">
+        <button class="btn" onclick="zMax=20;zNext()">0–20 (NEU)</button>
+        <button class="btn" onclick="zMax=100;zNext()">0–100 (WEITER)</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>0 – 20</h3>
+      <div class="row" style="gap:8px">
+        <span class="chip">0 null</span><span class="chip">1 eins</span><span class="chip">2 zwei</span><span class="chip">3 drei</span>
+        <span class="chip">4 vier</span><span class="chip">5 fünf</span><span class="chip">6 sechs</span><span class="chip">7 sieben</span>
+        <span class="chip">8 acht</span><span class="chip">9 neun</span><span class="chip">10 zehn</span><span class="chip">11 elf</span>
+        <span class="chip">12 zwölf</span><span class="chip">13 dreizehn</span><span class="chip">14 vierzehn</span><span class="chip">15 fünfzehn</span>
+        <span class="chip">16 sech<b style="color:var(--warn)">zehn</b></span><span class="chip">17 sieb<b style="color:var(--warn)">zehn</b></span>
+        <span class="chip">18 achtzehn</span><span class="chip">19 neunzehn</span><span class="chip">20 zwanzig</span>
+      </div>
+      <div class="note">Trampas: <b>sechzehn</b> (no *sechszehn) y <b>siebzehn</b> (no *siebenzehn). Para el antiguo: 21 = <b>einundzwanzig</b> → «uno-y-veinte», al revés que en español.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 CONTENIDO NUEVO -->
+<section class="slide">
+  <div class="kicker">35–45 min · Contenido nuevo para LOS DOS</div>
+  <h2>Sprachen &amp; das Verb <span style="color:var(--acc)">sprechen</span></h2>
+  <p class="sub">Aquí el antiguo también aprende algo que no tenía. Nadie hace de profesor de nadie.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Idiomas</h3>
+      <table>
+        <tr><td class="de">Deutsch</td><td class="es">alemán</td></tr>
+        <tr><td class="de">Spanisch</td><td class="es">español</td></tr>
+        <tr><td class="de">Englisch</td><td class="es">inglés</td></tr>
+        <tr><td class="de">Französisch</td><td class="es">francés</td></tr>
+      </table>
+      <div style="margin-top:14px" class="de">Ich spreche Spanisch.<br>Ich spreche ein bisschen Deutsch.</div>
+      <div class="es" style="margin-top:6px">ein bisschen = un poco · sehr gut = muy bien</div>
+    </div>
+    <div class="card">
+      <h3>sprechen — ojo al cambio de vocal</h3>
+      <table>
+        <tr><td class="de">ich spr<b style="color:var(--warn)">e</b>che</td><td class="es">yo hablo</td></tr>
+        <tr><td class="de">du spr<b style="color:var(--warn)">i</b>chst</td><td class="es">tú hablas</td></tr>
+        <tr><td class="de">er/sie spr<b style="color:var(--warn)">i</b>cht</td><td class="es">él/ella habla</td></tr>
+      </table>
+      <div class="note">La pregunta clave: <span class="de">Welche Sprachen sprichst du?</span> — que se la hagan <strong>entre ellos</strong>, no a ti.</div>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="pane neu"><span class="tag neu">NEU</span><ul>
+      <li>Solo la forma <span class="de">ich spreche…</span></li>
+      <li>Meta: <span class="de">Ich spreche Spanisch und ein bisschen Deutsch.</span></li></ul></div>
+    <div class="pane weiter"><span class="tag weiter">WEITER</span><ul>
+      <li>Usa <span class="de">sprichst du…?</span> y responde con negación</li>
+      <li><span class="de">Ich spreche Englisch, aber ich spreche kein Französisch.</span></li>
+      <li>Extra: <span class="de">Meine Mutter spricht…</span> (3ª persona)</li></ul></div>
+  </div>
+</section>
+
+<!-- 7 RETOS ALEATORIOS -->
+<section class="slide">
+  <div class="kicker">45–55 min · Desafío + conversación</div>
+  <h2>⚡ Herausforderung — retos al azar</h2>
+  <p class="sub">Ruleta doble: sale un reto Y sale quién lo hace. Pon 30 s. Si lo clava, punto. Si no, lo intenta el otro por medio punto.</p>
+  <div class="stagebox">
+    <div class="who" id="chWho" style="background:var(--card2)">—</div>
+    <div class="bigtxt small" id="chTxt">Pulsa «Reto al azar»</div>
+    <div class="es" id="chLvl" style="margin-top:12px;font-size:16px"></div>
+    <div class="row center" style="margin-top:22px">
+      <button class="btn big pri" onclick="chNext()">🎲 Reto al azar (R)</button>
+      <button class="btn big" onclick="setT(30);startT()">▶ 30 segundos</button>
+    </div>
+  </div>
+  <div class="note">Si el nuevo se bloquea: dale la primera palabra en voz baja. Nunca traduzcas la frase entera — rompe el «puedo hacerlo».</div>
+</section>
+
+<!-- 8 BOSS -->
+<section class="slide">
+  <div class="kicker">55–60 min · FINAL BOSS</div>
+  <h2>👑 Du triffst Lena aus Berlin</h2>
+  <p class="sub">Tú eres Lena, 17 años, de Berlín, hablas alemán e inglés. Entras en escena y les hablas <strong>solo en alemán</strong>. Uno a uno. El resto escucha.</p>
+  <div class="grid g2">
+    <div class="pane neu">
+      <span class="tag neu">NEU · versión básica (gana con 4/5)</span>
+      <ul>
+        <li>Lena: <span class="de">Hallo! Ich heiße Lena. Wie heißt du?</span></li>
+        <li>Lena: <span class="de">Wie alt bist du?</span></li>
+        <li>Lena: <span class="de">Woher kommst du?</span></li>
+        <li>Lena: <span class="de">Wo wohnst du?</span></li>
+        <li>Lena: <span class="de">Tschüss!</span> → <span class="de">Tschüss!</span></li>
+      </ul>
+    </div>
+    <div class="pane weiter">
+      <span class="tag weiter">WEITER · versión difícil (gana con 4/5)</span>
+      <ul>
+        <li>Responde <strong>uniendo</strong> 2 datos con und/aber</li>
+        <li>Hazle <strong>3 preguntas tú a Lena</strong> (du-Form)</li>
+        <li>Di qué idiomas hablas y cuáles no</li>
+        <li>Reacciona: <span class="de">Ah, cool! Freut mich!</span></li>
+        <li>Sobrevive 45 segundos sin español</li>
+      </ul>
+    </div>
+  </div>
+  <div class="row center" style="margin-top:20px">
+    <button class="btn big pri" onclick="setT(45);startT()">▶ Cronómetro 45 s</button>
+    <button class="btn big" onclick="go(9)">Ver resumen →</button>
+  </div>
+</section>
+
+<!-- 9 FINAL -->
+<section class="slide">
+  <div class="kicker">Cierre</div>
+  <h2>🏁 Geschafft! — Lo conseguisteis</h2>
+  <div class="stagebox" style="margin-bottom:18px">
+    <div class="row center" style="gap:40px">
+      <div><div class="es" id="fna">Alumno A</div><div class="bigtxt" style="color:var(--neu)" id="fpa">0</div></div>
+      <div style="font-size:30px;color:var(--dim)">—</div>
+      <div><div class="es" id="fnb">Alumno B</div><div class="bigtxt" style="color:var(--weiter)" id="fpb">0</div></div>
+    </div>
+    <div style="margin-top:14px;font-size:22px;font-weight:700" id="fwin"></div>
+  </div>
+  <div class="grid g2">
+    <div class="pane neu"><span class="tag neu">NEU · se lleva a casa</span><ul>
+      <li>4 frases de presentación sin leer</li><li>8 saludos</li><li>Números 0–20</li>
+      <li><b>Deberes:</b> grabarse un audio de 20 s presentándose</li></ul></div>
+    <div class="pane weiter"><span class="tag weiter">WEITER · se lleva a casa</span><ul>
+      <li>Preguntar en du-Form sin ayuda</li><li>und / aber / kein</li><li>sprechen + idiomas</li>
+      <li><b>Deberes:</b> 6 frases sobre un amigo (3ª persona: <span class="de">er heißt…</span>)</li></ul></div>
+  </div>
+  <div class="row center" style="margin-top:22px">
+    <button class="btn big" onclick="go(0)">↺ Reiniciar</button>
+    <button class="btn big pri" onclick="go(10)">Chuleta del profesor →</button>
+  </div>
+</section>
+
+<!-- 10 CHULETA -->
+<section class="slide">
+  <div class="kicker">Solo para ti · no proyectar</div>
+  <h2>📋 Chuleta del profesor</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Minuto a minuto</h3><table>
+      <tr><td>0–5</td><td>Blitz-Check (diagnóstico)</td></tr>
+      <tr><td>5–10</td><td>Begrüßungen</td></tr>
+      <tr><td>10–15</td><td>Die 4 Fragen</td></tr>
+      <tr><td>15–25</td><td>Carriles separados</td></tr>
+      <tr><td>25–35</td><td>Zahlen-Duell</td></tr>
+      <tr><td>35–45</td><td>sprechen + Sprachen</td></tr>
+      <tr><td>45–55</td><td>Retos al azar</td></tr>
+      <tr><td>55–60</td><td>Final Boss + recap</td></tr>
+    </table></div>
+    <div class="card"><h3>Reglas que no se rompen</h3><ul>
+      <li>Ninguna explicación supera <b>90 segundos</b></li>
+      <li>El antiguo <b>no</b> es el profesor del nuevo</li>
+      <li>Cada bloque termina con alguien <b>hablando</b>, no escuchando</li>
+      <li>Corriges repitiendo bien, sin decir «mal»</li>
+      <li>Si uno termina antes: la columna de su color tiene extra</li>
+      <li>Objetivo de la sesión: <b>≥60% del tiempo hablan ellos</b></li>
+    </ul></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>🔶 Puntos de ajuste (lo que no sé de las 5 clases previas)</h3>
+    <ul>
+      <li><b>Slide 5 (carriles):</b> si ya domina <span class="de">und/aber</span> → cámbialo por <span class="de">denn</span> o <span class="de">Ich möchte…</span></li>
+      <li><b>Slide 6 (números):</b> si ya llega a 100 → juega con años de nacimiento y teléfonos</li>
+      <li><b>Slide 7:</b> si <span class="de">sprechen</span> ya lo vio → sustituye por <span class="de">haben</span> (<span class="de">Ich habe einen Bruder</span>) o por profesiones</li>
+      <li><b>Boss:</b> si le resulta fácil → Lena pasa a <span class="de">Sie</span> (formal) o pregunta <span class="de">Was machst du gern?</span></li>
+    </ul>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>🎯 Refuerzo individual DESPUÉS de esta clase</h3>
+    <div class="grid g2">
+      <div><b style="color:var(--neu)">Nuevo:</b><ul>
+        <li>Pronunciación: <b>ei</b> [ai], <b>ie</b> [i:], <b>z</b> [ts], <b>w</b> [v], <b>v</b> [f], <b>ü/ö</b></li>
+        <li>Alfabeto y deletrear su nombre</li>
+        <li>Automatizar las 4 frases hasta que salgan solas</li>
+        <li>Números 0–20 en desorden</li></ul></div>
+      <div><b style="color:var(--weiter)">Antiguo:</b><ul>
+        <li>3ª persona (er/sie) — suele ser el agujero real</li>
+        <li>Negación: <b>nicht</b> vs <b>kein</b></li>
+        <li>Orden de la frase: verbo en 2ª posición</li>
+        <li>Fluidez: monólogo de 45 s sin pausas largas</li></ul></div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div class="tbar">
+  <button class="btn" onclick="go(cur-1)">←</button>
+  <button class="btn" onclick="go(cur+1)">→</button>
+  <button class="btn" onclick="revealAll()">Revelar todo (Espacio)</button>
+  <button class="btn" onclick="resetScores()">Reset marcador</button>
+  <div class="sp"></div>
+  <div class="tip" id="tip"></div>
+</div>
+
+<div id="help" onclick="toggleHelp()">
+  <div class="box" onclick="event.stopPropagation()">
+    <h2>Atajos de teclado</h2>
+    <table style="margin-top:14px">
+      <tr><td><kbd>→</kbd> <kbd>←</kbd></td><td>Cambiar de pantalla</td></tr>
+      <tr><td><kbd>Espacio</kbd></td><td>Revelar todo en esta pantalla</td></tr>
+      <tr><td><kbd>A</kbd> / <kbd>B</kbd></td><td>+1 punto al alumno A / B</td></tr>
+      <tr><td><kbd>Shift</kbd>+<kbd>A/B</kbd></td><td>−1 punto</td></tr>
+      <tr><td><kbd>T</kbd></td><td>Iniciar / pausar cronómetro</td></tr>
+      <tr><td><kbd>0</kbd></td><td>Reiniciar cronómetro</td></tr>
+      <tr><td><kbd>R</kbd></td><td>Aleatorio (pregunta / número / reto)</td></tr>
+      <tr><td><kbd>S</kbd></td><td>Elegir alumno al azar</td></tr>
+      <tr><td><kbd>F</kbd></td><td>Pantalla completa</td></tr>
+      <tr><td><kbd>?</kbd> / <kbd>Esc</kbd></td><td>Abrir / cerrar esta ayuda</td></tr>
+    </table>
+    <div class="note" style="margin-top:16px">Clic en el marcador = +1. Clic derecho = −1.</div>
+  </div>
+</div>
+
+<script>
+/* ---------- estado ---------- */
+const slides=[...document.querySelectorAll('.slide')];
+let cur=0, names={a:'Alumno A',b:'Alumno B'}, pts={a:0,b:0};
+const tips=["Marcador: clic = +1 · clic derecho = −1","Tecla R = aleatorio · T = cronómetro · Espacio = revelar",
+"Regla: ninguna explicación supera 90 segundos","Objetivo: que hablen ellos más del 60% del tiempo",
+"Si uno acaba antes, su columna de color tiene extra"];
+
+function go(i){
+  if(i<0||i>=slides.length)return;
+  slides[cur].classList.remove('on'); cur=i; slides[cur].classList.add('on');
+  slides[cur].scrollTop=0;
+  document.getElementById('pos').textContent=(cur+1)+' / '+slides.length;
+  document.getElementById('prog').style.width=((cur)/(slides.length-1)*100)+'%';
+  document.getElementById('tip').textContent=tips[cur%tips.length];
+  if(cur===9)finalScreen();
+}
+/* ---------- nombres y puntos ---------- */
+function setName(k,v){
+  names[k]=v.trim()||(k==='a'?'Alumno A':'Alumno B');
+  document.getElementById('n'+k).textContent=names[k];
+}
+function pt(k,d){
+  pts[k]=Math.max(0,pts[k]+d);
+  const el=document.getElementById('p'+k); el.textContent=pts[k];
+  const box=document.getElementById('s'+k); box.classList.add('bump');
+  setTimeout(()=>box.classList.remove('bump'),160);
+}
+function resetScores(){pts={a:0,b:0};document.getElementById('pa').textContent=0;document.getElementById('pb').textContent=0;}
+function finalScreen(){
+  document.getElementById('fna').textContent=names.a;
+  document.getElementById('fnb').textContent=names.b;
+  document.getElementById('fpa').textContent=pts.a;
+  document.getElementById('fpb').textContent=pts.b;
+  const w=document.getElementById('fwin');
+  w.textContent = pts.a===pts.b ? '🤝 Unentschieden — ¡empate!' :
+    '🏆 '+(pts.a>pts.b?names.a:names.b)+' gewinnt!';
+}
+/* ---------- reveal ---------- */
+function rv(el){el.classList.toggle('open')}
+function revealAll(){slides[cur].querySelectorAll('.rev').forEach(e=>e.classList.add('open'))}
+/* ---------- cronómetro ---------- */
+let tTotal=60,tLeft=60,tId=null;
+function paintT(){
+  const m=String(Math.floor(tLeft/60)).padStart(2,'0'), s=String(tLeft%60).padStart(2,'0');
+  const el=document.getElementById('timer'); el.textContent=m+':'+s;
+  el.classList.toggle('low',tLeft<=10&&tLeft>0);
+}
+function setT(n){tTotal=n;tLeft=n;stopT();paintT()}
+function startT(){
+  if(tId)return;
+  if(tLeft<=0)tLeft=tTotal;
+  document.getElementById('timer').classList.add('run');
+  tId=setInterval(()=>{tLeft--;paintT();if(tLeft<=0){stopT();beep()}},1000);
+}
+function stopT(){clearInterval(tId);tId=null;document.getElementById('timer').classList.remove('run')}
+function tgTimer(){tId?stopT():startT()}
+function beep(){
+  try{const c=new (window.AudioContext||window.webkitAudioContext)();
+  const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);
+  o.frequency.value=660;g.gain.value=.15;o.start();setTimeout(()=>{o.stop();c.close()},450);}catch(e){}
+}
+/* ---------- alumno al azar ---------- */
+function pick(){return Math.random()<.5?'a':'b'}
+function randStudent(){ flashWho(names[pick()],pick()); }
+function flashWho(txt,k){
+  ['bcWho','chWho'].forEach(id=>{
+    const e=document.getElementById(id); if(!e)return;
+    e.textContent='👉 '+txt;
+    e.style.background = k==='a'?'var(--neu)':'var(--weiter)';
+    e.style.color = k==='a'?'#06283b':'#4a0f2c';
+    e.classList.remove('flash');void e.offsetWidth;e.classList.add('flash');
+  });
+  document.getElementById('tip').textContent='🎲 Le toca a: '+txt;
+}
+/* ---------- Blitz-Check ---------- */
+const bc=[
+ {q:"Hallo! Wie heißt du?",a:"Ich heiße …",lv:"ambos"},
+ {q:"Wie alt bist du?",a:"Ich bin … Jahre alt.",lv:"ambos"},
+ {q:"Woher kommst du?",a:"Ich komme aus Spanien.",lv:"ambos"},
+ {q:"Wo wohnst du?",a:"Ich wohne in Sevilla.",lv:"antiguo"},
+ {q:"Cuenta de 1 a 10 en alemán",a:"eins, zwei, drei, vier, fünf, sechs, sieben, acht, neun, zehn",lv:"ambos"},
+ {q:"¿Cómo se dice «adiós» informal?",a:"Tschüss!",lv:"nuevo"},
+ {q:"Wie geht's?",a:"Gut, danke. Und dir?",lv:"antiguo"},
+ {q:"Di 3 palabras en alemán que ya conozcas",a:"(cualquiera vale — es para romper el hielo)",lv:"ambos"},
+ {q:"¿Qué significa «Guten Morgen»?",a:"Buenos días",lv:"nuevo"},
+ {q:"Stell dich bitte vor (preséntate)",a:"Ich heiße…, ich bin … Jahre alt und ich komme aus…",lv:"antiguo"},
+ {q:"¿Cómo preguntas la edad a alguien?",a:"Wie alt bist du?",lv:"antiguo"},
+ {q:"Zähl von 10 bis 1 rückwärts (10→1)",a:"zehn, neun, acht, sieben, sechs, fünf, vier, drei, zwei, eins",lv:"antiguo"}
+];
+let bcI=-1;
+function bcNext(){
+  bcI=Math.floor(Math.random()*bc.length);
+  const it=bc[bcI];
+  document.getElementById('bcQ').textContent=it.q;
+  document.getElementById('bcA').textContent='';
+  const k = it.lv==='nuevo'?'a': it.lv==='antiguo'?'b': pick();
+  flashWho(names[k]+'  ·  '+it.lv,k);
+  const e=document.getElementById('bcQ');e.classList.remove('flash');void e.offsetWidth;e.classList.add('flash');
+}
+function bcShow(){ if(bcI>=0) document.getElementById('bcA').textContent='✔ '+bc[bcI].a; }
+/* ---------- Zahlen ---------- */
+const u=["null","eins","zwei","drei","vier","fünf","sechs","sieben","acht","neun","zehn","elf","zwölf",
+"dreizehn","vierzehn","fünfzehn","sechzehn","siebzehn","achtzehn","neunzehn"];
+const t=["","","zwanzig","dreißig","vierzig","fünfzig","sechzig","siebzig","achtzig","neunzig"];
+function deNum(n){
+  if(n<20)return u[n];
+  if(n===100)return "hundert";
+  const d=Math.floor(n/10),r=n%10;
+  return r===0? t[d] : (r===1?"ein":u[r])+"und"+t[d];
+}
+let zMax=20,zCur=null;
+function zNext(){
+  zCur=Math.floor(Math.random()*(zMax+1));
+  document.getElementById('znum').textContent=zCur;
+  document.getElementById('zword').textContent='';
+  const e=document.getElementById('znum');e.classList.remove('flash');void e.offsetWidth;e.classList.add('flash');
+}
+function zShow(){ if(zCur!==null) document.getElementById('zword').textContent=deNum(zCur); }
+/* ---------- retos ---------- */
+const ch=[
+ {t:"Preséntate en 3 frases seguidas",lv:"ambos"},
+ {t:"Cuenta de 2 en 2 hasta 20",lv:"ambos"},
+ {t:"Hazle 3 preguntas a tu compañero (du-Form)",lv:"WEITER"},
+ {t:"Di tu nombre y deletréalo",lv:"ambos"},
+ {t:"Di 4 saludos distintos sin repetir",lv:"NEU"},
+ {t:"Ich spreche… + 2 idiomas + 1 que NO hablas",lv:"WEITER"},
+ {t:"Une 2 frases con «und» y 2 con «aber»",lv:"WEITER"},
+ {t:"Di 5 números que el profesor señale",lv:"NEU"},
+ {t:"Habla 30 segundos sin decir una palabra en español",lv:"WEITER"},
+ {t:"Responde: Wie alt bist du? Woher kommst du?",lv:"NEU"},
+ {t:"Presenta a tu compañero: «Er heißt…, er ist… Jahre alt»",lv:"WEITER"},
+ {t:"Di los números 16, 17 y 20 sin equivocarte",lv:"NEU"},
+ {t:"Saluda, pregunta qué tal y despídete (diálogo completo)",lv:"ambos"},
+ {t:"Traduce: «Vivo en Sevilla pero vengo de Madrid»",lv:"WEITER"},
+ {t:"Di 3 cosas sobre ti que aún no hayas dicho hoy",lv:"ambos"}
+];
+function chNext(){
+  const it=ch[Math.floor(Math.random()*ch.length)];
+  document.getElementById('chTxt').textContent=it.t;
+  const lvl=document.getElementById('chLvl');
+  lvl.textContent = it.lv==='ambos'?'Nivel: cualquiera de los dos':'Nivel: '+it.lv;
+  const k = it.lv==='NEU'?'a': it.lv==='WEITER'?'b': pick();
+  flashWho(names[k],k);
+  const e=document.getElementById('chTxt');e.classList.remove('flash');void e.offsetWidth;e.classList.add('flash');
+}
+/* ---------- teclado ---------- */
+function toggleHelp(){document.getElementById('help').classList.toggle('on')}
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  const k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'){go(cur+1);e.preventDefault()}
+  else if(k==='ArrowLeft'||k==='PageUp'){go(cur-1);e.preventDefault()}
+  else if(k===' '){revealAll();e.preventDefault()}
+  else if(k==='a'||k==='A'){pt('a',e.shiftKey?-1:1)}
+  else if(k==='b'||k==='B'){pt('b',e.shiftKey?-1:1)}
+  else if(k==='t'||k==='T'){tgTimer()}
+  else if(k==='0'){setT(tTotal)}
+  else if(k==='r'||k==='R'){ if(cur===1)bcNext(); else if(cur===5)zNext(); else if(cur===7)chNext(); else randStudent(); }
+  else if(k==='s'||k==='S'){randStudent()}
+  else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  else if(k==='?'||k==='h'||k==='H'){toggleHelp()}
+  else if(k==='Escape'){document.getElementById('help').classList.remove('on')}
+});
+/* ---------- init ---------- */
+go(0);paintT();zNext();
+</script>
+</body>
+</html>

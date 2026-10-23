@@ -9,6 +9,28 @@ La clase tiene dos actos:
 
 Incluye además un **modo práctica** para casa, que empieza por lo que cada alumno falló en clase.
 
+## Biblioteca para alumnos y Tema 1
+
+La portada `/` es el hub de estudio. `/tema/1` reúne el itinerario de **vocabulario, Nebensätze, Perfekt y Dativ**. Los alumnos pueden abrir cada presentación interactiva en su propia pestaña y volver al catálogo sin perderlo.
+
+- **7 presentaciones HTML actuales** en `public/presentaciones/`; las copias antiguas y los scripts de generación no se publican como lecciones.
+- **4 PDF de clase** acompañan a sus presentaciones. Son los PDF ya existentes; no son exportaciones nuevas de los remasters.
+- `/practica?tema=1` abre la práctica del Tema 1: conserva el banco preparado, los filtros por contenido y el historial de errores.
+- `/tema/1/taller` adapta las consignas originales a práctica individual: reescritura de las seis lecturas, historias con palabras dadas, escritura libre y ensayo de escenas. Guarda borradores y autoevaluaciones localmente; no finge corregir el alemán. Wort-Jenga sigue siendo una actividad de sala.
+- `/jugar` conserva el acceso del profesor y de los alumnos a las salas de clase.
+- Comparte la raíz de tu despliegue o añade `/tema/1`. Para nuevos alumnos, empieza por **Brücke A1** y sigue el orden recomendado del hub.
+
+Las presentaciones son archivos independientes; sus ejercicios y soluciones están dentro de cada HTML. **No son exámenes seguros**. La práctica interactiva y las salas siguen necesitando el servidor Node/WebSocket; subir el código a GitHub no equivale a desplegar ese servidor.
+
+Para actualizar las copias desde la carpeta local original y el remaster de Downloads:
+
+```bash
+node scripts/import-presentations.mjs
+npm run build
+```
+
+`catalogo.json` documenta los títulos, rutas y huellas SHA-256 de los HTML publicados. No contiene puntuaciones, alumnos ni datos de las salas.
+
 ## Puesta en marcha
 
 Requisitos: **Node.js 22.18 o superior** (el servidor ejecuta TypeScript directamente).

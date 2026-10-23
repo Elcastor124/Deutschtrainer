@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deutsch Trainer // Sprache in Bewegung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<style>
+:root{--bg:#080808;--panel:#101010;--bg2:#171717;--w:#F2F1EE;--g:#858585;--g2:#454545;--r:#FF3832;--r2:#A8201C;--ok:#67D6A0;
+--dot:'Doto','JetBrains Mono',monospace;--sans:'Space Grotesk',system-ui,sans-serif;--mono:'JetBrains Mono',Consolas,monospace;
+font-size:min(100vw/120,100vh/67.5)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--w);font-family:var(--sans);overflow:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(circle,#1a1a1a 1px,transparent 1.4px);background-size:1.5rem 1.5rem;opacity:.55;z-index:0}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px);z-index:50}
+button{font:inherit;color:inherit;background:var(--panel);border:1px solid var(--g2);padding:.5rem 1rem;cursor:pointer;border-radius:.25rem;transition:border-color .2s,transform .1s}
+button:hover{border-color:var(--r)} button:active{transform:scale(.96)}
+input{font:inherit;color:var(--w);background:var(--bg2);border:1px solid var(--g2);padding:.6rem 1rem;border-radius:.25rem;outline:none}
+input:focus{border-color:var(--r)}
+#top{position:fixed;top:0;left:0;right:0;height:4rem;display:flex;align-items:center;justify-content:space-between;padding:0 3rem;border-bottom:1px solid #1d1d1d;font-family:var(--mono);font-size:.85rem;color:var(--g);letter-spacing:.12em;z-index:5;background:var(--bg);transition:opacity .3s}
+#top b{font-family:var(--dot);color:var(--r);font-size:1.6rem;letter-spacing:0;margin-right:.8rem}
+#scnum{font-family:var(--dot);font-size:1.6rem;color:var(--w);letter-spacing:.05em}
+#bot{position:fixed;bottom:0;left:0;right:0;height:3.5rem;display:flex;align-items:center;gap:2rem;padding:0 3rem;border-top:1px solid #1d1d1d;font-family:var(--mono);font-size:.8rem;color:var(--g);z-index:5;background:var(--bg);transition:opacity .3s}
+#tl{flex:1;display:flex;gap:.3rem;align-items:center}
+#tl div{height:.25rem;background:var(--g2);position:relative;transition:background .4s}
+#tl div.past{background:var(--w)} #tl div.cur{background:var(--r);box-shadow:0 0 .6rem var(--r)}
+#tl div span{position:absolute;top:-1.2rem;left:0;font-size:.65rem}
+body.focus #top,body.focus #bot{opacity:0}
+#stage{position:fixed;inset:4rem 0 3.5rem 0;padding:3rem 6rem;display:flex;flex-direction:column;z-index:1}
+#sweep{position:fixed;left:0;right:0;top:4rem;height:2px;background:var(--r);box-shadow:0 0 1.2rem var(--r),0 0 4rem var(--r2);z-index:4;opacity:0;pointer-events:none}
+#sweep.go{animation:sweep .6s cubic-bezier(.6,0,.3,1)}
+@keyframes sweep{0%{opacity:1;transform:translateY(0)}85%{opacity:.8}100%{opacity:0;transform:translateY(calc(100vh - 7.5rem))}}
+.scene{height:100%;display:flex;flex-direction:column;position:relative}
+.scene.fresh{animation:in .5s cubic-bezier(.2,.7,.2,1)}
+.scene.fresh.back{animation-name:inb}
+@keyframes in{from{opacity:0;transform:translateX(3rem);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+@keyframes inb{from{opacity:0;transform:translateX(-3rem);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+.kick{font-family:var(--mono);color:var(--g);letter-spacing:.2em;font-size:1rem;text-transform:uppercase;margin-bottom:1rem}
+.kick em{color:var(--r);font-style:normal}
+h1.dm{font-family:var(--dot);font-weight:900;font-size:7rem;line-height:1;letter-spacing:.02em}
+h2.dm{font-family:var(--dot);font-weight:900;font-size:4.2rem;line-height:1.05;margin-bottom:1.5rem}
+.fresh .dm .c{opacity:0;animation:on .5s forwards}
+@keyframes on{0%{opacity:0;color:var(--r);text-shadow:0 0 1.5rem var(--r)}30%{opacity:1;color:var(--r);text-shadow:0 0 1.5rem var(--r)}100%{opacity:1}}
+.big{font-size:3.4rem;font-weight:500;line-height:1.25}
+.mid{font-size:2.2rem;line-height:1.35}
+.small{font-size:1.4rem;color:var(--g);line-height:1.5}
+.red{color:var(--r)} .grey{color:var(--g)} .ok{color:var(--ok)}
+.center{flex:1;display:flex;flex-direction:column;justify-content:center}
+.panel{background:var(--panel);border:1px solid #232323;border-radius:.4rem;padding:1.6rem 2rem;position:relative}
+.panel .lab{position:absolute;top:-.7rem;left:1.2rem;background:var(--bg);padding:0 .5rem;font-family:var(--mono);font-size:.8rem;color:var(--g);letter-spacing:.15em}
+.row{display:flex;gap:2rem;align-items:flex-start}
+.hidden{visibility:hidden}
+.sol{color:var(--ok);font-size:2rem;margin-top:1rem;min-height:2.6rem}
+.hint{color:var(--g);font-size:1.6rem;margin-top:.8rem}
+.key{font-family:var(--mono);font-size:.8rem;border:1px solid var(--g2);border-radius:.2rem;padding:.05rem .4rem;color:var(--g)}
+.sent{display:flex;flex-wrap:wrap;gap:1rem;font-size:3.6rem;font-weight:500;position:relative;min-height:5rem;align-items:center}
+.w{display:inline-block;padding:.3rem 1rem;border:1px solid var(--g2);border-radius:.3rem;background:var(--panel);transition:background .3s,color .3s,border-color .3s;position:relative}
+.w.v{background:var(--r);border-color:var(--r);color:#fff}
+.w.cj{border-color:var(--r);color:var(--r)}
+.w.p{border-color:var(--r);color:var(--r);border-style:dashed}
+.w.ok{border-color:var(--ok);color:var(--ok)}
+.w.bad{border-color:var(--r2);opacity:.6}
+.w.slot{border-style:dashed;color:transparent}
+.pool .w{cursor:pointer} .pool .w:hover{border-color:var(--w)}
+.opts{display:flex;gap:1.5rem;margin-top:2rem;flex-wrap:wrap}
+.opts button{font-size:2rem;padding:1rem 2.4rem}
+.opts button.sel{border-color:var(--w);background:#1a1a1a}
+.opts button.right{border-color:var(--ok);color:var(--ok)}
+.opts button.wrong{border-color:var(--r2);color:var(--g)}
+.pulse{animation:pulse .7s}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(103,214,160,.7)}100%{box-shadow:0 0 0 1.6rem rgba(103,214,160,0)}}
+.shake{animation:shake .45s}
+@keyframes shake{20%,60%{transform:translateX(-.6rem)}40%,80%{transform:translateX(.6rem)}}
+.dots{display:flex;gap:.5rem;margin:1rem 0;align-items:center}
+.dots i{width:.8rem;height:.8rem;border-radius:50%;border:1px solid var(--g2);transition:all .3s}
+.dots i.on{background:var(--r);border-color:var(--r)}
+.dots i.now{box-shadow:0 0 .7rem var(--r);transform:scale(1.3)}
+table.t{border-collapse:collapse;font-size:2rem}
+table.t td,table.t th{border-bottom:1px solid #222;padding:.6rem 2rem;text-align:left}
+table.t th{font-family:var(--mono);font-size:.9rem;color:var(--g);letter-spacing:.15em}
+.flipin{display:inline-block;animation:flipin .6s cubic-bezier(.3,1.4,.5,1) both}
+@keyframes flipin{from{transform:rotateX(90deg);opacity:0}to{transform:none;opacity:1}}
+.kdrop,.pop{display:inline-block;font-style:normal;animation:kdrop .7s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes kdrop{0%{transform:translateY(-1.4em) scale(1.6);opacity:0;text-shadow:0 0 2rem var(--r)}60%{opacity:1;text-shadow:0 0 2rem var(--r)}100%{transform:none}}
+.read{font-size:1.85rem;line-height:1.7;max-width:80rem}
+.vw{border-bottom:2px solid var(--r);cursor:pointer;transition:color .2s}
+.vw:hover,.vw.act{color:var(--r)}
+#tip{position:fixed;z-index:60;background:var(--panel);border:1px solid var(--r);border-radius:.4rem;padding:1rem 1.4rem;font-size:1.3rem;max-width:32rem;display:none;box-shadow:0 1rem 3rem #000;animation:tipin .25s}
+@keyframes tipin{from{opacity:0;transform:translateY(-.6rem)}}
+.abc{display:grid;grid-template-columns:repeat(10,1fr);gap:.8rem;margin-top:1rem}
+.abc button{font-family:var(--dot);font-weight:900;font-size:3.6rem;padding:.6rem 0;color:#3a3a3a;background:var(--panel);transition:color .3s,text-shadow .3s,border-color .3s}
+.abc button.f{color:var(--g)} .abc button.on{color:var(--r);border-color:var(--r);text-shadow:0 0 1rem var(--r)}
+.fresh .abc button{animation:pw .6s both}
+@keyframes pw{0%{color:#111;text-shadow:none}50%{color:var(--r);text-shadow:0 0 1rem var(--r)}}
+.clock{width:30rem;height:30rem;border-radius:50%;background:radial-gradient(circle at 50% 40%,#151515,#0a0a0a 70%);border:1px solid #2a2a2a;box-shadow:0 0 0 .8rem #0e0e0e,0 0 0 calc(.8rem + 1px) #262626,0 2.5rem 5rem #000;position:relative;flex:none}
+.clock i{position:absolute;left:50%;top:50%;border-radius:50%}
+.hand{position:absolute;left:50%;bottom:50%;transform-origin:50% 100%;border-radius:1rem;box-shadow:0 .4rem .8rem rgba(0,0,0,.6)}
+.hand.h{width:.9rem;height:8.2rem;margin-left:-.45rem;background:var(--w)}
+.hand.m{width:.45rem;height:12.6rem;margin-left:-.225rem;background:var(--w)}
+.hand.m::after{content:"";position:absolute;left:0;right:0;bottom:-2.2rem;height:2.2rem;background:var(--r);border-radius:1rem}
+.cap{position:absolute;left:50%;top:50%;width:1.6rem;height:1.6rem;margin:-.8rem;border-radius:50%;background:var(--r);box-shadow:0 0 1rem var(--r)}
+.digi{font-family:var(--dot);font-weight:900;font-size:5rem}
+.shapes{display:grid;grid-template-columns:repeat(6,1fr);gap:2rem;perspective:60rem}
+.shape{height:9rem;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:.6rem}
+.shape i{display:block;width:6rem;height:6rem;filter:grayscale(1) brightness(.35);transition:all .6s cubic-bezier(.3,1.3,.5,1);transform:rotateX(20deg) rotateY(25deg)}
+.shape.on i{filter:none;transform:rotateX(20deg) rotateY(205deg) scale(1.2);box-shadow:0 0 3rem currentColor}
+.shape span{font-family:var(--mono);font-size:.9rem;color:var(--g)}
+.map{position:relative;width:62rem;height:32rem;transform:perspective(80rem) rotateX(30deg);transform-origin:50% 80%;background:repeating-linear-gradient(90deg,#161616 0 1px,transparent 1px 4rem),repeating-linear-gradient(0deg,#161616 0 1px,transparent 1px 4rem);border:1px solid #222;flex:none}
+.bld{position:absolute;width:11rem;height:6rem;background:var(--bg2);border:1px solid var(--g2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:1.1rem;letter-spacing:.1em;box-shadow:0 .8rem 0 #050505;transition:all .4s;z-index:2}
+.bld.from{border-color:var(--w);box-shadow:0 .8rem 0 #333} .bld.to{border-color:var(--r);color:var(--r);box-shadow:0 .8rem 0 var(--r2),0 0 2rem rgba(255,56,50,.4)}
+.map svg{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.route{stroke:var(--r);stroke-width:.25;fill:none;stroke-dasharray:.6 .5;animation:dash 1s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-1.1}}
+.ov{position:fixed;inset:0;background:rgba(8,8,8,.9);z-index:40;display:none;align-items:center;justify-content:center}
+.ov.on{display:flex}
+.device{width:76rem;background:linear-gradient(160deg,#1a1a1a,#0c0c0c);border-radius:2.4rem;padding:2.4rem;box-shadow:0 3rem 6rem #000,inset 0 1px 0 #333;transform:perspective(90rem) rotateX(6deg)}
+.ov.on .device{animation:dev .8s cubic-bezier(.2,.8,.2,1)}
+@keyframes dev{from{transform:perspective(90rem) rotateX(55deg) rotateZ(-8deg) translateY(12rem) scale(.85);opacity:0}to{transform:perspective(90rem) rotateX(6deg);opacity:1}}
+.device .hd{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.85rem;color:var(--g);letter-spacing:.2em;margin-bottom:1.2rem}
+.device .led{display:inline-block;width:.7rem;height:.7rem;border-radius:50%;background:var(--r);box-shadow:0 0 .8rem var(--r);margin-right:.6rem;animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.25}}
+.screen{background:#050505;border:1px solid #222;border-radius:1rem;padding:1.6rem;min-height:22rem;position:relative;overflow:hidden}
+.ov.on .screen{animation:boot .9s .35s both}
+@keyframes boot{0%{filter:brightness(0)}40%{filter:brightness(2.5)}50%{filter:brightness(.3)}100%{filter:none}}
+.screen::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 3px);pointer-events:none}
+.screen input{width:100%;font-size:2.2rem;font-family:var(--mono)}
+#dres{margin-top:1.4rem;font-size:1.6rem;line-height:1.5}
+#dres .wd{font-family:var(--dot);font-weight:900;font-size:3.6rem;color:var(--w)}
+.grille{display:grid;grid-template-columns:repeat(24,1fr);gap:.5rem;margin-top:1.4rem}
+.grille i{height:.5rem;width:.5rem;border-radius:50%;background:#000;box-shadow:inset 0 1px 1px #000,0 1px 0 #2a2a2a}
+.sb{background:var(--panel);border:1px solid #2a2a2a;border-radius:.6rem;width:70rem;padding:2rem 2.4rem;animation:tipin .3s}
+.st{display:flex;align-items:center;gap:1.6rem;padding:.8rem 1rem;border-left:3px solid transparent;border-bottom:1px solid #1d1d1d;position:relative}
+.st.sel{border-left-color:var(--r);background:#151515}
+.st .nm{flex:1;font-size:2rem}
+.st .pts{font-family:var(--dot);font-weight:900;font-size:4rem;min-width:9rem;text-align:right;transition:color .4s,text-shadow .4s}
+.st .pts.flash{color:var(--r);text-shadow:0 0 1.5rem var(--r)}
+.float{position:absolute;right:4rem;top:0;font-family:var(--dot);font-weight:900;font-size:2.6rem;color:var(--r);animation:float 1s forwards;pointer-events:none}
+@keyframes float{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-3rem)}}
+#timer{position:fixed;right:3rem;top:5rem;z-index:30;background:var(--panel);border:1px solid #2a2a2a;border-radius:.4rem;padding:1rem 1.6rem;display:none;text-align:center}
+#timer.on{display:block}
+#timer .digi{font-size:4rem}
+#timer.done .digi{color:var(--r);animation:blink 1s infinite}
+#notes{position:fixed;left:0;right:0;bottom:3.5rem;z-index:30;background:#0d0d0d;border-top:1px solid var(--r2);padding:1.2rem 3rem;font-size:1.2rem;display:none;max-height:40vh;overflow:auto}
+#notes.on{display:block}
+#notes .ans{filter:blur(.5rem);cursor:pointer} #notes .ans.show{filter:none;color:var(--ok)}
+.help{background:var(--panel);border:1px solid #2a2a2a;padding:2rem 3rem;border-radius:.6rem;font-size:1.4rem;columns:2;column-gap:4rem;width:72rem}
+.help div{padding:.35rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.fresh .dm .c{opacity:1}}
+</style>
+</head>
+<body>
+<div id="top"><div><b>DT</b>DEUTSCH TRAINER // SPRACHE IN BEWEGUNG</div><div id="blk"></div><div id="scnum"></div></div>
+<div id="sweep"></div>
+<div id="stage"></div>
+<div id="bot"><div id="tl"></div><div id="bt"></div><div id="el">00:00</div><div><span class="key">←→</span> <span class="key">␣ / ⌫</span> <span class="key">D</span> <span class="key">P</span> <span class="key">A</span> <span class="key">?</span></div></div>
+<div id="tip"></div>
+<div id="timer"><div class="kick" style="margin:0">TIMER</div><div class="digi" id="tdig">05:00</div><div style="display:flex;gap:.5rem;justify-content:center"><button onclick="tAdd(-60)">−1</button><button onclick="tToggle()">▶/❚❚</button><button onclick="tAdd(60)">+1</button></div></div>
+<div id="notes"></div>
+<div class="ov" id="dict"><div class="device"><div class="hd"><span><span class="led"></span>DT-01 // WÖRTERBUCH DE⇄ES</span><span>GLOSSAR + ONLINE ● READY</span></div><div class="screen"><input id="dq" placeholder="Wort eingeben… (Enter)" autocomplete="off"><div id="dres"></div></div><div class="grille" id="grille"></div></div></div>
+<div class="ov" id="score"><div class="sb"><div class="row" style="justify-content:space-between;align-items:center"><h2 class="dm" style="font-size:3rem;margin:0">PUNKTE</h2><div id="rew"></div></div><div id="slist" style="margin:1.2rem 0"></div><div class="row" style="gap:.8rem;flex-wrap:wrap"><input id="newst" placeholder="Nuevo alumno + Enter"><button onclick="undoPts()">Deshacer (U)</button><button onclick="resetPts()">Reiniciar…</button></div><p class="small" style="margin-top:1rem;font-size:1rem">↑↓ seleccionar · Enter = +puntos · − restar · 1/2/3 recompensa · doble clic = renombrar · Esc cerrar</p></div></div>
+<div class="ov" id="help"><div class="help">
+<div><span class="key">→ / ←</span> diapositiva siguiente / anterior</div><div><span class="key">Espacio</span> paso / ejercicio siguiente</div><div><span class="key">⌫ Retroceso</span> o <span class="key">Shift+Espacio</span> paso / ejercicio anterior</div><div><span class="key">A</span> mostrar / ocultar solución</div><div><span class="key">H</span> pista · <span class="key">E</span> traducción</div><div><span class="key">↑ ↓</span> ejercicio anterior / siguiente</div><div><span class="key">1-4</span> elegir opción</div><div><span class="key">Enter</span> comprobar frase</div><div><span class="key">D</span> diccionario</div><div><span class="key">P</span> puntos</div><div><span class="key">S</span> parar audio</div><div><span class="key">T</span> temporizador</div><div><span class="key">F</span> modo concentración</div><div><span class="key">N</span> modo profesor (notas)</div><div><span class="key">R</span> reiniciar actividad</div><div><span class="key">Home/End</span> inicio / final</div><div><span class="key">Esc</span> cerrar</div></div></div>
+<script>
+/* ================= GLOSARIO [palabra, español, clase, género, plural, ejemplo] ================= */
+const G=[
+['der Bahnhof','la estación de tren','Nomen','m','die Bahnhöfe','Ich gehe zum Bahnhof.'],['der Fahrplan','el horario (de trenes)','Nomen','m','die Fahrpläne','Auf dem Fahrplan steht 9:52.'],['pünktlich','puntual','Adjektiv','','','Der Zug ist pünktlich.'],['besuchen','visitar','Verb','','','Ich besuche meinen Freund.'],['zusammen','juntos','Adverb','','','Wir lernen zusammen.'],['einkaufen','hacer la compra (separable)','Verb','','','Ich kaufe heute ein.'],['umsteigen','hacer transbordo (separable)','Verb','','','Wir steigen am Alexanderplatz um.'],['die Haltestelle','la parada','Nomen','f','die Haltestellen','Die Haltestelle ist dort.'],['aussteigen','bajarse (separable)','Verb','','','Wir steigen hier aus.'],['die Einladung','la invitación','Nomen','f','die Einladungen','Danke für die Einladung!'],['das Stadtfest','la fiesta de la ciudad','Nomen','n','die Stadtfeste','Heute gibt es ein Stadtfest.'],['mitkommen','venir (con alguien) (separable)','Verb','','','Kommst du mit?'],['aufstehen','levantarse (separable)','Verb','','','Ich stehe um sieben Uhr auf.'],['anrufen','llamar por teléfono (separable)','Verb','','','Ich rufe meine Mutter an.'],['einsteigen','subir (a un vehículo) (separable)','Verb','','','Wir steigen in den Zug ein.'],['fernsehen','ver la tele (separable)','Verb','','','Am Abend sehe ich fern.'],['frühstücken','desayunar','Verb','','','Ich frühstücke um acht.'],
+['weil','porque (verbo al final)','Konjunktion','','','Ich bleibe zu Hause, weil ich krank bin.'],['obwohl','aunque (verbo al final)','Konjunktion','','','Ich gehe spazieren, obwohl es regnet.'],['und','y','Konjunktion','','','Brot und Käse.'],['aber','pero','Konjunktion','','','Ich bin müde, aber ich lerne.'],['oder','o','Konjunktion','','','Tee oder Kaffee?'],['deshalb','por eso','Adverb','','','Ich bin krank, deshalb bleibe ich zu Hause.'],
+['krank','enfermo','Adjektiv','','','Ich bin krank.'],['müde','cansado','Adjektiv','','','Ich bin müde.'],['glücklich','feliz','Adjektiv','','','Ich bin glücklich.'],['kaputt','roto, estropeado','Adjektiv','','','Das Auto ist kaputt.'],['regnen','llover','Verb','','','Es regnet.'],['spazieren gehen','pasear','Verb','','','Ich gehe spazieren.'],
+['das Wort','la palabra','Nomen','n','die Wörter','Wie schreibt man das Wort?'],['der Satz','la frase, la oración','Nomen','m','die Sätze','Der Satz ist richtig.'],['die Frage','la pregunta','Nomen','f','die Fragen','Ich habe eine Frage.'],['die Antwort','la respuesta','Nomen','f','die Antworten','Die Antwort ist richtig.'],['die Sprache','el idioma, la lengua','Nomen','f','die Sprachen','Deutsch ist eine schöne Sprache.'],['die Übung','el ejercicio','Nomen','f','die Übungen','Die Übung ist leicht.'],['die Prüfung','el examen','Nomen','f','die Prüfungen','Morgen habe ich eine Prüfung.'],['der Name','el nombre','Nomen','m','die Namen','Wie ist dein Name?'],['richtig','correcto','Adjektiv','','','Das ist richtig.'],['falsch','falso, incorrecto','Adjektiv','','','Das ist falsch.'],
+['der Zug','el tren','Nomen','m','die Züge','Der Zug fährt um acht.'],['der Bus','el autobús','Nomen','m','die Busse','Ich fahre mit dem Bus.'],['die Straßenbahn','el tranvía','Nomen','f','die Straßenbahnen','Wir nehmen die Straßenbahn.'],['die U-Bahn','el metro','Nomen','f','die U-Bahnen','Ich fahre mit der U-Bahn.'],['das Gleis','el andén, la vía','Nomen','n','die Gleise','Der Zug fährt von Gleis 7.'],['die Fahrkarte','el billete','Nomen','f','die Fahrkarten','Eine Fahrkarte nach Berlin, bitte.'],['das Ticket','el billete, la entrada','Nomen','n','die Tickets','Ich brauche ein Ticket.'],['der Flughafen','el aeropuerto','Nomen','m','die Flughäfen','Ich fahre zum Flughafen.'],['das Fahrrad','la bicicleta','Nomen','n','die Fahrräder','Ich habe kein Fahrrad.'],['das Auto','el coche','Nomen','n','die Autos','Ich habe kein Auto.'],
+['die Schule','la escuela','Nomen','f','die Schulen','Ich gehe zur Schule.'],['das Café','la cafetería','Nomen','n','die Cafés','Wir gehen ins Café.'],['der Supermarkt','el supermercado','Nomen','m','die Supermärkte','Ich komme vom Supermarkt.'],['die Apotheke','la farmacia','Nomen','f','die Apotheken','Die Apotheke liegt gegenüber dem Bahnhof.'],['die Bäckerei','la panadería','Nomen','f','die Bäckereien','Ich gehe zur Bäckerei.'],['die Bank','el banco','Nomen','f','die Banken','Er arbeitet bei einer Bank.'],['das Krankenhaus','el hospital','Nomen','n','die Krankenhäuser','Sie arbeitet im Krankenhaus.'],['der Arzt','el médico','Nomen','m','die Ärzte','Ich gehe zum Arzt.'],['die Ärztin','la médica','Nomen','f','die Ärztinnen','Ich gehe zur Ärztin.'],['das Kino','el cine','Nomen','n','die Kinos','Wir gehen ins Kino.'],['das Restaurant','el restaurante','Nomen','n','die Restaurants','Das Restaurant ist gut.'],['der Park','el parque','Nomen','m','die Parks','Das Fest ist im Park.'],['das Hotel','el hotel','Nomen','n','die Hotels','Das Hotel ist neu.'],['die Post','correos','Nomen','f','','Die Post ist links.'],['das Büro','la oficina','Nomen','n','die Büros','Ich arbeite im Büro.'],['die Stadt','la ciudad','Nomen','f','die Städte','Berlin ist eine große Stadt.'],['die Straße','la calle','Nomen','f','die Straßen','Ich wohne in der Goethestraße.'],['das Haus','la casa','Nomen','n','die Häuser','Ich bleibe zu Hause.'],['die Wohnung','el piso, la vivienda','Nomen','f','die Wohnungen','Meine Wohnung ist klein.'],['das Zimmer','la habitación','Nomen','n','die Zimmer','Das Zimmer ist groß.'],['die Küche','la cocina','Nomen','f','die Küchen','Ich frühstücke in der Küche.'],['das Land','el país; el campo','Nomen','n','die Länder','Spanien ist ein schönes Land.'],['der Markt','el mercado','Nomen','m','die Märkte','Wir kaufen auf dem Markt ein.'],
+['der Freund','el amigo; el novio','Nomen','m','die Freunde','Ich spreche mit meinem Freund.'],['die Freundin','la amiga; la novia','Nomen','f','die Freundinnen','Meine Freundin heißt Mia.'],['die Mutter','la madre','Nomen','f','die Mütter','Ich spreche mit meiner Mutter.'],['der Vater','el padre','Nomen','m','die Väter','Mein Vater arbeitet viel.'],['die Eltern','los padres','Nomen','pl','','Ich wohne bei meinen Eltern.'],['der Bruder','el hermano','Nomen','m','die Brüder','Außer meinem Bruder sind alle hier.'],['die Schwester','la hermana','Nomen','f','die Schwestern','Meine Schwester heißt Mia.'],['die Familie','la familia','Nomen','f','die Familien','Meine Familie wohnt in Madrid.'],['das Kind','el niño, la niña','Nomen','n','die Kinder','Das Kind spielt.'],['der Mann','el hombre; el marido','Nomen','m','die Männer','Der Mann wartet.'],['die Frau','la mujer; la esposa; señora','Nomen','f','die Frauen','Die Frau liest.'],['der Lehrer','el profesor','Nomen','m','die Lehrer','Der Lehrer erklärt.'],['die Lehrerin','la profesora','Nomen','f','die Lehrerinnen','Ich spreche mit der Lehrerin.'],['der Kollege','el compañero de trabajo','Nomen','m','die Kollegen','Mein Kollege kommt mit.'],
+['das Obst','la fruta','Nomen','n','','Ich kaufe Obst.'],['der Apfel','la manzana','Nomen','m','die Äpfel','Der Apfel ist rot.'],['der Apfelkuchen','la tarta de manzana','Nomen','m','die Apfelkuchen','Tim hat einen Apfelkuchen gebacken.'],['der Kuchen','el pastel, la tarta','Nomen','m','die Kuchen','Der Kuchen ist lecker.'],['das Brot','el pan','Nomen','n','die Brote','Ich esse Brot mit Käse.'],['das Brötchen','el panecillo','Nomen','n','die Brötchen','Zwei Brötchen, bitte.'],['der Käse','el queso','Nomen','m','','Brot mit Käse.'],['die Milch','la leche','Nomen','f','','Kaffee mit Milch.'],['das Ei','el huevo','Nomen','n','die Eier','Ich esse ein Ei.'],['das Fleisch','la carne','Nomen','n','','Ich esse kein Fleisch.'],['der Fisch','el pescado; el pez','Nomen','m','die Fische','Heute gibt es Fisch.'],['das Gemüse','la verdura','Nomen','n','','Gemüse ist gesund.'],['der Salat','la ensalada; la lechuga','Nomen','m','die Salate','Einen Salat, bitte.'],['die Wurst','la salchicha','Nomen','f','die Würste','Die Wurst ist lecker.'],['der Kaffee','el café','Nomen','m','','Einen Kaffee, bitte.'],['der Tee','el té','Nomen','m','','Ich trinke Tee.'],['das Wasser','el agua','Nomen','n','','Ich trinke Wasser.'],['die Banane','el plátano','Nomen','f','die Bananen','Die Banane ist gelb.'],['die Tomate','el tomate','Nomen','f','die Tomaten','Die Tomate ist rot.'],['lecker','rico, sabroso','Adjektiv','','','Der Kuchen ist lecker.'],['der Hunger','el hambre','Nomen','m','','Ich habe Hunger.'],['der Durst','la sed','Nomen','m','','Ich habe Durst.'],
+['die Blume','la flor','Nomen','f','die Blumen','Die Blumen sind schön.'],['die Tasche','el bolso','Nomen','f','die Taschen','Ich habe keine Tasche.'],['der Hund','el perro','Nomen','m','die Hunde','Ich sehe keinen Hund.'],['die Katze','el gato','Nomen','f','die Katzen','Die Katze schläft.'],['die Maus','el ratón','Nomen','f','die Mäuse','Die Maus ist grau.'],['das Schwein','el cerdo','Nomen','n','die Schweine','Das Schwein ist rosa.'],['das Buch','el libro','Nomen','n','die Bücher','Ich habe keine Bücher.'],['das Handy','el móvil','Nomen','n','die Handys','Mein Handy ist kaputt.'],['der Computer','el ordenador','Nomen','m','die Computer','Ich arbeite am Computer.'],['das Geld','el dinero','Nomen','n','','Ich habe kein Geld.'],['der Euro','el euro','Nomen','m','die Euro','Das kostet drei Euro fünfzig.'],['die Jacke','la chaqueta','Nomen','f','die Jacken','Die Jacke ist schwarz.'],['die Hose','el pantalón','Nomen','f','die Hosen','Die Hose ist blau.'],['das T-Shirt','la camiseta','Nomen','n','die T-Shirts','Ich trage ein T-Shirt.'],['der Schuh','el zapato','Nomen','m','die Schuhe','Die Schuhe sind neu.'],['der Tisch','la mesa','Nomen','m','die Tische','Der Tisch ist braun.'],['der Stuhl','la silla','Nomen','m','die Stühle','Der Stuhl ist neu.'],['das Bett','la cama','Nomen','n','die Betten','Ich gehe ins Bett.'],['die Tür','la puerta','Nomen','f','die Türen','Die Tür ist offen.'],['das Fenster','la ventana','Nomen','n','die Fenster','Das Fenster ist zu.'],
+['die Uhr','el reloj; la hora (Uhr)','Nomen','f','die Uhren','Es ist drei Uhr.'],['halb','media (hora)','Adverb','','','Es ist halb sieben (6:30).'],['das Viertel','el cuarto','Nomen','n','die Viertel','Es ist Viertel nach acht.'],['die Zeit','el tiempo (cronológico)','Nomen','f','die Zeiten','Hast du Zeit?'],['die Stunde','la hora (duración)','Nomen','f','die Stunden','Der Kurs dauert zwei Stunden.'],['die Minute','el minuto','Nomen','f','die Minuten','Ich warte seit zehn Minuten.'],['der Tag','el día','Nomen','m','die Tage','Ich lerne jeden Tag.'],['die Woche','la semana','Nomen','f','die Wochen','Letzte Woche war ich in Berlin.'],['das Jahr','el año','Nomen','n','die Jahre','Ich lerne seit zwei Jahren Deutsch.'],['der Morgen','la mañana','Nomen','m','die Morgen','Guten Morgen!'],['der Nachmittag','la tarde (después de comer)','Nomen','m','die Nachmittage','Am Nachmittag fahren sie zurück.'],['der Abend','la tarde-noche','Nomen','m','die Abende','Heute Abend gibt es ein Fest.'],['die Nacht','la noche','Nomen','f','die Nächte','Gute Nacht!'],['das Wochenende','el fin de semana','Nomen','n','die Wochenenden','Was machst du am Wochenende?'],['der Montag','el lunes','Nomen','m','die Montage','Am Montag arbeite ich.'],['der Samstag','el sábado','Nomen','m','die Samstage','Am Samstag stehe ich spät auf.'],['der Sonntag','el domingo','Nomen','m','die Sonntage','Am Sonntag ist alles zu.'],
+['gestern','ayer','Adverb','','','Was hast du gestern gemacht?'],['heute','hoy','Adverb','','','Heute lerne ich Deutsch.'],['morgen','mañana (día)','Adverb','','','Morgen fahre ich nach Berlin.'],['jetzt','ahora','Adverb','','','Ich gehe jetzt nach Hause.'],['dann','luego, entonces','Adverb','','','Dann frühstücke ich.'],['schon','ya','Adverb','','','Es ist schon halb zehn.'],['noch','todavía; aún','Adverb','','','Ich habe noch Zeit.'],['manchmal','a veces','Adverb','','','Ich bin manchmal müde.'],['normalerweise','normalmente','Adverb','','','Normalerweise stehe ich um sieben auf.'],['immer','siempre','Adverb','','','Der Zug ist immer pünktlich.'],['oft','a menudo','Adverb','','','Ich trinke oft Tee.'],['nie','nunca','Adverb','','','Ich trinke nie Kaffee.'],['gern','con gusto (gustar hacer)','Adverb','','','Ich tanze gern.'],['viel','mucho','Adverb','','','Er arbeitet viel.'],['schnell','rápido','Adjektiv','','','Sie geht schnell zum Bahnhof.'],['langsam','despacio, lento','Adjektiv','','','Bitte langsam!'],['spät','tarde','Adjektiv','','','Es ist spät.'],['früh','temprano','Adjektiv','','','Ich stehe früh auf.'],['zurück','de vuelta','Adverb','','','Sie fahren zurück nach Berlin.'],['hier','aquí','Adverb','','','Alle sind hier.'],['dort','allí','Adverb','','','Dort warten Mia und Ben.'],['links','a la izquierda','Adverb','','','Die Post ist links.'],['rechts','a la derecha','Adverb','','','Das Café ist rechts.'],['geradeaus','todo recto','Adverb','','','Gehen Sie geradeaus.'],
+['schwierig','difícil','Adjektiv','','','Deutsch ist manchmal schwierig.'],['leicht','fácil; ligero','Adjektiv','','','Die Übung ist leicht.'],['gut','bien; bueno','Adjektiv','','','Mir geht es gut.'],['schlecht','mal; malo','Adjektiv','','','Das Wetter ist schlecht.'],['schön','bonito','Adjektiv','','','Das Wetter ist schön.'],['groß','grande','Adjektiv','','','Die Stadt ist groß.'],['klein','pequeño','Adjektiv','','','Die Wohnung ist klein.'],['neu','nuevo','Adjektiv','','','Das Handy ist neu.'],['alt','viejo; mayor','Adjektiv','','','Wie alt bist du?'],['teuer','caro','Adjektiv','','','Der Zug ist teuer.'],['billig','barato','Adjektiv','','','Der Bus ist billig.'],['kalt','frío','Adjektiv','','','Es ist kalt.'],['warm','cálido, caliente','Adjektiv','','','Heute ist es warm.'],['das Wetter','el tiempo (clima)','Nomen','n','','Das Wetter ist schön.'],['die Sonne','el sol','Nomen','f','','Die Sonne scheint.'],['der Regen','la lluvia','Nomen','m','','Ich mag keinen Regen.'],['der Schnee','la nieve','Nomen','m','','Der Schnee ist weiß.'],['der Himmel','el cielo','Nomen','m','','Der Himmel ist blau.'],['das Gras','la hierba','Nomen','n','','Das Gras ist grün.'],
+['rot','rojo','Adjektiv','','','Das Auto ist rot.'],['blau','azul','Adjektiv','','','Der Himmel ist blau.'],['grün','verde','Adjektiv','','','Das Gras ist grün.'],['gelb','amarillo','Adjektiv','','','Die Banane ist gelb.'],['schwarz','negro','Adjektiv','','','Der Kaffee ist schwarz.'],['weiß','blanco','Adjektiv','','','Der Schnee ist weiß.'],['grau','gris','Adjektiv','','','Die Maus ist grau.'],['orange','naranja','Adjektiv','','','Die Orange ist orange.'],['braun','marrón','Adjektiv','','','Der Tisch ist braun.'],['rosa','rosa','Adjektiv','','','Das Schwein ist rosa.'],['lila','lila, morado','Adjektiv','','','Die Blume ist lila.'],['die Farbe','el color','Nomen','f','die Farben','Welche Farbe hat das Auto?'],
+['lernen','aprender','Verb','','','Ich lerne Deutsch.'],['machen','hacer','Verb','','','Was machst du?'],['wohnen','vivir (residir)','Verb','','','Ich wohne in Madrid.'],['kommen','venir','Verb','','','Ich komme aus Spanien.'],['arbeiten','trabajar','Verb','','','Er arbeitet viel.'],['sein','ser, estar','Verb','','','Ich bin müde.'],['haben','tener','Verb','','','Du hast Zeit.'],['fahren','ir (en vehículo), conducir','Verb','','','Du fährst nach Berlin.'],['sprechen','hablar','Verb','','','Du sprichst Deutsch.'],['sehen','ver','Verb','','','Ich sehe einen Film.'],['gehen','ir (a pie)','Verb','','','Ich gehe zur Schule.'],['trinken','beber','Verb','','','Ich trinke Kaffee.'],['essen','comer','Verb','','','Ich esse Brot.'],['kaufen','comprar','Verb','','','Ich kaufe Brot.'],['warten','esperar','Verb','','','Ich warte auf den Bus.'],['tanzen','bailar','Verb','','','Wir tanzen gern.'],['backen','hornear','Verb','','','Ich backe einen Kuchen.'],['schreiben','escribir','Verb','','','Wie schreibt man das?'],['lesen','leer','Verb','','','Ich lese ein Buch.'],['hören','oír, escuchar','Verb','','','Ich höre Musik.'],['spielen','jugar; tocar (instrumento)','Verb','','','Wir spielen Fußball.'],['kochen','cocinar','Verb','','','Ich koche gern.'],['schlafen','dormir','Verb','','','Ich schlafe acht Stunden.'],['helfen','ayudar','Verb','','','Er hilft mir.'],['treffen','quedar con, encontrarse','Verb','','','Ich treffe meine Freunde.'],['nehmen','tomar, coger','Verb','','','Ich nehme den Bus.'],['geben','dar','Verb','','','Heute gibt es ein Stadtfest.'],['wissen','saber','Verb','','','Ich weiß es nicht.'],['verstehen','entender','Verb','','','Ich verstehe das nicht.'],['brauchen','necesitar','Verb','','','Ich brauche eine Fahrkarte.'],['bezahlen','pagar','Verb','','','Ich möchte bezahlen.'],['bestellen','pedir (en un bar)','Verb','','','Ich bestelle einen Tee.'],['bleiben','quedarse','Verb','','','Ich bleibe zu Hause.'],['heißen','llamarse','Verb','','','Ich heiße Lena.'],['möchten','querer (cortés), gustaría','Verb','','','Ich möchte einen Kaffee.'],['können','poder','Verb','','','Kannst du mir helfen?'],['müssen','tener que','Verb','','','Ich muss arbeiten.'],['wollen','querer','Verb','','','Ich will nach Berlin fahren.'],['tragen','llevar (puesto)','Verb','','','Ich trage ein T-Shirt.'],['liegen','estar (tumbado/situado)','Verb','','','Die Apotheke liegt gegenüber dem Bahnhof.'],['telefonieren','hablar por teléfono','Verb','','','Ich telefoniere mit meiner Mutter.'],
+['der Film','la película','Nomen','m','die Filme','Ich habe einen Film gesehen.'],['die Musik','la música','Nomen','f','','Ich höre gern Musik.'],['der Sport','el deporte','Nomen','m','','Ich mache Sport.'],['der Fußball','el fútbol; el balón','Nomen','m','die Fußbälle','Wir spielen Fußball.'],['der Urlaub','las vacaciones','Nomen','m','die Urlaube','Im Urlaub fahre ich nach Spanien.'],['die Arbeit','el trabajo','Nomen','f','die Arbeiten','Ich gehe zur Arbeit.'],['die Kopfschmerzen','el dolor de cabeza','Nomen','pl','','Ich habe Kopfschmerzen.'],
+['mit','con (+ Dativ)','Präposition','','','Ich fahre mit dem Bus.'],['nach','a (ciudades/países); después de (+ Dativ)','Präposition','','','Ich fahre nach Berlin.'],['aus','de (procedencia) (+ Dativ)','Präposition','','','Ich komme aus Spanien.'],['bei','en casa de, junto a (+ Dativ)','Präposition','','','Ich wohne bei meinen Eltern.'],['seit','desde (hace) (+ Dativ)','Präposition','','','Ich lerne seit zwei Jahren Deutsch.'],['von','de, desde (+ Dativ)','Präposition','','','Ich komme von meinem Freund.'],['zu','a (personas, lugares) (+ Dativ)','Präposition','','','Ich gehe zu meinem Freund.'],['außer','excepto (+ Dativ)','Präposition','','','Außer meinem Bruder sind alle hier.'],['gegenüber','enfrente de (+ Dativ)','Präposition','','','Die Apotheke liegt gegenüber dem Bahnhof.'],
+['kein','ningún, no (+ sustantivo)','Artikel','','','Ich habe kein Auto.'],['nicht','no','Adverb','','','Ich komme heute nicht.'],['ja','sí','Partikel','','','Ja, gern!'],['nein','no','Partikel','','','Nein, danke.'],['bitte','por favor','Partikel','','','Einen Kaffee, bitte.'],['danke','gracias','Partikel','','','Danke schön!'],['die Entschuldigung','perdón, disculpe','Nomen','f','die Entschuldigungen','Entschuldigung, wo ist der Bahnhof?'],
+['wann','cuándo','Fragewort','','','Wann fährt der Zug?'],['wo','dónde','Fragewort','','','Wo ist der Bahnhof?'],['wohin','adónde','Fragewort','','','Wohin fährst du?'],['woher','de dónde','Fragewort','','','Woher kommst du?'],['warum','por qué','Fragewort','','','Warum lernst du Deutsch?'],['wie','cómo','Fragewort','','','Wie geht es dir?'],['was','qué','Fragewort','','','Was machst du?'],['wer','quién','Fragewort','','','Wer kommt mit?'],['wem','a quién (Dativ)','Fragewort','','','Mit wem sprichst du?'],
+['Deutschland','Alemania','Nomen','n','','Ich möchte in Deutschland arbeiten.'],['Spanien','España','Nomen','n','','Ich komme aus Spanien.'],['Österreich','Austria','Nomen','n','','Wien liegt in Österreich.'],['Deutsch','alemán (idioma)','Nomen','n','','Ich lerne Deutsch.']
+];
+const ART={m:'der',f:'die',n:'das',pl:'die (Pl.)'};
+const base=s=>s.toLowerCase().trim().replace(/[.,!?¿¡"„“]/g,'').replace(/^(der|die|das|den|dem|ein|eine|einen|el|la|los|las|un|una)\s+/,'');
+const fold=s=>s.replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss');
+const lemma=e=>base(e[0]);
+function lookup(q){q=base(q);if(!q)return null;const fq=fold(q);
+  let e=G.find(x=>fold(lemma(x))===fq);if(e)return{e,dir:'de'};
+  for(const c of [q+'n',q.replace(/(e|st|t)$/,'')+'en']){e=G.find(x=>fold(lemma(x))===fold(c));if(e)return{e,dir:'de',form:true}}
+  e=G.find(x=>x[1].toLowerCase().split(/[;,()]/).map(s=>base(s)).includes(q));if(e)return{e,dir:'es'};
+  return null}
+function entryHTML(e,note=''){return `<div class="wd">${e[0]}</div><div class="mid">${e[1]}</div><div class="small">${e[2]}${e[3]?' · Artikel: <b class="red">'+ART[e[3]]+'</b>':''}${e[4]?' · Plural: '+e[4]:''}</div><div style="margin-top:.6rem">„${e[5]}" <button data-say="${e[5]}">▶ hören</button></div>${note}`}
+/* ================= AUDIO (play / stop) ================= */
+let deVoice=null,speaking=null;function pickVoice(){const v=window.speechSynthesis?speechSynthesis.getVoices():[];deVoice=v.find(x=>/^de/i.test(x.lang))||null}
+if(window.speechSynthesis){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
+function stopSay(){if(window.speechSynthesis)speechSynthesis.cancel();speaking=null;syncSayBtns()}
+function say(t,rate){if(!window.speechSynthesis||!deVoice){flash('Sin voz alemana disponible en este navegador');return}
+  if(speaking===t){stopSay();return}
+  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.voice=deVoice;u.lang=deVoice.lang;u.rate=rate||.88;
+  speaking=t;u.onend=u.onerror=()=>{if(speaking===t){speaking=null;syncSayBtns()}};speechSynthesis.speak(u);syncSayBtns()}
+function syncSayBtns(){const b=document.getElementById('vorBtn');if(b)b.innerHTML=speaking===READ_PLAIN?'■ Stop':'▶ Vorlesen'}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-say]');if(b)say(b.dataset.say)});
+function flash(m){const t=document.getElementById('tip');t.innerHTML=m;t.style.display='block';t.style.left='40%';t.style.top='8%';setTimeout(()=>t.style.display='none',1800)}
+/* ================= EFECTOS ================= */
+const SCR='ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜß0123456789';
+function decode(el){if(!el)return;const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);const nodes=[];while(w.nextNode())nodes.push([w.currentNode,w.currentNode.nodeValue]);
+  const total=nodes.reduce((a,n)=>a+n[1].length,0);let f=0;const F=22;
+  (function step(){f++;let shown=Math.floor(total*f/F),k=0;nodes.forEach(([n,txt])=>{let o='';for(const ch of txt){o+=(k<shown||ch===' ')?ch:SCR[Math.floor(Math.random()*SCR.length)];k++}n.nodeValue=o});if(f<F)requestAnimationFrame(step);else nodes.forEach(([n,t])=>n.nodeValue=t)})()}
+function snap(){const m={};stage.querySelectorAll('[data-k]').forEach(el=>m[el.dataset.k]=el.getBoundingClientRect());return m}
+function flip(prev,assemble){const els=[...stage.querySelectorAll('[data-k]')];
+  els.forEach((el,idx)=>{const p=prev&&prev[el.dataset.k];const r=el.getBoundingClientRect();
+    if(assemble){const dx=(Math.random()-.5)*700,dy=(Math.random()-.5)*400+200;el.animate([{transform:`translate(${dx}px,${dy}px) rotate(${(Math.random()-.5)*50}deg)`,opacity:0,filter:'blur(8px)'},{opacity:1,offset:.5},{transform:'none',opacity:1,filter:'none'}],{duration:900,delay:200+idx*90,easing:'cubic-bezier(.2,.8,.2,1)',fill:'backwards'});return}
+    if(p){const dx=p.left-r.left,dy=p.top-r.top;if(Math.abs(dx)<1&&Math.abs(dy)<1)return;
+      const far=Math.abs(dx)>140||Math.abs(dy)>60;el.style.zIndex=3;
+      el.animate(far?[{transform:`translate(${dx}px,${dy}px)`,boxShadow:'0 0 0 rgba(255,56,50,0)'},{transform:`translate(${dx*.5}px,${dy*.5-90}px) scale(1.12)`,boxShadow:'0 0 2.5rem rgba(255,56,50,.8)',offset:.5},{transform:'none',boxShadow:'0 0 0 rgba(255,56,50,0)'}]:[{transform:`translate(${dx}px,${dy}px)`},{transform:'none'}],{duration:far?1000:450,easing:'cubic-bezier(.5,0,.2,1)'})}
+    else if(prev){el.animate([{opacity:0,transform:'translateY(-2.5rem) scale(.7)',filter:'blur(6px)'},{opacity:1,transform:'none',filter:'none'}],{duration:550,easing:'cubic-bezier(.3,1.4,.5,1)'})}})}
+function countUp(el,from,to){const t0=performance.now();(function f(t){const k=Math.min(1,(t-t0)/600);el.textContent=Math.round(from+(to-from)*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)}
+/* ================= ESCENAS ================= */
+const BLOCKS=[['Calentamiento',8],['Weil · Obwohl · Dativ · Perfekt',24],['Leseverstehen',10],['Alphabet',9],['Zahlen & Uhrzeit',10],['Farben',5],['Grundbauplan',12],['Präsens & Sprechen',14],['Trennbare Verben',8],['kein · keine · keinen',7],['Präpositionen + Dativ',8],['Mission',5]];
+const dm=t=>[...t].map((c,i)=>`<span class="c" style="animation-delay:${i*35}ms">${c===' '?'&nbsp;':c}</span>`).join('');
+const S=[];
+function add(b,min,kick,obj,r,o={}){S.push(typeof r==='function'?{b,min,kick,obj,render:r,...o}:{b,min,kick,obj,...r,...o})}
+const dotsHTML=(n,i)=>`<div class="dots">${Array.from({length:n},(_,k)=>`<i class="${k<=i?'on':''} ${k===i?'now':''}"></i>`).join('')}<span class="key" style="margin-left:1rem">${String(i+1).padStart(2,'0')}/${String(n).padStart(2,'0')}</span></div>`;
+function seq(stages,caption=[],assemble){return {steps:stages.length,assemble,render:(st)=>{
+  const s=stages[Math.min(st,stages.length-1)];
+  return `<div class="sent">${s.map(w=>`<span class="w ${w[1]||''}" data-k="${w[2]||w[0]}">${w[0]}</span>`).join('')}</div><div class="small" style="margin-top:2.5rem;font-size:1.9rem;min-height:3rem">${caption[Math.min(st,caption.length-1)]||''}</div>`}}}
+function choice(items,opts){return {items,render:(st,ctx)=>{const it=items[ctx.i];const o=it.o||opts;
+  return `${dotsHTML(items.length,ctx.i)}<div class="big" style="margin:1.5rem 0">${it.q.replace('___','<span class="red">___</span>')}</div>
+  <div class="opts">${o.map((x,k)=>`<button data-opt="${k}" class="${ctx.sel===k?'sel':''} ${ctx.rev?(x===it.a?'right':(ctx.sel===k?'wrong':'')):''}"><span class="key">${k+1}</span> ${x}</button>`).join('')}</div>
+  <div class="sol ${ctx.rev?'':'hidden'}">${it.full||it.a}${it.why?` <span class="small">— ${it.why}</span>`:''}</div>`}}}
+function qa(items){return {items,render:(st,ctx)=>{const it=items[ctx.i];
+  return `${dotsHTML(items.length,ctx.i)}<div class="big" style="margin:1.5rem 0 1rem">${it.q}</div>
+  ${it.es?`<div class="hint ${ctx.es?'':'hidden'}">ES: ${it.es}</div>`:''}
+  ${it.h?`<div class="hint ${ctx.h?'':'hidden'}">Pista: <span class="red">${it.h}</span></div>`:''}
+  <div class="sol ${ctx.rev?'':'hidden'}">${it.a}</div>${it.t?`<div class="small" style="margin-top:auto">⏱ ${it.t}</div>`:''}`}}}
+function builder(items){return {items,builder:true,render:(st,ctx)=>{const it=items[ctx.i];ctx.placed=ctx.placed||[];
+  const pool=ctx.order||(ctx.order=shuffle(it.tiles.map((t,k)=>k)));const placed=ctx.placed;const sol=it.sol.map(s=>s.join(' '));
+  let res='';if(ctx.checked){const cur=placed.map(k=>it.tiles[k]).join(' ');ctx.ok=sol.includes(cur);res=ctx.ok?'<span class="ok">✓ Richtig!</span>':`<span class="red">✗ ${it.why}</span>`}
+  return `${dotsHTML(items.length,ctx.i)}<div class="small" style="margin:1rem 0">${it.task}</div>
+  <div class="sent panel" style="min-height:7rem;font-size:3rem">${placed.map((k,j)=>`<span class="w ${ctx.checked?(sol.some(s=>s.split(' ')[j]===it.tiles[k])?'ok':'bad'):''}" data-k="t${k}" data-un="${j}" style="${ctx.checked&&ctx.ok?`animation:pulse .7s ${j*90}ms both`:''}">${j===0?cap(it.tiles[k]):it.tiles[k]}</span>`).join('')}${placed.length===it.tiles.length?'<span style="font-size:3rem">'+it.end+'</span>':''}</div>
+  <div class="sent pool" style="margin-top:2rem;font-size:2.6rem">${pool.filter(k=>!placed.includes(k)).map(k=>`<span class="w" data-k="t${k}" data-pl="${k}">${it.tiles[k]}</span>`).join('')}</div>
+  <div class="row" style="margin-top:2rem;align-items:center"><button onclick="bCheck()">Prüfen (Enter)</button><button onclick="bReset()">Neu (R)</button><div class="mid ${ctx.checked&&!ctx.ok?'shake':''}">${res}</div></div>
+  <div class="sol ${ctx.rev?'':'hidden'}">${it.sol.map(s=>cap(s.join(' '))+it.end).join('  ·  ')}</div>`}}}
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* ===== BLOQUE 1 ===== */
+add(0,1,'01 // <em>Guten Morgen</em>','Abrir la clase, tono y objetivo.',{steps:3,render:st=>`<div class="center"><h1 class="dm">${dm('GUTEN MORGEN.')}</h1>${st>=1?`<h1 class="dm red" style="font-size:5rem;margin-top:2rem"><span class="flipin">HEUTE SPRECHEN WIR DEUTSCH.</span></h1>`:''}${st>=2?`<div class="kick flipin" style="margin-top:3rem">120 MINUTEN. EIN ZIEL: DEUTSCH SPRECHEN.</div>`:''}</div>`});
+add(0,2,'01 // Drei Sätze','Activar weil/obwohl/Dativ. Clic en palabras para explicar.',{render:()=>`<div class="center" style="gap:2.5rem">
+<div class="mid">Wir lernen Deutsch, <span class="w cj" data-x="Conjunción subordinante: manda el verbo conjugado al final.">weil</span> wir besser sprechen <span class="w v" data-x="Verbo conjugado: al final de la subordinada.">möchten</span>.</div>
+<div class="mid"><span class="w cj" data-x="Contraste: algo sucede a pesar de otra cosa.">Obwohl</span> Deutsch manchmal schwierig <span class="w v" data-x="Verbo al final de la subordinada.">ist</span>, <span class="w v" data-x="La subordinada ocupa la posición 1 → el verbo principal va justo después de la coma.">machen</span> wir weiter.</div>
+<div class="mid">Ich spreche <span class="w cj" data-x="mit + Dativ, siempre.">mit</span> <span class="w p" data-x="mein → meinem: Dativ masculino (der → dem).">meinem</span> Freund Deutsch.</div>
+<div class="small" id="xpl" style="min-height:3rem;color:var(--w)">Clic en una palabra marcada →</div></div>`});
+add(0,5,'01 // Aufwärmen','Que hablen. H pista, E traducción, A respuesta modelo.',qa([
+{q:'Wie geht es dir heute?',es:'¿Cómo estás hoy?',h:'Mir geht es gut, weil …',a:'Mir geht es gut, weil heute Samstag ist.',t:'45 s'},
+{q:'Was hast du gestern gemacht?',es:'¿Qué hiciste ayer?',h:'Ich habe … gemacht / Ich bin … gefahren.',a:'Ich habe gestern Fußball gespielt.',t:'60 s'},
+{q:'Wann bist du heute aufgestanden?',es:'¿Cuándo te levantaste hoy?',h:'Ich bin um … Uhr aufgestanden.',a:'Ich bin um sieben Uhr aufgestanden.',t:'45 s'},
+{q:'Was machst du normalerweise am Wochenende?',es:'¿Qué haces normalmente el fin de semana?',h:'Am Wochenende …',a:'Am Wochenende treffe ich meine Freunde.',t:'60 s'},
+{q:'Wie kommst du zur Schule?',es:'¿Cómo vas a la escuela?',h:'Ich fahre mit dem … / Ich gehe zu Fuß.',a:'Ich fahre mit dem Bus zur Schule.',t:'45 s'},
+{q:'Warum lernst du Deutsch?',es:'¿Por qué aprendes alemán?',h:'Ich lerne Deutsch, weil …',a:'Ich lerne Deutsch, weil ich in Deutschland arbeiten möchte.',t:'60 s'},
+{q:'Was machst du, obwohl du müde bist?',es:'¿Qué haces aunque estés cansado?',h:'Obwohl ich müde bin, …',a:'Obwohl ich müde bin, mache ich Sport.',t:'60 s'}]));
+
+/* ===== BLOQUE 2 ===== */
+add(1,2,'02 // Nebensätze','Momento B: el verbo viaja al final. Espacio avanza, ⌫ retrocede.',seq([
+[['Ich'],['bleibe','v'],['zu'],['Hause.','','ha'],['Ich','','i2'],['bin','v','bin'],['krank.','','kr']],
+[['Ich'],['bleibe','v'],['zu'],['Hause,','','ha'],['weil','cj'],['ich','','i2'],['bin','v','bin'],['krank.','','kr']],
+[['Ich'],['bleibe','v'],['zu'],['Hause,','','ha'],['weil','cj'],['ich','','i2'],['krank','','kr'],['bin.','v','bin']]],
+['Zwei Hauptsätze. Verb auf Position 2.','<span class="red">weil</span> verbindet …','… und das Verb reist <span class="red">ans Ende</span>. → WEIL = VERB AM ENDE']),{title:'WEIL'});
+add(1,2,'02 // weil · Wörter ordnen','Ordenar: clic en piezas, Enter comprueba. Espacio = siguiente ejercicio.',builder([
+{task:'1 · Ich trinke Kaffee, weil …',tiles:['ich','müde','bin'],sol:[['ich','müde','bin']],end:'.',why:'En la subordinada con weil el verbo conjugado va al final.'},
+{task:'2 · Ich lerne Deutsch, weil …',tiles:['ich','in Berlin','möchte','arbeiten'],sol:[['ich','in Berlin','arbeiten','möchte']],end:'.',why:'El verbo conjugado (möchte) va al final, detrás del infinitivo.'},
+{task:'3 · Wir bleiben zu Hause, weil …',tiles:['es','heute','regnet'],sol:[['es','heute','regnet']],end:'.',why:'Verbo conjugado al final.'},
+{task:'4 · Er geht zum Arzt, weil …',tiles:['er','Kopfschmerzen','hat'],sol:[['er','Kopfschmerzen','hat']],end:'.',why:'hat va al final de la subordinada.'},
+{task:'5 · Ich bin glücklich, weil …',tiles:['heute','Samstag','ist'],sol:[['heute','Samstag','ist']],end:'.',why:'ist va al final de la subordinada.'},
+{task:'6 · Sie fährt mit dem Bus, weil …',tiles:['ihr','Auto','kaputt','ist'],sol:[['ihr','Auto','kaputt','ist']],end:'.',why:'Sujeto (ihr Auto) detrás de weil, el verbo al final.'}]));
+add(1,2,'02 // weil · Verb ergänzen','Completar el verbo. Los alumnos dicen, el profesor revela (A).',qa([
+{q:'Ich gehe zum Arzt, weil ich krank ___.',a:'bin'},{q:'Er kauft Brot, weil er Hunger ___.',a:'hat'},{q:'Wir fahren mit dem Bus, weil das Auto kaputt ___.',a:'ist'},{q:'Sie lernt viel, weil sie morgen eine Prüfung ___.',a:'hat'},{q:'Du bleibst zu Hause, weil du krank ___.',a:'bist'},{q:'Wir lernen Deutsch, weil wir in Wien arbeiten ___.',a:'möchten / wollen'}]));
+add(1,2,'02 // weil · zwei Sätze → ein Satz','Transformar y producir oralmente.',qa([
+{q:'Ich lerne Deutsch. Ich möchte in Deutschland arbeiten.',a:'Ich lerne Deutsch, weil ich in Deutschland arbeiten möchte.'},
+{q:'Ich trinke Wasser. Ich habe Durst.',a:'Ich trinke Wasser, weil ich Durst habe.'},
+{q:'Ich gehe ins Bett. Ich bin müde.',a:'Ich gehe ins Bett, weil ich müde bin.'},
+{q:'Sie fährt mit dem Bus. Ihr Auto ist kaputt.',a:'Sie fährt mit dem Bus, weil ihr Auto kaputt ist.'},
+{q:'Warum trinkst du Kaffee?',h:'Ich trinke Kaffee, weil …',a:'Ich trinke Kaffee, weil ich müde bin.'},
+{q:'Warum bist du heute müde?',h:'Ich bin müde, weil …',a:'Ich bin müde, weil ich spät ins Bett gegangen bin.'}]));
+add(1,2,'02 // Obwohl','Contraste. Subordinada al principio: verbo, verbo.',seq([
+[['Es','','es'],['regnet.','v','reg'],['Ich','','ich'],['gehe','v','geh'],['spazieren.','p','spa']],
+[['Ich','','ich'],['gehe','v','geh'],['spazieren,','p','spa'],['obwohl','cj','ob'],['es','','es'],['regnet.','v','reg']],
+[['Obwohl','cj','ob'],['es','','es'],['regnet,','v','reg'],['gehe','v','geh'],['ich','','ich'],['spazieren.','p','spa']]],
+['weil = Grund ✓ logisch · obwohl = Gegensatz ⚡ Überraschung','Obwohl → Verb am Ende.','Nebensatz zuerst → <span class="red">Verb , Verb</span>: regnet, gehe']),{title:'OBWOHL'});
+add(1,2,'02 // Zwei Situationen','Construir frase con obwohl.',qa([
+{q:'Es ist kalt. ⚡ Ich trage ein T-Shirt.',a:'Ich trage ein T-Shirt, obwohl es kalt ist.'},
+{q:'Ich bin müde. ⚡ Ich gehe zum Stadtfest.',a:'Obwohl ich müde bin, gehe ich zum Stadtfest.'},
+{q:'Der Zug ist teuer. ⚡ Wir fahren mit dem Zug.',a:'Wir fahren mit dem Zug, obwohl er teuer ist.'},
+{q:'Er hat keine Zeit. ⚡ Er hilft mir.',a:'Obwohl er keine Zeit hat, hilft er mir.'},
+{q:'Das Wetter ist schlecht. ⚡ Wir spielen Fußball.',a:'Wir spielen Fußball, obwohl das Wetter schlecht ist.'},
+{q:'Ich habe kein Geld. ⚡ Ich gehe ins Kino.',a:'Obwohl ich kein Geld habe, gehe ich ins Kino.'}]));
+add(1,2,'02 // weil oder obwohl?','Elegir 1/2, revelar con A.',choice([
+{q:'Ich esse viel, ___ ich Hunger habe.',a:'weil'},{q:'Ich esse viel, ___ ich keinen Hunger habe.',a:'obwohl'},
+{q:'___ es regnet, bleiben wir zu Hause.',a:'Weil',o:['Weil','Obwohl']},{q:'___ es regnet, spielen wir Fußball.',a:'Obwohl',o:['Weil','Obwohl']},
+{q:'Sie kommt mit, ___ sie gern tanzt.',a:'weil'},{q:'Er arbeitet, ___ er krank ist.',a:'obwohl'}],['weil','obwohl']));
+add(1,2,'02 // Dativ','Wem? Artículos que cambian. Espacio = transformar.',{steps:2,render:st=>`<h2 class="dm">${dm('DATIV · WEM?')}</h2>
+<table class="t"><tr><th></th><th>NOMINATIV</th><th>DATIV</th></tr>
+${[['maskulin','der','dem'],['feminin','die','der'],['neutral','das','dem'],['Plural','die','den (+n)']].map((r,i)=>`<tr><td class="grey">${r[0]}</td><td>${r[1]}</td><td class="red">${st>=1?`<span class="flipin" style="animation-delay:${i*150}ms">${r[2]}</span>`:'<span class="grey">?</span>'}</td></tr>`).join('')}</table>
+<div class="mid" style="margin-top:2rem">Ich fahre mit <span class="red">dem</span> Bus. · Ich spreche mit <span class="red">meiner</span> Mutter. · Ich gehe zu <span class="red">meinem</span> Freund.</div>`});
+add(1,2,'02 // Dativ · üben','Elegir artículo.',choice([
+{q:'Ich fahre mit ___ Zug.',a:'dem',why:'der Zug → dem'},{q:'Ich spreche mit ___ Lehrerin.',a:'der',why:'die Lehrerin → der'},
+{q:'Ich wohne bei ___ Eltern.',a:'meinen',o:['meinen','meiner','meinem'],why:'Plural → den/meinen'},{q:'Wir fahren mit ___ Auto.',a:'dem',why:'das Auto → dem'},
+{q:'Er kommt aus ___ Supermarkt.',a:'dem',why:'der Supermarkt → dem'},{q:'Ich gehe zu ___ Ärztin.',a:'der',why:'die Ärztin → der (zur)'}],['dem','der','den']));
+add(1,2,'02 // Perfekt','haben/sein + Partizip II al final (Satzklammer).',seq([
+[['Ich','','ich'],['lerne','v','v'],['Deutsch.','','obj']],[['Ich','','ich'],['habe','v','v'],['Deutsch','','obj'],['gelernt.','p','pt']],[['Ich','','ich'],['bin','v','v'],['nach','','obj'],['Berlin','','b'],['gefahren.','p','pt']],[['Ich','','ich'],['habe','v','v'],['einen','','obj'],['Film','','b'],['gesehen.','p','pt']]],
+['Präsens: ein Verb.','haben + Partizip II → Klammer','sein: meist Bewegung (fahren, gehen, kommen) oder Veränderung (aufstehen) — auch: sein, bleiben','Die meisten Verben: haben.']));
+add(1,1,'02 // haben oder sein?','Elegir auxiliar.',choice([
+{q:'Ich ___ nach Madrid gefahren.',a:'bin'},{q:'Wir ___ Pizza gegessen.',a:'haben',o:['haben','sind']},{q:'Er ___ um sieben aufgestanden.',a:'ist',o:['hat','ist']},{q:'Du ___ einen Film gesehen.',a:'hast',o:['hast','bist']},{q:'Sie ___ zu Hause geblieben.',a:'ist',o:['hat','ist']},{q:'Ich ___ Deutsch gelernt.',a:'habe'}],['habe','bin']));
+add(1,1,'02 // Partizip II','Formar participios. A revela.',qa([{q:'lernen →',a:'gelernt'},{q:'sehen →',a:'gesehen'},{q:'fahren →',a:'gefahren'},{q:'essen →',a:'gegessen'},{q:'aufstehen →',a:'aufgestanden'},{q:'einkaufen →',a:'eingekauft'},{q:'telefonieren →',a:'telefoniert (sin ge-)'}]));
+add(1,1,'02 // Perfekt · bauen','Ordenar con Satzklammer. Varias soluciones válidas.',builder([
+{task:'1 · Gestern …',tiles:['ich','habe','gestern','einen Film','gesehen'],sol:[['ich','habe','gestern','einen Film','gesehen'],['gestern','habe','ich','einen Film','gesehen']],end:'.',why:'Auxiliar en posición 2, Partizip al final.'},
+{task:'2 · Am Samstag …',tiles:['wir','sind','am Samstag','nach Berlin','gefahren'],sol:[['wir','sind','am Samstag','nach Berlin','gefahren'],['am Samstag','sind','wir','nach Berlin','gefahren']],end:'.',why:'sind en posición 2, gefahren al final.'},
+{task:'3 · Heute Morgen …',tiles:['ich','bin','um sieben Uhr','aufgestanden'],sol:[['ich','bin','um sieben Uhr','aufgestanden'],['um sieben Uhr','bin','ich','aufgestanden']],end:'.',why:'bin en posición 2, aufgestanden al final.'},
+{task:'4 · Letzte Woche …',tiles:['wir','haben','letzte Woche','Pizza','gegessen'],sol:[['wir','haben','letzte Woche','Pizza','gegessen'],['letzte Woche','haben','wir','Pizza','gegessen']],end:'.',why:'haben en posición 2, gegessen al final.'}]));
+add(1,1,'02 // Sprechen','Producción libre. El profesor evalúa.',{render:()=>`<div class="center"><h1 class="dm" style="font-size:5.5rem">${dm('WAS HAST DU GESTERN GEMACHT?')}</h1><div class="mid grey" style="margin-top:3rem">gestern Abend · am Wochenende · letzte Woche</div><div class="mid" style="margin-top:1rem">gearbeitet · gelernt · gekocht · gesehen · getroffen · <span class="red">bin</span> gefahren · <span class="red">bin</span> gegangen</div></div>`});
+
+/* ===== BLOQUE 3 ===== */
+const VOC={Bahnhof:'der Bahnhof',Fahrplan:'der Fahrplan',pünktlich:'pünktlich',besucht:'besuchen',Zusammen:'zusammen','kaufen|ein':'einkaufen','steigen|um':'umsteigen',Haltestelle:'die Haltestelle','steigen|aus':'aussteigen',Einladung:'die Einladung',Stadtfest:'das Stadtfest','kommen|mit':'mitkommen'};
+const TEXT=`Lena wohnt in Berlin. Am Samstag steht sie um acht Uhr auf und frühstückt: Brot mit Käse und einen Kaffee. Dann sieht sie auf die Uhr – oh, schon halb zehn! Sie geht schnell zum [Bahnhof]. Auf dem [Fahrplan] steht: Der Zug nach Potsdam fährt um 9:52 Uhr. Heute ist der Zug [pünktlich].
+In Potsdam [besucht] Lena ihren Freund Tim. Er hat einen Apfelkuchen gebacken. [Zusammen] [kaufen|ein] sie auf dem Markt [ein|kaufen|ein]: Obst und Blumen.
+Am Nachmittag fahren sie mit dem Zug zurück nach Berlin. Am Alexanderplatz [steigen|um] sie in die Straßenbahn [um|steigen|um]. An der [Haltestelle] Hackescher Markt [steigen|aus] sie [aus|steigen|aus] und gehen in ein Café. Dort warten schon Tims Schwester Mia und ihr Freund Ben. Mia hat eine [Einladung]: Heute Abend gibt es ein [Stadtfest]. Alle [kommen|mit] [mit|kommen|mit], weil sie gern tanzen.`;
+const READ_PLAIN=TEXT.replace(/\[([^|\]]+)[^\]]*\]/g,'$1').replace('9:52','neun Uhr zweiundfünfzig');
+function readingHTML(){return TEXT.replace(/\[([^\]]+)\]/g,(m,k)=>{const p=k.split('|');let word,key;if(p.length===3){word=p[0];key=p[1]+'|'+p[2]}else{word=p[0];key=k}return `<span class="vw" data-v="${VOC[key]}">${word}</span>`}).replace(/\n/g,'<br><br>')}
+add(2,4,'03 // Leseverstehen','Lectura (2 min) + aclarar palabras (2 min). Clic en palabras subrayadas. Vorlesen = play/stop (o S).',{render:()=>`<div class="row" style="justify-content:space-between;align-items:center"><h2 class="dm" style="margin:0">${dm('EIN SAMSTAG IN BERLIN')}</h2><button id="vorBtn" onclick="say(READ_PLAIN,.85)">${speaking===READ_PLAIN?'■ Stop':'▶ Vorlesen'}</button></div><div class="read" style="margin-top:1.5rem">${readingHTML()}</div>`});
+add(2,4,'03 // Fragen zum Text','Elegir y revelar con A. Las soluciones están en el texto.',choice([
+{q:'Wann steht Lena auf?',a:'um acht Uhr',o:['um sieben Uhr','um acht Uhr','um halb zehn']},
+{q:'Wohin fährt Lena mit dem Zug?',a:'nach Potsdam',o:['nach Hamburg','nach Potsdam','nach Dresden']},
+{q:'Wo steigen Lena und Tim in die Straßenbahn um?',a:'am Alexanderplatz',o:['in Potsdam','am Alexanderplatz','am Hackeschen Markt']},
+{q:'Richtig oder falsch? Der Zug ist zu spät.',a:'falsch',o:['richtig','falsch'],full:'Falsch – der Zug ist pünktlich.'},
+{q:'Richtig oder falsch? Lena und Tim kaufen auf dem Markt Obst ein.',a:'richtig',o:['richtig','falsch']},
+{q:'Kurze Antwort: Was hat Tim gebacken?',a:'einen Apfelkuchen',o:['einen Apfelkuchen','Brot','eine Pizza'],full:'Einen Apfelkuchen.'}],[]));
+add(2,2,'03 // Und du?','Producción oral breve.',{render:()=>`<div class="center"><h1 class="dm" style="font-size:5.5rem">${dm('WAS MACHST DU AM SAMSTAG?')}</h1><div class="mid grey" style="margin-top:3rem">Erzähl in drei Sätzen: aufstehen · frühstücken · fahren · treffen · einkaufen</div><div class="mid" style="margin-top:1rem">Am Samstag stehe ich um … Uhr <span class="red">auf</span>. Dann …</div></div>`});
+
+/* ===== BLOQUE 4 ===== */
+const ABC=[['A','a','Apfel'],['B','be','Bahnhof'],['C','tse','Café'],['D','de','Deutsch'],['E','e','Essen'],['F','ef','Fahrplan'],['G','ge','gut'],['H','ha','Haus'],['I','i','Idee'],['J','jot','ja'],['K','ka','Kaffee'],['L','el','lernen'],['M','em','Mutter'],['N','en','neun'],['O','o','Obst'],['P','pe','pünktlich'],['Q','ku','Quark'],['R','er','rot'],['S','es','Sonne'],['T','te','Tee'],['U','u','Uhr'],['V','fau','Vater'],['W','we','Wasser'],['X','iks','Xylofon'],['Y','ypsilon','Yoga'],['Z','tset','Zug'],['Ä','ä','Äpfel'],['Ö','ö','Österreich'],['Ü','ü','Übung'],['ß','eszett','Straße']];
+const FOC='ÄÖÜßJVWZ';
+add(3,4,'04 // Das Alphabet','Clic en letras. Rojo = difíciles para hispanohablantes.',{render:()=>`<div class="row" style="justify-content:space-between"><h2 class="dm" style="margin:0">${dm('DAS ALPHABET')}</h2><div id="abcInfo" class="mid" style="text-align:right;min-height:6rem"></div></div><div class="abc">${ABC.map((l,i)=>`<button class="${FOC.includes(l[0])?'f':''}" data-abc="${i}" style="animation-delay:${Math.floor(Math.random()*900)}ms">${l[0]}</button>`).join('')}</div>`});
+add(3,2,'04 // Schwierige Laute','Aproximaciones (no equivalencias exactas).',{render:()=>`<h2 class="dm">${dm('SCHWIERIGE LAUTE')}</h2><table class="t">
+${[['J','ja, Jacke','como la "y" de "yo" (aprox.)'],['V','Vater, viel','normalmente como "f"'],['W','Wasser, wo','sonido [v] labiodental, no "u"'],['Z','Zug, Zeit','[ts]'],['Ü','Übung, für','"i" con labios redondeados'],['Ö','Österreich, schön','"e" con labios redondeados'],['ß / ch','Straße, ich, acht','ß = [s] sorda · ich (suave) · ach (como la "j" española, aprox.)'],['ei / ie','drei, vier','ei ≈ "ai" · ie = "i" larga']].map(r=>`<tr><td class="red" style="font-family:var(--dot);font-weight:900;font-size:2.6rem">${r[0]}</td><td><button data-say="${r[1]}">▶</button> ${r[1]}</td><td class="grey" style="font-size:1.5rem">${r[2]}</td></tr>`).join('')}</table>`});
+add(3,3,'04 // Buchstabiere das Wort','El profesor revela la palabra, la clase deletrea. A = deletreo.',qa([
+{q:'Wie schreibt man deinen Namen?',a:'Ich heiße … — Das schreibt man: …'},{q:'BAHNHOF',a:'be – a – ha – en – ha – o – ef'},{q:'STRASSE / STRAßE',a:'es – te – er – a – eszett – e'},{q:'PÜNKTLICH',a:'pe – ü – en – ka – te – el – i – tse – ha'},{q:'ZUG',a:'tset – u – ge'},{q:'WASSER',a:'we – a – es – es – e – er'}]));
+
+/* ===== BLOQUE 5 ===== */
+const N1=['null','eins','zwei','drei','vier','fünf','sechs','sieben','acht','neun','zehn','elf','zwölf','dreizehn','vierzehn','fünfzehn','sechzehn','siebzehn','achtzehn','neunzehn'];
+const TENS=['','','zwanzig','dreißig','vierzig','fünfzig','sechzig','siebzig','achtzig','neunzig'];
+function nw(n){if(n<20)return N1[n];if(n<100){const t=Math.floor(n/10),u=n%10;return u?(u===1?'ein':N1[u])+'und'+TENS[t]:TENS[t]}return n===100?'hundert':'?'}
+add(4,2,'05 // Zahlen','Clic para escuchar.',{render:()=>`<h2 class="dm">${dm('ZAHLEN 0–20')}</h2><div class="abc" style="grid-template-columns:repeat(7,1fr)">${N1.concat(['zwanzig']).map((w,i)=>`<button style="font-size:2.6rem;animation-delay:${i*40}ms" data-num="${i}">${i}</button>`).join('')}</div><div class="big" id="nwout" style="margin-top:1.5rem"></div>`});
+add(4,3,'05 // Einundzwanzig','Inversión: unidad + und + decena. Espacio = nueva cifra, ⌫ anterior.',{steps:3,render:(st,ctx)=>{ctx.n=ctx.n||21;return `<div class="center">
+<div class="sent" style="font-size:5rem">${st>=1?`<span class="w cj" data-k="ein">EIN</span><span class="w" data-k="und">UND</span><span class="w v" data-k="zw">ZWANZIG</span>`:'<span class="w v" data-k="zw">20</span><span class="w" data-k="und">+</span><span class="w cj" data-k="ein">1</span>'}</div>
+<div class="mid grey" style="margin:1.5rem 0">${st>=1?'español: veinte y uno → alemán: <span class="red">uno</span> y veinte':'21 = ?'}</div>
+${st>=2?`<div class="panel" style="width:60rem"><span class="lab">TRAINER</span><div class="digi flipin" data-n="${ctx.n}">${ctx.n}</div><div class="sol ${ctx.rev?'':'hidden'}">${nw(ctx.n)}</div><div class="small">Espacio: nueva cifra · A: solución · 3,50 € = drei Euro fünfzig · Ich bin 34 (vierunddreißig) Jahre alt.</div></div>`:''}</div>`},onSpace:(ctx)=>{if(ctx.step>=2){(ctx.hist=ctx.hist||[]).push(ctx.n);ctx.n=21+Math.floor(Math.random()*79);ctx.rev=false;return true}},onBack:ctx=>{if(ctx.hist&&ctx.hist.length){ctx.n=ctx.hist.pop();ctx.rev=false;return true}}});
+function hw(h){h=h%12;return h===0?'zwölf':N1[h]}
+function tInf(h,m){if(m===0)return `Es ist ${h%12===1?'ein':hw(h)} Uhr.`;const map={5:'fünf nach X',10:'zehn nach X',15:'Viertel nach X',20:'zwanzig nach X',25:'fünf vor halb Y',30:'halb Y',35:'fünf nach halb Y',40:'zwanzig vor Y',45:'Viertel vor Y',50:'zehn vor Y',55:'fünf vor Y'};return 'Es ist '+map[m].replace('X',hw(h)).replace('Y',hw(h+1))+'.'}
+function tFor(h,m){return `${h===1?'ein':nw(h)} Uhr${m?' '+nw(m):''}`}
+const TIMES=[[3,0],[6,30],[8,15],[9,45],[5,10],[8,40],[13,0],[18,45]];
+let clockMarks='';for(let i=0;i<60;i++){const a=i*6*Math.PI/180,R=i%5?13.6:13.2,s=i%5?.35:(i===0?.9:.7);clockMarks+=`<i style="width:${s}rem;height:${s}rem;margin:${-s/2}rem;background:${i===0?'var(--r)':i%5?'#3a3a3a':'var(--w)'};transform:translate(${Math.sin(a)*R}rem,${-Math.cos(a)*R}rem)"></i>`}
+add(4,4,'05 // Die Uhr','Momento C. Espacio = hora siguiente, ⌫ anterior, A = texto. Botones/slider mueven las agujas.',{render:(st,ctx)=>{if(ctx.t==null){ctx.t=180;ctx.disp=180;ctx.target=180}const h=Math.floor(ctx.t/60),m=ctx.t%60;
+return `<div class="row" style="gap:7rem;align-items:center;flex:1"><div class="clock">${clockMarks}<div class="hand h" id="hH" style="transform:rotate(${ctx.disp*.5}deg)"></div><div class="hand m" id="hM" style="transform:rotate(${ctx.disp*6}deg)"></div><div class="cap"></div></div>
+<div><div class="kick">WIE SPÄT IST ES?</div><div class="digi" id="cDig">${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}</div>
+<div class="row" style="gap:.6rem;margin:1.5rem 0"><button onclick="clk(-60)">−1 h</button><button onclick="clk(-5)">−5</button><button onclick="clk(5)">+5</button><button onclick="clk(60)">+1 h</button></div>
+<input type="range" id="cRange" min="0" max="1435" step="5" value="${ctx.t}" oninput="clkSet(+this.value)" style="width:36rem;accent-color:var(--r)">
+<div class="sol ${ctx.rev?'':'hidden'}" id="cTxt" style="font-size:2.6rem">${tInf(h,m)}</div><div class="small ${ctx.rev?'':'hidden'}" id="cFor">offiziell: ${tFor(h,m)}</div></div></div>`},
+onSpace:(ctx)=>{if((ctx.ti??-1)>=TIMES.length-1)return false;ctx.ti=(ctx.ti??-1)+1;ctx.rev=false;setClock(ctx,TIMES[ctx.ti][0]*60+TIMES[ctx.ti][1]);return true},
+onBack:(ctx)=>{if((ctx.ti??-1)<=0)return false;ctx.ti--;ctx.rev=false;setClock(ctx,TIMES[ctx.ti][0]*60+TIMES[ctx.ti][1]);return true}});
+add(4,1,'05 // Fahrplan','Lectura formal de horarios.',qa([{q:'ICE 18:45 → Hamburg · Gleis 7',a:'achtzehn Uhr fünfundvierzig, Gleis sieben'},{q:'RE 9:52 → Potsdam · Gleis 3',a:'neun Uhr zweiundfünfzig, Gleis drei'},{q:'S7 21:07 → Ahrensfelde · Gleis 1',a:'einundzwanzig Uhr sieben, Gleis eins'},{q:'IC 13:30 → Köln · Gleis 12',a:'dreizehn Uhr dreißig, Gleis zwölf'}]));
+
+/* ===== BLOQUE 6 ===== */
+const COL=[['rot','#FF3832','50%'],['blau','#2f6bff','0'],['grün','#2fbf5f','50% 50% 0 0'],['gelb','#ffd23a','0'],['schwarz','#000','50%'],['weiß','#fff','0'],['grau','#888','50%'],['orange','#ff8a1f','0 50%'],['braun','#7a4a24','0'],['rosa','#ff9ecf','50%'],['lila','#9b5cff','0 50% 50% 50%']];
+add(5,3,'06 // Farben','Seleccionar figura: se ilumina, nombre y audio.',{render:()=>`<div class="row" style="justify-content:space-between"><h2 class="dm" style="margin:0">${dm('DIE WELT HAT FARBEN.')}</h2><div id="colName" class="digi red"></div></div><div class="shapes" style="margin-top:2rem">${COL.map((c,i)=>`<div class="shape" data-col="${i}" style="color:${c[1]}"><i style="background:${c[1]};border-radius:${c[2]};${c[0]==='schwarz'?'border:1px solid #444':''}"></i><span>${String(i+1).padStart(2,'0')}</span></div>`).join('')}</div>`});
+add(5,2,'06 // Welche Farbe hat …?','Frases simples (sin declinar adjetivos).',qa([{q:'Welche Farbe hat die Banane? 🍌',a:'Die Banane ist gelb.'},{q:'Welche Farbe hat der Himmel?',a:'Der Himmel ist blau.'},{q:'Welche Farbe hat die Tomate? 🍅',a:'Die Tomate ist rot.'},{q:'Welche Farbe hat der Kaffee? ☕',a:'Der Kaffee ist schwarz / braun.'},{q:'Welche Farbe hat der Schnee? ❄',a:'Der Schnee ist weiß.'},{q:'Welche Farbe hat dein Auto?',a:'Mein Auto ist …'}]));
+
+/* ===== BLOQUE 7 ===== */
+add(6,2,'07 // Grundbauplan','Momento A: las piezas vuelan y se ensamblan.',seq([
+[['DEUTSCH','','d'],['ICH','','i'],['HEUTE','','h'],['LERNE','v','l']],[['ICH','','i'],['LERNE','v','l'],['HEUTE','','h'],['DEUTSCH','','d']]],['Vier Teile … (Espacio)','Position 1 · <span class="red">Verb: Position 2</span> · Mittelfeld'],true),{title:'EIN SATZ IST EINE MASCHINE.'});
+add(6,4,'07 // Positionen','Espacio: cada regla. ⌫ vuelve.',seq([
+[['Ich','','ich'],['lerne','v','v'],['heute','','h'],['Deutsch.','','d']],[['Heute','','h'],['lerne','v','v'],['ich','','ich'],['Deutsch.','','d']],[['Lernst','v','v'],['du','','ich'],['Deutsch?','','d']],[['Wann','cj','w'],['lernst','v','v'],['du','','ich'],['Deutsch?','','d']],[['Ich','','ich'],['möchte','v','v'],['heute','','h'],['Deutsch','','d'],['lernen.','p','inf']],[['Ich','','ich'],['lerne','v','v2'],['Deutsch,','','d'],['weil','cj','w'],['ich','','ich2'],['in Deutschland','','h'],['arbeiten','p','inf'],['möchte.','v','v']]],
+['1 · Aussage: Verb auf Position 2','2 · Inversion: anderes Element auf Position 1 → Verb bleibt auf 2','3 · Ja/Nein-Frage: Verb auf Position 1','4 · W-Frage: W-Wort + Verb','5 · Konjugiertes Verb (2) ≠ Infinitiv (Ende)','6 · weil/obwohl: konjugiertes Verb am Ende']));
+add(6,6,'07 // Satzbaumaschine','6 construcciones, varias soluciones válidas.',builder([
+{task:'1 · Aussage',tiles:['ich','wohne','in Madrid'],sol:[['ich','wohne','in Madrid']],end:'.',why:'Verbo conjugado en posición 2.'},
+{task:'2 · Inversion',tiles:['morgen','fahre','ich','nach Berlin'],sol:[['morgen','fahre','ich','nach Berlin'],['ich','fahre','morgen','nach Berlin']],end:'.',why:'Verbo en posición 2: si "morgen" va primero, el sujeto va detrás del verbo.'},
+{task:'3 · W-Frage',tiles:['wann','du','kommst','nach Hause'],sol:[['wann','kommst','du','nach Hause']],end:'?',why:'W-Wort + verbo + sujeto.'},
+{task:'4 · Ja/Nein-Frage',tiles:['du','sprichst','Deutsch'],sol:[['sprichst','du','Deutsch']],end:'?',why:'Pregunta sí/no: verbo en posición 1.'},
+{task:'5 · Modalverb',tiles:['ich','möchte','einen Kaffee','trinken'],sol:[['ich','möchte','einen Kaffee','trinken']],end:'.',why:'möchte en posición 2, infinitivo al final.'},
+{task:'6 · weil',tiles:['ich','bleibe','zu Hause','weil','ich','krank','bin'],sol:[['ich','bleibe','zu Hause','weil','ich','krank','bin']],end:'.',why:'En la subordinada, bin va al final.'}]));
+
+/* ===== BLOQUE 8 ===== */
+const VERBS=[['machen','mache','machst','macht','machen','macht','machen'],['lernen','lerne','lernst','lernt','lernen','lernt','lernen'],['wohnen','wohne','wohnst','wohnt','wohnen','wohnt','wohnen'],['kommen','komme','kommst','kommt','kommen','kommt','kommen'],['arbeiten','arbeite','arbeit<b class="red">e</b>st','arbeit<b class="red">e</b>t','arbeiten','arbeit<b class="red">e</b>t','arbeiten'],['sein','<b class="red">bin</b>','<b class="red">bist</b>','<b class="red">ist</b>','<b class="red">sind</b>','<b class="red">seid</b>','<b class="red">sind</b>'],['haben','habe','<b class="red">hast</b>','<b class="red">hat</b>','haben','habt','haben'],['fahren','fahre','f<b class="red">ä</b>hrst','f<b class="red">ä</b>hrt','fahren','fahrt','fahren'],['sprechen','spreche','spr<b class="red">i</b>chst','spr<b class="red">i</b>cht','sprechen','sprecht','sprechen']];
+add(7,4,'08 // Präsens','Espacio retira formas gradualmente (⌫ las devuelve). Clic en celda la muestra.',{steps:4,render:st=>`<table class="t" style="font-size:1.6rem"><tr><th>INFINITIV</th><th>ICH</th><th>DU</th><th>ER/SIE/ES</th><th>WIR</th><th>IHR</th><th>SIE/sie</th></tr>${VERBS.map((v,r)=>`<tr>${v.map((f,c)=>{const hide=c>0&&((st===1&&(c===2||c===3))||(st===2&&c!==1)||st===3);return `<td class="${c===0?'grey':''}" style="cursor:pointer" onclick="this.firstChild.style.visibility='visible'"><span style="visibility:${hide?'hidden':'visible'}">${f}</span></td>`}).join('')}</tr>`).join('')}</table><div class="small" style="margin-top:1rem">${['Tabla completa','du / er ocultos','solo ich','Todo de memoria'][st]}</div>`});
+add(7,2,'08 // Schnell!','Recuperar formas.',qa([{q:'er / fahren',a:'er fährt'},{q:'du / sprechen',a:'du sprichst'},{q:'sie (Sg.) / arbeiten',a:'sie arbeitet'},{q:'ihr / sein',a:'ihr seid'},{q:'du / haben',a:'du hast'},{q:'wir / wohnen',a:'wir wohnen'}]));
+const COMBOS=[['ICH','FAHREN','SCHULE','Ich fahre zur Schule.'],['DU','SPRECHEN','DEUTSCH','Du sprichst Deutsch.'],['ER','ARBEITEN','BANK','Er arbeitet bei einer Bank.'],['WIR','WOHNEN','BERLIN','Wir wohnen in Berlin.'],['SIE (SG.)','KOMMEN','SPANIEN','Sie kommt aus Spanien.'],['IHR','HABEN','ZEIT?','Habt ihr Zeit?'],['ICH','LERNEN','JEDEN TAG','Ich lerne jeden Tag Deutsch.'],['DU','FAHREN','MIT DEM BUS','Du fährst mit dem Bus.']];
+add(7,3,'08 // Konversationsmaschine','Combinaciones verificadas. Espacio = nueva, ⌫ anterior, A = frase.',{render:(st,ctx)=>{const c=COMBOS[ctx.i||0];return `<div class="center">${dotsHTML(COMBOS.length,ctx.i||0)}<div class="row" style="gap:2rem;justify-content:center;margin-top:2rem">${c.slice(0,3).map((x,k)=>`<div class="panel" style="min-width:24rem;text-align:center;overflow:hidden"><span class="lab">${['SUBJEKT','VERB','KONTEXT'][k]}</span><div class="digi ${k===1?'red':''} flipin" style="font-size:4rem;animation-delay:${k*160}ms">${x}</div></div>`).join('')}</div><div class="sol ${ctx.rev?'':'hidden'}" style="text-align:center;font-size:3.2rem;margin-top:3rem">${c[3]}</div></div>`},onSpace:ctx=>{if((ctx.i||0)>=COMBOS.length-1)return false;ctx.i=(ctx.i||0)+1;ctx.rev=false;return true},onBack:ctx=>{if(!ctx.i)return false;ctx.i--;ctx.rev=false;return true}});
+add(7,5,'08 // Flüssig sprechen','3 rondas. Evaluación oral por el profesor (sin reconocimiento automático).',qa([
+{q:'Runde 1 · Sich vorstellen: Wie heißt du? Woher kommst du?',a:'Ich heiße … Ich komme aus … Ich wohne in …',t:'1 min'},
+{q:'Runde 1 · Routine: Wann stehst du auf?',a:'Ich stehe um … Uhr auf.',t:'1 min'},
+{q:'Runde 2 · Am Bahnhof: Wann fährt der Zug nach Berlin? + Gleis?',a:'Entschuldigung, wann fährt der Zug nach Berlin? – Um 18:45 Uhr, von Gleis 7.',t:'1 min'},
+{q:'Runde 2 · Im Café: bestellen + eine Frage stellen',a:'Ich hätte gern einen Kaffee, bitte. Haben Sie auch Kuchen?',t:'1 min'},
+{q:'Runde 3 · Verabreden (3 Turns): A fragt – B antwortet – A reagiert',a:'A: Hast du am Samstag Zeit? B: Ja, warum? A: Kommst du mit zum Stadtfest?',t:'2 min'},
+{q:'Runde 3 · Eine Person beschreiben: Was macht Lena?',a:'Lena wohnt in Berlin. Sie fährt nach Potsdam und besucht Tim.',t:'1 min'}]));
+
+/* ===== BLOQUE 9 ===== */
+const TRV=[['auf','stehen','Ich','stehe','um sieben Uhr','.','aufgestanden'],['ein','kaufen','Ich','kaufe','im Supermarkt','.','eingekauft'],['an','rufen','Ich','rufe','meine Mutter','.','angerufen'],['mit','kommen','Kommst','du','zum Stadtfest','?','mitgekommen'],['ein','steigen','Wir','steigen','in den Zug','.','eingestiegen'],['aus','steigen','Wir','steigen','am Hackeschen Markt','.','ausgestiegen'],['fern','sehen','Am Abend','sehe','ich','.','ferngesehen']];
+add(8,4,'09 // Verben, die sich trennen','Momento D. Espacio: separar / siguiente verbo. ⌫ vuelve.',{render:(st,ctx)=>{const v=TRV[ctx.i||0];const sp=ctx.sp;const q=v[5]==='?';return `<h2 class="dm">${dm('VERBEN, DIE SICH TRENNEN.')}</h2>${dotsHTML(TRV.length,ctx.i||0)}<div class="center">
+<div class="kick">INFINITIV</div><div class="sent" style="font-size:4.5rem;margin-bottom:3rem;gap:0">${sp?`<span class="w p" style="opacity:.2">${v[0]}</span>`:`<span class="w p" data-k="pre">${v[0]}</span>`}<span class="w" style="${sp?'opacity:.2':''}">${v[1]}</span></div>
+<div class="kick">HAUPTSATZ</div><div class="sent" style="font-size:3.4rem"><span class="w ${q?'v':''}">${v[2]}</span><span class="w ${q?'':'v'}">${v[3]}</span><span class="w">${v[4]}</span>${sp?`<span class="w p" data-k="pre">${v[0]}</span>`:`<span class="w slot">${v[0]}</span>`}<span>${v[5]}</span></div>
+<div class="small" style="margin-top:2rem;min-height:2.5rem">${sp?`Präfix → <span class="red">ans Ende</span> · Perfekt: ${v[6]}`:'Espacio → el prefijo se separa'}</div></div>`},
+onSpace:ctx=>{if(!ctx.sp){ctx.sp=true;return true}if((ctx.i||0)>=TRV.length-1)return false;ctx.sp=false;ctx.i=(ctx.i||0)+1;return true},
+onBack:ctx=>{if(ctx.sp){ctx.sp=false;return true}if(!ctx.i)return false;ctx.i--;ctx.sp=true;return true}});
+add(8,2,'09 // Rekonstruieren','Ordenar.',builder([
+{task:'1 · aufstehen',tiles:['ich','stehe','um sieben Uhr','auf'],sol:[['ich','stehe','um sieben Uhr','auf'],['um sieben Uhr','stehe','ich','auf']],end:'.',why:'El prefijo (auf) va al final.'},
+{task:'2 · einkaufen',tiles:['wir','kaufen','am Samstag','ein'],sol:[['wir','kaufen','am Samstag','ein'],['am Samstag','kaufen','wir','ein']],end:'.',why:'kaufen en posición 2, ein al final.'},
+{task:'3 · anrufen',tiles:['rufst','du','mich','heute','an'],sol:[['rufst','du','mich','heute','an']],end:'?',why:'Pregunta sí/no: verbo primero, prefijo al final.'},
+{task:'4 · fernsehen',tiles:['er','sieht','am Abend','fern'],sol:[['er','sieht','am Abend','fern'],['am Abend','sieht','er','fern']],end:'.',why:'fern al final.'},
+{task:'5 · mitkommen',tiles:['kommst','du','zum Stadtfest','mit'],sol:[['kommst','du','zum Stadtfest','mit']],end:'?',why:'Verbo primero (pregunta), mit al final.'},
+{task:'6 · umsteigen',tiles:['wir','steigen','am Alexanderplatz','um'],sol:[['wir','steigen','am Alexanderplatz','um'],['am Alexanderplatz','steigen','wir','um']],end:'.',why:'um al final.'}]));
+add(8,2,'09 // Mein Tag','Narrar el día con verbos separables.',{render:()=>`<h2 class="dm">${dm('MEIN TAG')}</h2><table class="t">${[['07:00','aufstehen'],['08:15','in den Bus einsteigen'],['08:40','aussteigen'],['17:30','im Supermarkt einkaufen'],['19:00','meine Mutter anrufen'],['21:00','fernsehen']].map((r,i)=>`<tr><td class="digi" style="font-size:2.6rem"><span class="flipin" style="animation-delay:${i*120}ms">${r[0]}</span></td><td>${r[1]}</td></tr>`).join('')}</table><div class="mid grey" style="margin-top:1.5rem">Um sieben Uhr stehe ich <span class="red">auf</span>. Dann …</div>`});
+
+/* ===== BLOQUE 10 ===== */
+add(9,3,'10 // kein · keine · keinen','Terminaciones según género, número y caso.',{steps:3,render:st=>`<h2 class="dm">${dm('EIN → KEIN')}</h2>
+<table class="t"><tr><th></th><th>MASK.</th><th>FEM.</th><th>NEUTR.</th><th>PLURAL</th></tr>
+<tr><td class="grey">Nominativ</td><td>ein → <b class="red"><i class="kdrop">k</i>ein</b></td><td>eine → <b class="red"><i class="kdrop">k</i>eine</b></td><td>ein → <b class="red"><i class="kdrop">k</i>ein</b></td><td>– → <b class="red pop">keine</b></td></tr>
+${st>=1?`<tr><td class="grey">Akkusativ</td><td>einen → <b class="red"><i class="kdrop">k</i>einen</b></td><td>eine → <b class="red">keine</b></td><td>ein → <b class="red">kein</b></td><td>– → <b class="red">keine</b></td></tr>`:''}</table>
+<div class="mid" style="margin-top:1.5rem">Ich habe ein Auto → kein Auto · eine Tasche → keine Tasche${st>=1?' · Ich sehe einen Hund → <span class="red">keinen</span> Hund · keine Bücher':''}</div>
+${st>=2?`<div class="panel flipin" style="margin-top:2rem"><span class="lab">KEIN ODER NICHT?</span><div class="mid">kein = niega un sustantivo (ein / sin artículo): Ich habe <span class="red">kein</span> Fahrrad.<br>nicht = niega verbos, adjetivos, etc.: Ich komme heute <span class="red">nicht</span>.</div></div>`:''}`});
+const KEIN=[['Ich habe ','ein','kein',' Auto.','das Auto, Akk. → kein'],['Ich habe ','eine','keine',' Tasche.','die Tasche → keine'],['Ich sehe ','einen','keinen',' Hund.','der Hund, Akk. → keinen'],['Ich habe ','','keine ','Bücher.','Plural sin artículo → keine'],['Das ist ','ein','kein',' Bahnhof.','Nominativ mask. → kein'],['Wir trinken ','einen','keinen',' Kaffee.','der Kaffee, Akk. → keinen'],['Er hat ','','keine ','Zeit.','die Zeit, sin artículo → keine'],['Ich komme heute','',' nicht','.','se niega el verbo → nicht, no kein']];
+add(9,4,'10 // Negations-Schalter','Los alumnos dicen la negación; luego el interruptor (Espacio o clic) transforma. ⌫ vuelve.',{render:(st,ctx)=>{const k=KEIN[ctx.i||0];const neg=ctx.rev?(k[2]==='k'+k[1]?`<i class="kdrop">k</i>${k[1]}`:`<span class="pop">${k[2]}</span>`):k[1];return `${dotsHTML(KEIN.length,ctx.i||0)}<div class="center">
+<div class="row" style="align-items:center;gap:2rem;margin-bottom:3rem"><div class="kick" style="margin:0">NEGATION</div><div onclick="kSw()" style="cursor:pointer;width:7rem;height:3.4rem;border-radius:2rem;border:1px solid var(--g2);background:${ctx.rev?'var(--r)':'var(--panel)'};position:relative;transition:.3s;box-shadow:${ctx.rev?'0 0 1.5rem var(--r)':'none'}"><i style="position:absolute;top:.3rem;left:${ctx.rev?'3.9rem':'.3rem'};width:2.7rem;height:2.7rem;border-radius:50%;background:var(--w);transition:.3s"></i></div></div>
+<div class="big" style="font-size:4.4rem">${k[0]}<b class="red">${neg}</b>${k[3]}</div><div class="small ${ctx.rev?'':'hidden'}" style="margin-top:1.5rem;font-size:1.8rem">${k[4]}</div></div>`},
+onSpace:ctx=>{if(!ctx.rev){ctx.rev=true;return true}if((ctx.i||0)>=KEIN.length-1)return false;ctx.rev=false;ctx.i=(ctx.i||0)+1;return true},
+onBack:ctx=>{if(ctx.rev){ctx.rev=false;return true}if(!ctx.i)return false;ctx.i--;ctx.rev=true;return true}});
+
+/* ===== BLOQUE 11 ===== */
+add(10,3,'11 // Präpositionen + Dativ','Las 9 en contexto. Espacio = contracciones.',{steps:2,render:st=>`<div class="row" style="gap:4rem"><div><h2 class="dm" style="font-size:3.2rem">${dm('AUS AUSSER BEI MIT NACH SEIT VON ZU GEGENÜBER')}</h2>
+<div style="font-size:1.6rem;line-height:1.75">Ich komme <b class="red">aus</b> Spanien. · Ich fahre <b class="red">mit</b> dem Zug.<br>Ich wohne <b class="red">bei</b> meinen Eltern. · Ich fahre <b class="red">nach</b> Berlin.<br>Ich lerne <b class="red">seit</b> zwei Jahren Deutsch. · Ich komme <b class="red">von</b> meinem Freund.<br>Ich gehe <b class="red">zur</b> Schule. · Die Apotheke liegt <b class="red">gegenüber</b> dem Bahnhof.<br><b class="red">Außer</b> meinem Bruder sind alle hier.</div></div>
+<div class="panel" style="min-width:26rem;${st>=1?'':'opacity:.15'}"><span class="lab">KONTRAKTIONEN</span><div class="mid" style="line-height:1.8">${[['zu + dem','zum'],['zu + der','zur'],['bei + dem','beim'],['von + dem','vom']].map((c,i)=>`${c[0]} → <b class="red ${st>=1?'flipin':''}" style="animation-delay:${i*200}ms">${c[1]}</b>`).join('<br>')}</div></div></div>
+<div class="small" style="margin-top:1rem">Achtung: <b>nach Hause</b> (wohin?) · <b>zu Hause</b> (wo?) · „in die Schule" = in + Akkusativ (otra regla).</div>`});
+const PL={Bahnhof:[3,3],Schule:[24,2],'Café':[46,4],Supermarkt:[6,20],Apotheke:[30,22],Wohnung:[48,22]};
+const MAPQ=[['Wohnung','Schule','Wohin gehst du?','Ich gehe zur Schule.','zu + der → zur'],['Supermarkt','Wohnung','Woher kommst du?','Ich komme vom Supermarkt.','von + dem → vom'],['Café','Bahnhof','Wohin gehst du?','Ich gehe zum Bahnhof.','zu + dem → zum'],['Apotheke','Bahnhof','Wo liegt die Apotheke?','Die Apotheke liegt gegenüber dem Bahnhof.','gegenüber + Dativ'],['Schule','Café','Wie fährst du zum Café?','Ich fahre mit dem Bus zum Café.','mit + Dativ'],['Bahnhof','Wohnung','Wohin gehst du jetzt?','Ich gehe nach Hause.','nach Hause = wohin'],['Café','Supermarkt','Seit wann wartest du?','Ich warte seit zehn Minuten.','seit + Dativ']];
+add(10,5,'11 // Stadtplan','Situación → frase. Espacio siguiente, ⌫ anterior, A solución.',{render:(st,ctx)=>{const q=MAPQ[ctx.i||0];const a=PL[q[0]],b=PL[q[1]];const path=`M${a[0]+5.5} ${a[1]+3} L${a[0]+5.5} ${b[1]+3} L${b[0]+5.5} ${b[1]+3}`;return `${dotsHTML(MAPQ.length,ctx.i||0)}<div class="row" style="gap:3rem;flex:1;align-items:center"><div class="map"><svg viewBox="0 0 62 32" preserveAspectRatio="none"><path class="route" d="${path}"/><circle r=".6" fill="#FF3832"><animateMotion dur="2s" repeatCount="indefinite" path="${path}"/></circle></svg>${Object.entries(PL).map(([n,p])=>`<div class="bld ${n===q[0]?'from':''} ${n===q[1]?'to':''}" style="left:${p[0]}rem;top:${p[1]}rem">${n.toUpperCase()}</div>`).join('')}</div>
+<div style="width:36rem"><div class="kick">${q[0].toUpperCase()} → <em>${q[1].toUpperCase()}</em></div><div class="big">${q[2]}</div><div class="sol ${ctx.rev?'':'hidden'}">${q[3]}</div><div class="small ${ctx.rev?'':'hidden'}">${q[4]}</div></div></div>`},onSpace:ctx=>{if((ctx.i||0)>=MAPQ.length-1)return false;ctx.i=(ctx.i||0)+1;ctx.rev=false;return true},onBack:ctx=>{if(!ctx.i)return false;ctx.i--;ctx.rev=false;return true}});
+
+/* ===== BLOQUE 12 ===== */
+add(11,4,'12 // Mission','Elegir nivel 1/2/3. Diálogo en parejas.',{render:(st,ctx)=>{const L=ctx.lv||1;return `<h2 class="dm">${dm('MISSION 12 // DU SPRICHST DEUTSCH.')}</h2><div class="row" style="gap:3rem"><div style="flex:1"><div class="mid">Du kommst in Hamburg an. Du musst:</div><ol class="mid" style="margin:1rem 0 0 2.5rem;line-height:1.6"><li>nach einem Zug fragen</li><li>den Fahrplan verstehen</li><li>sagen, wohin du fährst</li><li>über deine Routine sprechen</li><li>eine Negation benutzen (kein / nicht)</li></ol></div>
+<div class="panel" style="width:40rem"><span class="lab">LEVEL ${L} · TASTE 1/2/3</span><div class="small flipin" style="color:var(--w)">${L===1?'Wann fährt der Zug nach …? · Er fährt um … von Gleis … · Ich fahre nach …, weil … · Ich stehe um … auf. · Ich habe kein …':L===2?'Stichwörter: Zug · Gleis · 18:45 · weil · aufstehen · kein':'Frei sprechen + Twist: Der Zug fällt aus! Was machst du?'}</div><div class="digi" style="margin-top:1rem;font-size:3rem">ICE 18:45 BERLIN GL.7</div></div></div>`},onDigit:(ctx,d)=>{if(d>=1&&d<=3){ctx.lv=d;return true}}});
+add(11,1,'12 // Weiter','Cierre y resumen.',{steps:2,render:st=>`<div class="center"><h1 class="dm" style="font-size:6rem">${dm('DU KANNST MEHR, ALS DU DENKST.')}</h1>${st>=1?`<h1 class="dm red" style="font-size:4rem;margin-top:2rem"><span class="flipin">WEITER SPRECHEN.</span></h1><div class="small" style="margin-top:3rem">weil · obwohl · Dativ · Perfekt · Lesen · Alphabet · Zahlen · Uhrzeit · Farben · Satzbau · Präsens · trennbare Verben · kein · Präpositionen</div>`:''}<pre class="grey" style="position:absolute;right:0;bottom:2rem;font-family:var(--mono);font-size:1rem">KLAUS//ONLINE ● <span class="ok">READY</span>\n  /\\_/\\\n ( ^.^ )\n  > W <</pre></div>`});
+
+/* ================= MOTOR ================= */
+let cur=+(localStorage.getItem('dt120-scene')||0);if(!(cur>=0&&cur<S.length))cur=0;
+let ctx={i:0,step:0};let start=+(localStorage.getItem('dt120-start')||0);
+const stage=document.getElementById('stage');
+function go(n,back){if(n<0||n>=S.length)return;cur=n;const s=S[n];ctx={i:back&&s.items?s.items.length-1:0,step:back&&s.steps?s.steps-1:0};localStorage.setItem('dt120-scene',cur);if(!start&&n>0){start=Date.now();localStorage.setItem('dt120-start',start)}stopSay();
+  const sw=document.getElementById('sweep');sw.classList.remove('go');void sw.offsetWidth;sw.classList.add('go');render(back?'back':'fresh')}
+function render(mode){const s=S[cur];const prev=mode?null:snap();const newly=ctx.rev&&!ctx._lastRev;ctx._lastRev=ctx.rev;
+  const html=`<div class="kick">${s.kick}</div>`+(s.title?`<h2 class="dm">${dm(s.title)}</h2>`:'')+s.render(ctx.step,ctx);
+  stage.innerHTML=`<div class="scene ${mode?'fresh':''} ${mode==='back'?'back':''}">${html}</div>`;
+  document.getElementById('blk').textContent=String(s.b+1).padStart(2,'0')+' // '+BLOCKS[s.b][0].toUpperCase()+' · '+BLOCKS[s.b][1]+' MIN';
+  document.getElementById('scnum').textContent=String(cur+1).padStart(2,'0')+'/'+S.length;
+  document.getElementById('tl').innerHTML=BLOCKS.map((b,i)=>`<div style="flex:${b[1]}" class="${i<s.b?'past':i===s.b?'cur':''}"><span>${String(i+1).padStart(2,'0')}</span></div>`).join('');
+  const done=S.slice(0,cur).reduce((a,x)=>a+x.min,0);document.getElementById('bt').textContent='SZENE '+s.min+' MIN · PLAN '+done+'/120';
+  notes();
+  if(mode&&s.assemble)flip(null,true);else if(!mode)flip(prev);
+  if(newly){stage.querySelectorAll('.sol:not(.hidden)').forEach(decode);stage.querySelectorAll('.opts .right').forEach(b=>b.classList.add('pulse'));stage.querySelectorAll('.opts .wrong').forEach(b=>b.classList.add('shake'))}}
+function nextStep(){const s=S[cur];
+  if(s.onSpace){const r=s.onSpace(ctx);if(r){render();return}if(r===false){go(cur+1);return}}
+  if(s.steps&&ctx.step<s.steps-1){ctx.step++;render();return}
+  if(s.items&&ctx.i<s.items.length-1){ctx={i:ctx.i+1,step:ctx.step};render();return}
+  go(cur+1)}
+function prevStep(){const s=S[cur];
+  if(s.onBack){const r=s.onBack(ctx);if(r){render();return}if(r===false){go(cur-1,true);return}}
+  if(s.steps&&ctx.step>0){ctx.step--;render();return}
+  if(s.items&&ctx.i>0){ctx={i:ctx.i-1,step:ctx.step};render();return}
+  go(cur-1,true)}
+function item(d){const s=S[cur];if(!s.items)return;const n=ctx.i+d;if(n<0||n>=s.items.length)return;ctx={i:n,step:ctx.step};render()}
+function bCheck(){ctx.checked=true;render()}function bReset(){ctx={i:ctx.i,step:ctx.step};render()}
+stage.addEventListener('click',e=>{const t=e.target.closest('[data-pl],[data-un],[data-opt],[data-x],.vw,[data-abc],[data-col],[data-num]');if(!t)return;
+  if(t.dataset.pl!=null){ctx.placed.push(+t.dataset.pl);ctx.checked=false;render()}
+  else if(t.dataset.un!=null){ctx.placed.splice(+t.dataset.un,1);ctx.checked=false;render()}
+  else if(t.dataset.opt!=null){ctx.sel=+t.dataset.opt;render()}
+  else if(t.dataset.x){const x=document.getElementById('xpl');x.innerHTML='<span class="red">'+t.textContent+'</span> → '+t.dataset.x;decode(x)}
+  else if(t.classList.contains('vw')){stage.querySelectorAll('.vw').forEach(v=>v.classList.toggle('act',v.dataset.v===t.dataset.v));showTip(t)}
+  else if(t.dataset.abc!=null){const l=ABC[+t.dataset.abc];stage.querySelectorAll('[data-abc]').forEach(b=>b.classList.remove('on'));t.classList.add('on');const info=document.getElementById('abcInfo');info.innerHTML=`<span class="digi red" style="font-size:3.4rem">${l[0]} · „${l[1]}"</span><br><span class="small">${l[2]}</span>`;decode(info);say(l[1]+'. '+l[2])}
+  else if(t.dataset.num!=null){const i=+t.dataset.num,w=nw(i),o=document.getElementById('nwout');o.textContent=i+' = '+w;decode(o);say(w)}
+  else if(t.dataset.col!=null){const c=COL[+t.dataset.col];stage.querySelectorAll('.shape').forEach(b=>b.classList.remove('on'));t.classList.add('on');const n=document.getElementById('colName');n.textContent=c[0].toUpperCase();n.style.color=c[0]==='schwarz'?'#bbb':c[1];decode(n);say(c[0])}});
+let lastVocab='';
+function showTip(t){const key=t.dataset.v;lastVocab=key;const r=lookup(key);const tip=document.getElementById('tip');tip.innerHTML=r?entryHTML(r.e).replace('class="wd"','class="wd" style="font-family:var(--dot);font-weight:900;font-size:2.4rem"'):key;tip.style.display='block';const b=t.getBoundingClientRect();tip.style.left=Math.max(10,Math.min(b.left,innerWidth-tip.offsetWidth-20))+'px';tip.style.top=(b.bottom+tip.offsetHeight+20>innerHeight?b.top-tip.offsetHeight-10:b.bottom+10)+'px'}
+document.addEventListener('click',e=>{if(!e.target.closest('.vw,#tip'))document.getElementById('tip').style.display='none'});
+/* reloj: agujas fluidas (animación continua hacia la hora objetivo) */
+function setClock(c,t){t=((t%1440)+1440)%1440;c.t=t;let d=((t-c.target)%720+720)%720;if(d>360)d-=720;c.target+=d;
+  const h=Math.floor(t/60),m=t%60,$=id=>document.getElementById(id);
+  if($('cDig')){$('cDig').textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');$('cTxt').textContent=tInf(h,m);$('cFor').textContent='offiziell: '+tFor(h,m);$('cRange').value=t;
+    $('cTxt').classList.toggle('hidden',!c.rev);$('cFor').classList.toggle('hidden',!c.rev)}}
+function clk(d){setClock(ctx,ctx.t+d)}function clkSet(v){setClock(ctx,v)}
+(function clockLoop(){const H=document.getElementById('hH');if(H&&ctx.target!=null){const d=ctx.target-ctx.disp;ctx.disp=Math.abs(d)<.05?ctx.target:ctx.disp+d*.09;H.style.transform=`rotate(${ctx.disp*.5}deg)`;document.getElementById('hM').style.transform=`rotate(${ctx.disp*6}deg)`}requestAnimationFrame(clockLoop)})();
+function kSw(){ctx.rev=!ctx.rev;render()}
+/* ================= DICCIONARIO ================= */
+const dict=document.getElementById('dict'),dq=document.getElementById('dq'),dres=document.getElementById('dres');
+document.getElementById('grille').innerHTML='<i></i>'.repeat(48);
+const POS={noun:'Sustantivo',verb:'Verbo',adjective:'Adjetivo',adverb:'Adverbio',preposition:'Preposición',conjunction:'Conjunción',pronoun:'Pronombre',interjection:'Interjección',article:'Artículo'};
+function openDict(){const sel=(getSelection().toString()||lastVocab||'').trim();dict.classList.remove('on');void dict.offsetWidth;dict.classList.add('on');dq.value=sel;setTimeout(()=>dq.focus(),60);if(sel)dSearch();else dres.innerHTML='<span class="grey">Escribe una palabra alemana (o española). Enter busca · Esc cierra.</span>'}
+async function dSearch(){const q=dq.value.trim();if(!q)return;const r=lookup(q);
+  if(r){dres.innerHTML=entryHTML(r.e,r.dir==='es'?'<div class="small">(búsqueda inversa español → alemán)</div>':r.form?'<div class="small">(forma de '+r.e[0]+')</div>':'')+'<div class="small" style="margin-top:.4rem">● Glosario local de la clase</div>';decode(dres.querySelector('.wd'));return}
+  dres.innerHTML=`<div class="mid grey">„${q}" no está en el glosario local.</div><div class="small">Consultando traductor online…</div>`;
+  if(!navigator.onLine){dres.innerHTML=`<div class="mid grey">„${q}" no está en el glosario local.</div><div class="red mid">Sin conexión — solo glosario local disponible.</div>`;return}
+  const tm=ms=>{const c=new AbortController();setTimeout(()=>c.abort(),ms);return c.signal};
+  try{const j=await(await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=de&tl=es&dt=t&dt=bd&q='+encodeURIComponent(q),{signal:tm(6000)})).json();
+    const main=j[0]&&j[0].map(x=>x[0]).join('');if(!main)throw 0;
+    const bd=(j[1]||[]).map(g=>`<div><b class="red">${POS[g[0]]||g[0]}</b>: ${g[1].slice(0,5).join(', ')}</div>`).join('');
+    dres.innerHTML=`<div class="wd">${q}</div><div class="mid">${main}</div><div class="small" style="margin-top:.4rem">${bd}</div><div class="small" style="margin-top:.6rem">○ Traducción automática online (Google Translate) — sin artículo alemán; verificar. <button data-say="${q.replace(/"/g,'')}">▶ hören</button></div>`;decode(dres.querySelector('.wd'));return}catch(e){}
+  try{const j=await(await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(q)+'&langpair=de|es',{signal:tm(6000)})).json();const tr=j&&j.responseData&&j.responseData.translatedText;if(!tr)throw 0;
+    dres.innerHTML=`<div class="wd">${q}</div><div class="mid">${tr}</div><div class="small">○ Traducción automática (MyMemory, servicio de respaldo) — poco fiable para palabras sueltas; verificar.</div>`;return}
+  catch(e){dres.innerHTML=`<div class="mid grey">„${q}" no está en el glosario local.</div><div class="red mid">Traductor online no disponible.</div>`}}
+dq.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();dSearch()}if(e.key==='Escape'){dict.classList.remove('on');dq.blur()}e.stopPropagation()});
+/* ================= PUNTOS ================= */
+const SK='dt120-scoreboard';let SB;try{SB=JSON.parse(localStorage.getItem(SK))}catch(e){}
+if(!SB||!Array.isArray(SB.st))SB={st:[{n:'Robe',p:0},{n:'Dani',p:0}],rw:[1,5,10],ri:0,sel:0,hist:[]};
+function saveSB(){try{localStorage.setItem(SK,JSON.stringify(SB))}catch(e){}}
+function paintSB(fl,from,v){document.getElementById('rew').innerHTML=SB.rw.map((r,i)=>`<button style="${i===SB.ri?'border-color:var(--r);color:var(--r)':''}" onclick="SB.ri=${i};paintSB()">+${r}</button>`).join(' ');
+  document.getElementById('slist').innerHTML=SB.st.map((s,i)=>`<div class="st ${i===SB.sel?'sel':''}" onclick="SB.sel=${i};paintSB()"><span class="key">${String(i+1).padStart(2,'0')}</span><span class="nm" ondblclick="ren(${i})">${s.n}</span><button onclick="event.stopPropagation();addPts(${i},-1)">−</button><button onclick="event.stopPropagation();addPts(${i},1)">+</button><span class="pts ${fl===i?'flash':''}" id="pts${i}">${s.p}</span><button onclick="event.stopPropagation();delSt(${i})" title="eliminar">×</button>${fl===i&&v?`<span class="float">${v>0?'+':''}${v}</span>`:''}</div>`).join('');
+  if(fl!=null&&from!=null){const el=document.getElementById('pts'+fl);if(el){countUp(el,from,SB.st[fl].p);setTimeout(()=>el.classList.remove('flash'),900)}}saveSB()}
+function addPts(i,sign){if(!SB.st[i])return;const v=SB.rw[SB.ri]*sign;const from=SB.st[i].p;SB.hist.push({i,v});SB.st[i].p+=v;SB.sel=i;paintSB(i,from,v)}
+function undoPts(){const h=SB.hist.pop();if(h&&SB.st[h.i]){const from=SB.st[h.i].p;SB.st[h.i].p-=h.v;paintSB(h.i,from,-h.v)}}
+function resetPts(){if(confirm('¿Poner todas las puntuaciones a cero?')){SB.st.forEach(s=>s.p=0);SB.hist=[];paintSB()}}
+function ren(i){const n=prompt('Nombre:',SB.st[i].n);if(n&&n.trim()){SB.st[i].n=n.trim();paintSB()}}
+function delSt(i){if(confirm('¿Eliminar a '+SB.st[i].n+'?')){SB.st.splice(i,1);SB.sel=0;SB.hist=[];paintSB()}}
+document.getElementById('newst').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'&&e.target.value.trim()){SB.st.push({n:e.target.value.trim(),p:0});e.target.value='';paintSB()}if(e.key==='Escape')e.target.blur()});
+const score=document.getElementById('score');
+/* ================= TIMER ================= */
+let tLeft=300,tRun=false,tInt;function tPaint(){document.getElementById('tdig').textContent=String(Math.floor(Math.max(tLeft,0)/60)).padStart(2,'0')+':'+String(Math.max(tLeft,0)%60).padStart(2,'0');document.getElementById('timer').classList.toggle('done',tLeft<=0)}
+function tToggle(){tRun=!tRun;clearInterval(tInt);if(tRun)tInt=setInterval(()=>{tLeft--;tPaint();if(tLeft<=0){clearInterval(tInt);tRun=false}},1000)}
+function tAdd(s){tLeft=Math.max(0,tLeft+s);tPaint()}
+setInterval(()=>{if(!start)return;const s=Math.floor((Date.now()-start)/1000);document.getElementById('el').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')+' / 120:00'},1000);
+/* ================= NOTAS PROFESOR ================= */
+function notes(){const s=S[cur];let ans='';if(s.items)ans=s.items.map((it,k)=>`<div><span class="grey">${k+1}.</span> <span class="ans" onclick="this.classList.toggle('show')">${it.full||it.a||(it.sol&&it.sol.map(x=>x.join(' ')).join(' / '))}</span></div>`).join('');
+  document.getElementById('notes').innerHTML=`<div class="row" style="justify-content:space-between"><div><b class="red">MODO PROFESOR</b> · ${s.min} min · ${s.obj}</div><div class="grey">Respuestas difuminadas: clic para ver</div></div><div style="columns:3;margin-top:.6rem">${ans}</div>`}
+/* ================= TECLADO ================= */
+document.addEventListener('keydown',e=>{const k=e.key,tag=(e.target.tagName||'');
+  if(k==='Escape'){[dict,score,document.getElementById('help')].forEach(o=>o.classList.remove('on'));document.body.classList.remove('focus');document.getElementById('tip').style.display='none';return}
+  if(/INPUT|TEXTAREA/.test(tag)&&e.target.type!=='range')return;
+  if(score.classList.contains('on')){if(k==='ArrowDown'){SB.sel=Math.min(SB.st.length-1,SB.sel+1);paintSB()}else if(k==='ArrowUp'){SB.sel=Math.max(0,SB.sel-1);paintSB()}else if(k==='Enter'){addPts(SB.sel,1)}else if(k==='-'||k==='Backspace'){addPts(SB.sel,-1)}else if(/^[123]$/.test(k)){SB.ri=+k-1;paintSB()}else if(k==='u'||k==='U'||(e.ctrlKey&&k==='z')){undoPts()}else if(k==='p'||k==='P')score.classList.remove('on');e.preventDefault();return}
+  if(dict.classList.contains('on'))return;
+  if(e.target.type==='range'){e.target.blur()}
+  if(k==='ArrowRight'){go(cur+1);e.preventDefault()}
+  else if(k==='ArrowLeft'){go(cur-1,true);e.preventDefault()}
+  else if((k===' '&&e.shiftKey)||k==='Backspace'||k==='PageUp'||k==='b'||k==='B'){e.preventDefault();prevStep()}
+  else if(k===' '||k==='PageDown'){e.preventDefault();nextStep()}
+  else if(k==='ArrowDown'){e.preventDefault();item(1)}else if(k==='ArrowUp'){e.preventDefault();item(-1)}
+  else if(k==='a'||k==='A'){ctx.rev=!ctx.rev;render()}
+  else if(k==='h'||k==='H'){ctx.h=!ctx.h;render()}
+  else if(k==='e'||k==='E'){ctx.es=!ctx.es;render()}
+  else if(k==='s'||k==='S'){stopSay()}
+  else if(k==='Enter'&&S[cur].builder){e.preventDefault();bCheck()}
+  else if(k==='d'||k==='D'){e.preventDefault();openDict()}
+  else if(k==='p'||k==='P'){score.classList.add('on');paintSB()}
+  else if(k==='t'||k==='T'){const t=document.getElementById('timer');t.classList.toggle('on');if(t.classList.contains('on')&&!tRun){tLeft=S[cur].min*60;tPaint();tToggle()}}
+  else if(k==='f'||k==='F'){document.body.classList.toggle('focus')}
+  else if(k==='n'||k==='N'||k==='m'||k==='M'){document.getElementById('notes').classList.toggle('on')}
+  else if(k==='r'||k==='R'){ctx={i:ctx.i,step:0};render()}
+  else if(k==='?'){document.getElementById('help').classList.toggle('on')}
+  else if(k==='Home')go(0);else if(k==='End')go(S.length-1);
+  else if(/^[1-9]$/.test(k)){const s=S[cur];if(s.onDigit&&s.onDigit(ctx,+k)){render()}else if(stage.querySelector(`[data-opt="${+k-1}"]`)){ctx.sel=+k-1;render()}}
+});
+render('fresh');
+</script>
+</body>
+</html>

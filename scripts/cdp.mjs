@@ -149,13 +149,13 @@ export async function launch({ shots = 'shots', base } = {}) {
 
 /** Crea una sala desde la interfaz del profesor y mete a los alumnos por la portada. Devuelve el código. */
 export async function openRoom(T, students) {
-  await T.go('/');
+  await T.go('/jugar');
   await T.until(`!!document.querySelector('.home-card .btn.primary')`, 'home');
   await T.click('.home-card .btn.primary');
   await T.until(`/^\\/t\\/[A-Z0-9]{4}$/.test(location.pathname) && !!document.querySelector('.lobby-code')`, 'lobby');
   const code = await T.eval(`document.querySelector('.lobby-code').textContent`);
   for (const [p, name] of students) {
-    await p.go('/');
+    await p.go('/jugar');
     await p.until(`!!document.querySelector('input[aria-label="Código de sala"]')`, 'home');
     await p.type('input[aria-label="Código de sala"]', code);
     await p.type('input[aria-label="Tu nombre"]', name);
