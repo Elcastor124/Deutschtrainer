@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
-import { BOXING_MOVES, type BoxingAction, type BoxingFighter, type BoxingView, type BoxingWelcome } from '../../shared/boxing.ts';
+import { BOXING_MOVES, type BoxingAction, type BoxingFighter, type BoxingResolution, type BoxingView, type BoxingWelcome } from '../../shared/boxing.ts';
 import { BoxingClient, boxingRequest, readBoxingSession, saveBoxingSession } from '../boxing-client.ts';
 import { BoxingRing } from '../components/BoxingRing.tsx';
 import { navigate, store, useSetting } from '../util.ts';
@@ -40,11 +40,28 @@ export function Boxing() {
         {session ? <button className="bx-text-button" onClick={exit}>Salir</button> : <a className="bx-text-button" href="/" onClick={(event) => { event.preventDefault(); navigate('/'); }}>← Volver al hub</a>}
       </div>
     </header>
-    {session ? <BoxingRoom key={`${session.code}:${session.role}`} session={session} sound={sound} onExit={exit} /> : <BoxingLanding key={entryKey} onEnter={enter} sound={sound} />}
+    {session ? <BoxingRoom key={`${session.code}:${session.role}`} session={session} sound={sound} onExit={exit} /> : <BoxingLanding key={entryKey} onEnter={enter} />}
   </main>;
 }
 
-function BoxingLanding({ onEnter, sound }: { onEnter: (welcome: BoxingWelcome) => void; sound: boolean }) {
+const demoFighters: BoxingFighter[] = ['Esquina roja', 'Esquina azul'].map((name, i) => ({ id: `demo-${i}`, name, hp: 100, stamina: 3, correct: 0, wrong: 0, damage: 0, connected: true, answered: false, lockedMove: false }));
+type DemoEvent = [BoxingResolution['fighters'][number]['move'], number, boolean, boolean];
+const demoScript: [DemoEvent, DemoEvent][] = [
+  [['jab', 0, false, false], ['guard', 2, true, false]],
+  [['dodge', 0, false, true], ['cross', 0, false, false]],
+  [['hook', 0, false, false], ['recover', 16, false, false]],
+  [['jab', 8, false, false], ['jab', 8, false, false]],
+];
+/** Attract-mode loop for the landing hero: scripted exchanges, never a real game state. */
+function useDemoResult() {
+  const [step, setStep] = useState(0);
+  useEffect(() => { const timer = setInterval(() => setStep((value) => value + 1), 3200); return () => clearInterval(timer); }, []);
+  const script = demoScript[step % demoScript.length];
+  const fighters = script.map(([move, damageTaken, blocked, dodged], i) => ({ id: `demo-${i}`, move, correct: move !== 'recover', damageTaken, blocked, dodged, damageDealt: script[1 - i][1] }));
+  return { exchange: step + 1, fighters, explanation: '', answer: '' } satisfies BoxingResolution;
+}
+
+function BoxingLanding({ onEnter }: { onEnter: (welcome: BoxingWelcome) => void }) {
   const [code, setCode] = useState(queryCode);
   const [name, setName] = useState(() => store.get('dt:boxing:name') ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +69,7 @@ function BoxingLanding({ onEnter, sound }: { onEnter: (welcome: BoxingWelcome) =
   const controller = useRef<AbortController | null>(null);
   const submitting = useRef(false);
   const last = readBoxingSession();
+  const demo = useDemoResult();
   useEffect(() => () => controller.current?.abort(), []);
   const request = async (kind: 'create' | 'join') => {
     if (submitting.current) return;
@@ -72,7 +90,7 @@ function BoxingLanding({ onEnter, sound }: { onEnter: (welcome: BoxingWelcome) =
   return <>
     <div className="bx-intro bx-landing-intro"><div><p className="bx-eyebrow">TEMA 1 / A1—A2 · DUELO EN DIRECTO</p><h1>Tu alemán.<br /><em>Tu mejor golpe.</em></h1><p className="bx-lead">Piensa la respuesta. Elige tu movimiento. En este ring gana el conocimiento, no la velocidad.</p></div><span className="bx-edition" aria-hidden="true">WISSEN<br />SCHLÄGT<br /><b>TEMPO.</b></span></div>
     <div className="bx-landing-grid">
-      <div className="bx-landing-scene"><BoxingRing fighters={[]} sound={sound} /><div className="bx-rules"><span><b>01</b> Responde en alemán</span><span><b>02</b> Gestiona tu energía</span><span><b>03</b> Elige sin prisas</span></div></div>
+      <div className="bx-landing-scene"><BoxingRing fighters={demoFighters} result={demo} /><div className="bx-rules"><span><b>01</b> Responde en alemán</span><span><b>02</b> Gestiona tu energía</span><span><b>03</b> Elige sin prisas</span></div></div>
       <section className="bx-entry-panel">
         <div className="bx-entry-title"><span className="bx-eyebrow">ALUMNADO</span><h2>Sube al ring.</h2></div>
         <form onSubmit={(event: FormEvent) => { event.preventDefault(); void request('join'); }} className="bx-join-form">
@@ -141,9 +159,9 @@ export function BoxingArena({ view, busy, sound, onAction }: { view: BoxingView;
   const phaseLabel = view.phase === 'lobby' ? 'PREPARACIÓN' : view.phase === 'question' ? '01 / CONOCIMIENTO' : view.phase === 'action' ? '02 / ESTRATEGIA' : view.phase === 'finished' ? 'COMBATE COMPLETADO' : '03 / INTERCAMBIO';
   return <>
     <div data-box-phase={view.phase} data-box-exchange={view.exchange} className={`bx-arena ${view.role === 'teacher' ? 'is-teacher' : 'is-player'}`}>
-      <section className="bx-visual" aria-label="Combate"><div className="bx-round-strip"><span>{phaseLabel}</span><b>{view.exchange ? `ASALTO ${String(view.exchange).padStart(2, '0')} / ${view.maxExchanges}` : 'PREPARADOS PARA EMPEZAR'}</b></div>
+      <section className="bx-visual" aria-label="Combate"><div className="bx-round-strip"><span>{phaseLabel}</span><b>{view.exchange ? <>ASALTO <strong>{view.exchange}</strong>/{view.maxExchanges}</> : 'PREPARADOS'}</b></div>
         <div className="bx-scoreboards">{[0, 1].map((index) => <FighterHud key={index} fighter={view.fighters[index]} index={index} mine={view.fighters[index]?.id === view.me} />)}</div>
-        <BoxingRing fighters={view.fighters} result={resultVisible ? view.result : undefined} paused={view.paused} sound={sound} />
+        <BoxingRing fighters={view.fighters} result={resultVisible ? view.result : undefined} paused={view.paused} sound={sound} round={view.exchange} phase={view.phase} winner={view.phase === 'finished' ? view.winner : undefined} />
         <div className="bx-simultaneous"><span aria-hidden="true">⇄</span><p>Sin ventaja por responder antes. <b>El intercambio se resuelve cuando ambos han elegido.</b></p></div>
       </section>
       <section className="bx-play-panel" aria-label={view.role === 'teacher' ? 'Panel del profesor' : 'Tu turno'}>
@@ -160,7 +178,7 @@ export function BoxingArena({ view, busy, sound, onAction }: { view: BoxingView;
           {view.phase === 'action' && view.role === 'teacher' && <div className="bx-turn-status" role="status">Ambas respuestas recibidas. Los alumnos eligen su estrategia en privado.</div>}
           {view.phase === 'action' && view.role === 'player' && (view.ownCorrect ? <>
             <div className="bx-unlocked"><b>✓ Correcto. Elige tu movimiento.</b><span>Tu energía: {me?.stamina ?? 0} · Las elecciones del rival siguen ocultas.</span></div>
-            <div className="bx-moves" role="group" aria-label="Movimientos desbloqueados">{BOXING_MOVES.map((move) => <button key={move.id} data-move-choice={move.id} data-box-move={move.id} className={`bx-move${view.ownMove === move.id ? ' selected' : ''}`} disabled={!canPlay || !!view.ownMove || !!me?.lockedMove || (me?.stamina ?? 0) < move.cost} onClick={() => { if (view.question) onAction({ type: 'move', questionId: view.question.id, move: move.id }); }} title={move.description}><span className={`bx-move-icon ${move.id}`} aria-hidden="true">{move.id === 'guard' ? '◇' : move.id === 'dodge' ? '↶' : move.id === 'hook' ? '↪' : move.id === 'cross' ? '⟶' : '→'}</span><b>{move.name}</b><span className="bx-move-cost">{move.cost ? `${move.cost} energía` : '+ energía'}</span><small>{move.description}</small></button>)}</div>
+            <div className="bx-moves" role="group" aria-label="Movimientos desbloqueados">{BOXING_MOVES.map((move) => <button key={move.id} data-move-choice={move.id} data-box-move={move.id} className={`bx-move${view.ownMove === move.id ? ' selected' : ''}`} disabled={!canPlay || !!view.ownMove || !!me?.lockedMove || (me?.stamina ?? 0) < move.cost} onClick={() => { if (view.question) onAction({ type: 'move', questionId: view.question.id, move: move.id }); }} title={move.description}><span className={`bx-move-icon ${move.id}`} aria-hidden="true"><MoveIcon move={move.id} /></span><b>{move.name}</b><span className="bx-move-cost" aria-label={move.cost ? `${move.cost} de energía` : 'Recupera energía'}>{move.cost ? Array.from({ length: move.cost }, (_, i) => <i key={i} />) : <em>+1</em>}<span>{move.cost ? `${move.cost} energía` : 'recupera'}</span></span><small>{move.description}</small></button>)}</div>
             {(view.ownMove || me?.lockedMove) && <p className="bx-turn-status" role="status">Movimiento bloqueado. Esperando al rival…</p>}
           </> : <div className="bx-recover" role="status"><span aria-hidden="true">↻</span><div><b>Este asalto toca recuperar.</b><p>No has acertado. Recuperarás energía automáticamente. La explicación llega con el resultado.</p></div></div>)}
           <Roster fighters={view.fighters} compact phase={view.phase} />
@@ -173,7 +191,23 @@ export function BoxingArena({ view, busy, sound, onAction }: { view: BoxingView;
 }
 
 function FighterHud({ fighter, index, mine }: { fighter?: BoxingFighter; index: number; mine: boolean }) {
-  return <div className={`bx-fighter-hud ${index ? 'blue' : 'red'}${mine ? ' mine' : ''}`}><div className="bx-fighter-name"><b>{fighter?.name ?? `Esquina ${index ? 'azul' : 'roja'}`}</b>{mine && <small>TÚ</small>}<span className={`bx-online-dot${fighter?.connected ? ' online' : ''}`} title={fighter?.connected ? 'Conectado' : 'Desconectado o esperando'} /></div><div className="bx-hp"><span>HP</span><div className="bx-hp-track" role="meter" aria-label={`Vida de ${fighter?.name ?? 'esquina vacía'}`} aria-valuenow={fighter?.hp ?? 100} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${Math.max(0, Math.min(100, fighter?.hp ?? 100))}%` }} /></div><b>{fighter?.hp ?? '—'}</b></div><div className="bx-stamina"><span>ENERGÍA</span><div aria-label={`${fighter?.stamina ?? 0} de energía`}>{Array.from({ length: Math.max(5, fighter?.stamina ?? 0) }, (_, i) => <i key={i} className={i < (fighter?.stamina ?? 0) ? 'full' : ''} />)}</div></div></div>;
+  const hp = Math.max(0, Math.min(100, fighter?.hp ?? 100));
+  const stamina = fighter?.stamina ?? 0;
+  return <div className={`bx-fighter-hud ${index ? 'blue' : 'red'}${mine ? ' mine' : ''}${fighter && hp < 30 ? ' low' : ''}`}>
+    <div className="bx-fighter-name"><span className={`bx-online-dot${fighter?.connected ? ' online' : ''}`} title={fighter?.connected ? 'Conectado' : 'Desconectado o esperando'} /><b>{fighter?.name ?? `Esquina ${index ? 'azul' : 'roja'}`}</b>{mine && <small>TÚ</small>}<strong className="bx-hp-number">{fighter?.hp ?? '—'}</strong></div>
+    <div className="bx-hp"><div className="bx-hp-track" role="meter" aria-label={`Vida de ${fighter?.name ?? 'esquina vacía'}`} aria-valuenow={fighter?.hp ?? 100} aria-valuemin={0} aria-valuemax={100}><i className="ghost" style={{ width: `${hp}%` }} /><i className="fill" style={{ width: `${hp}%` }} /></div></div>
+    <div className="bx-stamina"><span>ENERGÍA</span><div aria-label={`${stamina} de energía`}>{Array.from({ length: Math.max(5, stamina) }, (_, i) => <i key={i} className={i < stamina ? 'full' : ''} />)}</div></div>
+  </div>;
+}
+function MoveIcon({ move }: { move: string }) {
+  const paths: Record<string, string> = {
+    jab: 'M4 16 H22 M17 10 L23 16 L17 22',
+    cross: 'M3 12 H24 M3 20 H24 M19 7 L26 16 L19 25',
+    hook: 'M5 25 Q5 7 20 7 M15 3 L21 7 L16 12',
+    guard: 'M16 3 L27 8 V16 Q27 24 16 29 Q5 24 5 16 V8 Z',
+    dodge: 'M24 6 Q8 10 10 26 M5 21 L10 27 L16 22',
+  };
+  return <svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d={paths[move]} /></svg>;
 }
 function Roster({ fighters, compact = false, phase = 'lobby' }: { fighters: BoxingFighter[]; compact?: boolean; phase?: BoxingView['phase'] }) {
   return <div className={`bx-roster${compact ? ' compact' : ''}`} aria-label="Estado de los alumnos">{[0, 1].map((index) => { const fighter = fighters[index]; return <div key={index}><span className={`bx-online-dot${fighter?.connected ? ' online' : ''}`} /><b>{fighter?.name ?? `Esperando alumno ${index + 1}`}</b><span>{!fighter ? 'Plaza libre' : !fighter.connected ? 'Sin conexión' : phase === 'action' ? fighter.lockedMove ? 'Elección recibida' : 'Preparando' : phase === 'question' ? fighter.answered ? 'Respuesta recibida' : 'Pensando' : 'En línea'}</span></div>; })}</div>;
@@ -191,7 +225,8 @@ function TeacherControls({ view, busy, onAction }: { view: BoxingView; busy: boo
 function ResultPanel({ view }: { view: BoxingView }) {
   const winner = view.winner === 'draw' ? 'Empate. Buen combate.' : view.fighters.find((fighter) => fighter.id === view.winner)?.name;
   const ranking = [...view.fighters].sort((a, b) => b.hp - a.hp || b.correct - a.correct || b.damage - a.damage);
-  return <><p className="bx-eyebrow">{view.phase === 'finished' ? 'DIE ENTSCHEIDUNG / RESULTADO FINAL' : 'ASALTO RESUELTO / APRENDEMOS'}</p><h2>{view.phase === 'finished' ? view.winner === 'draw' ? winner : winner ? `${winner} gana el combate.` : 'Combate completado.' : 'Cada asalto enseña.'}</h2>
+  const mine = view.result?.fighters.find((event) => event.id === view.me);
+  return <>{mine && view.result && <div className={`bx-verdict ${mine.correct ? 'ok' : 'bad'}`}><span aria-hidden="true">{mine.correct ? '✓' : '✗'}</span><b>{mine.correct ? 'Richtig! Respuesta correcta.' : 'Falsch. Esta vez no.'}</b></div>}<p className="bx-eyebrow">{view.phase === 'finished' ? 'DIE ENTSCHEIDUNG / RESULTADO FINAL' : 'ASALTO RESUELTO / APRENDEMOS'}</p><h2>{view.phase === 'finished' ? view.winner === 'draw' ? winner : winner ? `${winner} gana el combate.` : 'Combate completado.' : 'Cada asalto enseña.'}</h2>
     {view.result && <div className="bx-solution"><span>RESPUESTA CORRECTA</span><strong lang="de">{view.result.answer}</strong><p>{view.result.explanation}</p></div>}
     <div className="bx-ranking"><h3>Clasificación</h3><div className="bx-ranking-head"><span>PÚGIL</span><span>HP</span><span>ACIERTOS</span><span>DAÑO</span></div>{ranking.map((fighter, i) => <div key={fighter.id} className={fighter.id === view.me ? 'mine' : ''}><b><i>{i + 1}</i>{fighter.name}</b><strong>{fighter.hp}</strong><span>{fighter.correct}</span><span>{fighter.damage}</span></div>)}</div>
     {view.result && <div className="bx-result-notes">{view.result.fighters.map((event) => <p key={event.id}><b>{view.fighters.find((fighter) => fighter.id === event.id)?.name}:</b> {event.move === 'recover' ? 'recupera energía' : BOXING_MOVES.find((move) => move.id === event.move)?.name}{event.dodged ? ' · esquiva efectiva' : event.blocked ? ' · bloqueo efectivo' : ''} · {event.damageDealt} de daño.</p>)}</div>}
