@@ -6,14 +6,16 @@ import { networkInterfaces } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { WebSocketServer, type WebSocket } from 'ws';
-import type { BlockId, ChestTier, ClientMsg, CtlAction, ItemId, ServerMsg, Topic } from '../shared/types.ts';
-import { CHESTS, PLAN, TOPICS, ITEMS } from '../shared/rules.ts';
+import type { BlockId, ChestTier, ClientMsg, CtlAction, ItemId, ServerMsg } from '../shared/types.ts';
+import { CHESTS, PLAN, ITEMS } from '../shared/rules.ts';
 import { loadBank } from './bank/index.ts';
 import { Room, newCode, type Deps, type Result, type RoomState } from './room.ts';
 import { jengaPull, taskCtl, taskPick, taskText } from './tasks.ts';
+import { openPractice } from './practice-session.ts';
 import { Store, type Profile } from './store.ts';
 import { createBoxingHandler } from './boxing.ts';
 import { createRoadHandler } from './road.ts';
+import { createProgressHandler, recordEvent } from './progress.ts';
 
 const PORT = Number(process.env.PORT) || 4747;
 const ROOT = resolve(import.meta.dirname, '..');
@@ -35,7 +37,7 @@ function ensureProfile(id: string | undefined, name: string): Profile {
   if (name) p.name = name.slice(0, 16);
   return p;
 }
-function recordResult(profile: string, qid: string, ok: boolean) {
+function recordResult(profile: string, qid: string, ok: boolean, context?: {source: 'practice' | 'class' | 'jenga'; room: string}) {
   const p = store.data.profiles[profile];
   if (!p) return;
   const s = (p.stats[qid] ??= { n: 0, wrong: 0, last: 1, at: 0 });
@@ -43,6 +45,7 @@ function recordResult(profile: string, qid: string, ok: boolean) {
   if (!ok) s.wrong++;
   s.last = ok ? 1 : 0;
   s.at = Date.now();
+  recordEvent({profile, kind:'answer', source:context?.source ?? 'practice', qid, topic:bank.get(qid)?.topic, ok, ...(context ? {room:context.room} : {})});
 }
 
 /** Preguntas que ya han visto estos perfiles (en clase o en práctica): id → última vez. */
@@ -92,6 +95,7 @@ function uniqueCode(n: number) {
 }
 
 function ctl(room: Room, a: CtlAction): Result {
+  if (!a || typeof a !== 'object') return { ok: false, error: 'Acción desconocida.' };
   switch (a.k) {
     case 'block': return PLAN.some((b) => b.id === a.block) ? room.startBlock(a.block as BlockId) : { ok: false, error: 'Bloque desconocido.' };
     case 'next': return room.next();
@@ -117,6 +121,8 @@ function hello(c: Client, m: Extract<ClientMsg, { t: 'hello' }>) {
     let room = m.room ? rooms.get(String(m.room).toUpperCase()) : undefined;
     if (m.create) {
       room = Room.create(deps, uniqueCode(4));
+      // Juego por temas (/jugar?temas=…) o Wort-Jenga directo (/jenga).
+      room.configure({ topics: m.topics, start: m.start });
       rooms.set(room.s.code, room);
     } else if (!room || room.s.teacherToken !== m.token) {
       return send(c.ws, { t: 'err', msg: 'Sala no encontrada o sin permiso de profesor.', fatal: true });
@@ -144,35 +150,38 @@ function hello(c: Client, m: Extract<ClientMsg, { t: 'hello' }>) {
   }
 
   if (m.role === 'practice') {
-    // Reanudar una práctica (recarga de página) o empezar una nueva.
-    const prev = m.room ? rooms.get(String(m.room).toUpperCase()) : undefined;
-    let room = prev && prev.s.mode === 'practice' && m.token && prev.s.players[0]?.token === m.token ? prev : undefined;
-    let prof: Profile | undefined = room ? store.data.profiles[room.s.players[0].profile] : undefined;
-    if (!prof && m.profileCode) {
-      prof = store.profileByCode(String(m.profileCode));
-      if (!prof) return send(c.ws, { t: 'err', msg: 'No encuentro ese código de alumno.', fatal: true });
-    }
-    prof ??= ensureProfile(m.profile, String(m.name || 'Alumno'));
-    if (!room) {
-      room = Room.create(deps, 'P' + uniqueCode(5), 'practice');
-      rooms.set(room.s.code, room);
-      const r = room.join(String(m.name || prof.name || 'Alumno'), prof.id);
-      if ('ok' in r) return send(c.ws, { t: 'err', msg: 'No se pudo crear la práctica.', fatal: true });
-      const topics = (Array.isArray(m.topics) ? m.topics : []).filter((t): t is Topic => t in TOPICS);
-      room.startPractice(r, topics, !!m.focus, prof.stats);
-    }
+    // Reanudar una práctica (recarga de página) o empezar una nueva; si la sala guardada ya no existe, otra nueva con aviso.
+    const r = openPractice({
+      rooms, deps, newRoomCode: () => 'P' + uniqueCode(5),
+      profileByCode: (code) => store.profileByCode(code),
+      ensureProfile,
+    }, m);
+    if (!r.ok) return send(c.ws, { t: 'err', msg: r.error, fatal: true });
+    for (const code of Object.keys(store.data.rooms)) if (!rooms.has(code)) delete store.data.rooms[code];
+    const { room, profile: prof } = r;
     const p = room.s.players[0];
     Object.assign(c, { room: room.s.code, role: 'practice', pid: p.id });
     room.setConnected(p.id, true);
-    send(c.ws, { t: 'welcome', role: 'practice', room: room.s.code, token: p.token, pid: p.id, profile: prof.id, profileCode: prof.code });
+    send(c.ws, { t: 'welcome', role: 'practice', room: room.s.code, token: p.token, pid: p.id, profile: prof.id, profileCode: prof.code, ...(r.notice ? { notice: r.notice } : {}) });
     return broadcast(room);
   }
 }
 
+/** Un mensaje erróneo (o un fallo inesperado) nunca debe tumbar el servidor: se registra y se avisa al cliente. */
 function handle(c: Client, raw: string) {
+  try {
+    handleMsg(c, raw);
+  } catch (e) {
+    console.error('[ws] error procesando un mensaje:', e);
+    const id = (() => { try { return Number(JSON.parse(raw)?.id) || 0; } catch { return 0; } })();
+    send(c.ws, id ? { t: 'ack', id, ok: false, error: 'Error interno del servidor. Inténtalo de nuevo.' } : { t: 'err', msg: 'Error interno del servidor. Recarga la página.' });
+  }
+}
+
+function handleMsg(c: Client, raw: string) {
   let m: ClientMsg;
   try { m = JSON.parse(raw); } catch { return; }
-  if (!m || typeof m !== 'object') return;
+  if (!m || typeof m !== 'object' || Array.isArray(m)) return;
   if (m.t === 'hello') return hello(c, m);
   const room = rooms.get(c.room);
   if (!room) return send(c.ws, { t: 'err', msg: 'Sala no disponible.' });
@@ -203,9 +212,11 @@ const MIME: Record<string, string> = {
   '.woff2': 'font/woff2', '.woff': 'font/woff', '.json': 'application/json', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json', '.pdf': 'application/pdf',
 };
 
+const progressHandler = createProgressHandler({dataDir: process.env.DATA_DIR || join(ROOT, 'data'), profiles: id => store.data.profiles[id]});
 const roadHandler = createRoadHandler({ dataDir: process.env.DATA_DIR || join(ROOT, 'data') });
 const boxingHandler = createBoxingHandler({ dataDir: process.env.DATA_DIR || join(ROOT, 'data') });
 const server = createServer((req, res) => {
+  if (progressHandler(req, res)) return;
   if (roadHandler(req, res)) return;
   if (boxingHandler(req, res)) return;
   const url = new URL(req.url ?? '/', 'http://x');
@@ -258,11 +269,13 @@ setInterval(() => {
 
 // Temporizadores de las salas.
 setInterval(() => {
-  for (const room of rooms.values()) if (room.tick()) broadcast(room);
+  for (const room of rooms.values()) {
+    try { if (room.tick()) broadcast(room); } catch (e) { console.error(`[tick] sala ${room.s.code}:`, e); }
+  }
 }, 250);
 
-process.on('SIGINT', () => { store.data.rooms = Object.fromEntries([...rooms].map(([k, r]) => [k, r.s])); store.flush(); process.exit(0); });
-process.on('SIGTERM', () => { store.data.rooms = Object.fromEntries([...rooms].map(([k, r]) => [k, r.s])); store.flush(); process.exit(0); });
+process.on('SIGINT', () => { store.data.rooms = Object.fromEntries([...rooms].map(([k, r]) => [k, r.s])); store.flush(); progressHandler.log.flush(); process.exit(0); });
+process.on('SIGTERM', () => { store.data.rooms = Object.fromEntries([...rooms].map(([k, r]) => [k, r.s])); store.flush(); progressHandler.log.flush(); process.exit(0); });
 
 /** IPs de la red local (wifi/ethernet), sin adaptadores virtuales; primero las típicas de casa/escuela. */
 function lanIps(): string[] {

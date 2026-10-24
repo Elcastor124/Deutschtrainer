@@ -9,11 +9,19 @@ export function TopicOne() {
   return (
     <main className="home learning-home">
       <header className="stack">
-        <a className="learning-back" href="/" onClick={followLearningLink}>← Explorar</a>
-        <p className="learning-eyebrow">RUTA DE ESTUDIO · A1–A2</p>
+        <a className="learning-back" href="/curso" onClick={followLearningLink}>← Volver al curso</a>
+        <p className="learning-eyebrow">BIBLIOTECA DE MATERIALES · TEMA 1 · A1–A2</p>
         <h1 className="home-title">Tema 1<b>// entender y usar</b></h1>
         <p className="home-sub">Nebensätze, Perfekt, Dativ y vocabulario. Revisa las explicaciones y entrena con todo el banco de preguntas preparado.</p>
       </header>
+      <section className="panel learning-feature dt-course-callout" aria-labelledby="course-callout">
+        <div className="stack">
+          <span className="learning-eyebrow">NUEVO · RUTA DEL CURSO</span>
+          <h2 id="course-callout">¿No sabes por dónde seguir?</h2>
+          <p>El curso ordena estas presentaciones en Lektionen y te guía en cada clase: ver, practicar, jugar y repasar, con tu progreso guardado.</p>
+        </div>
+        <a className="btn signal lg" href="/curso" onClick={followLearningLink}>Ir al curso →</a>
+      </section>
       <section className="stack learning-section" aria-labelledby="path-title">
         <h2 id="path-title">Ruta de estudio</h2>
         <ol className="learning-path">

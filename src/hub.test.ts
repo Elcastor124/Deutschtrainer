@@ -19,16 +19,28 @@ describe('Student learning hub', () => {
     }
   });
 
-  it('opens the Explore catalog at the root with Tema 1 and navigation', () => {
+  it('opens the brand landing at the root with the course, practice, games and navigation', () => {
     const html = renderRoute('/');
-    expect(html).toContain('Explorar');
-    expect(html).toContain('Tema 1');
+    expect(html).toContain('Aprende alemán');
+    expect(html).toContain('aria-label="Deutschtrainer"');
+    for (const href of ['/curso', '/practica', '/road-to-b1', '/jugar', '/jenga', '/boxeo', '/tema/1', '/profesor']) expect(html).toContain(`href="${href}"`);
     expect(html).toContain('Nebensätze');
-    expect(html).toContain('Perfekt');
-    expect(html).toContain('Dativ');
-    expect(html).toContain('Vocabulario');
-    expect(html).toContain('href="/tema/1"');
-    expect(html).toContain('href="/jugar"');
+    expect(html).toContain('Wort-Jenga');
+    expect(html).toContain('Tu primer paso');
+  });
+
+  it('shows the ordered course with the fixed class flow and a teacher placeholder without secrets', () => {
+    const html = renderRoute('/curso');
+    expect(html).toContain('Tu curso');
+    expect(html.indexOf('Brücke A1')).toBeLessThan(html.indexOf('Auf der Bank'));
+    expect(html.indexOf('Auf der Bank')).toBeLessThan(html.indexOf('Mission Stadt'));
+    expect(html).toContain('href="/presentaciones/bruecke-a1.html"');
+    expect(html).toContain('href="/practica?temas=praesens,alltag,vocab,satzbau"');
+    expect(html).toContain('Marcar hecho');
+    expect(html).toContain('Siguiente');
+    const teacher = renderRoute('/profesor');
+    expect(teacher).toContain('Próximamente: modo profesor protegido');
+    expect(teacher).not.toMatch(/type="password"/);
   });
 
   it('shows Tema 1 as a study path with resources, complete quiz practice and live workshops', () => {

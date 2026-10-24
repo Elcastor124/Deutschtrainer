@@ -6,7 +6,7 @@ import {
   BC_BONUS, BOSS_CHEST_EVERY, CHESTS, COMMON_ITEMS, DIFF_LABEL, GOLD_ITEMS, ITEMS, MAX_INV, PLAN, POINTS, STREAK_REWARD, THIEF_MAX, TOPICS, blockDef, checkUse, type UseCtx,
 } from '../shared/rules.ts';
 import type {
-  Answer, BlockId, ChestTier, ErrorEntry, FinalView, Fx, ItemId, Phase, PlayerResult, Question, RevealView, RoomView, Status, TaskKind, Topic,
+  Answer, BlockId, ChestTier, ErrorEntry, FinalView, Fx, GameStart, ItemId, Phase, PlayerResult, Question, RevealView, RoomView, Status, TaskKind, Topic,
 } from '../shared/types.ts';
 import { grade, makeInstance, publicView, solution, type Instance } from './grade.ts';
 import { buildQueue, drawTopic, practiceQueue, wildTopics, type SelCtx, type Stat } from './select.ts';
@@ -78,14 +78,18 @@ export interface RoomState {
   players: Player[];
   log: Fx[];
   fxSeq: number;
-  practice?: { topics: Topic[]; requeued: string[]; done: number; correct: number };
+  practice?: { topics: Topic[]; requeued: string[]; done: number; correct: number; focus?: boolean; size?: number };
+  /** Temas elegidos por el profesor para el juego de clase y el Wort-Jenga (vacío = todos). */
+  topics?: Topic[];
+  /** Con qué empieza la sala: el plan BlackCard o directamente el Wort-Jenga. */
+  start?: GameStart;
 }
 
 export interface Deps {
   bank: Map<string, Question>;
   now: () => number;
   rand: () => number;
-  onResult?: (profile: string, qid: string, ok: boolean) => void;
+  onResult?: (profile: string, qid: string, ok: boolean, context?: {source: 'practice' | 'class' | 'jenga'; room: string}) => void;
   profileCode?: (profile: string) => string;
   /** Preguntas que ya vieron estos perfiles en otras partidas (id → última vez). */
   seen?: (profiles: string[]) => Map<string, number>;
@@ -156,6 +160,7 @@ export class Room {
     s.task ??= null;
     if (s.task && (s.task.kind === 'rolle' || s.task.kind === 'wort' || s.task.kind === 'frei')) s.task.judged ??= {};
     s.scenesUsed ??= [];
+    s.topics ??= [];
     for (const p of s.players) { p.chests ??= []; p.stars ??= 0; }
     // Las recompensas antiguas eran objetos sueltos (sin cofre): no se pueden mostrar como cofres.
     if (s.roundEnd?.rewards.some((r) => !('tier' in r))) s.roundEnd.rewards = [];
@@ -180,7 +185,17 @@ export class Room {
 
   /** Historial de estos alumnos en otras partidas: se prefieren preguntas nuevas para ellos. */
   selCtx(): SelCtx {
-    return { reading: this.s.reading, seen: this.d.seen?.(this.s.players.map((p) => p.profile)) };
+    return { reading: this.s.reading, seen: this.d.seen?.(this.s.players.map((p) => p.profile)), ...(this.s.topics?.length ? { topics: this.s.topics } : {}) };
+  }
+
+  /** Juego por temas / arranque directo (solo en la sala del profesor, antes de empezar). */
+  configure(o: { topics?: unknown; start?: unknown }): Result {
+    if (this.practice) return fail('No disponible en práctica.');
+    const topics = Array.isArray(o.topics) ? [...new Set(o.topics.filter((t): t is Topic => typeof t === 'string' && Object.hasOwn(TOPICS, t)))] : [];
+    this.s.topics = topics;
+    this.s.start = o.start === 'jenga' ? 'jenga' : 'blackcard';
+    this.touch();
+    return OK;
   }
 
   /** Lectura que estos alumnos han visto hace más tiempo (o nunca). */
@@ -326,7 +341,15 @@ export class Room {
 
   next(): Result {
     switch (this.s.phase) {
-      case 'lobby': return this.startBlock(PLAN[0].id);
+      case 'lobby': {
+        if (this.s.start === 'jenga') {
+          const r = this.startBlock('jenga');
+          return r.ok ? startTask(this, 'jenga') : r;
+        }
+        // Juego por temas sin Leseverstehen: se empieza directamente por el Calentamiento.
+        const first = this.s.topics?.length && !this.s.topics.includes('lesen') ? 'warmup' : PLAN[0].id;
+        return this.startBlock(first as BlockId);
+      }
       case 'intro': {
         const def = blockDef(this.s.block);
         return def?.kind === 'task' ? startTask(this, def.id as TaskKind) : this.presentNext();
@@ -661,7 +684,7 @@ export class Room {
     // 5) Historial para el modo práctica.
     for (const p of this.s.players) {
       const st = results[p.id]?.status;
-      if (st && st !== 'none') this.d.onResult?.(p.profile, q.id, st === 'correct');
+      if (st && st !== 'none') this.d.onResult?.(p.profile, q.id, st === 'correct', {source: this.practice ? 'practice' : 'class', room:this.s.code});
     }
     if (this.s.practice) {
       const ok = results[this.s.players[0]?.id]?.status === 'correct';
@@ -789,9 +812,9 @@ export class Room {
   }
 
   // ───────────── práctica ─────────────
-  startPractice(p: Player, topics: Topic[], focus: boolean, stats: Record<string, Stat>): Result {
-    this.s.practice = { topics, requeued: [], done: 0, correct: 0 };
-    this.s.queue = practiceQueue(stats, topics, focus, this.d.bank, this.d.rand);
+  startPractice(p: Player, topics: Topic[], focus: boolean, stats: Record<string, Stat>, size = 15): Result {
+    this.s.practice = { topics, requeued: [], done: 0, correct: 0, focus, size };
+    this.s.queue = practiceQueue(stats, topics, focus, this.d.bank, this.d.rand, size, this.now);
     this.s.qTotal = this.s.queue.length;
     this.s.startedAt = this.now;
     if (!this.s.players.includes(p)) this.s.players.push(p);
@@ -857,7 +880,9 @@ export class Room {
       wild: s.wild, wildPending: s.wildPending, roundEnd: s.roundEnd, log: s.log.slice(-25),
       reading: s.reading, task: taskView(this, viewer),
     };
-    if (s.practice) v.practice = { topics: s.practice.topics, done: s.practice.done, correct: s.practice.correct };
+    if (s.topics?.length) v.topics = s.topics;
+    if (s.start === 'jenga') v.start = 'jenga';
+    if (s.practice) v.practice = { topics: s.practice.topics, done: s.practice.done, correct: s.practice.correct, size: s.practice.size, focus: s.practice.focus };
     if (s.phase === 'final') v.final = this.finalView();
     if ('teacher' in viewer) {
       v.teacher = {

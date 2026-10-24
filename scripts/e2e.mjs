@@ -337,11 +337,24 @@ try {
   const pq = await P.until((s) => s.phase === 'question', 'pregunta de práctica');
   ok(pq.mode === 'practice' && pq.timer === null, 'práctica individual sin temporizador');
   const tomStats = new Set(fin.final.players.find((p) => p.id === B.welcome.pid).errors.map((e) => e.qid));
-  ok(tomStats.has(pq.q.id), 'la práctica empieza por una pregunta que falló en clase');
+  // Mixed spaced review may start fresh; inspect the whole session, not its first card.
+  const practiceSeen = new Set([pq.q.id]);
   await P.req({ t: 'answer', qid: pq.q.id, a: answerFor(pq.q, false) });
   const pr = await P.until((s) => s.phase === 'reveal', 'corrección práctica');
   ok(!!pr.reveal.explain, 'la práctica muestra la explicación');
   ok((await P.req({ t: 'pnext' })).ok, 'siguiente pregunta en práctica');
+  for (let i=0;i<40;i++) {
+    const v=await P.until(s=>s.phase==='question'||s.phase==='final','práctica completa');
+    if(v.phase==='final') break;
+    practiceSeen.add(v.q.id);
+    await P.req({t:'answer',qid:v.q.id,a:answerFor(v.q,true)});
+    await P.until(s=>s.phase==='reveal','corrección');
+    await P.req({t:'pnext'});
+  }
+  ok([...practiceSeen].some(id=>tomStats.has(id)), 'repaso mixto incluye errores anteriores');
+  ok([...practiceSeen].some(id=>!tomStats.has(id)), 'repaso mixto incluye preguntas nuevas');
+  const summary=await (await fetch(`http://127.0.0.1:${PORT}/api/progress/me?profile=${encodeURIComponent(P.welcome.profile)}`)).json();
+  ok(summary.weekPoints>0 && summary.topics.length>0,'respuestas reales suman puntos semanales y estadísticas');
 
   for (const c of [A2, B2, T2, P]) await c.close();
 } catch (e) {

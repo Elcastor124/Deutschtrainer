@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { CHESTS, COMMON_ITEMS, ITEMS, PLAN, PLAN_MIN, blockDef } from '../../shared/rules.ts';
-import type { BlockId, ChestTier, CtlAction, ItemId, RoomView } from '../../shared/types.ts';
+import { CHESTS, COMMON_ITEMS, ITEMS, PLAN, PLAN_MIN, TOPICS, blockDef } from '../../shared/rules.ts';
+import type { BlockId, ChestTier, ClientMsg, CtlAction, ItemId, RoomView } from '../../shared/types.ts';
+import { topicsFromQuery } from './Practice.tsx';
 import { Timer } from '../components/bits.tsx';
 import { Leaderboard } from '../components/Leaderboard.tsx';
 import { Question, QuestionHead } from '../components/Question.tsx';
@@ -12,11 +13,18 @@ import { sfx } from '../fx/sound.ts';
 import { Net, useNet } from '../net.ts';
 import { navigate, store } from '../util.ts';
 
+/** Hello del profesor: /t/new?temas=…&juego=jenga crea la sala con esos temas; /t/CODE entra con su token. */
+export function teacherHello(code: string, search: string, token?: string): Extract<ClientMsg, { t: 'hello'; role: 'teacher' }> {
+  if (code !== 'new') return { t: 'hello', role: 'teacher', room: code, token };
+  const start = new URLSearchParams(search).get('juego') === 'jenga' ? 'jenga' : 'blackcard';
+  return { t: 'hello', role: 'teacher', create: true, topics: topicsFromQuery(search), start };
+}
+
 export function Teacher({ code }: { code: string }) {
   const net = useMemo(() => {
     const creating = code === 'new';
     const token = creating ? undefined : store.get(`bc:t:${code}`) ?? undefined;
-    return new Net(creating ? { t: 'hello', role: 'teacher', create: true } : { t: 'hello', role: 'teacher', room: code, token }, (m) => {
+    return new Net(teacherHello(code, location.search, token), (m) => {
       store.set(`bc:t:${m.room}`, m.token);
       store.set('bc:last-teacher', m.room);
       if (code !== m.room) history.replaceState(null, '', `/t/${m.room}`);
@@ -130,8 +138,14 @@ function Lobby({ v, onStart }: { v: RoomView; onStart: () => void }) {
         <p className="lobby-line">Entrad en <span className="lobby-url">{base.replace(/^https?:\/\//, '')}</span> y escribid el código</p>
         <div className="lobby-code" aria-label={`Código ${v.code}`}>{[...v.code].map((c, i) => <span key={i} style={{ '--i': i } as CSSProperties}>{c}</span>)}</div>
         <p className="lobby-line">Enlace directo: <span className="lobby-url">{url}</span></p>
+        {(v.topics?.length || v.start === 'jenga') ? (
+          <p className="lobby-line lobby-topics" aria-label="Temas de la sala">
+            <b>{v.start === 'jenga' ? 'Wort-Jenga' : 'BlackCard'}</b>
+            {v.topics?.length ? v.topics.map((t) => <span key={t} className="chip">{TOPICS[t].de}</span>) : <span className="dim">todos los temas</span>}
+          </p>
+        ) : null}
         <div className="row">
-          <button className="btn primary xl" onClick={onStart} disabled={!v.players.length}>Empezar la clase <kbd>Espacio</kbd></button>
+          <button className="btn primary xl" onClick={onStart} disabled={!v.players.length}>{v.start === 'jenga' ? 'Empezar Wort-Jenga' : 'Empezar la clase'} <kbd>Espacio</kbd></button>
           {!v.players.length && <span className="dim">Esperando a los alumnos…</span>}
         </div>
       </section>

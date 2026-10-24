@@ -17,6 +17,8 @@ export interface NetState {
   /** serverNow − Date.now() */
   offset: number;
   pid?: string;
+  /** Aviso no bloqueante del servidor (p. ej. «tu práctica anterior ya no estaba: empezamos una nueva»). */
+  notice?: string;
 }
 
 export class Net {
@@ -69,10 +71,19 @@ export class Net {
 
   private receive(m: ServerMsg) {
     if (m.t === 'welcome') {
-      // A partir de ahora, si se reconecta, se identifica con su token (no crea otro jugador).
-      this.hello = { t: 'hello', role: m.role, room: m.room, token: m.token } as Hello;
+      // A partir de ahora, si se reconecta, se identifica con su token (no crea otro jugador ni otra sala).
+      // En práctica conserva además perfil, nombre y opciones: si el servidor se reinició y la sala ya no existe,
+      // empieza otra práctica para EL MISMO alumno en lugar de un perfil anónimo.
+      const prev = this.hello;
+      if (prev.role === 'practice') {
+        const { profileCode: _pc, ...keep } = prev;
+        void _pc;
+        this.hello = { ...keep, room: m.room, token: m.token, ...(m.profile ? { profile: m.profile } : {}) };
+      } else {
+        this.hello = { t: 'hello', role: m.role, room: m.room, token: m.token } as Hello;
+      }
       this.onWelcome?.(m);
-      this.set({ conn: 'online', error: null, pid: m.pid });
+      this.set({ conn: 'online', error: null, pid: m.pid, notice: m.notice });
     } else if (m.t === 'state') {
       this.set({ view: m.s, offset: m.s.serverNow - Date.now(), conn: 'online' });
     } else if (m.t === 'ack') {

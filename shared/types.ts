@@ -271,14 +271,21 @@ export interface RoomView {
   task: TaskView | null;
   teacher?: TeacherView;
   final?: FinalView;
-  practice?: { topics: Topic[]; done: number; correct: number };
+  practice?: { topics: Topic[]; done: number; correct: number; size?: number; focus?: boolean };
+  /** Temas elegidos por el profesor (juego por temas). Vacío o ausente = todos. */
+  topics?: Topic[];
+  /** Sala creada para ir directamente a una actividad (p. ej. Wort-Jenga sin el plan de clase). */
+  start?: GameStart;
 }
+
+/** Juego con el que arranca una sala de clase: el plan BlackCard completo o el Wort-Jenga directamente. */
+export type GameStart = 'blackcard' | 'jenga';
 
 // ---------- Protocolo ----------
 export type ClientMsg =
-  | { t: 'hello'; role: 'teacher'; create?: boolean; room?: string; token?: string }
+  | { t: 'hello'; role: 'teacher'; create?: boolean; room?: string; token?: string; topics?: Topic[]; start?: GameStart }
   | { t: 'hello'; role: 'player'; room: string; token?: string; name?: string; profile?: string }
-  | { t: 'hello'; role: 'practice'; room?: string; token?: string; profile?: string; profileCode?: string; name?: string; topics?: Topic[]; focus?: boolean }
+  | { t: 'hello'; role: 'practice'; room?: string; token?: string; profile?: string; profileCode?: string; name?: string; topics?: Topic[]; focus?: boolean; size?: number }
   | { t: 'answer'; id: number; qid: string; a: Answer }
   | { t: 'item'; id: number; item: ItemId; target?: string }
   | { t: 'wild'; id: number; topic: Topic }
@@ -308,7 +315,7 @@ export type CtlAction =
   | { k: 'task'; op: 'show' | 'star' | 'judgeText' | 'goal' | 'reroll' | 'judge' | 'reset' | 'skip'; pid?: string; n?: number; ok?: boolean };
 
 export type ServerMsg =
-  | { t: 'welcome'; role: 'teacher' | 'player' | 'practice'; room: string; token: string; pid?: string; profile?: string; profileCode?: string }
+  | { t: 'welcome'; role: 'teacher' | 'player' | 'practice'; room: string; token: string; pid?: string; profile?: string; profileCode?: string; notice?: string }
   | { t: 'state'; s: RoomView }
   | { t: 'ack'; id: number; ok: boolean; error?: string; retry?: boolean }
   | { t: 'err'; msg: string; fatal?: boolean };

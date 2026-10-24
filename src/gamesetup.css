@@ -1,0 +1,7 @@
+/* Pantalla de preparación de juegos (/jugar, /jenga). Solo maquetación mínima: el estilo viene de styles.css. */
+.game-setup .gs-topics { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; min-width: 0; }
+.game-setup .gs-topics legend { padding: 0; margin-bottom: 6px; }
+.game-setup .gs-topics > .btn { justify-self: start; }
+.lobby-topics { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.practice-notice { margin: 12px auto 0; max-width: 960px; }
+.practice-more { justify-content: center; margin-top: 12px; }

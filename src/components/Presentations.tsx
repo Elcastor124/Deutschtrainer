@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { loadCatalog, type Presentation } from '../catalog.ts';
+import { courseOrder } from '../course.ts';
 
 export function PresentationCards({ entries }: { entries: Presentation[] }) {
-  return <div className="learning-grid">{entries.map((entry) => (
+  const sorted = [...entries].sort((a, b) => courseOrder(a.id) - courseOrder(b.id));
+  return <div className="learning-grid">{sorted.map((entry) => (
     <article className="panel home-card" key={entry.id}>
-      <span className="learning-eyebrow">PRESENTACIÓN {entry.level && `· ${entry.level}`}</span>
+      <span className="learning-eyebrow">{entry.unit ? `LEKTION ${entry.unit}` : 'PRESENTACIÓN'} {entry.level && `· ${entry.level}`}</span>
       <h3>{entry.title}</h3><p>{entry.description}</p>
       <div className="chips">{entry.topics.map((topic) => <span className="badge" key={topic}>{topic}</span>)}</div>
       <div className="row">

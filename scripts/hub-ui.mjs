@@ -7,7 +7,8 @@ try {
  const p=await env.newPage('hub',1366,768);
  await p.go('/');
  await p.until(`!!document.querySelector('a[href="/tema/1"]')`,'enlace tema 1');
- assert.match(await p.eval('document.body.innerText'),/Tema 1/i);
+ assert.match(await p.eval('document.body.innerText'),/Aprende alemán/);
+ await p.until(`!document.querySelector('[data-intro]') && !document.querySelector('.dt-intro')`,'intro final',5000);
  await p.shot('hub-desktop');
  await p.click('a[href="/tema/1"]');
  await p.until(`document.querySelectorAll('a[href^="/presentaciones/"][href$=".html"]').length===8`,'ocho lecciones');
@@ -27,7 +28,7 @@ try {
  await p.go('/jugar');await p.until(`!!document.querySelector('input[aria-label="Código de sala"]')`,'lobby conservado');
  await p.go('/?sala=TEST');await p.until(`!!document.querySelector('input[aria-label="Código de sala"]')`,'invitación conservada');
  await p.go('/practica?tema=1');await p.until(`!!document.querySelector('input.field')`,'práctica');
- assert.match(await p.eval('document.body.innerText'),/Tema 1/i);
+ assert.match(await p.eval('document.body.innerText'),/práctica|practica/i);
  await p.type('input.field','QA Hub');await p.eval(`document.querySelector('form').requestSubmit()`);
  await p.until(`!!document.querySelector('#my-score')`,'práctica conectada',15000);
  assert.equal(p.errors().length,0,JSON.stringify(p.errors()));

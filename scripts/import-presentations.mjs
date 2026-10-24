@@ -16,6 +16,10 @@ const rows = [
  ['sprache-in-bewegung','deutsch-trainer-120.html','Sprache in Bewegung','Repaso interactivo de estructuras, ejercicios y diccionario.',['Vocabulario','Dativ','Perfekt','Nebensätze'],'A1–A2'],
  ['krankenhaus-remaster',resolve(process.env.USERPROFILE || 'C:/Users/castr','Downloads/IM_KRANKENHAUS_3D_DATIV_REMASTER.html'),'Krankenhaus · Lectura y repaso 3D','Lectura de Leo, repaso de Dativ y Perfekt, ejercicios y vocabulario médico.',['Leseverstehen','Dativ','Perfekt','Nebensätze','Vocabulario'],'A1–A2'],
 ];
+// Número de Lektion en la ruta del curso (src/course.ts); el catálogo se publica en ese orden.
+const UNIT = { 'bruecke-a1':1, bank:2, 'nebensaetze-perfekt':3, krankenhaus:4, 'krankenhaus-remaster':4, unterwegs:5, akkusativ:6, 'sprache-in-bewegung':7 };
+const ORDER = Object.keys(UNIT);
+rows.sort((a,b)=>ORDER.indexOf(a[0])-ORDER.indexOf(b[0]));
 const catalog = rows.map(([id,src,title,description,topics,level,pdf]) => {
  const input = resolve(source,src);
  let html = readFileSync(input,'utf8').replace(/\r\n?/g,'\n');
@@ -25,7 +29,7 @@ const catalog = rows.map(([id,src,title,description,topics,level,pdf]) => {
  if (localRefs.length) throw new Error(`${src}: recursos relativos no empaquetados: ${localRefs.join(', ')}`);
  if (/(?:ghp_|github_pat_|sk-proj-)[A-Za-z0-9_]{15,}/.test(html)) throw new Error('Posible credencial en '+src);
  writeFileSync(join(out,id+'.html'),html);
- const item={id,title,description,file:`/presentaciones/${id}.html`,topics,level,source:typeof src==='string'?src.split(/[\\/]/).pop():src,sha256:createHash('sha256').update(html).digest('hex')};
+ const item={id,unit:UNIT[id],title,description,file:`/presentaciones/${id}.html`,topics,level,source:typeof src==='string'?src.split(/[\\/]/).pop():src,sha256:createHash('sha256').update(html).digest('hex')};
  if (pdf) { const p=join(source,pdf);if(!existsSync(p))throw new Error('Falta PDF '+pdf);copyFileSync(p,join(out,id+'.pdf'));item.pdf=`/presentaciones/${id}.pdf`; }
  return item;
 });

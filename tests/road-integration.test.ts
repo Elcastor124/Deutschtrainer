@@ -12,8 +12,9 @@ describe('Road to B1 integration',()=>{
  });
  it('mounts Road inside the existing application and exposes it from the hub and study navigation',()=>{
   expect(source('src/App.tsx')).toContain('<Road />');
-  expect(source('src/components/LearningNav.tsx')).toContain('href="/road-to-b1"');
-  expect(source('src/views/Explore.tsx')).toContain('<RoadActivity />');
+  // La navegación genera sus enlaces desde una lista; la portada es ahora la landing de marca.
+  expect(source('src/components/LearningNav.tsx')).toContain("href: '/road-to-b1'");
+  expect(source('src/views/Landing.tsx')).toContain('href="/road-to-b1"');
   expect(source('src/views/TopicOne.tsx')).toContain('<RoadActivity />');
  });
  it('keeps examination secrets out of browser imports',()=>{

@@ -1,6 +1,7 @@
 [
   {
     "id": "bruecke-a1",
+    "unit": 1,
     "title": "Brücke A1 · Empieza aquí",
     "description": "Saludos, presentaciones, números, preguntas personales e idiomas.",
     "file": "/presentaciones/bruecke-a1.html",
@@ -14,51 +15,8 @@
     "sha256": "cd3ab02935a555dc18a8823220adef73e3d31977018ad748b7335501ff9aa02f"
   },
   {
-    "id": "akkusativ",
-    "title": "Mission Stadt · Akkusativ y preposiciones",
-    "description": "Akkusativ, Dativ, Wo/Wohin y un combate final de boxeo multijugador.",
-    "file": "/presentaciones/akkusativ.html",
-    "topics": [
-      "Akkusativ",
-      "Dativ",
-      "Preposiciones"
-    ],
-    "level": "A1–A2",
-    "source": "akkusativ.html",
-    "sha256": "d5c923cb7d447a98d0da8991c941d276af687a9c37553909559096727f1bb557",
-    "pdf": "/presentaciones/akkusativ.pdf"
-  },
-  {
-    "id": "nebensaetze-perfekt",
-    "title": "Warum? · Nebensätze y Perfekt",
-    "description": "weil, obwohl, deshalb; haben/sein y el verbo al final.",
-    "file": "/presentaciones/nebensaetze-perfekt.html",
-    "topics": [
-      "Nebensätze",
-      "Perfekt"
-    ],
-    "level": "A1–A2",
-    "source": "nebensatz-perfekt.html",
-    "sha256": "c8e4f4c401512e01650029f03fd7b746789ca24f1aa8d945d5accc2eedbd3d34",
-    "pdf": "/presentaciones/nebensaetze-perfekt.pdf"
-  },
-  {
-    "id": "unterwegs",
-    "title": "Unterwegs · Dativ + Perfekt",
-    "description": "Artículos, pronombres y preposiciones de Dativ; viajes y frases combinadas.",
-    "file": "/presentaciones/unterwegs.html",
-    "topics": [
-      "Dativ",
-      "Perfekt",
-      "Nebensätze"
-    ],
-    "level": "A1–A2",
-    "source": "dativ.html",
-    "sha256": "6baceefdfcfd0d31c2095b73b72df6174bc42f0c43a7d764fd5213d63d44f2a4",
-    "pdf": "/presentaciones/unterwegs.pdf"
-  },
-  {
     "id": "bank",
+    "unit": 2,
     "title": "Auf der Bank",
     "description": "Vocabulario del banco, trato formal y diálogos para situaciones reales.",
     "file": "/presentaciones/bank.html",
@@ -72,7 +30,23 @@
     "pdf": "/presentaciones/bank.pdf"
   },
   {
+    "id": "nebensaetze-perfekt",
+    "unit": 3,
+    "title": "Warum? · Nebensätze y Perfekt",
+    "description": "weil, obwohl, deshalb; haben/sein y el verbo al final.",
+    "file": "/presentaciones/nebensaetze-perfekt.html",
+    "topics": [
+      "Nebensätze",
+      "Perfekt"
+    ],
+    "level": "A1–A2",
+    "source": "nebensatz-perfekt.html",
+    "sha256": "c8e4f4c401512e01650029f03fd7b746789ca24f1aa8d945d5accc2eedbd3d34",
+    "pdf": "/presentaciones/nebensaetze-perfekt.pdf"
+  },
+  {
     "id": "krankenhaus",
+    "unit": 4,
     "title": "Im Krankenhaus · Nebensätze",
     "description": "Cuerpo y salud; weil, obwohl, dass, wenn y deshalb.",
     "file": "/presentaciones/krankenhaus.html",
@@ -87,22 +61,8 @@
     "pdf": "/presentaciones/krankenhaus.pdf"
   },
   {
-    "id": "sprache-in-bewegung",
-    "title": "Sprache in Bewegung",
-    "description": "Repaso interactivo de estructuras, ejercicios y diccionario.",
-    "file": "/presentaciones/sprache-in-bewegung.html",
-    "topics": [
-      "Vocabulario",
-      "Dativ",
-      "Perfekt",
-      "Nebensätze"
-    ],
-    "level": "A1–A2",
-    "source": "deutsch-trainer-120.html",
-    "sha256": "7efb631d599646fc61c28f934d4a10ccab8ca2837cede72d067ddfc7556a2543"
-  },
-  {
     "id": "krankenhaus-remaster",
+    "unit": 4,
     "title": "Krankenhaus · Lectura y repaso 3D",
     "description": "Lectura de Leo, repaso de Dativ y Perfekt, ejercicios y vocabulario médico.",
     "file": "/presentaciones/krankenhaus-remaster.html",
@@ -116,5 +76,53 @@
     "level": "A1–A2",
     "source": "IM_KRANKENHAUS_3D_DATIV_REMASTER.html",
     "sha256": "ba67042d80a38e4a8065ba7bdbfe7b1efa5577a6c7bbb6f94706dce97c723833"
+  },
+  {
+    "id": "unterwegs",
+    "unit": 5,
+    "title": "Unterwegs · Dativ + Perfekt",
+    "description": "Artículos, pronombres y preposiciones de Dativ; viajes y frases combinadas.",
+    "file": "/presentaciones/unterwegs.html",
+    "topics": [
+      "Dativ",
+      "Perfekt",
+      "Nebensätze"
+    ],
+    "level": "A1–A2",
+    "source": "dativ.html",
+    "sha256": "6baceefdfcfd0d31c2095b73b72df6174bc42f0c43a7d764fd5213d63d44f2a4",
+    "pdf": "/presentaciones/unterwegs.pdf"
+  },
+  {
+    "id": "akkusativ",
+    "unit": 6,
+    "title": "Mission Stadt · Akkusativ y preposiciones",
+    "description": "Akkusativ, Dativ, Wo/Wohin y un combate final de boxeo multijugador.",
+    "file": "/presentaciones/akkusativ.html",
+    "topics": [
+      "Akkusativ",
+      "Dativ",
+      "Preposiciones"
+    ],
+    "level": "A1–A2",
+    "source": "akkusativ.html",
+    "sha256": "d5c923cb7d447a98d0da8991c941d276af687a9c37553909559096727f1bb557",
+    "pdf": "/presentaciones/akkusativ.pdf"
+  },
+  {
+    "id": "sprache-in-bewegung",
+    "unit": 7,
+    "title": "Sprache in Bewegung",
+    "description": "Repaso interactivo de estructuras, ejercicios y diccionario.",
+    "file": "/presentaciones/sprache-in-bewegung.html",
+    "topics": [
+      "Vocabulario",
+      "Dativ",
+      "Perfekt",
+      "Nebensätze"
+    ],
+    "level": "A1–A2",
+    "source": "deutsch-trainer-120.html",
+    "sha256": "7efb631d599646fc61c28f934d4a10ccab8ca2837cede72d067ddfc7556a2543"
   }
 ]

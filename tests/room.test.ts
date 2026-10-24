@@ -507,15 +507,17 @@ describe('modo práctica', () => {
     expect(env.room.question?.id).toBe(q.id);
     expect(env.room.view({ pid: p.id }).reading).toBe('ausrede');
   });
-  it('prioriza preguntas falladas y repite deliberadamente lo fallado en la sesión', () => {
+  it('prioriza preguntas falladas (completando con nuevas) y repite deliberadamente lo fallado en la sesión', () => {
     const env = setup('practice');
     const p = env.room.join('Ana', 'prof-ana') as Player;
     const failed = all.filter((q) => q.topic === 'dativ').slice(0, 5);
     const stats = Object.fromEntries(failed.map((q) => [q.id, { n: 1, wrong: 1, last: 0 as const, at: 1 }]));
     env.room.startPractice(p, ['dativ'], true, stats);
-    expect(env.room.s.queue.length + 1).toBe(5);
+    const session = [env.room.question!.id, ...env.room.s.queue];
+    expect(session.length).toBe(15);
+    for (const f of failed) expect(session).toContain(f.id);
+    expect(session.every((id) => bank.get(id)?.topic === 'dativ')).toBe(true);
     const firstId = env.room.question!.id;
-    expect(failed.map((q) => q.id)).toContain(firstId);
     ans(env.room, p, false);
     expect(env.room.s.phase).toBe('reveal');
     expect(env.room.s.queue).toContain(firstId);

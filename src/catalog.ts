@@ -6,6 +6,8 @@ export interface Presentation {
   topics: string[];
   level?: string;
   pdf?: string;
+  /** Lektion de la ruta del curso (src/course.ts). */
+  unit?: number;
 }
 
 function isAsset(value: unknown, extension: 'html' | 'pdf'): value is string {
@@ -24,11 +26,13 @@ export function parseCatalog(value: unknown): Presentation[] {
         typeof p.description !== 'string' || !isAsset(p.file, 'html') || !Array.isArray(p.topics) ||
         !p.topics.every((topic) => typeof topic === 'string') ||
         (p.level !== undefined && typeof p.level !== 'string') ||
-        (p.pdf !== undefined && !isAsset(p.pdf, 'pdf'))) throw new Error('Presentación no válida.');
+        (p.pdf !== undefined && !isAsset(p.pdf, 'pdf')) ||
+        (p.unit !== undefined && (typeof p.unit !== 'number' || !Number.isInteger(p.unit) || p.unit < 1))) throw new Error('Presentación no válida.');
     ids.add(p.id);
     return { id: p.id, title: p.title, description: p.description, file: p.file,
       topics: p.topics as string[], ...(p.level !== undefined ? { level: p.level as string } : {}),
-      ...(p.pdf !== undefined ? { pdf: p.pdf as string } : {}) };
+      ...(p.pdf !== undefined ? { pdf: p.pdf as string } : {}),
+      ...(p.unit !== undefined ? { unit: p.unit as number } : {}) };
   });
 }
 

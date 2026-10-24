@@ -1137,12 +1137,6 @@ button.code-chip:active { transform: translateY(1px); }
 .is-teacher .jenga .opt { min-height: 64px; font-size: clamp(1.05rem, 0.85rem + 0.7vw, 1.5rem); }
 
 /* Learning hub: same black enclosure and red signal, with readable study cards. */
-.learning-nav { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px 24px; padding: 14px max(var(--gut), calc((100vw - 1124px) / 2)); border-bottom: 1px solid var(--line-2); background: var(--body); position: relative; z-index: 2; }
-.learning-nav a { color: var(--paper-2); text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; padding: 8px 10px; border-radius: 7px; }
-.learning-nav a:hover { background: var(--cap); color: var(--paper); }
-.learning-nav a[aria-current='page'] { color: var(--signal); box-shadow: inset 0 -2px var(--signal); }
-.learning-nav .learning-brand { font-family: var(--mono); font-size: 0.78rem; gap: 8px; padding-inline: 0; }
-.learning-brand b { color: var(--signal); }
 .learning-home { align-content: start; min-height: calc(100dvh - 80px); gap: clamp(24px, 4vw, 46px); padding-block: clamp(28px, 5vw, 64px); }
 .learning-home > *, .learning-section { width: 100%; min-width: 0; }
 .learning-home .home-title { font-size: clamp(2.5rem, 1.6rem + 4.5vw, 5.5rem); overflow-wrap: anywhere; }
@@ -1169,9 +1163,6 @@ button.code-chip:active { transform: translateY(1px); }
 .learning-review input { width: 18px; height: 18px; flex: none; accent-color: var(--signal); }
 .learning-home textarea.field { resize: vertical; }
 @media (max-width: 760px) {
-  .learning-nav { gap: 4px; padding: 10px var(--gut); }
-  .learning-nav .row { gap: 4px; width: 100%; }
-  .learning-nav .row a { flex: 1; justify-content: center; font-size: 0.88rem; }
   .learning-feature, .learning-path, .learning-topics { grid-template-columns: 1fr; }
   .learning-feature > .btn { width: 100%; }
   .learning-home .wchip { flex-wrap: wrap; }

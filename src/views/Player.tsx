@@ -51,7 +51,7 @@ function PlayerConn({ code, onReset }: { code: string; onReset: () => void }) {
   return <PlayScreen net={net} st={st} />;
 }
 
-export function PlayScreen({ net, st, onNewPractice }: { net: Net; st: NetState; onNewPractice?: () => void }) {
+export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Net; st: NetState; onNewPractice?: () => void; onChangeTopics?: () => void }) {
   const v = st.view;
   const me = v?.me;
   const [busy, setBusy] = useState(false);
@@ -77,7 +77,10 @@ export function PlayScreen({ net, st, onNewPractice }: { net: Net; st: NetState;
     else if (r.retry) { setInitial(a); sfx.rewind(); document.body.classList.add('rewinding'); setTimeout(() => document.body.classList.remove('rewinding'), 700); }
   };
   const next = async () => {
+    if (busy) return;
+    setBusy(true);
     const r = await net.request({ t: 'pnext' });
+    setBusy(false);
     if (!r.ok) setErr(r.error ?? 'Error');
   };
   const onKey = (e: KeyboardEvent) => {
@@ -142,6 +145,9 @@ export function PlayScreen({ net, st, onNewPractice }: { net: Net; st: NetState;
             </>
           )}
           {v.phase === 'final' && <Final view={v} onPractice={onNewPractice} />}
+          {v.phase === 'final' && practice && onChangeTopics && (
+            <div className="row practice-more"><button className="btn" onClick={onChangeTopics}>Cambiar temas o número de preguntas</button></div>
+          )}
           {v.phase === 'task' && <TaskPlay view={v} net={net} offset={st.offset} />}
 
           {practice && v.q?.topic === 'lesen' && (

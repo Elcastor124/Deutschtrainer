@@ -237,7 +237,7 @@ function resolveJenga(room: Room, t: JengaTask, ok: boolean, given: string) {
   const pid = t.turn as string;
   const q = t.q ? room.d.bank.get(t.q.id) : undefined;
   t.last = { pid, ok, given, solution: q ? solution(q) : ok ? 'Respuesta aceptada por el profesor.' : 'Respuesta no aceptada.' };
-  if (q) room.d.onResult?.(room.player(pid)?.profile ?? '', q.id, ok);
+  if (q) room.d.onResult?.(room.player(pid)?.profile ?? '', q.id, ok, {source:'jenga', room:room.s.code});
   const p = room.player(pid);
   if (ok && p) {
     p.stars++;
