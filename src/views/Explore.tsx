@@ -1,5 +1,6 @@
 import { followLearningLink } from '../components/LearningNav.tsx';
 import { BoxingActivity } from '../components/BoxingActivity.tsx';
+import { RoadActivity } from '../components/RoadActivity.tsx';
 
 export const STUDY_TOPICS = [
   { title: 'Nebensätze', description: 'Conecta ideas con weil, obwohl, dass y wenn. Coloca el verbo al final.' },
@@ -29,6 +30,7 @@ export function Explore() {
           <a className="btn" href="/practica?tema=1" onClick={followLearningLink}>Ir a la práctica</a>
         </div>
       </section>
+      <RoadActivity />
       <BoxingActivity />
       <section className="learning-grid" aria-label="Qué quieres hacer">
         <article className="panel home-card">

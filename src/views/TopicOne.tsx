@@ -3,6 +3,7 @@ import { followLearningLink } from '../components/LearningNav.tsx';
 import { STUDY_TOPICS } from './Explore.tsx';
 import { Presentations } from '../components/Presentations.tsx';
 import { BoxingActivity } from '../components/BoxingActivity.tsx';
+import { RoadActivity } from '../components/RoadActivity.tsx';
 
 export function TopicOne() {
   return (
@@ -25,6 +26,7 @@ export function TopicOne() {
         {STUDY_TOPICS.map((topic) => <article className="panel home-card" key={topic.title}><h2 lang="de">{topic.title}</h2><p>{topic.description}</p></article>)}
       </section>
       <Presentations />
+      <RoadActivity />
       <BoxingActivity />
       <section className="panel learning-feature" aria-labelledby="practice-title">
         <div className="stack">

@@ -1,4 +1,5 @@
 import { Home } from './views/Home.tsx';
+import { Road } from './views/Road.tsx';
 import { Boxing } from './views/Boxing.tsx';
 import { Explore } from './views/Explore.tsx';
 import { TopicOne } from './views/TopicOne.tsx';
@@ -17,6 +18,7 @@ export function App() {
   let screen;
   if (m && m[1] === 't') screen = <Teacher key={m[2]} code={m[2] === 'new' ? 'new' : m[2].toUpperCase()} />;
   else if (m) screen = <Player key={m[2]} code={m[2].toUpperCase()} />;
+  else if (/^\/road-to-b1(?:\/level-1)?\/?$/.test(path)) screen = <Road />;
   else if (/^\/tema\/1\/taller\/?$/.test(path)) screen = <Workshop />;
   else if (/^\/tema\/1\/?$/.test(path)) screen = <TopicOne />;
   else if (/^\/practi[cz]a\/?$/.test(path)) screen = <Practice />;

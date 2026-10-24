@@ -13,6 +13,7 @@ import { Room, newCode, type Deps, type Result, type RoomState } from './room.ts
 import { jengaPull, taskCtl, taskPick, taskText } from './tasks.ts';
 import { Store, type Profile } from './store.ts';
 import { createBoxingHandler } from './boxing.ts';
+import { createRoadHandler } from './road.ts';
 
 const PORT = Number(process.env.PORT) || 4747;
 const ROOT = resolve(import.meta.dirname, '..');
@@ -202,8 +203,10 @@ const MIME: Record<string, string> = {
   '.woff2': 'font/woff2', '.woff': 'font/woff', '.json': 'application/json', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json', '.pdf': 'application/pdf',
 };
 
+const roadHandler = createRoadHandler({ dataDir: process.env.DATA_DIR || join(ROOT, 'data') });
 const boxingHandler = createBoxingHandler({ dataDir: process.env.DATA_DIR || join(ROOT, 'data') });
 const server = createServer((req, res) => {
+  if (roadHandler(req, res)) return;
   if (boxingHandler(req, res)) return;
   const url = new URL(req.url ?? '/', 'http://x');
   if (url.pathname === '/api/info') {

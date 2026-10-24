@@ -1,0 +1,62 @@
+/* Road uses the platform panel/btn/field/stack/row primitives. */
+.road { width: min(1440px, 100%); max-width: 1440px; justify-items: stretch; margin-inline: auto; align-content: start; padding-top: 2rem; }
+.road, .road * { box-sizing: border-box; }
+.road .stack { min-width: 0; }
+.road .panel { min-width: 0; }
+.road h2, .road h3, .road p { overflow-wrap: anywhere; }
+.road h3 { font-size: 1.1rem; line-height: 1.5; }
+.road p { line-height: 1.75; }
+.road .row { flex-wrap: wrap; }
+.road .btn { white-space: normal; min-height: 42px; }
+.road-entry { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+.road-board { gap: 1.25rem; }
+.road-reading { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,1fr); gap: 1.25rem; align-items: start; }
+.road-reading > .stack { gap: 1rem; }
+.road-text { white-space: pre-wrap; line-height: 1.85; font-size: 1.08rem; overflow-wrap: anywhere; }
+.road-text h3 { white-space: normal; display: flex; gap: .75rem; align-items: start; }
+.road-text p { margin-bottom: 0; }
+.road-options { border: 0; padding: 0; margin: 0; list-style: none; display: grid; gap: .65rem; min-width: 0; }
+.road-radio { display: flex; align-items: center; gap: .75rem; padding: .85rem; border: 1px solid var(--line, #454545); border-radius: 8px; cursor: pointer; line-height: 1.55; }
+.road-radio.selected { border-color: var(--signal, #d0ff72); background: color-mix(in srgb, var(--signal) 7%, transparent); }
+.road-radio:has(input:disabled) { cursor: default; }
+.road-radio input { flex-shrink: 0; width: 18px; height: 18px; accent-color: var(--signal, #d0ff72); }
+.road-choice-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; min-height: 2rem; flex-shrink: 0; font-weight: 800; border: 1px solid var(--line, #555); border-radius: 4px; }
+/* Static projection lists deliberately have no hover or button affordance. */
+.road-static-options li { display: flex; gap: .85rem; align-items: baseline; padding: .7rem 0; line-height: 1.6; border-bottom: 1px solid var(--line, #444); cursor: default; }
+.road-projector .road-static-options { font-size: clamp(1.15rem, 1.5vw, 1.6rem); }
+.road-control-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; }
+.road-timers { font-variant-numeric: tabular-nums; }
+.road-status { overflow-wrap: anywhere; font-size: .9rem; }
+.road-error { border-left: 3px solid #e8b18d; padding: .8rem 1rem; background: #e8b18d0c; line-height: 1.6; overflow-wrap: anywhere; }
+.road-dictation { min-height: 350px; width: 100%; resize: vertical; line-height: 1.9; font-size: 1.1rem; padding: 1rem; }
+.road .field { max-width: 100%; min-width: 0; }
+.road .road-question select { width: 100%; min-height: 46px; }
+.road-example, .road-solution { padding: .8rem; border-left: 2px solid var(--signal, #d0ff72); }
+.road-private { border-top: 3px solid #dba977; }
+.road-student { padding: 1rem 0; border-top: 1px solid var(--line, #444); }
+.road-student summary { cursor: pointer; line-height: 1.9; }
+.road-student > .stack { margin-top: 1rem; }
+.road-answer-review { display: grid; gap: .5rem; margin: 0; }
+.road-answer-review > div { display: flex; flex-wrap: wrap; gap: 1rem; }
+.road-answer-review dd { margin: 0; overflow-wrap: anywhere; }
+.road-score { font-size: clamp(1.3rem, 3vw, 2.4rem); }
+.road-schedule { display: grid; gap: .65rem; padding-left: 1.4rem; }
+.road-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.road :focus-visible { outline: 3px solid var(--signal, #d0ff72); outline-offset: 4px; }
+@media(max-width: 760px) { .road-entry, .road-reading { grid-template-columns: minmax(0, 1fr); } .road { padding-inline: 1rem; } .road-control-grid { grid-template-columns: minmax(0,1fr); } .road .panel { padding: 1rem; } .road-dictation { min-height: 300px; } .road .home-title { font-size: clamp(2rem, 8vw, 3rem); } }
+/* Active lessons reserve screen space for reading rather than a landing-page hero. */
+.road:has(.road-board) { gap: 12px; padding-top: 16px; }
+.road:has(.road-board) > header { gap: 8px; }
+.road:has(.road-board) > header p { margin: 0; }
+.road:has(.road-board) > header .home-title { font-family: var(--sans, system-ui, sans-serif); font-size: clamp(1.35rem, 2.3vw, 2rem); line-height: 1.25; }
+.road:has(.road-board) > header .home-title b { display: inline; margin-left: .6rem; }
+.road:has(.road-board) .road-status { margin: 0; }
+.road-board .panel { padding: 18px; }
+.road-board .panel > p { margin: 0; }
+.road-board > .panel:first-child { gap: 6px; padding: 12px 18px; }
+.road-board > .panel:first-child > .small { display: none; }
+.road-board > section:has(.road-reading) > .panel { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 12px; }
+.road-board > section:has(.road-reading) > .panel .row { gap: 10px; }
+.road-board > section:has(.road-reading) > .panel h2 { font-size: 1.2rem; }
+.road-board > .panel:first-child .small { font-size: .8rem; }
+@media(prefers-reduced-motion: reduce) { .road *, .road *::before, .road *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

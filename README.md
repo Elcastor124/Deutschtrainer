@@ -31,6 +31,10 @@ npm run build
 
 `catalogo.json` documenta los títulos, rutas y huellas SHA-256 de los HTML publicados. No contiene puntuaciones, alumnos ni datos de las salas.
 
+## Road to B1 — Level 1
+
+`/road-to-b1` integra **Die erste Prüfung**, una sesión guiada de 105 minutos con 30 preguntas de lectura, dictado con revisión del profesor y diez preguntas sobre cinco audios alemanes pregenerados. Profesor, alumno y proyector usan credenciales distintas; el servidor decide cuándo autoriza soluciones y resultados. No es un examen oficial Goethe. [Guía de clase, arquitectura y límites](docs/road-to-b1.md).
+
 ## Puesta en marcha
 
 Requisitos: **Node.js 22.18 o superior** (el servidor ejecuta TypeScript directamente).
@@ -78,7 +82,7 @@ El servidor necesita WebSockets (las tres opciones los admiten). Variables: `POR
 
 ## Boxen Arena · combate final de Akkusativ
 
-`/boxeo` es la actividad **Repaso de Dativ y Akkusativ**, accesible directamente desde la portada y Tema 1. Funciona para **profesor y dos jugadores**, también enlazada desde el final de **Mission Stadt**. No reemplaza el quiz BlackCard. Las partidas nuevas seleccionan solo ejercicios de Akkusativ, Dativ, preposiciones, pronombres y Wo/Wohin (30 ejercicios disponibles, 12 intercambios por partida), sin mezclar Perfekt ni Nebensätze.
+`/boxeo` es la actividad **Repaso de Dativ y Akkusativ**, accesible directamente desde la portada y Tema 1. Funciona para **profesor y dos jugadores**, también enlazada desde el final de **Mission Stadt**. No reemplaza el quiz BlackCard. Las partidas nuevas seleccionan solo ejercicios de Akkusativ, Dativ, preposiciones, pronombres y Wo/Wohin (135 ejercicios disponibles, 12 intercambios equilibrados por tema en cada partida), sin mezclar Perfekt ni Nebensätze.
 
 **Si la página no abre:** no ejecutes el HTML suelto como servidor del juego. Arranca `npm start` y abre la web en `http://localhost:4747/`; pulsa **Jugar al repaso de casos**. En un despliegue público, el enlace `/boxeo` usa el mismo servidor de la web. Sin un servidor Node activo, GitHub por sí solo no ejecuta el combate.
 
