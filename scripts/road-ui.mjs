@@ -62,10 +62,14 @@ try {
  await A.reload();await A.until(`!!document.querySelector('[data-road-section="lesen"]')`,'reload preserves session');
  assert.equal(Object.keys((await state(A,'player')).ownAnswers).length,30);
  await A.click('[data-road-submit="lesen"]');
+ await A.until(`!!document.querySelector('[data-road-autoscore="lesen"]')`,'auto-correction card after submit');
+ s=await state(A,'player');assert.equal(s.ownScore.lesen,30,'auto-correction 30/30');assert.equal(Object.keys(s.solutions.answers).length,30);
+ assert.equal((await state(B,'player')).solutions,undefined,'other student still has no keys');
+ await A.shot('autocorrect-lesen');
  await T.click('[data-road-pause]');await B.until(`document.querySelector('[data-road-answer]')?.disabled===true`,'pause disables controls');
  await T.click('[data-road-pause]');
  await goSection('korrektur');
- assert.equal((await state(A,'player')).solutions,undefined,'phase alone does not reveal');
+ assert.equal((await state(B,'player')).solutions,undefined,'phase alone does not reveal');
  await T.click('[data-road-release="lesen"]');await A.until(`document.body.textContent.includes('Falsch')`,'reading review');
  s=await state(A,'player');assert.equal(Object.keys(s.solutions.answers).length,30);assert.equal(s.solutions.dictation,undefined);assert.equal(s.solutions.scripts,undefined);
  await goSection('diktat');

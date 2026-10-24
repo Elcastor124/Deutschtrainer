@@ -96,10 +96,9 @@ describe('Road authoritative HTTP', () => {
     restart(); expect((await state(teacher)).body.players[0]).toMatchObject({dictation:'saved draft äöü',rubric:Array(10).fill(false),submitted:{diktat:true}});
     advance(21000); expect((await state(teacher)).body.players[0].connected).toBe(false);
     expect((await state(player)).body.players[0].connected).toBe(true);
-    await action(teacher,{type:'reopen',pid:player.pid,activity:'diktat'});
-    await action(player,{type:'dictation',text:'corrected'});
-    expect((await state(teacher)).body.players[0].score.pending).toBe(true);
-    advance(9_000_000); expect((await action(player,{type:'dictation',text:'timer is advisory'})).status).toBe(200);
+    // Auto-corrected submissions are sealed: the student has already seen the solution.
+    expect((await action(teacher,{type:'reopen',pid:player.pid,activity:'diktat'})).status).toBe(409);
+    expect((await state(teacher)).body.players[0].score.pending).toBe(false);
   });
   it('recovers a lost listen response and failed body with the same durable per-audio attempt', async () => {
     const {teacher,player,action,state,raw,restart,advance} = await setup();
@@ -258,9 +257,8 @@ describe('Road authoritative HTTP', () => {
     await action(teacher,{type:'lock',activity:'lesen',locked:true}); expect((await action(player,answer)).status).toBe(409);
     await action(teacher,{type:'lock',activity:'lesen',locked:false});
     await action(player,{type:'submit',activity:'lesen'}); expect((await action(player,answer)).status).toBe(409);
-    await action(teacher,{type:'reopen',pid:player.pid,activity:'lesen'}); expect((await action(player,answer)).status).toBe(200);
+    expect((await action(teacher,{type:'reopen',pid:player.pid,activity:'lesen'})).status).toBe(409); expect((await action(player,answer)).status).toBe(409);
     await action(teacher,{type:'release',activity:'lesen',released:true});
-    await action(teacher,{type:'reopen',pid:player.pid,activity:'lesen'}); expect((await action(player,answer)).status).toBe(409);
     await action(teacher,{type:'release',activity:'lesen',released:false}); expect((await action(player,answer)).status).toBe(409);
     expect((await state(player)).body.sealed).toEqual({lesen:true,horen:false,diktat:false});
     await action(teacher,{type:'section',section:'ergebnisse'});
@@ -273,5 +271,22 @@ describe('Road authoritative HTTP', () => {
     expect((await request(`state?code=${teacher.code}`)).status).toBe(401);
     const levels = await request('levels'); expect(levels.status).toBe(200);
     expect(JSON.stringify(levels.body)).not.toMatch(/answers|scripts|reading|listening|dictation/);
+  });
+  it('auto-corrects each part on submission only for that student', async () => {
+    const {teacher,player:a,request,action,state} = await setup();
+    const b = (await request('join',{code:teacher.code,name:'Bea'})).body as RoadWelcome;
+    await action(teacher,{type:'section',section:'lesen'});
+    await action(a,{type:'answer',questionId:'l1',value:'Falsch'}); await action(a,{type:'answer',questionId:'l2',value:'Falsch'});
+    expect((await state(a)).body.solutions).toBeUndefined();
+    await action(a,{type:'submit',activity:'lesen'});
+    const sa=(await state(a)).body; expect(sa.ownScore.lesen).toBe(1); expect(Object.keys(sa.solutions.answers)).toHaveLength(30); expect(sa.solutions.scripts).toBeUndefined();
+    expect((await state(b)).body.solutions).toBeUndefined();
+    await action(teacher,{type:'section',section:'diktat'});
+    await action(a,{type:'dictation',text:'Am Montag beginnt die Schule um acht Uhr. Ich fahre mit dem bus.'});
+    expect((await state(a)).body.level.dictation.rubric).toHaveLength(0);
+    await action(a,{type:'submit',activity:'diktat'});
+    const sd=(await state(a)).body; expect(sd.ownScore.diktat).toBe(2); expect(sd.ownScore.pending).toBe(false); expect(sd.solutions.dictation).toContain('Montag');
+    expect((await state(b)).body.solutions).toBeUndefined();
+    await action(teacher,{type:'review',pid:a.pid,rubric:Array(10).fill(true)}); expect((await state(a)).body.ownScore.diktat).toBe(10);
   });
 });

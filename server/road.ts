@@ -132,7 +132,7 @@ export function createRoadHandler({ dataDir = process.env.DATA_DIR || resolve(im
       const act = activity(a.activity), p = room.players.find(p => p.id === a.pid);
       if (!p) fail(404, 'Alumno desconocido.');
       // Published solutions cannot be unlearned: reopening preserves the original work.
-      if (room.exposed[act]) fail(409, 'Ya se publicaron soluciones; se conserva el original.');
+      if (room.exposed[act] || p.submitted[act]) fail(409, 'Entrega ya autocorregida; se conserva el original.');
       p.submitted[act] = false; return;
     }
     if (a.type === 'answer' || a.type === 'dictation' || a.type === 'submit') {
@@ -150,39 +150,45 @@ export function createRoadHandler({ dataDir = process.env.DATA_DIR || resolve(im
     }
     fail(400, 'Acción desconocida.');
   }
+  // Auto-correction: one point per rubric element written exactly (case-sensitive, spacing tolerant).
+  function autoRubric(text: string): boolean[] {
+    const norm = (s: string) => ' ' + s.replace(/[.,!?;:„“"]/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
+    const t = norm(text); return ROAD_LEVEL.dictation.rubric.map(k => t.includes(norm(k)));
+  }
   function score(p: Player): RoadScore {
     const lesen = reading.filter(q => p.answers[q.id] === ROAD_SECRET.answers[q.id]).length;
     const horen = listening.filter(q => p.answers[q.id] === ROAD_SECRET.answers[q.id]).length;
-    const diktat = p.rubric ? p.rubric.filter(Boolean).length : null;
+    const diktat = p.rubric ? p.rubric.filter(Boolean).length : p.submitted.diktat ? autoRubric(p.dictation).filter(Boolean).length : null;
     const total = diktat === null ? null : lesen + horen + diktat;
     return { lesen, horen, diktat, total, outOf: 50, grade: total === null ? null : total / 5, percent: total === null ? null : total * 2, pending: diktat === null };
   }
   function view(room: Room, who: ReturnType<typeof auth>): RoadView {
     const solutions: Partial<RoadSecret> = {};
+    const released = who.player ? { lesen: room.released.lesen || who.player.submitted.lesen, horen: room.released.horen || who.player.submitted.horen, diktat: room.released.diktat || who.player.submitted.diktat } : room.released;
     if (who.role === 'teacher') Object.assign(solutions, ROAD_SECRET);
     else {
       const answers: Record<string,string> = {};
-      if (room.released.lesen) for (const q of reading) answers[q.id] = ROAD_SECRET.answers[q.id];
-      if (room.released.horen) { for (const q of listening) answers[q.id] = ROAD_SECRET.answers[q.id]; solutions.scripts = ROAD_SECRET.scripts; }
+      if (released.lesen) for (const q of reading) answers[q.id] = ROAD_SECRET.answers[q.id];
+      if (released.horen) { for (const q of listening) answers[q.id] = ROAD_SECRET.answers[q.id]; solutions.scripts = ROAD_SECRET.scripts; }
       if (Object.keys(answers).length) solutions.answers = answers;
-      if (room.released.diktat) { solutions.dictation = ROAD_SECRET.dictation; solutions.dictationFragments = ROAD_SECRET.dictationFragments; }
+      if (released.diktat) { solutions.dictation = ROAD_SECRET.dictation; solutions.dictationFragments = ROAD_SECRET.dictationFragments; }
     }
     const audioGrant = latest.get(who.player?.token || (who.role === 'teacher' ? room.teacherToken : ''));
     return {
       code: room.code, role: who.role,
-      level: who.role === 'teacher' || room.released.diktat ? ROAD_LEVEL : {
+      level: who.role === 'teacher' || released.diktat ? ROAD_LEVEL : {
         ...ROAD_LEVEL, dictation: { ...ROAD_LEVEL.dictation, rubric: [] },
       },
       section: room.section, paused: room.paused, serverNow: now(),
       elapsedMs: room.elapsed, sectionElapsedMs: room.sectionTimes[room.section] || 0,
-      locked: room.locked, released: room.released, sealed: room.exposed,
+      locked: room.locked, released, sealed: who.player ? { lesen: room.exposed.lesen || released.lesen, horen: room.exposed.horen || released.horen, diktat: room.exposed.diktat || released.diktat } : room.exposed,
       ...(room.cue ? { cue: room.cue } : {}),
       ...(audioGrant ? { audioGrant } : {}),
       ...(Object.keys(solutions).length ? { solutions } : {}),
       ...(who.player ? {
         me: who.player.id, ownAnswers: who.player.answers, ownDictation: who.player.dictation,
         ownSubmitted: who.player.submitted,
-        ...(room.section === 'ergebnisse' ? { ownScore: score(who.player) } : {}),
+        ...(room.section === 'ergebnisse' || Object.values(who.player.submitted).some(Boolean) ? { ownScore: score(who.player) } : {}),
       } : {}),
       players: room.players.map(p => ({
         id: p.id, name: p.name, connected: now() - p.lastSeen < 20000,

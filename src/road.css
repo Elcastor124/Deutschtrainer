@@ -60,3 +60,28 @@
 .road-board > section:has(.road-reading) > .panel h2 { font-size: 1.2rem; }
 .road-board > .panel:first-child .small { font-size: .8rem; }
 @media(prefers-reduced-motion: reduce) { .road *, .road *::before, .road *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+/* ---- Auto-correction result + light polish ---- */
+.road .panel { border-radius: 16px; box-shadow: 0 6px 22px rgba(0,0,0,.08); transition: box-shadow .2s ease, transform .2s ease; }
+.road h2 { letter-spacing: -.01em; }
+.road .btn.signal { font-size: 1.05rem; padding: 12px 22px; border-radius: 12px; }
+.road-result-card { display: flex; align-items: center; gap: 22px; padding: 20px 24px; animation: road-pop .45s cubic-bezier(.2,.9,.3,1.3); border-left: 6px solid var(--road-tone, #4caf50); }
+.road-result-card.good { --road-tone: #5fd38d; }
+.road-result-card.mid { --road-tone: #e0a020; }
+.road-result-card.low { --road-tone: #d9534f; }
+.road-result-card strong { font-size: 1.35rem; }
+.road-result-ring { --p: 0; flex: none; width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center;
+  background: conic-gradient(var(--road-tone) calc(var(--p) * 1%), rgba(127,127,127,.18) 0); }
+.road-result-ring span { width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; background: var(--bg, #111); font-size: 1.6rem; font-weight: 800; }
+.road-result-ring small { font-size: .75rem; font-weight: 600; opacity: .7; }
+.road-ok { color: #5fd38d; font-weight: 600; }
+.road-bad { color: #ff8a80; font-weight: 600; }
+.road-result-review li { padding: 6px 0; border-bottom: 1px solid rgba(127,127,127,.15); }
+@keyframes road-pop { from { opacity: 0; transform: scale(.94) translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .road-result-card { animation: none; } }
+@media (max-width: 520px) { .road-result-card { flex-direction: column; text-align: center; } }
+
+.road-radio.is-key { border-color: #5fd38d; background: rgba(95,211,141,.12); }
+.road-radio.is-wrong { border-color: #ff8a80; background: rgba(255,138,128,.12); }
+.road-solution.ok { border-left-color: #5fd38d !important; color: #5fd38d; font-weight: 600; }
+.road-solution.bad { border-left-color: #ff8a80 !important; color: #ff8a80; font-weight: 600; }
