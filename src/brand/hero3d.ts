@@ -1,11 +1,13 @@
 // Escena 3D de la portada (three.js, cargada bajo demanda).
-// Centro: el símbolo «Punkt-D» como objeto físico (baldosa negra lacada, tubo rojo, asta papel, punto de oro).
+// Centro: el boceto A/cuaderno-D/lápiz-T como relieve físico sobre una baldosa negra lacada.
 // Alrededor: tres dados de artículo — der / die / das — que el alumno puede tocar para sacar una palabra.
 // Detrás: un globo de puntos (la pantalla de puntos de BlackCard hecha esfera).
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BRAND, SYMBOL } from './geometry.ts';
+import { BRAND } from './geometry.ts';
+import { createHeroMark } from './hero-mark3d.ts';
+export { createHeroMark } from './hero-mark3d.ts';
 
 export type Article = 'der' | 'die' | 'das';
 export interface HeroOptions {
@@ -20,9 +22,6 @@ const ART: { a: Article; color: string; ink: string; gender: string }[] = [
   { a: 'die', color: BRAND.red, ink: BRAND.black, gender: 'feminin' },
   { a: 'das', color: BRAND.gold, ink: BRAND.black, gender: 'neutral' },
 ];
-
-/** Coordenadas de la retícula 48×48 (y hacia abajo) → mundo (unidad = 8 px). */
-const P = (x: number, y: number, z = 0) => new THREE.Vector3((x - 24) / 8, -(y - 24) / 8, z);
 
 function faceTexture(label: string, sub: string, bg: string, ink: string): THREE.CanvasTexture {
   const c = document.createElement('canvas');
@@ -90,29 +89,19 @@ export function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): HeroHan
   const logo = new THREE.Group();
   world.add(logo);
   const lacquer = track(new THREE.MeshPhysicalMaterial({ color: 0x0b0b0b, roughness: 0.28, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.12 }));
-  const red = track(new THREE.MeshPhysicalMaterial({ color: 0xff3832, roughness: 0.32, clearcoat: 0.8, clearcoatRoughness: 0.2, emissive: 0x3a0402, emissiveIntensity: 0.35 }));
-  const paper = track(new THREE.MeshPhysicalMaterial({ color: 0xf2f1ee, roughness: 0.38, clearcoat: 0.5 }));
-  const gold = track(new THREE.MeshStandardMaterial({ color: 0xe9b949, roughness: 0.22, metalness: 1 }));
-
   const tile = new THREE.Mesh(track(new RoundedBoxGeometry(6, 6, 0.8, 6, 1.4)), lacquer);
   logo.add(tile);
-  const R = 0.4, Z = 0.4 + R * 0.55;
-  // Panza: línea superior + arco (centro 21.5,24, r 12.5) + remate inferior.
-  const pts: THREE.Vector3[] = [];
-  for (let i = 0; i <= 8; i++) pts.push(P(14.5 + (7 * i) / 8, 11.5, Z));
-  for (let i = 1; i <= 40; i++) { const t = Math.PI / 2 - (Math.PI * i) / 40; pts.push(P(21.5 + 12.5 * Math.cos(t), 24 - 12.5 * Math.sin(t), Z)); }
-  pts.push(P(22.5, 36.5, Z));
-  const bowlCurve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
-  logo.add(new THREE.Mesh(track(new THREE.TubeGeometry(bowlCurve, 140, R, 20, false)), red));
-  const cap = track(new THREE.SphereGeometry(R, 24, 16));
-  for (const p of [pts[0], pts[pts.length - 1]]) { const m = new THREE.Mesh(cap, red); m.position.copy(p); logo.add(m); }
-  const stemLen = (27 - 11.5) / 8;
-  const stem = new THREE.Mesh(track(new THREE.CapsuleGeometry(R * 1.02, stemLen, 8, 20)), paper);
-  stem.position.copy(P(14.5, (11.5 + 27) / 2, Z + 0.02));
-  logo.add(stem);
-  const dot = new THREE.Mesh(track(new THREE.SphereGeometry((SYMBOL.dot.r / 8) * 1.05, 40, 28)), gold);
-  dot.position.copy(P(SYMBOL.dot.cx, SYMBOL.dot.cy, Z + 0.12));
-  logo.add(dot);
+  const relief = createHeroMark();
+  logo.add(relief);
+  // Shared materials/caps are owned exactly once by this scene.
+  const reliefResources = new Set<THREE.BufferGeometry | THREE.Material>();
+  relief.traverse(object => {
+    if (!(object instanceof THREE.Mesh)) return;
+    reliefResources.add(object.geometry);
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    materials.forEach(material => reliefResources.add(material));
+  });
+  reliefResources.forEach(track);
 
   // ── Dados de artículo ──
   const cubeGeo = track(new RoundedBoxGeometry(1.55, 1.55, 1.55, 5, 0.26));
@@ -155,9 +144,10 @@ export function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): HeroHan
     const r = canvas.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    return ray.intersectObjects([...cubes, tile, ...logo.children], false)[0]?.object ?? null;
+    return ray.intersectObjects([...cubes, logo], true)[0]?.object ?? null;
   };
   const onMove = (e: PointerEvent) => {
+    if (opts.reduced) return;
     mouse.tx = (e.clientX / innerWidth) * 2 - 1; mouse.ty = (e.clientY / innerHeight) * 2 - 1;
   };
   const onCanvasMove = (e: PointerEvent) => { canvas.style.cursor = pick(e) ? 'pointer' : ''; };
@@ -189,6 +179,7 @@ export function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): HeroHan
     const fitW = 11.6 / (2 * Math.tan((camera.fov * Math.PI) / 360) * camera.aspect);
     camera.position.z = Math.max(fitH, fitW);
     camera.updateProjectionMatrix();
+    if (opts.reduced) renderer.render(scene, camera);
   };
   const ro = new ResizeObserver(resize);
   ro.observe(canvas.parentElement!);
@@ -199,17 +190,18 @@ export function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): HeroHan
   const t0 = last;
   const ease = (x: number) => 1 - Math.pow(1 - Math.min(Math.max(x, 0), 1), 3);
   const frame = (now: number) => {
-    raf = requestAnimationFrame(frame);
+    raf = opts.reduced ? 0 : requestAnimationFrame(frame);
     const dt = Math.min((now - last) / 1000, 0.05); last = now;
-    const t = (now - t0) / 1000;
-    const k = opts.reduced ? 0.15 : 1;
+    // Reduced motion is a settled composition rendered on demand, not a slow loop.
+    const t = opts.reduced ? 4 : (now - t0) / 1000;
+    const k = opts.reduced ? 0 : 1;
     mouse.x += (mouse.tx - mouse.x) * 0.06; mouse.y += (mouse.ty - mouse.y) * 0.06;
     const intro = opts.reduced ? 1 : ease(t / 1.4);
     world.scale.setScalar(0.72 + 0.28 * intro);
     world.rotation.y = mouse.x * 0.32 + (1 - intro) * -0.9;
     world.rotation.x = mouse.y * 0.18;
     logoSpin = Math.max(0, logoSpin - dt * 0.9);
-    logo.rotation.y = Math.sin(t * 0.5 * k) * 0.22 + (logoSpin > 0 ? ease(1 - logoSpin) * Math.PI * 2 : 0);
+    logo.rotation.y = Math.sin(t * 0.5 * k) * 0.22 + (!opts.reduced && logoSpin > 0 ? ease(1 - logoSpin) * Math.PI * 2 : 0);
     logo.rotation.x = Math.sin(t * 0.37 * k) * 0.07;
     logo.position.y = Math.sin(t * 0.8 * k) * 0.12;
     cubes.forEach((c, i) => {
@@ -218,7 +210,7 @@ export function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): HeroHan
       const delay = ease((t - 0.35 - i * 0.18) / 1.1);
       c.position.set(a.x * (0.6 + 0.4 * delay), a.y + Math.sin(t * 0.9 * k + i * 2.1) * 0.22, a.z);
       // Giro solo alrededor de Y (con un ligero balanceo) para que der/die/das se lean siempre derechos.
-      const flip = u.spin > 0 ? ease(1 - u.spin) * Math.PI * 2 : 0;
+      const flip = !opts.reduced && u.spin > 0 ? ease(1 - u.spin) * Math.PI * 2 : 0;
       c.rotation.set(0.22 * Math.sin(t * 0.6 * k + i), -0.5 + i * 0.5 + Math.sin(t * 0.35 * k + i * 2) * 0.55 + flip, 0.1 * Math.sin(t * 0.45 * k + i * 1.3));
       c.scale.setScalar(delay * (1 + Math.sin(u.bump * Math.PI) * 0.22));
     });

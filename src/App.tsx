@@ -1,3 +1,8 @@
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { PageTransition } from './brand/PageTransition.tsx';
+import { AmbientField } from './brand/AmbientField.tsx';
+import './brand/gamefeel.css';
+const KlausShowcase = lazy(() => import('./klaus/KlausShowcase.tsx'));
 import { Road } from './views/Road.tsx';
 import { Boxing } from './views/Boxing.tsx';
 import { Landing } from './views/Landing.tsx';
@@ -15,13 +20,22 @@ import { usePath } from './util.ts';
 
 export function App() {
   const path = usePath();
-  if (/^\/boxeo\/?$/.test(path)) return <Boxing />;
+  // usePath intentionally ignores queries; invitations still need to update without a reload.
+  const [search, setSearch] = useState(location.search);
+  useEffect(() => {
+    const syncSearch = () => setSearch(location.search);
+    addEventListener('popstate', syncSearch);
+    return () => removeEventListener('popstate', syncSearch);
+  }, []);
+  const boxing = /^\/boxeo\/?$/.test(path);
   const m = /^\/(t|p|j)\/([A-Za-z0-9]{3,8})\/?$/.exec(path);
-  const invited = path === '/' && !!new URLSearchParams(location.search).get('sala');
+  const invited = path === '/' && !!new URLSearchParams(search).get('sala');
   let screen;
-  if (m && m[1] === 't') screen = <Teacher key={m[2]} code={m[2] === 'new' ? 'new' : m[2].toUpperCase()} />;
+  if (boxing) screen = <Boxing />;
+  else if (m && m[1] === 't') screen = <Teacher key={m[2]} code={m[2] === 'new' ? 'new' : m[2].toUpperCase()} />;
   else if (m) screen = <Player key={m[2]} code={m[2].toUpperCase()} />;
   else if (/^\/road-to-b1(?:\/level-1)?\/?$/.test(path)) screen = <Road />;
+  else if (path === '/preview/klaus') screen = <Suspense fallback={<p className="home">Cargando a Klaus…</p>}><KlausShowcase /></Suspense>;
   else if (/^\/curso\/?$/.test(path)) screen = <Course />;
   else if (/^\/profesor\/?$/.test(path)) screen = <TeacherSoon />;
   else if (/^\/tema\/1\/taller\/?$/.test(path)) screen = <Workshop />;
@@ -30,5 +44,5 @@ export function App() {
   else if (/^\/jenga\/?$/.test(path)) screen = <GameSetup mode="jenga" />;
   else if (/^\/jugar\/?$/.test(path) || invited) screen = <GameSetup mode="blackcard" />;
   else screen = <Landing />;
-  return <><Intro path={path} search={location.search} /><LearningNav path={invited ? '/jugar' : path} /><div id="contenido" className="dt-content" tabIndex={-1}>{screen}</div></>;
+  return <><AmbientField path={path} search={search} /><Intro path={path} search={search} />{!boxing && <LearningNav path={invited ? '/jugar' : path} />}<PageTransition path={path}>{screen}</PageTransition></>;
 }

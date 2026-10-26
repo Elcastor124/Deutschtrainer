@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { GLYPHS } from '../components/Glyph.tsx';
 
-export interface BcOpts { mode: 'activate' | 'burn'; result?: 'win' | 'lose'; lite?: boolean }
+export interface BcOpts { mode: 'activate' | 'burn'; result?: 'win' | 'lose'; lite?: boolean; signal?: AbortSignal }
 
 const W = 512, H = 716;           // textura de la carta (5:7)
 const CW = 2.5, CH = 3.5;          // tamaño en el mundo
@@ -179,139 +179,178 @@ class Particles {
 const ease = { out: (k: number) => 1 - Math.pow(1 - k, 3), inOut: (k: number) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2) };
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
+/** One-shot scene. Abort disposes synchronously and resolves (never resumes/replays).
+ * Pre-aborted signals allocate nothing; late font completion cannot create resources.
+ * Setup/render failures reject after releasing all resources already acquired.
+ */
 export async function playBlackCard(host: HTMLElement, o: BcOpts): Promise<void> {
-  try { await Promise.all([document.fonts.load('900 64px "Doto Variable"'), document.fonts.load('600 22px "Space Grotesk Variable"')]); } catch { /* fuentes del sistema */ }
-  const lite = !!o.lite;
-  const renderer = new THREE.WebGLRenderer({ antialias: !lite, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, lite ? 1 : 1.5));
-  const size = () => renderer.setSize(host.clientWidth, host.clientHeight, false);
-  size();
-  host.appendChild(renderer.domElement);
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(32, host.clientWidth / Math.max(1, host.clientHeight), 0.1, 100);
-  camera.position.set(0, 0, 9.5);
-  const onResize = () => { size(); fitPoints(); camera.aspect = host.clientWidth / Math.max(1, host.clientHeight); camera.updateProjectionMatrix(); };
-  addEventListener('resize', onResize);
+  const signal = o.signal;
+  if (signal?.aborted) return;
+  let stopped = false, raf = 0;
+  let complete: (() => void) | undefined;
+  const releases: Array<() => void> = [];
+  const own = <T extends { dispose: () => void }>(resource: T): T => {
+    releases.push(() => resource.dispose());
+    return resource;
+  };
+  const release = () => {
+    if (stopped) return;
+    stopped = true;
+    if (raf) cancelAnimationFrame(raf);
+    raf = 0;
+    releases.splice(0).reverse().forEach((dispose) => dispose());
+  };
+  // Abort settles the promise as well as stopping GPU work, so the FX queue advances.
+  const abort = () => { release(); complete?.(); };
+  signal?.addEventListener('abort', abort, { once: true });
+  try {
+    await new Promise<void>((resolve) => {
+      complete = resolve;
+      try {
+        void Promise.all([document.fonts.load('900 64px "Doto Variable"'), document.fonts.load('600 22px "Space Grotesk Variable"')]).then(() => resolve(), () => resolve());
+      } catch { resolve(); /* fuentes del sistema */ }
+    });
+    complete = undefined;
+    // Fonts may resolve after abort; never allocate a renderer for that old event.
+    if (stopped || signal?.aborted) return;
+    const lite = !!o.lite;
+    const renderer = new THREE.WebGLRenderer({ antialias: !lite, alpha: true, powerPreference: 'high-performance' });
+    releases.push(() => { renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove(); });
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, lite ? 1 : 1.5));
+    const size = () => renderer.setSize(host.clientWidth, host.clientHeight, false);
+    size();
+    host.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(32, host.clientWidth / Math.max(1, host.clientHeight), 0.1, 100);
+    camera.position.set(0, 0, 9.5);
+    const onResize = () => { size(); fitPoints(); camera.aspect = host.clientWidth / Math.max(1, host.clientHeight); camera.updateProjectionMatrix(); };
 
-  // Campo de combustión compartido (CPU ⇄ GPU)
-  const ox = 0.5 + (Math.random() - 0.5) * 0.5, oy = -0.06;
-  const raw = new Float32Array(NX * NY);
-  for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
-    const u = i / (NX - 1), v = j / (NY - 1);
-    raw[j * NX + i] = fbm(u * 4, v * 5.6) * 0.55 + Math.hypot(u - ox, v - oy) * 0.75;
-  }
-  // Normalizado a [0, 1]: la combustión se reparte por toda la duración de la animación.
-  let lo = Infinity, hi = -Infinity;
-  for (const n of raw) { lo = Math.min(lo, n); hi = Math.max(hi, n); }
-  const field = new Uint8Array(NX * NY);
-  for (let k = 0; k < raw.length; k++) field[k] = Math.round(((raw[k] - lo) / (hi - lo)) * 255);
-  const fieldTex = new THREE.DataTexture(field, NX, NY, THREE.RedFormat, THREE.UnsignedByteType);
-  fieldTex.magFilter = THREE.LinearFilter; fieldTex.minFilter = THREE.LinearFilter; fieldTex.needsUpdate = true;
+    // Campo de combustión compartido (CPU ⇄ GPU)
+    const ox = 0.5 + (Math.random() - 0.5) * 0.5, oy = -0.06;
+    const raw = new Float32Array(NX * NY);
+    for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+      const u = i / (NX - 1), v = j / (NY - 1);
+      raw[j * NX + i] = fbm(u * 4, v * 5.6) * 0.55 + Math.hypot(u - ox, v - oy) * 0.75;
+    }
+    // Normalizado a [0, 1]: la combustión se reparte por toda la duración de la animación.
+    let lo = Infinity, hi = -Infinity;
+    for (const n of raw) { lo = Math.min(lo, n); hi = Math.max(hi, n); }
+    const field = new Uint8Array(NX * NY);
+    for (let k = 0; k < raw.length; k++) field[k] = Math.round(((raw[k] - lo) / (hi - lo)) * 255);
+    const fieldTex = own(new THREE.DataTexture(field, NX, NY, THREE.RedFormat, THREE.UnsignedByteType));
+    fieldTex.magFilter = THREE.LinearFilter; fieldTex.minFilter = THREE.LinearFilter; fieldTex.needsUpdate = true;
 
-  const frontKind = o.mode === 'activate' ? 'front' : o.result === 'win' ? 'win' : 'lose';
-  const tFront = new THREE.CanvasTexture(face(frontKind));
-  const tBack = new THREE.CanvasTexture(face('back'));
-  for (const t of [tFront, tBack]) { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; }
-  const uniforms = { burn: { value: 0 }, time: { value: 0 }, glow: { value: 0 }, opacity: { value: 1 }, field: { value: fieldTex } };
-  const mkMat = (map: THREE.Texture) => new THREE.ShaderMaterial({ vertexShader: CARD_VS, fragmentShader: CARD_FS, transparent: true, uniforms: { ...uniforms, map: { value: map } } });
-  const geo = new THREE.PlaneGeometry(CW, CH);
-  // Ambas caras comparten los mismos objetos uniform (burn, time…): un solo valor anima las dos.
-  const matF = mkMat(tFront), matB = mkMat(tBack);
-  const front = new THREE.Mesh(geo, matF);
-  const back = new THREE.Mesh(geo, matB);
-  back.rotation.y = Math.PI;
-  back.position.z = -0.002;
-  const card = new THREE.Group();
-  card.add(front, back);
-  scene.add(card);
+    const frontKind = o.mode === 'activate' ? 'front' : o.result === 'win' ? 'win' : 'lose';
+    const tFront = own(new THREE.CanvasTexture(face(frontKind)));
+    const tBack = own(new THREE.CanvasTexture(face('back')));
+    for (const t of [tFront, tBack]) { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; }
+    const uniforms = { burn: { value: 0 }, time: { value: 0 }, glow: { value: 0 }, opacity: { value: 1 }, field: { value: fieldTex } };
+    const mkMat = (map: THREE.Texture) => own(new THREE.ShaderMaterial({ vertexShader: CARD_VS, fragmentShader: CARD_FS, transparent: true, uniforms: { ...uniforms, map: { value: map } } }));
+    const geo = own(new THREE.PlaneGeometry(CW, CH));
+    // Ambas caras comparten los mismos objetos uniform (burn, time…): un solo valor anima las dos.
+    const matF = mkMat(tFront), matB = mkMat(tBack);
+    const front = new THREE.Mesh(geo, matF);
+    const back = new THREE.Mesh(geo, matB);
+    back.rotation.y = Math.PI;
+    back.position.z = -0.002;
+    const card = new THREE.Group();
+    card.add(front, back);
+    scene.add(card);
 
-  const embers = new Particles(lite ? 260 : 1100, EMBER_FS, true);
-  const ash = new Particles(lite ? 90 : 420, ASH_FS, false);
-  const fitPoints = () => { const h = renderer.getDrawingBufferSize(new THREE.Vector2()).y; embers.scale.value = h * 0.016; ash.scale.value = h * 0.016; };
-  fitPoints();
-  scene.add(embers.points, ash.points);
+    const embers = own(new Particles(lite ? 260 : 1100, EMBER_FS, true));
+    const ash = own(new Particles(lite ? 90 : 420, ASH_FS, false));
+    const fitPoints = () => { const h = renderer.getDrawingBufferSize(new THREE.Vector2()).y; embers.scale.value = h * 0.016; ash.scale.value = h * 0.016; };
+    fitPoints();
+    addEventListener('resize', onResize);
+    releases.push(() => removeEventListener('resize', onResize));
+    scene.add(embers.points, ash.points);
 
-  // Muestras del campo para emitir en el frente de fuego.
-  const step = lite ? 4 : 2;
-  const samples: { u: number; v: number; n: number }[] = [];
-  for (let j = 0; j < NY; j += step) for (let i = 0; i < NX; i += step) samples.push({ u: i / (NX - 1), v: j / (NY - 1), n: (field[j * NX + i] / 255) * N_MAX });
-  const tmp = new THREE.Vector3();
-  const world = (u: number, v: number) => tmp.set((u - 0.5) * CW, (v - 0.5) * CH, 0.01).applyMatrix4(front.matrixWorld);
+    // Muestras del campo para emitir en el frente de fuego.
+    const step = lite ? 4 : 2;
+    const samples: { u: number; v: number; n: number }[] = [];
+    for (let j = 0; j < NY; j += step) for (let i = 0; i < NX; i += step) samples.push({ u: i / (NX - 1), v: j / (NY - 1), n: (field[j * NX + i] / 255) * N_MAX });
+    const tmp = new THREE.Vector3();
+    const world = (u: number, v: number) => tmp.set((u - 0.5) * CW, (v - 0.5) * CH, 0.01).applyMatrix4(front.matrixWorld);
 
-  const DUR = o.mode === 'activate' ? 2.5 : 5.0;
-  const t0 = performance.now();
-  let last = t0;
-  let prevT = -1;
-  let sparked = false;
+    const DUR = o.mode === 'activate' ? 2.5 : 5.0;
+    const t0 = performance.now();
+    let last = t0;
+    let prevT = -1;
+    let sparked = false;
 
-  await new Promise<void>((resolve) => {
-    const frame = (now: number) => {
-      const t = (now - t0) / 1000;
-      const dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
-      uniforms.time.value = t;
-      if (o.mode === 'activate') {
-        const k = ease.out(clamp01(t / 1.1));
-        card.position.z = -14 * (1 - k);
-        card.rotation.y = 4 * Math.PI * (1 - k) + (t > 1.1 ? Math.sin((t - 1.1) * 2.2) * 0.18 : 0);
-        card.rotation.x = 0.25 * (1 - k);
-        card.scale.setScalar(0.5 + 0.5 * k);
-        uniforms.glow.value = t > 0.9 ? 0.5 + 0.5 * Math.sin(t * 7) : 0;
-        if (t > 1.0 && !sparked) {
-          sparked = true;
-          card.updateMatrixWorld();
-          for (let s = 0; s < (lite ? 50 : 180); s++) {
-            const side = Math.random();
-            const u = side < 0.5 ? Math.random() : side < 0.75 ? 0 : 1, v = side < 0.5 ? (Math.random() < 0.5 ? 0 : 1) : Math.random();
-            const p = world(u, v);
-            const a = Math.atan2(p.y, p.x);
-            embers.spawn(p, [Math.cos(a) * (1 + Math.random() * 2.5), Math.sin(a) * (1 + Math.random() * 2.5), Math.random()], 0.6 + Math.random() * 0.7, 6 + Math.random() * 8, [1, 0.5, 0.2]);
-          }
-        }
-        if (t > 1.95) {
-          const k2 = ease.inOut(clamp01((t - 1.95) / 0.5));
-          card.position.y = 2.2 * k2;
-          card.scale.setScalar(1 - 0.6 * k2);
-          uniforms.opacity.value = 1 - k2;
-        }
-      } else {
-        const kin = ease.out(clamp01(t / 0.6));
-        card.rotation.y = Math.PI * (1 - kin);
-        card.scale.setScalar(0.85 + 0.15 * kin);
-        if (o.result === 'lose' && t > 0.6 && t < 1.0) card.position.x = Math.sin(t * 90) * 0.06 * (1 - (t - 0.6) / 0.4);
-        else card.position.x = 0;
-        uniforms.glow.value = t < 1 ? 0.6 : 0;
-        const b = Math.pow(clamp01((t - 1.1) / 3.1), 0.85); // combustión casi lineal, arranque visible
-        uniforms.burn.value = b;
-        card.updateMatrixWorld();
-        const curT = b * (N_MAX + 0.08) - 0.04;
-        if (b > 0) {
-          for (const s of samples) {
-            if (s.n > prevT && s.n <= curT) {
-              const p = world(s.u, s.v);
-              if (Math.random() < (lite ? 0.5 : 0.9)) {
-                embers.spawn(p, [(Math.random() - 0.5) * 0.6, 0.3 + Math.random() * 0.9, (Math.random() - 0.2) * 0.6], 0.5 + Math.random() * 1.1, 4 + Math.random() * 7, [1, 0.8, 0.35]);
-              }
-              if (Math.random() < 0.14) {
-                const g = 0.1 + Math.random() * 0.16;
-                ash.spawn(p, [(Math.random() - 0.5) * 0.3, 0.12 + Math.random() * 0.35, Math.random() * 0.3], 1.4 + Math.random() * 1.8, 4 + Math.random() * 7, [g, g * 0.92, g * 0.86]);
+    await new Promise<void>((resolve, reject) => {
+      complete = resolve;
+      const frame = (now: number) => {
+        raf = 0;
+        if (stopped) { resolve(); return; }
+        try {
+          const t = (now - t0) / 1000;
+          const dt = Math.min(0.05, (now - last) / 1000);
+          last = now;
+          uniforms.time.value = t;
+          if (o.mode === 'activate') {
+            const k = ease.out(clamp01(t / 1.1));
+            card.position.z = -14 * (1 - k);
+            card.rotation.y = 4 * Math.PI * (1 - k) + (t > 1.1 ? Math.sin((t - 1.1) * 2.2) * 0.18 : 0);
+            card.rotation.x = 0.25 * (1 - k);
+            card.scale.setScalar(0.5 + 0.5 * k);
+            uniforms.glow.value = t > 0.9 ? 0.5 + 0.5 * Math.sin(t * 7) : 0;
+            if (t > 1.0 && !sparked) {
+              sparked = true;
+              card.updateMatrixWorld();
+              for (let s = 0; s < (lite ? 50 : 180); s++) {
+                const side = Math.random();
+                const u = side < 0.5 ? Math.random() : side < 0.75 ? 0 : 1, v = side < 0.5 ? (Math.random() < 0.5 ? 0 : 1) : Math.random();
+                const p = world(u, v);
+                const a = Math.atan2(p.y, p.x);
+                embers.spawn(p, [Math.cos(a) * (1 + Math.random() * 2.5), Math.sin(a) * (1 + Math.random() * 2.5), Math.random()], 0.6 + Math.random() * 0.7, 6 + Math.random() * 8, [1, 0.5, 0.2]);
               }
             }
+            if (t > 1.95) {
+              const k2 = ease.inOut(clamp01((t - 1.95) / 0.5));
+              card.position.y = 2.2 * k2;
+              card.scale.setScalar(1 - 0.6 * k2);
+              uniforms.opacity.value = 1 - k2;
+            }
+          } else {
+            const kin = ease.out(clamp01(t / 0.6));
+            card.rotation.y = Math.PI * (1 - kin);
+            card.scale.setScalar(0.85 + 0.15 * kin);
+            if (o.result === 'lose' && t > 0.6 && t < 1.0) card.position.x = Math.sin(t * 90) * 0.06 * (1 - (t - 0.6) / 0.4);
+            else card.position.x = 0;
+            uniforms.glow.value = t < 1 ? 0.6 : 0;
+            const b = Math.pow(clamp01((t - 1.1) / 3.1), 0.85); // combustión casi lineal, arranque visible
+            uniforms.burn.value = b;
+            card.updateMatrixWorld();
+            const curT = b * (N_MAX + 0.08) - 0.04;
+            if (b > 0) {
+              for (const s of samples) {
+                if (s.n > prevT && s.n <= curT) {
+                  const p = world(s.u, s.v);
+                  if (Math.random() < (lite ? 0.5 : 0.9)) {
+                    embers.spawn(p, [(Math.random() - 0.5) * 0.6, 0.3 + Math.random() * 0.9, (Math.random() - 0.2) * 0.6], 0.5 + Math.random() * 1.1, 4 + Math.random() * 7, [1, 0.8, 0.35]);
+                  }
+                  if (Math.random() < 0.14) {
+                    const g = 0.1 + Math.random() * 0.16;
+                    ash.spawn(p, [(Math.random() - 0.5) * 0.3, 0.12 + Math.random() * 0.35, Math.random() * 0.3], 1.4 + Math.random() * 1.8, 4 + Math.random() * 7, [g, g * 0.92, g * 0.86]);
+                  }
+                }
+              }
+              prevT = curT;
+            }
           }
-          prevT = curT;
-        }
-      }
-      embers.update(dt, t, 'ember');
-      ash.update(dt, t, 'ash');
-      renderer.render(scene, camera);
-      if (t < DUR) requestAnimationFrame(frame);
-      else resolve();
-    };
-    requestAnimationFrame(frame);
-  });
-
-  removeEventListener('resize', onResize);
-  embers.dispose(); ash.dispose(); geo.dispose(); matF.dispose(); matB.dispose(); tFront.dispose(); tBack.dispose(); fieldTex.dispose();
-  renderer.dispose();
-  renderer.domElement.remove();
+          embers.update(dt, t, 'ember');
+          ash.update(dt, t, 'ash');
+          renderer.render(scene, camera);
+          if (t < DUR) raf = requestAnimationFrame(frame);
+          else resolve();
+        } catch (error) { reject(error); }
+      };
+      raf = requestAnimationFrame(frame);
+    });
+  } finally {
+    signal?.removeEventListener('abort', abort);
+    complete = undefined;
+    release();
+  }
 }

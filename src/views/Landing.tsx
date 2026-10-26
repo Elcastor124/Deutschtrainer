@@ -1,13 +1,16 @@
-import { useRef, type CSSProperties } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 import { COURSE, GAME_INFO, STEP_META, nextStep, overallProgress, unitProgress, unitStatus } from '../course.ts';
 import { followLearningLink } from '../components/LearningNav.tsx';
 import { Hero3D } from '../brand/Hero3D.tsx';
 import { Wordmark } from '../brand/Logo.tsx';
+import { IntroReplayButton } from '../brand/Intro.tsx';
 import { MagneticLink } from '../brand/MagneticLink.tsx';
 import { ProgressRing } from '../brand/ProgressRing.tsx';
 import { WeeklyPointsSlot } from '../brand/WeeklyPointsSlot.tsx';
 import { useCourseProgress } from '../brand/progress.ts';
 import { useReveal, useScrollVar } from '../brand/motion.ts';
+import { useEffectsEnabled } from '../brand/effects.ts';
+import '../brand/editorial.css';
 
 const FLOW = (['ver', 'practicar', 'jugar', 'repaso'] as const).map((k, i) => ({ k, n: i + 1, ...STEP_META[k] }));
 const FLOW_TEXT: Record<(typeof FLOW)[number]['k'], string> = {
@@ -23,35 +26,128 @@ const GAMES = [
   { id: 'boxeo', ...GAME_INFO.boxeo, de: 'Repaso de Dativ y Akkusativ', text: 'Combate de repaso: dos jugadores responden casos y Wo/Wohin; acertar desbloquea golpes.', tag: '1 contra 1 · casos' },
 ] as const;
 
+/** Arm the visible headline only after the actual intro overlay has left the DOM.
+ * Content is visible by default; only the short, explicitly armed entrance adds motion.
+ */
+export function watchEditorialEntrance(root: HTMLElement, effectsEnabled: boolean): () => void {
+  root.dataset.editorialEnter = 'static';
+  const doc = root.ownerDocument;
+  const win = doc.defaultView;
+  if (!win || !effectsEnabled || typeof win.MutationObserver !== 'function' || typeof win.requestAnimationFrame !== 'function') return () => {};
+  let frame = 0;
+  let stopped = false;
+  const blocked = () => doc.hidden || doc.documentElement.classList.contains('dt-intro-lock') || !!doc.querySelector('[data-intro]');
+  const detach = () => {
+    win.cancelAnimationFrame(frame);
+    observer.disconnect();
+    doc.removeEventListener('visibilitychange', sync);
+  };
+  const sync = () => {
+    if (stopped) return;
+    if (blocked()) {
+      win.cancelAnimationFrame(frame);
+      frame = 0;
+      root.dataset.editorialEnter = 'waiting';
+      return;
+    }
+    if (frame) return;
+    // Give Intro's mount effects and the browser a frame to establish their lock.
+    frame = win.requestAnimationFrame(() => {
+      frame = win.requestAnimationFrame(() => {
+        frame = 0;
+        if (blocked() || stopped) { sync(); return; }
+        root.dataset.editorialEnter = 'play';
+        stopped = true;
+        detach();
+      });
+    });
+  };
+  const observer = new win.MutationObserver(sync);
+  observer.observe(doc.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  doc.addEventListener('visibilitychange', sync);
+  sync();
+  return () => { stopped = true; detach(); root.dataset.editorialEnter = 'static'; };
+}
+
+/** Touch browsers do not consistently apply :active to links. Keep a local,
+ * passive pointer signal; never capture the pointer or prevent a scrolling gesture. */
+export function bindEditorialPress(root: HTMLElement, effectsEnabled: boolean): () => void {
+  const doc = root.ownerDocument, win = doc.defaultView;
+  if (!win || !effectsEnabled) return () => {};
+  let pressed: HTMLElement | null = null;
+  const clear = () => { if (pressed) delete pressed.dataset.editorialPressed; pressed = null; };
+  const press = (event: PointerEvent) => {
+    if (event.button !== 0 || event.isPrimary === false) return;
+    const target = (event.target as Element | null)?.closest?.<HTMLElement>('.dt-btn, .dt-card, .dt-game, .dt-rail-item a');
+    if (!target || !root.contains(target)) return;
+    clear();
+    pressed = target;
+    pressed.dataset.editorialPressed = 'true';
+  };
+  root.addEventListener('pointerdown', press, { passive: true });
+  root.addEventListener('pointerleave', clear, { passive: true });
+  win.addEventListener('pointerup', clear, { passive: true });
+  win.addEventListener('pointercancel', clear, { passive: true });
+  win.addEventListener('blur', clear);
+  doc.addEventListener('visibilitychange', clear);
+  return () => {
+    clear();
+    root.removeEventListener('pointerdown', press);
+    root.removeEventListener('pointerleave', clear);
+    win.removeEventListener('pointerup', clear);
+    win.removeEventListener('pointercancel', clear);
+    win.removeEventListener('blur', clear);
+    doc.removeEventListener('visibilitychange', clear);
+  };
+}
+
 export function Landing() {
   const root = useRef<HTMLElement>(null);
+  const effectsEnabled = useEffectsEnabled();
   const { done } = useCourseProgress();
   useReveal(root, []);
   useScrollVar(root);
+  useEffect(() => {
+    if (!root.current) return;
+    const stopEntrance = watchEditorialEntrance(root.current, effectsEnabled);
+    const stopPress = bindEditorialPress(root.current, effectsEnabled);
+    return () => { stopEntrance(); stopPress(); };
+  }, [effectsEnabled]);
   const next = nextStep(done);
   const overall = overallProgress(done);
   const started = overall.done > 0;
   const cta = next ? { href: '/curso#' + next.unit.id, label: started ? `Continuar · Lektion ${next.unit.n}` : 'Empezar el curso' } : { href: '/curso', label: 'Ver mi curso completo' };
 
   return (
-    <main className="dt-landing" ref={root}>
+    <main className="dt-landing dt-editorial" data-editorial-enter="static" ref={root}>
       {/* ── Hero ── */}
       <section className="dt-hero" aria-labelledby="hero-title">
         <div className="dt-hero-copy">
-          <p className="dt-eyebrow dt-rise" style={{ '--d': '0ms' } as CSSProperties}><span className="dt-led" /> A1 → B1 · Deutsch für dich</p>
+          <p className="dt-eyebrow" data-editorial-support style={{ '--d': '0ms' } as CSSProperties}><span className="dt-led" /> A1 → B1 · Deutsch für dich</p>
           <h1 id="hero-title" className="dt-hero-title">
-            <span className="dt-line"><span style={{ '--d': '80ms' } as CSSProperties}>Aprende alemán</span></span>
-            <span className="dt-line"><span style={{ '--d': '170ms' } as CSSProperties}>paso a paso<b className="dt-punkt">.</b></span></span>
-            <span className="dt-line dt-hero-de" lang="de"><span style={{ '--d': '260ms' } as CSSProperties}>Schritt für Schritt.</span></span>
+            <span className="dt-editorial-line">
+              <span className="dt-editorial-mask"><span data-editorial-word style={{ '--word': 0 } as CSSProperties}>Aprende</span></span>{' '}
+              <span className="dt-editorial-mask"><span data-editorial-word style={{ '--word': 1 } as CSSProperties}>alemán</span></span>
+            </span>{' '}
+            <span className="dt-editorial-line dt-editorial-underlined">
+              <span className="dt-editorial-mask"><span data-editorial-word style={{ '--word': 2 } as CSSProperties}>paso</span></span>{' '}
+              <span className="dt-editorial-mask"><span data-editorial-word style={{ '--word': 3 } as CSSProperties}>a</span></span>{' '}
+              <span className="dt-editorial-mask"><span data-editorial-word style={{ '--word': 4 } as CSSProperties}>paso<b className="dt-punkt">.</b></span></span>
+            </span>{' '}
+            <span className="dt-editorial-line dt-hero-de" lang="de">
+              <span className="dt-editorial-mask"><span data-editorial-word style={{ '--word': 5 } as CSSProperties}>Schritt</span></span>{' '}
+              <span className="dt-editorial-mask"><span data-editorial-word style={{ '--word': 6 } as CSSProperties}>für</span></span>{' '}
+              <span className="dt-editorial-mask"><span data-editorial-word style={{ '--word': 7 } as CSSProperties}>Schritt.</span></span>
+            </span>
           </h1>
-          <p className="dt-hero-sub dt-rise" style={{ '--d': '360ms' } as CSSProperties}>
+          <p className="dt-hero-sub" data-editorial-support style={{ '--d': '300ms' } as CSSProperties}>
             {COURSE.length - 1} Lektionen en orden y un examen final. En cada clase sigues siempre el mismo camino: <b>ver</b>, <b>practicar</b>, <b>jugar</b> y <b>repasar</b>.
           </p>
-          <div className="dt-hero-cta dt-rise" style={{ '--d': '440ms' } as CSSProperties}>
+          <div className="dt-hero-cta" data-editorial-support style={{ '--d': '400ms' } as CSSProperties}>
             <MagneticLink href={cta.href}>{cta.label} <span aria-hidden="true">→</span></MagneticLink>
             <MagneticLink href="/practica" variant="ghost">Practicar ahora</MagneticLink>
           </div>
-          <ul className="dt-hero-facts dt-rise" style={{ '--d': '520ms' } as CSSProperties} aria-label="El curso en datos">
+          <ul className="dt-hero-facts" data-editorial-support style={{ '--d': '500ms' } as CSSProperties} aria-label="El curso en datos">
             <li><b className="dotnum">{COURSE.length - 1}</b><span>Lektionen</span></li>
             <li><b className="dotnum">4</b><span>pasos por clase</span></li>
             <li><b className="dotnum">3</b><span>juegos</span></li>
@@ -180,6 +276,7 @@ export function Landing() {
       <footer className="dt-footer" data-reveal>
         <Wordmark height={54} className="dt-footer-mark" />
         <p lang="de">Viel Spaß beim Lernen.</p>
+        <IntroReplayButton />
         <nav className="dt-footer-links" aria-label="Pie de página">
           <a href="/curso" onClick={followLearningLink}>Curso</a>
           <a href="/tema/1" onClick={followLearningLink}>Biblioteca de materiales</a>
@@ -221,7 +318,7 @@ function GameArt({ id }: { id: 'jenga' | 'jugar' | 'boxeo' }) {
     <svg className="dt-game-art" viewBox="0 0 120 70" aria-hidden="true">
       {[0, 1, 2].map((i) => <path key={i} d={`M8 ${24 + i * 12} H112`} stroke={i === 1 ? '#FF3832' : '#2a2a27'} strokeWidth="1.6" />)}
       <g className="glove l"><Glove fill="#FF3832" deep="#B3201B" /></g>
-      <g className="glove r" transform="translate(120 0) scale(-1 1)"><Glove fill="#E9B949" deep="#A87C1E" /></g>
+      <g transform="translate(120 0) scale(-1 1)"><g className="glove r"><Glove fill="#E9B949" deep="#A87C1E" /></g></g>
       <path d="M58 30 L62 34 M62 30 L58 34" stroke="#F2F1EE" strokeWidth="1.4" strokeLinecap="round" opacity="0.7" />
     </svg>
   );

@@ -21,7 +21,9 @@ describe('Student learning hub', () => {
 
   it('opens the brand landing at the root with the course, practice, games and navigation', () => {
     const html = renderRoute('/');
-    expect(html).toContain('Aprende alemán');
+    // Assert the actual headline text, not that animated word spans share one HTML text node.
+    const headline = /<h1[^>]*id="hero-title"[^>]*>([\s\S]*?)<\/h1>/.exec(html)?.[1].replace(/<[^>]*>/g, '');
+    expect(headline).toContain('Aprende alemán');
     expect(html).toContain('aria-label="Deutschtrainer"');
     for (const href of ['/curso', '/practica', '/road-to-b1', '/jugar', '/jenga', '/boxeo', '/tema/1', '/profesor']) expect(html).toContain(`href="${href}"`);
     expect(html).toContain('Nebensätze');

@@ -27,7 +27,7 @@ async function playSession(B, { reloadAt = -1, label }) {
         await B.until(`globalThis.__bcNet?.state?.view?.phase === 'question'`, 'retomar tras recargar', 12000);
         const after = await B.state();
         ok(after.q.id === before, `${label}: recargar a mitad retoma la MISMA pregunta sin pasar por el formulario`);
-        ok(!(await B.eval(`!!document.querySelector('form .btn.primary.lg')`)), `${label}: tras recargar no aparece el formulario de inicio`);
+        ok(!(await B.eval(`!!document.querySelector('form.home .btn.primary.lg')`)), `${label}: tras recargar no aparece el formulario de inicio`);
       }
       await B.eval(`globalThis.__bcNet.request({t:'answer', qid: globalThis.__bcNet.state.view.q.id, a:{choice:0,text:'x',gaps:['x','x','x','x'],order:[],index:0,fix:'x',pairs:[0,0,0,0]}})`);
       await B.until(`globalThis.__bcNet.state.view.phase !== 'question'`, `${label}: corrección`, 8000);
@@ -36,8 +36,12 @@ async function playSession(B, { reloadAt = -1, label }) {
     if (!(await B.eval(`document.body.innerText.trim().length > 40`))) { ok(false, `${label}: pantalla en blanco (k=${k})`); await B.shot(`blank-${label}-${k}`); }
     await B.until(`!!document.querySelector('.qpanel .btn.primary.lg') || globalThis.__bcNet.state.view.phase === 'final'`, `${label}: botón Siguiente`, 8000);
     if (await B.eval(`globalThis.__bcNet.state.view.phase === 'final'`)) continue;
-    await B.click('.qpanel .btn.primary.lg');
-    await B.until(`globalThis.__bcNet.state.view.phase !== 'reveal' || globalThis.__bcNet.state.view.qNo !== ${v.qNo}`, `${label}: avanzar`, 8000).catch(() => {});
+    // Native keyboard activation avoids Player's smooth-scroll moving the
+    // pointer between mouseDown and mouseUp. Assert progress; never swallow it.
+    await B.eval(`document.querySelector('.qpanel .btn.primary.lg').focus({preventScroll:true})`);
+    await L.send('Input.dispatchKeyEvent', {type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,nativeVirtualKeyCode:13,text:String.fromCharCode(13)}, B.sid);
+    await L.send('Input.dispatchKeyEvent', {type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,nativeVirtualKeyCode:13}, B.sid);
+    await B.until(`globalThis.__bcNet.state.view.phase !== 'reveal' || globalThis.__bcNet.state.view.qNo !== ${v.qNo}`, `${label}: avanzar`, 8000);
   }
   throw new Error(`${label}: la sesión no termina`);
 }

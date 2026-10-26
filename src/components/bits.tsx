@@ -4,28 +4,32 @@ import type { RoomView } from '../../shared/types.ts';
 import type { Conn } from '../net.ts';
 import { mmss, useTick } from '../util.ts';
 import { DotGlyph, STAR_ROWS } from './Glyph.tsx';
+import { useEffectsEnabled } from '../brand/effects.ts';
 
 /** Número que rueda hasta su nuevo valor y se ilumina al cambiar (sube: blanco · baja: rojo). */
 export function Counter({ value, className, id }: { value: number; className?: string; id?: string }) {
+  const effectsEnabled = useEffectsEnabled();
   const [shown, setShown] = useState(value);
   const [dir, setDir] = useState<'' | 'up' | 'down'>('');
   const from = useRef(value);
   useEffect(() => {
+    if (!effectsEnabled) { from.current = value; setShown(value); setDir(''); return; }
     const start = performance.now();
     const a = from.current;
     if (a === value) return;
     setDir(value > a ? 'up' : 'down');
     let raf = 0;
+    let endTimer: ReturnType<typeof setTimeout> | undefined;
     const step = (t: number) => {
       const k = Math.min(1, (t - start) / 750);
       const e = 1 - Math.pow(1 - k, 3);
       setShown(Math.round(a + (value - a) * e));
       if (k < 1) raf = requestAnimationFrame(step);
-      else { from.current = value; setTimeout(() => setDir(''), 500); }
+      else { from.current = value; endTimer = setTimeout(() => setDir(''), 500); }
     };
     raf = requestAnimationFrame(step);
-    return () => { cancelAnimationFrame(raf); from.current = value; };
-  }, [value]);
+    return () => { cancelAnimationFrame(raf); clearTimeout(endTimer); from.current = value; };
+  }, [value, effectsEnabled]);
   return <span id={id} className={`${className ?? ''} ctr${dir ? ` ctr-${dir}` : ''}`}>{shown}</span>;
 }
 

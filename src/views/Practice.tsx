@@ -6,6 +6,8 @@ import { navigate, profileId, store } from '../util.ts';
 import { PlayScreen } from './Player.tsx';
 import { followLearningLink } from '../components/LearningNav.tsx';
 import { ErrorBoundary } from '../components/ErrorBoundary.tsx';
+import { KlausCompanion } from '../klaus/KlausCompanion.tsx';
+import { KlausPracticeStage } from '../klaus/KlausPracticeStage.tsx';
 
 type Hello = Extract<ConstructorParameters<typeof Net>[0], { role: 'practice' }>;
 interface Opts { topics: Topic[]; focus: boolean; size: number }
@@ -65,6 +67,7 @@ export function Practice() {
       <h1 className="home-title" style={{ fontSize: 'clamp(2.2rem, 1.4rem + 4vw, 4.6rem)' }}>Tema 1<b>// práctica</b></h1>
       <p className="home-sub">Todo el banco de preguntas preparado, en sesiones sin tiempo. Cada práctica trae preguntas nuevas y mezcla un repaso de lo que fallaste en otras sesiones. Si fallas una, vuelve a salir unas preguntas después.</p>
       <p className="home-sub small">Necesitas conexión con el servidor. Los talleres de escritura y ensayo de escenas tienen su propio espacio de práctica.</p>
+      <KlausCompanion />
       <div className="row"><a className="btn" href="/tema/1" onClick={followLearningLink}>Ver materiales de Tema 1</a><a className="btn" href="/tema/1/taller" onClick={followLearningLink}>Practicar escritura y escenas</a></div>
       {saved && (
         <div className="panel row" style={{ width: '100%' }}>
@@ -130,7 +133,9 @@ function PracticeConn({ hello, onAgain, onForm }: { hello: Hello; onAgain: () =>
     <ErrorBoundary onReset={onForm} resetLabel="Empezar otra práctica">
       {st.notice && <p className="panel practice-notice" role="status">{st.notice}</p>}
       {st.error && <p className="err-msg" role="alert">{st.error}</p>}
-      <PlayScreen net={net} st={st} onNewPractice={onAgain} onChangeTopics={onForm} />
+      <KlausPracticeStage state={st}>
+        <PlayScreen net={net} st={st} onNewPractice={onAgain} onChangeTopics={onForm} />
+      </KlausPracticeStage>
     </ErrorBoundary>
   );
 }

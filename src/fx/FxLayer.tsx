@@ -9,6 +9,7 @@ import { flash, flyText, mark, punch, rectOf, ring, shake, sleep, stream } from 
 import { takeOrigin } from './origin.ts';
 import { burst, burstAt } from './particles.ts';
 import { sfx } from './sound.ts';
+import { readEffectsEnabled, subscribeEffects } from '../brand/effects.ts';
 
 interface Toast { id: number; text: string; tone: '' | 'alarm' | 'good' | 'gold'; glyph?: ItemId | 'chest' }
 interface ItemShow { key: number; item: ItemId; caption: string; attack: boolean; from: { x: number; y: number; w: number } | null }
@@ -170,7 +171,8 @@ export function FxLayer({ view, me, lite }: { view: RoomView | null; me?: string
 
     // Puntos de la corrección
     const rv = view.reveal;
-    if (rv && rv.qid !== lastReveal.current) {
+    // Practice has its own occurrence-aware local feedback and Klaus. Never cover the exercise with the class FX.
+    if (view.mode !== 'practice' && rv && rv.qid !== lastReveal.current) {
       lastReveal.current = rv.qid;
       if (me && rv.results[me]) {
         const r = rv.results[me];
@@ -276,33 +278,81 @@ function ItemOverlay({ show }: { show: ItemShow }) {
 
 function BcStage({ show, lite, onDone }: { show: BcShow; lite: boolean; onDone: () => void }) {
   const host = useRef<HTMLDivElement>(null);
+  const current = useRef({ lite, onDone });
+  current.current = { lite, onDone };
+  const cancelScene = useRef<(() => void) | null>(null);
+  const previousLite = useRef(lite);
   const [out, setOut] = useState(false);
   const [fallback, setFallback] = useState(lite);
   useEffect(() => {
     let alive = true;
+    let finished = false;
+    let doneTimer: ReturnType<typeof setTimeout> | undefined;
+    const controller = new AbortController();
+    const signal = controller.signal;
+    const surface = host.current;
+    const finish = () => {
+      if (!alive || finished) return;
+      finished = true;
+      setOut(true);
+      doneTimer = setTimeout(() => { if (alive) current.current.onDone(); }, 450);
+    };
+    // Cancellation consumes this event. Resuming effects never restarts/replays it.
+    const cancel = () => {
+      controller.abort();
+      if (!alive || finished) return;
+      setFallback(true);
+      finish();
+    };
+    cancelScene.current = cancel;
+    const canAnimate = () => alive && !signal.aborted && !current.current.lite && readEffectsEnabled();
+    // Cancel synchronously on the master event, not only after React's next effect.
+    const unsubscribe = subscribeEffects(() => { if (!readEffectsEnabled()) cancel(); });
+    const wait = (ms: number) => new Promise<boolean>((resolve) => {
+      if (signal.aborted) { resolve(false); return; }
+      const abort = () => { clearTimeout(timer); resolve(false); };
+      const timer = setTimeout(() => { signal.removeEventListener('abort', abort); resolve(true); }, ms);
+      signal.addEventListener('abort', abort, { once: true });
+    });
     (async () => {
       let ok = false;
-      if (!lite && host.current) {
+      if (canAnimate() && surface) {
         try {
           const m = await import('./blackcard3d.ts');
-          await m.playBlackCard(host.current, { mode: show.mode, result: show.result, lite });
+          if (!canAnimate()) { cancel(); return; }
+          await m.playBlackCard(surface, { mode: show.mode, result: show.result, lite: current.current.lite, signal });
+          if (!canAnimate()) { cancel(); return; }
           ok = true;
         } catch (e) {
+          if (signal.aborted || !alive) return;
           console.warn('[blackcard] WebGL no disponible, se usa la versión ligera', e);
         }
       }
-      if (!ok && alive) {
+      if (!ok && alive && !signal.aborted) {
         setFallback(true);
-        if (show.mode === 'burn') { await sleep(500); burst(innerWidth / 2, innerHeight * 0.45, 'ember', 120); await sleep(2300); }
-        else { burst(innerWidth / 2, innerHeight * 0.45, 'ember', 60); await sleep(2000); }
+        if (show.mode === 'burn') {
+          if (!await wait(500)) return;
+          if (canAnimate()) burst(innerWidth / 2, innerHeight * 0.45, 'ember', 120);
+          if (!await wait(2300)) return;
+        } else {
+          if (canAnimate()) burst(innerWidth / 2, innerHeight * 0.45, 'ember', 60);
+          if (!await wait(2000)) return;
+        }
       }
-      if (!alive) return;
-      setOut(true);
-      await sleep(450);
-      if (alive) onDone();
+      if (alive && !signal.aborted) finish();
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+      cancelScene.current = null;
+      unsubscribe();
+      controller.abort();
+      clearTimeout(doneTimer);
+    };
   }, []);
+  useEffect(() => {
+    if (lite && !previousLite.current) cancelScene.current?.();
+    previousLite.current = lite;
+  }, [lite]);
   return (
     <div ref={host} className={`bcfx${out ? ' out' : ''}`} aria-live="assertive">
       {fallback && (

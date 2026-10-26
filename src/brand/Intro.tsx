@@ -1,60 +1,179 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { BrandSymbol, Wordmark } from './Logo.tsx';
-import { reducedMotion } from './motion.ts';
+import { readEffectsEnabled, useEffectsEnabled } from './effects.ts';
+import './intro-v2.css';
 
-const KEY = 'dt:intro:v1';
-export const INTRO_MS = 2400;
-const COLS = 15, ROWS = 3;
+const KEY = 'dt:intro:v1'; // Keep the existing per-tab contract across the redesign.
+export const INTRO_MS = 6200;
+export const INTRO_EXIT_MS = 460;
+export const INTRO_REPLAY_EVENT = 'dt:intro:replay';
 
-/** Se muestra una vez por sesión, nunca en salas de juego/examen ni con reduced-motion. ?intro=1 la fuerza. */
+// Decorative paths only: every thread terminates at the canonical emblem's centre.
+// Their viewport-sized SVG is anchored inside the drafting square, not the page.
+const CONVERGENCE = [
+  { edge: 'left', tone: 'red', d: 'M-900 -220 C-520 -220 -290 0 0 0', delay: 100 },
+  { edge: 'right', tone: 'gold', d: 'M900 190 C520 190 290 0 0 0', delay: 180 },
+  { edge: 'top', tone: 'gold', d: 'M-340 -600 C-340 -300 -120 -200 0 0', delay: 260 },
+  { edge: 'bottom', tone: 'red', d: 'M380 600 C380 290 120 200 0 0', delay: 340 },
+  { edge: 'left', tone: 'gold', d: 'M-900 110 C-510 110 -250 0 0 0', delay: 420 },
+  { edge: 'right', tone: 'red', d: 'M900 -130 C510 -130 250 0 0 0', delay: 500 },
+  { edge: 'top', tone: 'red', d: 'M570 -600 C410 -280 150 -150 0 0', delay: 200 },
+  { edge: 'bottom', tone: 'gold', d: 'M-590 600 C-430 280 -150 150 0 0', delay: 280 },
+  { edge: 'left', tone: 'red', d: 'M-900 -470 L0 0', delay: 580 },
+  { edge: 'right', tone: 'gold', d: 'M900 460 L0 0', delay: 660 },
+] as const;
+
+/** Place in Landing/footer; it replays without reloading or clearing session progress. */
+export function IntroReplayButton({ className = '' }: { className?: string }) {
+  return <button type="button" className={`dt-intro-replay ${className}`} data-intro-replay onClick={() => window.dispatchEvent(new Event(INTRO_REPLAY_EVENT))}>
+    <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M4 6a7 7 0 1 1-1 7M4 2v5h5" /></svg>
+    Repetir intro
+  </button>;
+}
+
+/** Stable edit/capture points; CSS animates continuously rather than on React renders. */
+export const INTRO_CUES = [
+  { at: 0, name: 'draft' },
+  { at: 800, name: 'letters' },
+  { at: 2000, name: 'notebook' },
+  { at: 3200, name: 'signature' },
+  { at: 4600, name: 'hold' },
+] as const;
+
+/** Never interrupt an invitation, classroom or assessment, including forced QA URLs. */
 export function shouldShowIntro(path: string, search: string): boolean {
   if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') return false;
   const q = new URLSearchParams(search);
+  if (q.get('intro') === '0' || q.has('sala')) return false;
+  // Keep the original global matchMedia eligibility contract as well as the
+  // shared preference gate (including embedders with only a global media API).
+  if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  if (!/^\/(curso\/?)?$/.test(path) || !readEffectsEnabled()) return false;
   if (q.get('intro') === '1' || q.get('intro') === 'still') return true;
-  if (q.get('intro') === '0' || q.get('sala')) return false;
-  if (!/^\/(curso\/?)?$/.test(path)) return false;
   try { if (sessionStorage.getItem(KEY)) return false; } catch { return false; }
-  return !reducedMotion();
+  return readEffectsEnabled();
 }
 
-// Desplazamientos pseudoaleatorios estables (sin Math.random en render).
-const DOTS = Array.from({ length: COLS * ROWS }, (_, i) => {
-  const a = Math.sin(i * 91.7) * 43758.5453, b = Math.sin(i * 47.3 + 3) * 24634.6345;
-  return { i, row: Math.floor(i / COLS), col: i % COLS, dx: ((a - Math.floor(a)) - 0.5) * 760, dy: ((b - Math.floor(b)) - 0.5) * 520 };
-});
-
 export function Intro({ path, search }: { path: string; search: string }) {
+  const effectsEnabled = useEffectsEnabled();
   const [phase, setPhase] = useState<'off' | 'play' | 'exit'>(() => (shouldShowIntro(path, search) ? 'play' : 'off'));
-  // ?intro=still (solo QA): mantiene la intro en pantalla para capturar fotogramas.
+  const [cue, setCue] = useState<string>('draft');
+  // Remove the overlay in the preference-change render, not after the exit animation.
+  const active = phase !== 'off' && effectsEnabled;
+  const overlay = useRef<HTMLDivElement>(null);
+  const skipButton = useRef<HTMLButtonElement>(null);
+  const introLocation = useRef({ path, search });
+  // ?intro=still holds the fully assembled composition. CSS animations remain seekable via CDP.
   const still = new URLSearchParams(search).get('intro') === 'still';
+
   useEffect(() => {
-    if (phase === 'off') return;
-    try { sessionStorage.setItem(KEY, '1'); } catch { /* modo privado */ }
-    const root = document.documentElement;
-    root.classList.add('dt-intro-lock');
-    const hold = still && phase === 'play';
-    const toExit = phase === 'play' && !hold ? setTimeout(() => setPhase('exit'), INTRO_MS - 520) : undefined;
-    const done = hold ? undefined : setTimeout(() => setPhase('off'), phase === 'play' ? INTRO_MS : 520);
-    const skip = (e: Event) => {
-      if (e instanceof KeyboardEvent && ['Shift', 'Control', 'Alt', 'Meta', 'Tab'].includes(e.key)) return;
-      setPhase((p) => (p === 'play' ? 'exit' : p));
+    // Re-enabling effects must not resurrect a cancelled cinematic.
+    if (!effectsEnabled) setPhase('off');
+  }, [effectsEnabled]);
+
+  useEffect(() => {
+    const cancelOnLocationChange = (nextPath: string, nextSearch: string) => {
+      if (introLocation.current.path === nextPath && introLocation.current.search === nextSearch) return;
+      introLocation.current = { path: nextPath, search: nextSearch };
+      // Turning off runs the existing timer, inert, focus and listener cleanup.
+      // Never re-evaluate eligibility here: navigation must not auto replay.
+      setPhase('off');
     };
-    addEventListener('keydown', skip);
-    return () => { clearTimeout(toExit); clearTimeout(done); removeEventListener('keydown', skip); root.classList.remove('dt-intro-lock'); };
-  }, [phase, still]);
-  if (phase === 'off') return null;
+    cancelOnLocationChange(path, search);
+    // usePath only updates for pathname changes; observe search-only SPA navigation too.
+    const navigated = () => cancelOnLocationChange(window.location.pathname, window.location.search);
+    window.addEventListener('popstate', navigated);
+    return () => window.removeEventListener('popstate', navigated);
+  }, [path, search]);
+
+  useEffect(() => {
+    const replay = () => {
+      const currentLocation = introLocation.current;
+      const query = new URLSearchParams(currentLocation.search);
+      query.set('intro', '1');
+      if (shouldShowIntro(currentLocation.path, query.toString())) setPhase((current) => current === 'off' ? 'play' : current);
+    };
+    window.addEventListener(INTRO_REPLAY_EVENT, replay);
+    return () => window.removeEventListener(INTRO_REPLAY_EVENT, replay);
+  }, [path, search]);
+
+  useEffect(() => {
+    if (!active) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const siblings = Array.from(overlay.current?.parentElement?.children ?? [])
+      .filter((el): el is HTMLElement => el instanceof HTMLElement && el !== overlay.current);
+    const inertBefore = siblings.map((el) => el.inert);
+    const root = document.documentElement;
+    const wasLocked = root.classList.contains('dt-intro-lock');
+    root.classList.add('dt-intro-lock');
+    siblings.forEach((el) => { el.inert = true; });
+    skipButton.current?.focus({ preventScroll: true });
+    const keyboard = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') { e.preventDefault(); skipButton.current?.focus({ preventScroll: true }); }
+      if (e.key === 'Escape') { e.preventDefault(); setPhase('off'); }
+    };
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const motionChanged = () => { if (motion.matches) setPhase('off'); };
+    motion.addEventListener('change', motionChanged);
+    motionChanged();
+    window.addEventListener('keydown', keyboard);
+    return () => {
+      motion.removeEventListener('change', motionChanged);
+      window.removeEventListener('keydown', keyboard);
+      if (!wasLocked) root.classList.remove('dt-intro-lock');
+      siblings.forEach((el, i) => { el.inert = inertBefore[i]; });
+      const target = previous?.isConnected && previous !== document.body ? previous : document.getElementById('contenido');
+      target?.focus({ preventScroll: true });
+    };
+  }, [active]);
+
+  useEffect(() => {
+    if (phase === 'off' || !effectsEnabled) return;
+    try { sessionStorage.setItem(KEY, '1'); } catch { /* storage may be disabled */ }
+    if (phase === 'exit') {
+      const done = window.setTimeout(() => setPhase('off'), INTRO_EXIT_MS);
+      return () => window.clearTimeout(done);
+    }
+    setCue('draft');
+    const timers = INTRO_CUES.slice(1).map((c) => window.setTimeout(() => setCue(c.name), c.at));
+    if (!still) timers.push(window.setTimeout(() => setPhase('exit'), INTRO_MS - INTRO_EXIT_MS));
+    return () => timers.forEach((id) => window.clearTimeout(id));
+  }, [phase, still, effectsEnabled]);
+
+  if (!active) return null;
   return (
-    <div className={`dt-intro ${phase}`} data-testid="intro" onClick={() => setPhase('exit')} role="presentation">
-      <div className="dt-intro-stage" aria-hidden="true">
-        <div className="dt-intro-dots">
-          {DOTS.map((d) => <i key={d.i} className={`r${d.row}`} style={{ '--dx': `${d.dx.toFixed(0)}px`, '--dy': `${d.dy.toFixed(0)}px`, '--d': `${(d.col * 22 + d.row * 40)}ms` } as CSSProperties} />)}
+    <div ref={overlay} className={`dt-intro dt-intro-v2 ${phase}`} data-testid="intro" data-intro="cinematic-v2" data-intro-phase={phase === 'exit' ? 'reveal' : cue} data-intro-duration={INTRO_MS} onClick={() => setPhase('off')} role="dialog" aria-modal="true" aria-label="Presentación de Deutschtrainer">
+      <div className="dt-intro-field" aria-hidden="true"><i /><i /><i /></div>
+      <div className="dt-intro-blueprint" aria-hidden="true"><i /><i /><i /></div>
+      <div className="dt-intro-registration" aria-hidden="true"><i /><i /><i /><i /></div>
+      <div className="dt-intro-masthead" aria-hidden="true"><span>Deutschtrainer<span className="dt-intro-slash"> / </span>Identität</span><span>D + T<span className="dt-intro-slash"> / </span>A</span></div>
+      <div className="dt-intro-v2-stage" aria-hidden="true">
+        <div className="dt-intro-drafting">
+          <svg className="dt-intro-convergence" data-intro-convergence viewBox="-720 -450 1440 900" preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false">
+            {CONVERGENCE.map((thread, i) => <g key={i} data-intro-edge={thread.edge} className={`dt-intro-thread is-${thread.tone}`} style={{ '--thread-delay': `${thread.delay}ms` } as CSSProperties}>
+              <path className="dt-intro-thread-rail" d={thread.d} pathLength="1" vectorEffect="non-scaling-stroke" />
+              <path className="dt-intro-thread-pulse" data-intro-beam={thread.tone} d={thread.d} pathLength="1" vectorEffect="non-scaling-stroke" />
+            </g>)}
+          </svg>
+          <div className="dt-intro-resonance" aria-hidden="true"><i /><i /></div>
+          <svg className="dt-intro-guides" viewBox="0 0 360 360" fill="none">
+            <path className="dt-guide-frame" d="M28 180 H332 M180 20 V340 M54 310 H307 M180 42 L53 310 M180 42 L307 310" />
+            <circle className="dt-guide-circle" cx="180" cy="180" r="145" />
+            <path className="dt-guide-ticks" d="M44 175 V185 M316 175 V185 M175 38 H185 M175 322 H185" />
+          </svg>
+          <span className="dt-intro-letter dt-intro-letter-d">D</span>
+          <span className="dt-intro-letter dt-intro-letter-t">T</span>
+          <BrandSymbol size={260} tone="dark" animated className="dt-intro-emblem" />
+          <span className="dt-intro-annotation dt-intro-annotation-left">D<span>Das Heft</span></span>
+          <span className="dt-intro-annotation dt-intro-annotation-right">T<span>Der Stift</span></span>
         </div>
-        <BrandSymbol size={132} tone="dark" animated className="dt-intro-symbol" />
-        <Wordmark height={30} tone="dark" animated className="dt-intro-word" />
-        <p className="dt-intro-tag" lang="de">Schritt für Schritt</p>
+        <div className="dt-intro-word-window"><Wordmark height={34} tone="dark" animated className="dt-intro-word" /></div>
+        <p className="dt-intro-v2-tag" lang="de"><span>Schritt für Schritt.</span><b>Dein Deutsch.</b></p>
       </div>
-      <div className="dt-intro-wipe" aria-hidden="true"><b /><b /><b /></div>
-      <button type="button" className="dt-intro-skip" onClick={(e) => { e.stopPropagation(); setPhase('exit'); }}>Saltar intro <kbd>Esc</kbd></button>
+      <div className="dt-intro-score" aria-hidden="true"><span>Eine Idee. Dein Weg.</span><div>{['D', 'T', 'A'].map((letter, i) => <i key={letter} style={{ '--chapter': i } as CSSProperties}><b />{letter}</i>)}</div></div>
+      <div className="dt-intro-aperture" aria-hidden="true"><i /><i /></div>
+      <div className="dt-intro-v2-reveal" aria-hidden="true"><i /><i /><i /></div>
+      <button ref={skipButton} type="button" className="dt-intro-skip" data-intro-skip onClick={(e) => { e.stopPropagation(); setPhase('off'); }}>Saltar intro <kbd>Esc</kbd></button>
     </div>
   );
 }

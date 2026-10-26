@@ -14,7 +14,7 @@ try {
   const a = await env.newPage('intro', 1366, 768);
   await a.go('/');
   await a.until(`!!document.querySelector('[data-testid=intro]')`, 'intro visible', 12000);
-  await a.until(`!document.querySelector('[data-testid=intro]')`, 'intro termina sola en la primera visita', 6000);
+  await a.until(`!document.querySelector('[data-testid=intro]')`, 'intro termina sola en la primera visita', 8500);
   assert(!(await a.eval(`document.documentElement.classList.contains('dt-intro-lock')`)), 'scroll bloqueado tras la intro');
   await a.reload();
   await a.until(`!!document.querySelector('.dt-hero')`, 'landing');
@@ -28,7 +28,7 @@ try {
   await a.until(`window.__skip!==null`, 'intro cerrada tras clic', 3000);
   report.checks.introSkipMs = await a.eval('window.__skip');
   assert(report.checks.introSkipMs <= 900, 'saltar la intro tarda demasiado');
-  // Esc también la salta; y sin interacción se cierra sola en ≤2.5 s.
+  // Esc también la salta; la nueva entrada cinematográfica dura 6.2 s.
   await a.go('/?intro=still');
   await a.until(`!!document.querySelector('.dt-intro.play')`, 'intro forzada');
   await a.key('Escape');
@@ -41,7 +41,7 @@ try {
   await sleep(2600);
   await a.until(`window.__introMs!==null`, 'intro termina sola', 5000);
   report.checks.introAutoMs = await a.eval('window.__introMs');
-  assert(report.checks.introAutoMs <= 2700, 'intro demasiado larga');
+  assert(report.checks.introAutoMs >= 5000 && report.checks.introAutoMs <= 7200, 'intro fuera del contrato cinematográfico de 6.2 s');
   // Invitación a sala: sin intro.
   const inv = await env.newPage('invite', 1366, 768);
   await inv.go('/?sala=TEST');

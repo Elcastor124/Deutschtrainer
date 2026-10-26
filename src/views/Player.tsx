@@ -14,6 +14,9 @@ import { TaskPlay } from '../components/Tasks.tsx';
 import { sfx } from '../fx/sound.ts';
 import { Net, useNet, type NetState } from '../net.ts';
 import { navigate, profileId, store } from '../util.ts';
+import { PracticeProgress } from '../brand/PracticeProgress.tsx';
+import { usePracticeFeedback } from '../brand/usePracticeFeedback.ts';
+import { readEffectsEnabled } from '../brand/effects.ts';
 
 export function Player({ code }: { code: string }) {
   const [name, setName] = useState(() => store.get('bc:name') ?? '');
@@ -53,6 +56,7 @@ function PlayerConn({ code, onReset }: { code: string; onReset: () => void }) {
 
 export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Net; st: NetState; onNewPractice?: () => void; onChangeTopics?: () => void }) {
   const v = st.view;
+  const feel = usePracticeFeedback(v);
   const me = v?.me;
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -62,7 +66,7 @@ export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Ne
   useEffect(() => { setInitial(null); setErr(null); }, [qid]);
   // Cada pregunta o pantalla nueva empieza arriba (en Chromebooks y móviles la página puede quedar desplazada).
   const screenKey = `${v?.block}-${v?.phase === 'reveal' ? 'question' : v?.phase}-${qid ?? ''}-${v?.task?.kind ?? ''}`;
-  useEffect(() => { scrollTo({ top: 0, behavior: 'smooth' }); }, [screenKey]);
+  useEffect(() => { scrollTo({ top: 0, behavior: readEffectsEnabled() ? 'smooth' : 'instant' }); }, [screenKey]);
   // Si el cofre ya no existe (abierto en otra pestaña), se cierra la escena… salvo que se esté revelando.
   useEffect(() => { if (chest && me && !me.chests.some((c) => c.id === chest.id) && !document.querySelector('.chest-ovl .prize, .chest-big.waiting')) setChest(null); }, [me?.chests.length]);
 
@@ -84,6 +88,8 @@ export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Ne
     if (!r.ok) setErr(r.error ?? 'Error');
   };
   const onKey = (e: KeyboardEvent) => {
+    // Keep native Enter/Space activation on controls; a nav switch must not advance the exercise.
+    if ((e.target as HTMLElement | null)?.closest('button,a,summary,input,textarea,select,[role="switch"],[contenteditable="true"]')) return;
     if (practice && v?.phase === 'reveal' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); void next(); }
   };
 
@@ -119,6 +125,8 @@ export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Ne
             {pub?.sabotaged && <span className="chip diff-hard">Saboteado: tu próximo acierto vale ½</span>}
             {me.used && <span className="chip bc">{ITEMS[me.used].name} activado</span>}
           </div>
+
+          {practice && <PracticeProgress view={v} />}
 
           {v.phase === 'question' && me.incoming.length > 0 && (
             <div className="alert" role="alert">
@@ -158,7 +166,7 @@ export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Ne
           )}
 
           {(v.phase === 'question' || v.phase === 'review' || v.phase === 'reveal') && v.q && (
-            <section className={`panel qpanel screen${v.phase === 'reveal' ? ' is-reveal' : ''}`} key={v.q.id}>
+            <section className={`panel qpanel screen${v.phase === 'reveal' ? ' is-reveal' : ''}`} key={v.q.id} data-practice-feedback={practice && feel ? feel.kind : undefined} data-practice-feedback-id={practice ? feel?.id : undefined}>
               <QuestionHead q={v.q} no={v.qNo} total={v.qTotal} />
               {v.phase === 'question' && v.timer && <Timer timer={v.timer} offset={st.offset} onLow={(s) => sfx.tick(5 - s)} />}
               {v.phase === 'question' && me.state === 'retry' && (

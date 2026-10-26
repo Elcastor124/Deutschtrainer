@@ -1,6 +1,9 @@
 import type { CSSProperties, SVGProps } from 'react';
 import './brand.css';
-import { BRAND, SYMBOL, SYMBOL_STROKE, SYMBOL_VIEWBOX, WORDMARK, WORDMARK_STROKE, type PlacedGlyph } from './geometry.ts';
+import { BRAND, WORDMARK, WORDMARK_STROKE, type PlacedGlyph } from './geometry.ts';
+import { DT_MARK } from './logo-mark.ts';
+
+export { DT_MARK } from './logo-mark.ts';
 
 export { BRAND, SYMBOL, WORDMARK } from './geometry.ts';
 
@@ -16,19 +19,31 @@ interface SymbolProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
   title?: string;
 }
 
-/** Símbolo «Punkt-D»: asta (sujeto) → panza roja (el verbo que viaja al final) → punto dorado. */
+/** D-cuaderno + T-lápiz, reunidos en el vértice de una A. Basado en el boceto del usuario. */
 export function BrandSymbol({ size = 32, tile = false, tone = 'dark', animated, title, ...rest }: SymbolProps) {
-  const stem = tone === 'mono' ? 'currentColor' : tile || tone === 'dark' ? BRAND.paper : BRAND.black;
+  const ink = tone === 'mono' ? 'currentColor' : tile || tone === 'dark' ? BRAND.paper : BRAND.black;
   const red = tone === 'mono' ? 'currentColor' : BRAND.red;
   const gold = tone === 'mono' ? 'currentColor' : BRAND.gold;
+  const length = animated ? 1 : undefined;
   return (
-    <svg viewBox={SYMBOL_VIEWBOX} width={size} height={size} role={title ? 'img' : undefined} aria-hidden={title ? undefined : true} aria-label={title} focusable="false" {...rest}>
-      {tile && <rect className="dt-sym-tile" width="48" height="48" rx={SYMBOL.tile.r} fill={BRAND.black} />}
-      <g fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth={SYMBOL_STROKE}>
-        <path className="dt-sym-bowl" d={SYMBOL.bowl} stroke={red} pathLength={animated ? 1 : undefined} />
-        <path className="dt-sym-stem" d={SYMBOL.stem} stroke={stem} pathLength={animated ? 1 : undefined} />
+    <svg viewBox={DT_MARK.viewBox} width={size} height={size} role={title ? 'img' : undefined} aria-hidden={title ? undefined : true} aria-label={title} focusable="false" data-brand-symbol="dt-pencil-book" {...rest}>
+      {tile && <rect width="120" height="120" rx="24" fill={BRAND.black} />}
+      <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path className="dt-mark-notebook" data-brand-part="d-notebook" d={DT_MARK.notebook} stroke={red} strokeWidth="5.2" pathLength={length} />
+        <path className="dt-mark-peak" data-brand-part="a-peak" d={DT_MARK.peak} stroke={ink} strokeWidth="5.6" pathLength={length} />
+        <path className="dt-mark-spine" data-brand-part="t-stem" d={DT_MARK.spine} stroke={ink} strokeWidth="3.2" pathLength={length} />
+        <path className="dt-mark-page" d={DT_MARK.pageTurn} stroke={red} strokeWidth="1.7" pathLength={length} />
+        <g className="dt-mark-lines" data-brand-part="notebook-lines" stroke={gold} strokeWidth="2.2">
+          {DT_MARK.lines.map((d, i) => <path key={d} d={d} pathLength={length} style={{ '--line': i } as CSSProperties} />)}
+        </g>
+        <g className="dt-mark-pencil" data-brand-part="t-pencil">
+          <path className="dt-mark-pencil-body" d={DT_MARK.pencil} fill={red} stroke={red} strokeWidth="2.2" pathLength={length} />
+          <path d={DT_MARK.pencilFacet} stroke={ink} strokeWidth="1.3" pathLength={length} />
+          <path d={DT_MARK.ferrule} stroke={ink} strokeWidth="1.6" pathLength={length} />
+          <path data-brand-part="pencil-tip" d={DT_MARK.tip} stroke={gold} fill={gold} strokeWidth="1.2" pathLength={length} />
+          <path d={DT_MARK.graphite} stroke="none" fill={tile || tone === 'dark' ? BRAND.black : ink} />
+        </g>
       </g>
-      <circle className="dt-sym-dot" cx={SYMBOL.dot.cx} cy={SYMBOL.dot.cy} r={SYMBOL.dot.r} fill={gold} />
     </svg>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { VOCAB } from '../../shared/vocab.ts';
 import { BrandSymbol } from './Logo.tsx';
-import { reducedMotion } from './motion.ts';
+import { useEffectsEnabled } from './effects.ts';
 import type { Article, HeroHandle } from './hero3d.ts';
 
 function useWords() {
@@ -42,13 +42,14 @@ export function Hero3D() {
   const [state, setState] = useState<'loading' | 'ready' | 'static'>('loading');
   const [hit, setHit] = useState<{ article: Article; de: string; es: string } | null>(null);
   const words = useWords();
+  const effectsEnabled = useEffectsEnabled();
   useEffect(() => {
     let handle: HeroHandle | null = null, cancelled = false, io: IntersectionObserver | null = null;
     if (!webglAvailable()) { setState('static'); return; }
     const boot = () => import('./hero3d.ts').then(({ mountHero }) => {
       if (cancelled || !canvas.current) return;
       try {
-        handle = mountHero(canvas.current, { words, reduced: reducedMotion(), onArticle: setHit });
+        handle = mountHero(canvas.current, { words, reduced: !effectsEnabled, onArticle: setHit });
         setState('ready');
         io = new IntersectionObserver(([e]) => handle?.setActive(e.isIntersecting), { threshold: 0.02 });
         io.observe(wrap.current!);
@@ -65,7 +66,7 @@ export function Hero3D() {
       mo.observe(root, { attributes: true, attributeFilter: ['class'] });
     } else schedule();
     return () => { cancelled = true; mo?.disconnect(); io?.disconnect(); handle?.dispose(); };
-  }, [words]);
+  }, [words, effectsEnabled]);
   return (
     <div className={`dt-hero-3d is-${state}`} ref={wrap}>
       {state === 'static' ? <HeroStatic /> : <canvas ref={canvas} aria-label="Símbolo de Deutschtrainer en 3D con los dados der, die y das. Toca un dado para ver una palabra." role="img" />}

@@ -1,5 +1,6 @@
 // Partículas en un único canvas superpuesto (ligero: se detiene cuando no hay nada que dibujar).
 // «pixel» son cuadrados de matriz de puntos: el confeti propio de esta interfaz.
+import { readEffectsEnabled } from '../brand/effects.ts';
 type Kind = 'spark' | 'confetti' | 'ember' | 'pixel' | 'coin' | 'shard';
 interface P { x: number; y: number; vx: number; vy: number; life: number; max: number; size: number; color: string; kind: Kind; rot: number; vr: number }
 
@@ -41,7 +42,7 @@ const COLORS: Record<Kind, string[]> = {
 export interface BurstOpts { colors?: string[]; speed?: number; up?: number }
 
 export function burst(x: number, y: number, kind: Kind = 'spark', n = 40, o: BurstOpts = {}) {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!readEffectsEnabled()) return;
   ensure();
   const count = Math.round(liteMode ? n * 0.25 : n);
   const cols = o.colors ?? COLORS[kind];
@@ -69,6 +70,7 @@ export function burstAt(el: Element | null, kind: Kind = 'spark', n = 40, o: Bur
 function loop() {
   if (!ctx || !canvas) return;
   ctx.clearRect(0, 0, innerWidth, innerHeight);
+  if (!readEffectsEnabled()) { parts = []; running = false; return; }
   for (const p of parts) {
     p.life++;
     p.vy += p.kind === 'ember' ? -0.02 : p.kind === 'confetti' || p.kind === 'pixel' ? 0.22 : p.kind === 'coin' ? 0.3 : 0.08;

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { blockDef } from '../../shared/rules.ts';
 import type { BlockId } from '../../shared/types.ts';
 import { FxLayer } from '../fx/FxLayer.tsx';
+import { useEffectsEnabled } from '../brand/effects.ts';
 import { setJuiceLite } from '../fx/juice.ts';
 import { setLite as setParticlesLite } from '../fx/particles.ts';
 import { setSound, sfx } from '../fx/sound.ts';
@@ -20,6 +21,8 @@ export function Shell({ st, me, teacher, onBlock, onKey, hudExtra, children }: {
   onKey?: (e: KeyboardEvent) => void; hudExtra?: ReactNode; children: ReactNode;
 }) {
   const [lite, setLite] = useSetting('bc:lite', prefersReducedMotion());
+  const effects = useEffectsEnabled();
+  const effectiveLite = lite || !effects;
   const [snd, setSnd] = useSetting(teacher ? 'bc:sound-t' : 'bc:sound', !!teacher);
   const [ov, setOv] = useState<'dict' | 'score' | 'help' | null>(null);
   const keyRef = useRef(onKey);
@@ -27,7 +30,7 @@ export function Shell({ st, me, teacher, onBlock, onKey, hudExtra, children }: {
   const v = st.view;
   useJengaFx(v);
 
-  useEffect(() => { document.documentElement.dataset.lite = lite ? '1' : '0'; setParticlesLite(lite); setJuiceLite(lite); }, [lite]);
+  useEffect(() => { document.documentElement.dataset.lite = effectiveLite ? '1' : '0'; setParticlesLite(effectiveLite); setJuiceLite(effectiveLite); }, [effectiveLite]);
   useEffect(() => setSound(snd), [snd]);
   const pub = v?.players.find((p) => p.id === me);
   const live = !!v && (v.phase === 'question' || v.phase === 'review');
@@ -102,7 +105,7 @@ export function Shell({ st, me, teacher, onBlock, onKey, hudExtra, children }: {
       </div>
       {aura.dbl && <div className="aura-tag dbl" role="status">×2 Double XP activo</div>}
       {aura.target && <div className="aura-tag target" role="status">Estás en el punto de mira</div>}
-      <FxLayer view={v} me={me} lite={lite} />
+      <FxLayer view={v} me={me} lite={effectiveLite} />
       {ov === 'dict' && <Dictionary locked={dictLocked} onClose={() => setOv(null)} />}
       {ov === 'score' && v && <Scoreboard view={v} onClose={() => setOv(null)} />}
       {ov === 'help' && <KeysHelp teacher={!!teacher} onClose={() => setOv(null)} />}

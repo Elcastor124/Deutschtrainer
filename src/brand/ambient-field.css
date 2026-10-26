@@ -1,0 +1,68 @@
+/* The ambient layer is light, never content. Static pigments remain if GL is unavailable. */
+.dt-ambient-field {
+  position: fixed;
+  inset: 0 0 auto;
+  height: min(1120px, 120svh);
+  z-index: 0;
+  overflow: hidden;
+  contain: strict;
+  pointer-events: none !important;
+  user-select: none;
+  background:
+    radial-gradient(ellipse 54% 48% at 90% 16%, #e9b9490c, transparent 78%),
+    radial-gradient(ellipse 72% 62% at 82% 44%, #a31c191a, transparent 76%),
+    linear-gradient(158deg, transparent 20%, #ff383204 48%, transparent 75%);
+  mask-image: linear-gradient(#000 0 62%, transparent 100%);
+  -webkit-mask-image: linear-gradient(#000 0 62%, transparent 100%);
+}
+.dt-ambient-field canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none !important;
+}
+.dt-ambient-field[data-ambient-status='running'] canvas,
+.dt-ambient-field[data-ambient-status='still'][data-ambient-painted='true'] canvas { opacity: .78; }
+/* A mounted sibling must not sit above a page's unpositioned text or its 3D hero. */
+.dt-ambient-field ~ .dt-page-surface { position: relative; z-index: 1; }
+
+.dt-effects-control { display: inline-flex; flex: none; align-items: center; }
+.dt-effects-toggle {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 10px;
+  margin: 0;
+  border: 1px solid #f2f1ee24;
+  border-radius: 999px;
+  background: #0d0d0b;
+  color: #c9c7c1;
+  font-family: var(--dt-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.dt-effects-toggle b { color: #f2f1ee; font-weight: 600; }
+.dt-effects-toggle:hover:not(:disabled) { border-color: #e9b94988; color: #f2f1ee; }
+.dt-effects-toggle:focus-visible { outline: 2px solid #e9b949; outline-offset: 3px; }
+.dt-effects-toggle:disabled { cursor: not-allowed; color: #b1aea5; border-style: dashed; opacity: 1; }
+.dt-effects-toggle small { font: inherit; font-size: 8px; color: #b1aea5; }
+.dt-effects-toggle-track { display: inline-flex; align-items: center; width: 22px; height: 12px; padding: 2px; border: 1px solid #f2f1ee45; border-radius: 99px; background: #282722; flex: none; }
+.dt-effects-toggle-track i { width: 6px; height: 6px; border-radius: 50%; background: #c9c7c1; transform: translateX(0); }
+.dt-effects-toggle[aria-checked='true'] .dt-effects-toggle-track { background: #e9b949; border-color: #e9b949; }
+.dt-effects-toggle[aria-checked='true'] .dt-effects-toggle-track i { background: #0a0a0a; transform: translateX(10px); }
+.dt-effects-description { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (max-width: 480px) {
+  .dt-effects-toggle { padding-inline: 8px; gap: 5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dt-ambient-field canvas { display: none; }
+}
+html[data-dt-effects='off'] .dt-ambient-field canvas { display: none; }

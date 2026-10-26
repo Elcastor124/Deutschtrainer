@@ -2,9 +2,10 @@
 // Todo con transform/opacity (barato en Chromebooks) y desactivable con el modo ligero o «reducir movimiento».
 import { burst } from './particles.ts';
 
+import { readEffectsEnabled } from '../brand/effects.ts';
 let lite = false;
 export const setJuiceLite = (v: boolean) => { lite = v; };
-const calm = () => lite || matchMedia('(prefers-reduced-motion: reduce)').matches;
+const calm = () => lite || !readEffectsEnabled();
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 type Target = Element | DOMRect | null | undefined;
@@ -28,7 +29,7 @@ export function shake(power = 1) {
 
 /** Destello de pantalla completa. */
 export function flash(kind: 'white' | 'red' | 'gold' | 'black' = 'white', ms = 420) {
-  if (lite) return;
+  if (calm()) return;
   const d = document.createElement('div');
   d.className = `flash ${kind}`;
   d.setAttribute('aria-hidden', 'true');

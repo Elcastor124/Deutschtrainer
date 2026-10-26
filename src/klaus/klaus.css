@@ -1,0 +1,98 @@
+.klaus-figure { --klaus-accent: #f2c65d; display: block; width: 100%; height: 100%; overflow: visible; color: #f4f4f4; }
+.klaus-figure[data-klaus-skin="fire"] { --klaus-accent: #ff8a44; color: #fff3e8; }
+.klaus-figure[data-klaus-skin="royal"] { --klaus-accent: #ffd54a; color: #fff3c4; }
+.klaus-shadow { fill: #f2c65d; opacity: .09; }
+.klaus-rig { transform-origin: 60px 66px; animation: klaus-breathe 4.33s ease-in-out infinite; }
+.klaus-ear-left { transform-origin: 31px 35px; }
+.klaus-ear-right { transform-origin: 69px 35px; animation: klaus-ear 7s ease-in-out infinite; }
+.klaus-gaze { animation: klaus-gaze 10.8s ease-in-out infinite; }
+.klaus-eye-open { animation: klaus-eye-open 4.9s linear infinite; }
+.klaus-eye-shut { opacity: 0; animation: klaus-eye-shut 4.9s linear infinite; }
+.klaus-paw { transform: rotate(-14deg); animation: klaus-wave 1.37s ease-in-out 3; }
+.klaus-paw-echo { animation: klaus-echo 1.37s ease-in-out 3; }
+.klaus-fire { opacity: .22; animation: klaus-fire 1.5s ease-in-out 3; transform-origin: 50px 95px; }
+.klaus-thought { animation: klaus-think 2.8s ease-in-out infinite; }
+.klaus-spark { opacity: 0; transform-origin: 50px 55px; animation: klaus-spark 1.5s cubic-bezier(.18,.68,.3,1) var(--spark-delay) 1 both; }
+.klaus-figure[data-klaus-reaction="thinking"] .klaus-rig { animation: klaus-thinking 3.2s ease-in-out infinite; }
+.klaus-figure[data-klaus-reaction="thinking"] .klaus-gaze { transform: translate(.9px, -.7px); animation: none; }
+.klaus-figure[data-klaus-reaction="support"] .klaus-rig { animation: klaus-nod 1.2s ease-in-out 2; }
+.klaus-figure[data-klaus-reaction="correct"] .klaus-rig,
+.klaus-figure[data-klaus-reaction="streak3"] .klaus-rig { animation: klaus-hop .9s cubic-bezier(.3,0,.2,1) 2; }
+.klaus-figure[data-klaus-reaction="streak5"] .klaus-rig,
+.klaus-figure[data-klaus-reaction="streak10"] .klaus-rig,
+.klaus-figure[data-klaus-reaction="complete"] .klaus-rig { animation: klaus-celebrate 1.15s ease-in-out 2; }
+@keyframes klaus-breathe { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-.45px) scaleY(1.0035); } }
+@keyframes klaus-ear { 0%, 72%, 84%, 100% { transform: rotate(0); } 77% { transform: rotate(-2deg); } }
+@keyframes klaus-gaze { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(.35px); } 75% { transform: translateX(-.35px); } }
+/* Same 4.9 second cadence and 4.10–4.34 blink window as compute_pose. */
+@keyframes klaus-eye-open { 0%, 83.5%, 88.6%, 100% { opacity: 1; } 85%, 87% { opacity: 0; } }
+@keyframes klaus-eye-shut { 0%, 83.5%, 88.6%, 100% { opacity: 0; } 85%, 87% { opacity: 1; } }
+@keyframes klaus-wave { 0%, 100% { transform: rotate(-14deg); } 25% { transform: rotate(-4deg); } 75% { transform: rotate(-24deg); } }
+@keyframes klaus-echo { 0%, 100% { opacity: .15; } 50% { opacity: .65; } }
+@keyframes klaus-thinking { 0%, 100% { transform: rotate(-2.8deg); } 50% { transform: rotate(-2.45deg) translateY(-.45px); } }
+@keyframes klaus-think { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }
+@keyframes klaus-nod { 0%, 100% { transform: rotate(0); } 45% { transform: rotate(-1.5deg) translateY(1px); } }
+@keyframes klaus-hop { 0%, 100% { transform: translateY(0); } 38% { transform: translateY(-2.8px) rotate(-.7deg); } 65% { transform: translateY(0) scaleY(.985); } }
+@keyframes klaus-celebrate { 0%, 100% { transform: translateY(0) rotate(0); } 28% { transform: translateY(-4px) rotate(-2.6deg); } 65% { transform: translateY(-2px) rotate(2.6deg); } }
+@keyframes klaus-spark { 0% { opacity: 0; transform: translate(0, 0) scale(.3); } 18% { opacity: .85; } 100% { opacity: 0; transform: translate(var(--spark-x), var(--spark-y)) scale(1); } }
+@keyframes klaus-fire { 0%, 100% { opacity: .15; transform: scaleY(.9); } 50% { opacity: .3; transform: scaleY(1.04); } }
+.klaus-figure[data-klaus-motion="reduced"] *, [data-lite="1"] .klaus-figure * { animation: none !important; }
+.klaus-figure[data-klaus-motion="reduced"] .klaus-spark, [data-lite="1"] .klaus-spark { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .klaus-figure * { animation: none !important; }
+  .klaus-spark { display: none; }
+}
+
+/* A companion in the same playfield, not a dashboard or a header. */
+.klaus-companion { --klaus-accent: #efca71; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; min-width: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #f4f1e9; isolation: isolate; }
+.klaus-portrait { width: 100%; height: 230px; min-width: 0; background: radial-gradient(ellipse at 42% 60%, #efca7108, transparent 65%); }
+.klaus-companion[data-klaus-state="correct"] .klaus-portrait,
+.klaus-companion[data-klaus-state="streak3"] .klaus-portrait { background: radial-gradient(ellipse at 42% 60%, #efca7119, transparent 68%); }
+.klaus-companion[data-klaus-state="streak5"] .klaus-portrait { background: radial-gradient(ellipse at 42% 60%, #e574351f, transparent 70%); }
+.klaus-companion[data-klaus-state="streak10"] .klaus-portrait,
+.klaus-companion[data-klaus-state="complete"] .klaus-portrait { background: radial-gradient(ellipse at 42% 60%, #ffd54a22, transparent 70%); }
+.klaus-copy { min-width: 0; padding-inline: 22px 12px; }
+.klaus-wordmark { font: 650 10px/1.5 'JetBrains Mono Variable', monospace; letter-spacing: .15em; color: #d5bd86; }
+.klaus-wordmark span { display: none; }
+.klaus-caption { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-top: 8px; }
+.klaus-caption strong { font: 550 16px/1.4 'Space Grotesk Variable', sans-serif; }
+.klaus-comment { max-width: 32ch; margin: 8px 0 0; color: #bcb8af; font: 400 13px/1.6 'Space Grotesk Variable', sans-serif; overflow-wrap: anywhere; }
+.klaus-streak-badge { color: #edcc83; font: 600 12px/1.5 'JetBrains Mono Variable', monospace; }
+.klaus-preferences { margin: 12px 12px 0 22px; min-width: 0; }
+.klaus-preferences summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; max-width: 230px; list-style: none; color: #aaa69d; font: 500 10px/1.4 'JetBrains Mono Variable', monospace; cursor: pointer; }
+.klaus-preferences summary::-webkit-details-marker { display: none; }
+.klaus-preferences summary:hover { color: #edcc83; }
+.klaus-controls { display: grid; gap: 4px; padding-block: 4px; }
+.klaus-controls button { box-sizing: border-box; width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid #49474b; border-radius: 3px; background: #151516; color: #d9d4ca; font: 500 11px/1.4 'JetBrains Mono Variable', monospace; cursor: pointer; text-align: left; }
+.klaus-controls button:hover { border-color: #d4b674; }
+.klaus-controls button:focus-visible, .klaus-preferences summary:focus-visible { outline: 2px solid #f2cf78; outline-offset: 3px; }
+.klaus-controls button:disabled { cursor: default; color: #b7b1a5; }
+.klaus-companion.is-hidden { align-content: start; }
+/* The portal is a stable sibling of .col-main inside the existing .player. */
+.klaus-practice-stage .player { grid-template-columns: minmax(0, 1fr) minmax(260px, 300px); }
+.klaus-practice-stage .player > .klaus-companion { margin-top: 76px; }
+/* Setup and the labelled preview use a compact, unboxed greeting. */
+form.home > .klaus-companion { width: 100%; grid-template-columns: 110px minmax(0, 1fr); align-items: center; }
+form.home > .klaus-companion .klaus-portrait { height: 100px; }
+form.home > .klaus-companion .klaus-copy { padding-inline: 0; }
+form.home > .klaus-companion .klaus-preferences { grid-column: 2; margin: 0; }
+.klaus-showcase { width: min(1100px, calc(100% - 32px)); margin: 40px auto; color: #eee; }
+.klaus-showcase h1 { font-size: clamp(26px, 5vw, 48px); margin: 8px 0; }
+.klaus-showcase > header > p { max-width: 70ch; line-height: 1.6; }
+.klaus-showcase .klaus-companion { width: min(360px, 100%); margin: 28px 0; }
+.klaus-demo-controls { display: flex; flex-wrap: wrap; gap: 10px; }
+.klaus-demo-controls [aria-pressed="true"] { border-color: #edc76c; color: #ffde90; }
+.klaus-preview-note { max-width: 80ch; font-size: 13px; line-height: 1.7; color: #b5b0a8; }
+@media (max-width: 900px) {
+  .klaus-practice-stage .player { grid-template-columns: minmax(0, 1fr); }
+  .klaus-practice-stage .player > .klaus-companion { margin-top: 0; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 0 6px; }
+  .klaus-practice-stage .klaus-portrait { height: 100px; grid-row: 1 / 3; }
+  .klaus-practice-stage .klaus-copy { padding: 0; }
+  .klaus-practice-stage .klaus-wordmark { font-size: 9px; }
+  .klaus-practice-stage .klaus-caption { margin-top: 3px; gap: 6px; }
+  .klaus-practice-stage .klaus-caption strong { font-size: 13px; }
+  .klaus-practice-stage .klaus-comment { margin-top: 3px; font-size: 11px; line-height: 1.45; max-width: 48ch; }
+  .klaus-practice-stage .klaus-preferences { grid-column: 2; margin: 0; }
+  .klaus-practice-stage .klaus-companion.is-hidden { grid-template-columns: minmax(0, 1fr); }
+  .klaus-practice-stage .klaus-companion.is-hidden .klaus-preferences { grid-column: 1; }
+}

@@ -1,0 +1,214 @@
+/* Landing-only editorial layer. UI stays Space Grotesk; metadata stays Mono. */
+.dt-landing.dt-editorial {
+  --dt-editorial-headline: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --dt-editorial-tracking: -0.018em;
+  --dt-editorial-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dt-black: #080808;
+}
+
+.dt-editorial .dt-hero-copy { gap: clamp(22px, 2.2vw, 30px); min-width: 0; }
+.dt-editorial .dt-hero-title {
+  font-family: var(--dt-editorial-headline);
+  font-weight: 700;
+  font-size: clamp(3.3rem, 7.5vw, 6.4rem);
+  line-height: 0.98;
+  letter-spacing: var(--dt-editorial-tracking);
+  text-wrap: balance;
+}
+.dt-editorial .dt-editorial-line { display: block; max-width: 100%; }
+.dt-editorial .dt-editorial-mask {
+  display: inline-block;
+  max-width: 100%;
+  overflow: clip;
+  vertical-align: top;
+  padding-block: 0.13em;
+  margin-block: -0.13em;
+}
+.dt-editorial [data-editorial-word] { display: inline-block; }
+.dt-editorial .dt-editorial-underlined {
+  position: relative;
+  width: fit-content;
+  padding-bottom: 0.12em;
+}
+.dt-editorial .dt-editorial-underlined::after {
+  content: '';
+  position: absolute;
+  left: 0.02em;
+  right: 0.02em;
+  bottom: 0;
+  height: clamp(2px, 0.035em, 4px);
+  background: linear-gradient(90deg, var(--dt-red) 0 88%, var(--dt-gold) 88% 100%);
+  transform-origin: left;
+}
+.dt-editorial .dt-hero-de {
+  --dt-editorial-tracking: 0.008em;
+  margin-top: 0.42em;
+  font-family: var(--dt-editorial-headline);
+  font-size: 0.43em;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: var(--dt-editorial-tracking);
+  color: var(--dt-red);
+}
+.dt-editorial .dt-hero-sub { max-width: 44ch; font-size: clamp(1rem, 0.93rem + 0.3vw, 1.125rem); line-height: 1.65; text-wrap: pretty; }
+.dt-editorial .dt-hero-sub b { text-decoration: underline; text-decoration-color: rgba(255, 56, 50, 0.45); text-underline-offset: 0.18em; text-decoration-thickness: 1px; }
+.dt-editorial .dt-eyebrow { font-size: clamp(0.65rem, 0.61rem + 0.14vw, 0.75rem); letter-spacing: 0.11em; line-height: 1.7; }
+.dt-editorial .dt-hero-facts { gap: clamp(18px, 3.5vw, 44px); padding-top: 20px; }
+.dt-editorial .dt-hero-facts .dotnum { font-family: var(--dt-editorial-headline); font-weight: 600; font-size: 2.15rem; letter-spacing: -0.02em; }
+.dt-editorial .dt-hero-facts span { font-size: 0.78rem; line-height: 1.4; }
+
+/* One clear typographic register for headings, not a second font for every label. */
+.dt-editorial .dt-section-head h2 {
+  max-width: 22ch;
+  font-family: var(--dt-editorial-headline);
+  font-weight: 600;
+  font-size: clamp(2.25rem, 1.5rem + 2.8vw, 3.75rem);
+  line-height: 1.02;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+.dt-editorial .dt-resume-text h2 { font-family: var(--dt-editorial-headline); font-weight: 600; font-size: clamp(1.65rem, 1.2rem + 1.15vw, 2.15rem); letter-spacing: 0; }
+.dt-editorial .dt-flow-step h3 { font-family: var(--dt-editorial-headline); font-size: 2rem; font-weight: 600; line-height: 1.08; letter-spacing: 0; }
+.dt-editorial .dt-card h3 { padding-right: 32px; font-family: var(--dt-editorial-headline); font-weight: 600; font-size: clamp(2rem, 1.7rem + 1vw, 2.7rem); line-height: 1; letter-spacing: -0.01em; }
+.dt-editorial .dt-game h3 { font-family: var(--dt-editorial-headline); font-size: 2.25rem; font-weight: 600; line-height: 1.05; letter-spacing: -0.005em; }
+.dt-editorial .dt-section-head p:not(.dt-eyebrow) { font-size: 1.025rem; line-height: 1.65; text-wrap: pretty; }
+.dt-editorial :is(.dt-card, .dt-game, .dt-flow-step) p { line-height: 1.6; text-wrap: pretty; }
+.dt-editorial :is(.dt-card-k, .dt-game-tag) { line-height: 1.6; }
+.dt-editorial .dt-game-de { font-size: 0.9rem !important; line-height: 1.5; }
+.dt-editorial .dt-card-k { padding-right: 48px; }
+
+/* Entrance is opt-in, never a prerequisite for seeing the words. No boot timer. */
+.dt-editorial[data-editorial-enter='play'] [data-editorial-word] {
+  animation: dt-editorial-word-in 780ms var(--dt-editorial-ease) calc(var(--word) * 68ms) both;
+}
+.dt-editorial[data-editorial-enter='play'] [data-editorial-support] {
+  animation: dt-editorial-support-in 720ms var(--dt-editorial-ease) var(--d, 0ms) both;
+}
+.dt-editorial[data-editorial-enter='play'] .dt-editorial-underlined::after {
+  animation: dt-editorial-underline-in 760ms var(--dt-editorial-ease) 310ms both;
+}
+@keyframes dt-editorial-word-in {
+  from { opacity: 0; transform: translateY(112%) rotate(1.2deg); letter-spacing: 0.012em; }
+  to { opacity: 1; transform: none; letter-spacing: var(--dt-editorial-tracking); }
+}
+@keyframes dt-editorial-support-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes dt-editorial-underline-in {
+  from { transform: scaleX(0); opacity: 0.4; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+
+/* Quiet physical cues: an edge catches light; arrows and underlines respond to intent.
+ * Individual translate/scale avoids fighting shared scroll-reveal transforms. */
+.dt-editorial .dt-btn {
+  min-height: 54px;
+  border-radius: 12px;
+  padding-inline: clamp(18px, 2vw, 26px);
+  font-size: 0.95rem;
+  line-height: 1.35;
+  letter-spacing: 0;
+  white-space: normal;
+  text-align: center;
+  transition: translate 220ms var(--dt-editorial-ease), scale 180ms var(--dt-editorial-ease), box-shadow 220ms, border-color 220ms, background 220ms;
+}
+.dt-editorial .dt-btn-primary { box-shadow: inset 0 1px 0 rgba(242, 241, 238, 0.3), inset 0 -3px 0 rgba(8, 8, 8, 0.22), 0 12px 32px -20px rgba(255, 56, 50, 0.65); }
+.dt-editorial .dt-btn-label { flex-wrap: wrap; justify-content: center; }
+.dt-editorial .dt-btn-label > [aria-hidden] { display: inline-block; transition: translate 260ms var(--dt-editorial-ease); }
+.dt-editorial .dt-btn:is(:hover, :focus-visible) { translate: 0 -2px; }
+.dt-editorial .dt-btn:is(:hover, :focus-visible) .dt-btn-label > [aria-hidden] { translate: 4px 0; }
+.dt-editorial .dt-btn-primary:is(:hover, :focus-visible) { background: #ff4943; box-shadow: inset 0 1px 0 rgba(242, 241, 238, 0.4), inset 0 -3px 0 rgba(8, 8, 8, 0.25), 0 16px 36px -18px rgba(255, 56, 50, 0.5); }
+.dt-editorial .dt-btn-ghost:is(:hover, :focus-visible) { background: rgba(242, 241, 238, 0.08); border-color: var(--dt-paper-2); }
+.dt-editorial .dt-btn:is(:active, [data-editorial-pressed]) { translate: 0 1px; scale: 0.985; transform: none !important; box-shadow: inset 0 2px 5px rgba(8, 8, 8, 0.3); }
+
+.dt-editorial :is(.dt-card, .dt-game) {
+  position: relative;
+  isolation: isolate;
+  transition: translate 360ms var(--dt-editorial-ease), scale 180ms var(--dt-editorial-ease), border-color 240ms, box-shadow 360ms, transform 800ms var(--dt-ease);
+}
+.dt-editorial .dt-card::after, .dt-editorial .dt-game::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(125deg, rgba(242, 241, 238, 0.065), transparent 38% 72%, rgba(233, 185, 73, 0.035));
+  box-shadow: inset 0 1px 0 rgba(242, 241, 238, 0.12);
+  transition: opacity 300ms;
+}
+.dt-editorial :is(.dt-card, .dt-game):is(:hover, :focus-visible) { transform: none; translate: 0 -5px; border-color: rgba(242, 241, 238, 0.25); box-shadow: 0 28px 48px -34px #000; }
+.dt-editorial :is(.dt-card, .dt-game):is(:hover, :focus-visible)::after { opacity: 1; }
+.dt-editorial :is(.dt-card, .dt-game):is(:active, [data-editorial-pressed]) { translate: 0 1px; scale: 0.993; }
+.dt-editorial .dt-card-go { transition: rotate 300ms var(--dt-editorial-ease), background 220ms, color 220ms; }
+.dt-editorial .dt-card:is(:hover, :focus-visible) .dt-card-go { transform: none; rotate: -45deg; background: var(--dt-paper); color: #080808; }
+.dt-editorial .dt-card-course:is(:hover, :focus-visible) .dt-card-go { background: var(--dt-red); }
+.dt-editorial .dt-card-road:is(:hover, :focus-visible) .dt-card-go { background: var(--dt-gold); }
+.dt-editorial .dt-game-cta { border-radius: 10px; }
+.dt-editorial .dt-game-cta > span { transition: translate 280ms var(--dt-editorial-ease); }
+.dt-editorial .dt-game:is(:hover, :focus-visible) .dt-game-cta { background: var(--dt-paper); color: #080808; }
+.dt-editorial .dt-game:is(:hover, :focus-visible) .dt-game-cta > span { translate: 4px 0; }
+.dt-editorial .dt-game:focus-visible .dt-game-art .pull { transform: translateX(6px); }
+.dt-editorial .dt-game:focus-visible .dt-game-art .card { transform: rotate(8deg) translateY(-4px); }
+.dt-editorial .dt-game:focus-visible .dt-game-art .glove.l { transform: translateX(8px); }
+.dt-editorial .dt-game:is(:hover, :focus-visible) .dt-game-art .glove.r { transform: translateX(8px); }
+.dt-editorial .dt-rail-item a:is(:hover, :focus-visible) { border-color: var(--dt-paper-2); background: var(--dt-ink-2); }
+.dt-editorial .dt-rail-item a:is(:active, [data-editorial-pressed]) { translate: 0 1px; }
+.dt-editorial :is(a, button):focus-visible { outline: 2px solid var(--dt-gold); outline-offset: 5px; }
+
+@media (max-width: 980px) {
+  .dt-editorial .dt-hero-title { font-size: clamp(3rem, 10.8vw, 6.6rem); }
+  .dt-editorial .dt-hero-copy { gap: 24px; }
+  .dt-editorial .dt-hero-sub { max-width: 52ch; }
+}
+@media (max-width: 640px) {
+  .dt-editorial .dt-hero-title { font-size: clamp(3rem, 12.3vw, 4.8rem); letter-spacing: -0.018em; }
+  .dt-editorial .dt-hero-de { font-size: 0.46em; }
+  .dt-editorial .dt-hero-copy { gap: 22px; }
+  .dt-editorial .dt-hero-facts { gap: 24px; }
+  .dt-editorial .dt-hero-facts .dotnum { font-size: 1.85rem; }
+  .dt-editorial .dt-section-head h2 { max-width: 18ch; }
+}
+@media (hover: none) {
+  .dt-editorial :is(.dt-card, .dt-game, .dt-btn):hover { translate: none; }
+  .dt-editorial :is(.dt-card, .dt-game, .dt-btn):is(:active, [data-editorial-pressed]) { translate: 0 1px; }
+}
+
+/* Kill only decorative motion. Never reset SVG transforms: they define the artwork. */
+html[data-dt-effects='off'] .dt-editorial :is([data-editorial-word], [data-editorial-support]),
+html[data-dt-effects='off'] .dt-editorial[data-editorial-enter] .dt-editorial-underlined::after {
+  animation: none !important;
+  transition: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+html[data-dt-effects='off'] .dt-editorial .dt-editorial-mask { transition: none !important; }
+html[data-dt-effects='off'] .dt-editorial :is(.dt-btn, .dt-card, .dt-game, .dt-flow-step, .dt-rail-item a, .dt-card-go, .dt-game-cta > span, .dt-btn-label > span) {
+  transition: none !important;
+  translate: none !important;
+  scale: none !important;
+  rotate: none !important;
+}
+html[data-dt-effects='off'] .dt-editorial :is(.dt-card, .dt-game, .dt-flow-step, .dt-rail-item a):hover { transform: none !important; }
+html[data-dt-effects='off'] .dt-editorial .dt-led { animation: none; }
+html[data-dt-effects='off'] .dt-editorial :is(.dt-hero-copy, .dt-hero-visual) { transform: none !important; }
+html[data-dt-effects='off'] .dt-editorial.dt-reveal-on [data-reveal] { opacity: 1; transform: none; transition: none; }
+html[data-dt-effects='off'] .dt-editorial .dt-card::before,
+html[data-dt-effects='off'] .dt-editorial .dt-card::after,
+html[data-dt-effects='off'] .dt-editorial .dt-game::after { transition: none; }
+html[data-dt-effects='off'] .dt-editorial .dt-card::before { transform: none; }
+html[data-dt-effects='off'] .dt-editorial .dt-game-art :is(.pull, .glove) { transform: none !important; transition: none !important; }
+html[data-dt-effects='off'] .dt-editorial .dt-game-art .card { transform: rotate(8deg) !important; transition: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dt-editorial :is([data-editorial-word], [data-editorial-support]),
+  .dt-editorial[data-editorial-enter] .dt-editorial-underlined::after { animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }
+  .dt-editorial .dt-editorial-mask { transition: none !important; }
+  .dt-editorial :is(.dt-btn, .dt-card, .dt-game, .dt-flow-step, .dt-rail-item a, .dt-card-go, .dt-game-cta > span, .dt-btn-label > span) { transition: none !important; translate: none !important; scale: none !important; rotate: none !important; }
+  .dt-editorial :is(.dt-card, .dt-game, .dt-flow-step, .dt-rail-item a):hover { transform: none !important; }
+  .dt-editorial .dt-card::before, .dt-editorial .dt-card::after, .dt-editorial .dt-game::after { transition: none; }
+  .dt-editorial .dt-card::before { transform: none; }
+  .dt-editorial .dt-game-art :is(.pull, .glove) { transform: none !important; transition: none !important; }
+  .dt-editorial .dt-game-art .card { transform: rotate(8deg) !important; transition: none !important; }
+}

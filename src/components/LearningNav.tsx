@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { navigate } from '../util.ts';
 import { Logo } from '../brand/Logo.tsx';
+import { EffectsToggle } from '../brand/EffectsToggle.tsx';
 
 const plainClick = (e: MouseEvent<HTMLAnchorElement>) => !(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
 
@@ -40,6 +41,16 @@ export function LearningNav({ path }: { path: string }) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const measure = () => document.documentElement.style.setProperty('--dt-nav-height', `${header.getBoundingClientRect().height}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    return () => { observer.disconnect(); document.documentElement.style.removeProperty('--dt-nav-height'); };
+  }, []);
   useEffect(() => setOpen(false), [path]);
   useEffect(() => {
     const on = () => setScrolled(scrollY > 8);
@@ -55,7 +66,7 @@ export function LearningNav({ path }: { path: string }) {
   }, [open]);
   const go = (e: MouseEvent<HTMLAnchorElement>) => { setOpen(false); followLearningLink(e); };
   return (
-    <header className={`dt-nav${scrolled ? ' is-scrolled' : ''}${open ? ' is-open' : ''}`}>
+    <header ref={headerRef} className={`dt-nav${scrolled ? ' is-scrolled' : ''}${open ? ' is-open' : ''}`}>
       <a className="dt-skip" href="#contenido">Saltar al contenido</a>
       <nav className="dt-nav-inner" aria-label="Navegación principal">
         <a className="dt-nav-brand" href="/" onClick={go} aria-label="Deutschtrainer · Inicio"><Logo height={30} /></a>
@@ -68,6 +79,7 @@ export function LearningNav({ path }: { path: string }) {
               <span>{l.label}</span><small lang="de" aria-hidden="true">{l.de}</small>
             </a>
           ))}
+          <EffectsToggle />
           <a className="dt-nav-teacher" href="/profesor" onClick={go} aria-current={active === 'teacher' ? 'page' : undefined} aria-label="Área del profesor">
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2M3.5 7h9v6.5h-9z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
             <span>Profesor</span>
