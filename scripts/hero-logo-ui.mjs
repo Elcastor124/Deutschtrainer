@@ -42,16 +42,12 @@ try {
   writeFileSync(join(env.shots, 'desktop-pointer-depth.png'), Buffer.from(pointerShot.data, 'base64'));
   // Actual CDP pointer clicks, scan the left floating cube without application shortcuts.
   const canvasRect = await desktop.eval(`(()=>{const r=document.querySelector('.dt-hero-3d canvas').getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})()`);
-  let word = '';
-  for (const [x,y] of [[.17,.27],[.18,.30],[.20,.33],[.80,.40],[.30,.77]]) {
-    const point = { x: canvasRect.x + canvasRect.w*x, y: canvasRect.y+canvasRect.h*y, button:'left', clickCount:1 };
-    for (const type of ['mouseMoved','mousePressed','mouseReleased']) await env.send('Input.dispatchMouseEvent', {type,...point}, desktop.sid);
-    await sleep(100);
-    word = await desktop.eval(`document.querySelector('.dt-hero-hint').textContent`);
-    if (!word.includes('Toca un dado')) break;
-  }
-  assert(!word.includes('Toca un dado'), 'real article cube click must still work');
-  report.article = word;
+  // The plaque is the interactive object (the dice were retired with the jewel redesign).
+  const point = { x: canvasRect.x + canvasRect.w*.5, y: canvasRect.y+canvasRect.h*.5, button:'left', clickCount:1 };
+  for (const type of ['mouseMoved','mousePressed','mouseReleased']) await env.send('Input.dispatchMouseEvent', {type,...point}, desktop.sid);
+  await sleep(200);
+  report.plaqueCursor = await desktop.eval(`document.querySelector('.dt-hero-3d canvas').style.cursor`);
+  assert.equal(report.plaqueCursor, 'pointer', 'the plaque is interactive');
   assert.deepEqual(desktop.errors(), []);
 
   // Route unmount disposes scene; remount restores a single working canvas.

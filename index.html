@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" class="dt-booting">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -8,8 +8,64 @@
     <meta name="description" content="Deutschtrainer: curso de alemán A1–A2 en orden, con presentaciones, práctica, juegos de clase y Road to B1." />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script>window.__dtBootStart = performance.now();</script>
+    <style>
+      /* Preloader: painted from the first HTML byte, before any JS or webfont.
+         Only opacity/transform/stroke animate, so it stays smooth while the bundle parses. */
+      html { background: #080808; }
+      html.dt-booting { overflow: hidden; }
+      .dt-preloader { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; background: radial-gradient(ellipse 60% 50% at 50% 46%, #17130d 0, #0b0a09 45%, #080808 75%); color: #f2f1ee; pointer-events: none; transition: opacity 420ms cubic-bezier(.4,0,.2,1), visibility 0s linear 420ms; animation: dt-pre-failsafe 0s linear 15s forwards; }
+      .dt-preloader[data-preloader='done'] { opacity: 0; visibility: hidden; }
+      .dt-preloader-core { display: grid; justify-items: center; gap: 30px; }
+      .dt-preloader-mark { position: relative; width: 96px; height: 96px; }
+      .dt-preloader-mark svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+      .dt-preloader-mark .p { stroke-dasharray: 1; stroke-dashoffset: 1; animation: dt-pre-draw 900ms cubic-bezier(.65,0,.35,1) forwards; }
+      .dt-preloader-mark .b { opacity: 0; animation: dt-pre-pop 600ms cubic-bezier(.22,1,.36,1) 650ms forwards; }
+      .dt-preloader-glow { position: absolute; inset: -90%; border-radius: 50%; background: radial-gradient(circle, #ff383226 0, #e9b9490d 38%, transparent 66%); animation: dt-pre-breathe 2400ms ease-in-out infinite alternate; will-change: transform, opacity; }
+      .dt-preloader-bar { position: relative; width: 132px; height: 1px; overflow: hidden; background: #f2f1ee1c; }
+      .dt-preloader-bar b { position: absolute; top: 0; bottom: 0; left: 0; width: 45%; background: linear-gradient(90deg, transparent, #ff3832 40%, #e9b949 70%, transparent); animation: dt-pre-sweep 1300ms cubic-bezier(.45,0,.55,1) infinite; will-change: transform; }
+      .dt-preloader-label { margin: -14px 0 0; font: 500 10px/1 ui-monospace, 'Cascadia Mono', Consolas, monospace; letter-spacing: .32em; text-transform: uppercase; color: #8d8a82; }
+      @keyframes dt-pre-draw { to { stroke-dashoffset: 0; } }
+      @keyframes dt-pre-pop { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+      @keyframes dt-pre-breathe { from { transform: scale(.9); opacity: .65; } to { transform: scale(1.08); opacity: 1; } }
+      @keyframes dt-pre-sweep { from { transform: translateX(-110%); } to { transform: translateX(240%); } }
+      @keyframes dt-pre-failsafe { to { opacity: 0; visibility: hidden; } }
+      @media (prefers-reduced-motion: reduce) {
+        .dt-preloader-mark .p { animation: none; stroke-dashoffset: 0; }
+        .dt-preloader-mark .b { animation: none; opacity: 1; }
+        .dt-preloader-glow, .dt-preloader-bar b { animation: none; }
+      }
+    </style>
   </head>
   <body>
+    <div class="dt-preloader" data-preloader="loading" role="status" aria-live="polite" aria-busy="true" aria-label="Cargando Deutschtrainer">
+      <div class="dt-preloader-core">
+        <div class="dt-preloader-mark" aria-hidden="true">
+          <i class="dt-preloader-glow"></i>
+          <svg viewBox="0 0 120 120" fill="none" stroke-linecap="round" stroke-linejoin="round" data-preloader-mark>
+            <path class="p" pathLength="1" d="M60 13 C84 23 101 46 101 72 C101 95 82 108 55 108 C40 108 27 105 17 101" stroke="#FF3832" stroke-width="5.2" data-mark="notebook" />
+            <path class="p" pathLength="1" d="M17 101 L60 13 L103 101" stroke="#F2F1EE" stroke-width="5.6" data-mark="peak" style="animation-delay:120ms" />
+            <path class="p" pathLength="1" d="M60 62 V99" stroke="#F2F1EE" stroke-width="3.2" data-mark="spine" style="animation-delay:380ms" />
+            <path class="p" pathLength="1" d="M60 99 Q79 93 97 98" stroke="#FF3832" stroke-width="1.7" data-mark="pageTurn" style="animation-delay:460ms" />
+            <g stroke="#E9B949" stroke-width="2.2">
+              <path class="p" pathLength="1" d="M68 72 H90" style="animation-delay:520ms" />
+              <path class="p" pathLength="1" d="M68 79 H91" style="animation-delay:580ms" />
+              <path class="p" pathLength="1" d="M68 86 H88" style="animation-delay:640ms" />
+              <path class="p" pathLength="1" d="M68 93 H81" style="animation-delay:700ms" />
+            </g>
+            <g class="b">
+              <path d="M18 57 H99 V65 H18 Z" fill="#FF3832" stroke="#FF3832" stroke-width="2.2" data-mark="pencil" />
+              <path d="M21 61 H99" stroke="#F2F1EE" stroke-width="1.3" />
+              <path d="M27 57 V65" stroke="#F2F1EE" stroke-width="1.6" />
+              <path d="M99 57 L113 61 L99 65 Z" fill="#E9B949" stroke="#E9B949" stroke-width="1.2" data-mark="tip" />
+              <path d="M108 59.6 L113 61 L108 62.4 Z" fill="#0A0A0A" stroke="none" />
+            </g>
+          </svg>
+        </div>
+        <div class="dt-preloader-bar" aria-hidden="true"><b></b></div>
+        <p class="dt-preloader-label">Deutschtrainer</p>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

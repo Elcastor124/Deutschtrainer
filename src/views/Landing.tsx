@@ -36,7 +36,7 @@ export function watchEditorialEntrance(root: HTMLElement, effectsEnabled: boolea
   if (!win || !effectsEnabled || typeof win.MutationObserver !== 'function' || typeof win.requestAnimationFrame !== 'function') return () => {};
   let frame = 0;
   let stopped = false;
-  const blocked = () => doc.hidden || doc.documentElement.classList.contains('dt-intro-lock') || !!doc.querySelector('[data-intro]');
+  const blocked = () => doc.hidden || doc.documentElement.classList.contains('dt-booting') || doc.documentElement.classList.contains('dt-intro-lock') || !!doc.querySelector('[data-intro]');
   const detach = () => {
     win.cancelAnimationFrame(frame);
     observer.disconnect();

@@ -18,7 +18,7 @@
   cursor: default;
 }
 .dt-intro-v2::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(ellipse at 50% 42%, #23221b 0, #11110f 28%, #080808 68%); opacity: .7; }
-.dt-intro-v2::after { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: .11; background: repeating-linear-gradient(0deg, transparent 0 3px, #ffffff09 3px 4px); }
+.dt-intro-v2::after { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: .11; transform: translateZ(0); background: repeating-linear-gradient(0deg, transparent 0 3px, #ffffff09 3px 4px); }
 .dt-intro-field { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .dt-intro-field i { position: absolute; inset: -12%; background: radial-gradient(ellipse at 24% 42%, #ff38320f, transparent 45%), radial-gradient(ellipse at 76% 56%, #e9b94912, transparent 43%); animation: dt-cinematic-field 5400ms var(--intro-ease) both; }
 .dt-intro-field i:nth-child(2) { inset: 12% -30%; background: conic-gradient(from 45deg at 50% 42%, transparent 0 40%, #e9b94908 45%, transparent 50% 90%, #ff38320a 95%, transparent); animation-name: dt-cinematic-depth; }
@@ -37,22 +37,23 @@
 .dt-intro-v2-stage { position: relative; z-index: 2; width: min(90vw, 660px); display: grid; justify-items: center; align-content: center; gap: 0; margin-top: -32px; pointer-events: none; }
 .dt-intro-drafting { position: relative; width: clamp(230px, 34vw, 340px); aspect-ratio: 1; display: grid; place-items: center; }
 .dt-intro-drafting::before { content: ''; position: absolute; inset: -30%; pointer-events: none; background: radial-gradient(ellipse, #e9b9490c, #ff383206 30%, transparent 65%); animation: dt-cinematic-core 3000ms 500ms var(--intro-ease) both; }
-.dt-intro-convergence { position: absolute; z-index: 0; top: 50%; left: 50%; width: 100vw; height: 100vh; overflow: visible; transform: translate(-50%, -50%); }
-.dt-intro-thread { stroke: var(--intro-red); stroke-linecap: round; }
-.dt-intro-thread.is-gold { stroke: var(--intro-gold); }
-.dt-intro-thread-rail { stroke-width: 1; stroke-dasharray: 1; animation: dt-cinematic-rail 3000ms var(--intro-ease) var(--thread-delay) both; }
-.dt-intro-thread-pulse { stroke-width: 3; stroke-dasharray: .16 1; animation: dt-cinematic-inflow 1850ms cubic-bezier(.4,0,.12,1) var(--thread-delay) both; }
+.dt-intro-convergence { position: absolute; z-index: 0; top: 50%; left: 50%; width: 0; height: 0; pointer-events: none; }
+/* Each thread is laid along the vector centre→edge; length/angle come from CSS trig. */
+.dt-intro-thread { --dx: calc(var(--tx) * 50vw); --dy: calc(var(--ty) * 50vh); position: absolute; left: 0; top: 0; width: hypot(var(--dx), var(--dy)); height: 5px; margin-top: -2.5px; overflow: hidden; transform-origin: 0 50%; transform: rotate(atan2(var(--dy), var(--dx))); color: var(--intro-red); contain: strict; }
+.dt-intro-thread.is-gold { color: var(--intro-gold); }
+.dt-intro-thread b { position: absolute; left: 0; right: 0; will-change: transform, opacity; }
+.dt-intro-thread-rail { top: 2px; height: 1.5px; background: linear-gradient(90deg, currentColor, color-mix(in srgb, currentColor 55%, transparent) 60%, transparent); transform-origin: 100% 50%; animation: dt-cinematic-rail 3000ms var(--intro-ease) var(--thread-delay) both; }
+.dt-intro-thread-pulse { top: 0; height: 5px; background: linear-gradient(90deg, transparent 0, color-mix(in srgb, currentColor 40%, transparent) 2%, #fff8ee 6%, currentColor 10%, color-mix(in srgb, currentColor 50%, transparent) 20%, transparent 34%); animation: dt-cinematic-inflow 1850ms cubic-bezier(.4,0,.12,1) var(--thread-delay) both; }
+.dt-intro-thread.is-depth-0 { opacity: .62; }
+.dt-intro-thread.is-depth-0 .dt-intro-thread-pulse { top: 1px; height: 3px; }
 .dt-intro-resonance { position: absolute; inset: 5%; z-index: 0; pointer-events: none; }
 .dt-intro-resonance i { position: absolute; inset: 0; border: 1px solid #ff383248; border-radius: 50%; animation: dt-cinematic-resonance 1800ms 1100ms var(--intro-ease) both; }
 .dt-intro-resonance i:last-child { inset: 6%; border-color: #e9b94938; animation-delay: 1400ms; }
-.dt-intro-guides { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; overflow: visible; stroke: #f2f1ee23; stroke-width: .6; animation: dt-v2-guides 3400ms var(--intro-ease) both; }
-.dt-guide-frame { stroke-dasharray: 1500; animation: dt-v2-guide-draw 1600ms var(--intro-ease) 180ms both; }
-.dt-guide-circle { stroke: #e9b94932; stroke-dasharray: 4 10; }
-.dt-guide-ticks { stroke: #e9b94980; stroke-width: 1; }
+.dt-intro-guides { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; pointer-events: none; user-select: none; will-change: transform, opacity; animation: dt-v2-guides 3400ms var(--intro-ease) both; }
 .dt-intro-letter { position: absolute; z-index: 2; top: 50%; font-family: var(--dt-display); font-weight: 500; font-size: clamp(100px, 13vw, 150px); line-height: 1; letter-spacing: -.06em; color: #f2f1ee; opacity: 0; }
 .dt-intro-letter-d { left: -8%; animation: dt-v2-letter-d 2000ms var(--intro-ease) 200ms both; }
 .dt-intro-letter-t { right: -8%; color: var(--intro-red); animation: dt-v2-letter-t 2000ms var(--intro-ease) 200ms both; }
-.dt-intro-emblem { position: relative; z-index: 2; width: 77%; height: auto; overflow: visible; transform-origin: 50% 55%; filter: drop-shadow(0 24px 24px #00000070); animation: dt-v2-emblem 4100ms var(--intro-ease) both; }
+.dt-intro-emblem { position: relative; z-index: 2; width: 77%; height: auto; overflow: visible; transform-origin: 50% 55%; animation: dt-v2-emblem 4100ms var(--intro-ease) both; }
 .dt-intro-emblem .dt-mark-peak { stroke-dasharray: 1; animation: dt-v2-draw 1250ms var(--intro-ease) 600ms both; }
 .dt-intro-emblem .dt-mark-notebook { stroke-dasharray: 1; animation: dt-v2-book 1500ms var(--intro-ease) 1150ms both; transform-origin: 60px 60px; }
 .dt-intro-emblem .dt-mark-spine { stroke-dasharray: 1; animation: dt-v2-draw 700ms var(--intro-ease) 2150ms both; }
@@ -95,17 +96,20 @@
 .dt-intro-v2-reveal i { position: absolute; left: 0; right: 0; top: 100%; height: 1px; opacity: 0; background: linear-gradient(90deg, transparent, var(--intro-red) 35%, var(--intro-gold) 65%, transparent); }
 .dt-intro-v2-reveal i:nth-child(2) { margin-top: 3px; opacity: 0; }
 .dt-intro-v2-reveal i:nth-child(3) { margin-top: 6px; opacity: 0; }
-.dt-intro.dt-intro-v2.exit { animation: dt-v2-exit 460ms cubic-bezier(.65,0,.35,1) both; pointer-events: none; }
+.dt-intro-v2.is-waiting, .dt-intro-v2.is-waiting *, .dt-intro-v2.is-waiting *::before, .dt-intro-v2.is-waiting *::after { animation-play-state: paused !important; }
+.dt-intro.dt-intro-v2.exit { animation: dt-v2-exit 460ms cubic-bezier(.65,0,.35,1) both; pointer-events: none; will-change: transform; }
 .dt-intro-v2.exit .dt-intro-v2-stage { animation: dt-v2-stage-out 400ms ease-in both; }
 .dt-intro-v2.exit .dt-intro-v2-reveal i { animation: dt-v2-shutter 460ms cubic-bezier(.65,0,.35,1) both; }
 .dt-intro-v2.exit .dt-intro-skip { opacity: 0; }
 
-@keyframes dt-cinematic-field { from { opacity: 0; transform: translate3d(-2%, 1%, 0) scale(1.12); } 25% { opacity: 1; } to { opacity: .55; transform: none; } }
-@keyframes dt-cinematic-depth { from { opacity: 0; transform: rotate(-8deg) scale(1.1); } 30% { opacity: .8; } to { opacity: .25; transform: rotate(4deg) scale(1); } }
+/* Large gradient layers animate only translate/rotate/opacity: scaling them forces the
+   compositor to re-rasterize full-screen textures (measured 200+ ms hitches). */
+@keyframes dt-cinematic-field { from { opacity: 0; transform: translate3d(-3%, 1.5%, 0); } 25% { opacity: 1; } to { opacity: .55; transform: translate3d(0, 0, 0); } }
+@keyframes dt-cinematic-depth { from { opacity: 0; transform: rotate(-8deg); } 30% { opacity: .8; } to { opacity: .25; transform: rotate(4deg); } }
 @keyframes dt-cinematic-ground { from { opacity: 0; } 45% { opacity: .9; } to { opacity: .4; } }
-@keyframes dt-cinematic-core { from { opacity: 0; transform: scale(.7); } 45% { opacity: 1; } to { opacity: .25; transform: scale(1.15); } }
-@keyframes dt-cinematic-rail { 0% { opacity: 0; stroke-dashoffset: 1; } 35% { opacity: .36; stroke-dashoffset: 0; } 70% { opacity: .2; } 100% { opacity: 0; stroke-dashoffset: 0; } }
-@keyframes dt-cinematic-inflow { 0% { opacity: 0; stroke-dashoffset: .16; } 12% { opacity: 1; } 75% { opacity: .9; } 100% { opacity: 0; stroke-dashoffset: -1; } }
+@keyframes dt-cinematic-core { from { opacity: 0; } 45% { opacity: 1; } to { opacity: .25; } }
+@keyframes dt-cinematic-rail { 0% { opacity: 0; transform: scaleX(0); } 35% { opacity: .5; transform: scaleX(1); } 70% { opacity: .26; } 100% { opacity: 0; transform: scaleX(1); } }
+@keyframes dt-cinematic-inflow { 0% { opacity: 0; transform: translate3d(100%, 0, 0); } 12% { opacity: 1; } 75% { opacity: .9; } 100% { opacity: 0; transform: translate3d(-24%, 0, 0); } }
 @keyframes dt-cinematic-resonance { 0% { opacity: 0; transform: scale(.72); } 25% { opacity: .5; } 100% { opacity: 0; transform: scale(1.55); } }
 @keyframes dt-cinematic-type-lock { from { opacity: .25; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes dt-v2-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
@@ -126,9 +130,9 @@
 @keyframes dt-v2-type-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes dt-v2-score { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes dt-v2-aperture { 0%,12% { transform: scaleY(1); } 100% { transform: scaleY(0); } }
-@keyframes dt-v2-exit { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(0 0 100% 0); } }
+@keyframes dt-v2-exit { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, -100%, 0); } }
 @keyframes dt-v2-stage-out { to { opacity: 0; transform: translateY(-22px) scale(.97); } }
-@keyframes dt-v2-shutter { from { top: 100%; opacity: .55; } to { top: 0; opacity: .2; } }
+@keyframes dt-v2-shutter { from { transform: translate3d(0, 0, 0); opacity: .55; } to { transform: translate3d(0, -100vh, 0); opacity: .2; } }
 
 @media (max-width: 640px) {
   .dt-intro-masthead { inset: max(22px, env(safe-area-inset-top)) 20px auto; font-size: 8px; letter-spacing: .06em; }
@@ -147,6 +151,15 @@
   .dt-intro-score i { width: 26px; }
   .dt-intro-score > div { gap: 7px; }
   .dt-intro-v2 .dt-intro-skip { right: 20px; bottom: max(22px, env(safe-area-inset-bottom)); font-size: 10px; padding-inline: 12px; }
+}
+/* Phones / coarse pointers: the same story with fewer full-screen layers to paint.
+   The signature beats (threads, emblem drawing, wordmark) are untouched. */
+@media (max-width: 640px), (pointer: coarse) {
+  .dt-intro-field i:nth-child(2), .dt-intro-v2 .dt-intro-blueprint, .dt-intro-registration, .dt-intro-v2::after { display: none; }
+  .dt-intro-thread:nth-child(n+9) { display: none; }
+  /* SVG stroke drawing re-lays out its subtree every frame. Keep it for the emblem (the
+     signature) but let the wordmark/guides arrive through their composited window/fade. */
+  .dt-intro-v2 .dt-intro-word path { animation: none; stroke-dashoffset: 0; }
 }
 @media (max-height: 540px) {
   .dt-intro-drafting { width: min(44vh, 220px); }

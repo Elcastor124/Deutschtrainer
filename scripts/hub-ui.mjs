@@ -8,7 +8,7 @@ try {
  await p.go('/');
  await p.until(`!!document.querySelector('a[href="/tema/1"]')`,'enlace tema 1');
  assert.match(await p.eval('document.body.innerText'),/Aprende alemán/);
- await p.until(`!document.querySelector('[data-intro]') && !document.querySelector('.dt-intro')`,'intro final',8500);
+ await p.until(`!document.querySelector('[data-intro]') && !document.querySelector('.dt-intro')`,'intro final',15000);
  await p.shot('hub-desktop');
  await p.click('a[href="/tema/1"]');
  await p.until(`document.querySelectorAll('a[href^="/presentaciones/"][href$=".html"]').length===8`,'ocho lecciones');

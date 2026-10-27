@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { BrandSymbol, Wordmark } from './Logo.tsx';
 import { readEffectsEnabled, useEffectsEnabled } from './effects.ts';
+import { useBooted } from './boot.ts';
 import './intro-v2.css';
 
 const KEY = 'dt:intro:v1'; // Keep the existing per-tab contract across the redesign.
@@ -8,20 +9,28 @@ export const INTRO_MS = 6200;
 export const INTRO_EXIT_MS = 460;
 export const INTRO_REPLAY_EVENT = 'dt:intro:replay';
 
-// Decorative paths only: every thread terminates at the canonical emblem's centre.
-// Their viewport-sized SVG is anchored inside the drafting square, not the page.
+// Decorative threads only: every one starts beyond a screen edge and terminates at the
+// emblem's centre. Straight, GPU-composited beams (transform/opacity only): the old SVG
+// strokes repainted the full viewport each frame and stuttered on mid-range phones.
+// x/y are the start point relative to the centre, as a fraction of the half-viewport.
 const CONVERGENCE = [
-  { edge: 'left', tone: 'red', d: 'M-900 -220 C-520 -220 -290 0 0 0', delay: 100 },
-  { edge: 'right', tone: 'gold', d: 'M900 190 C520 190 290 0 0 0', delay: 180 },
-  { edge: 'top', tone: 'gold', d: 'M-340 -600 C-340 -300 -120 -200 0 0', delay: 260 },
-  { edge: 'bottom', tone: 'red', d: 'M380 600 C380 290 120 200 0 0', delay: 340 },
-  { edge: 'left', tone: 'gold', d: 'M-900 110 C-510 110 -250 0 0 0', delay: 420 },
-  { edge: 'right', tone: 'red', d: 'M900 -130 C510 -130 250 0 0 0', delay: 500 },
-  { edge: 'top', tone: 'red', d: 'M570 -600 C410 -280 150 -150 0 0', delay: 200 },
-  { edge: 'bottom', tone: 'gold', d: 'M-590 600 C-430 280 -150 150 0 0', delay: 280 },
-  { edge: 'left', tone: 'red', d: 'M-900 -470 L0 0', delay: 580 },
-  { edge: 'right', tone: 'gold', d: 'M900 460 L0 0', delay: 660 },
+  { edge: 'left', tone: 'red', x: -1.25, y: -0.49, delay: 100, depth: 1 },
+  { edge: 'right', tone: 'gold', x: 1.25, y: 0.42, delay: 180, depth: 1 },
+  { edge: 'top', tone: 'gold', x: -0.47, y: -1.33, delay: 260, depth: 0 },
+  { edge: 'bottom', tone: 'red', x: 0.53, y: 1.33, delay: 340, depth: 1 },
+  { edge: 'left', tone: 'gold', x: -1.25, y: 0.24, delay: 420, depth: 0 },
+  { edge: 'right', tone: 'red', x: 1.25, y: -0.29, delay: 500, depth: 0 },
+  { edge: 'top', tone: 'red', x: 0.79, y: -1.33, delay: 200, depth: 1 },
+  { edge: 'bottom', tone: 'gold', x: -0.82, y: 1.33, delay: 280, depth: 0 },
+  { edge: 'left', tone: 'red', x: -1.25, y: -1.04, delay: 580, depth: 0 },
+  { edge: 'right', tone: 'gold', x: 1.25, y: 1.02, delay: 660, depth: 1 },
 ] as const;
+
+const GUIDES_SVG = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" fill="none">
+<path d="M28 180 H332 M180 20 V340 M54 310 H307 M180 42 L53 310 M180 42 L307 310" stroke="#f2f1ee" stroke-opacity=".14" stroke-width=".6"/>
+<circle cx="180" cy="180" r="145" stroke="#e9b949" stroke-opacity=".2" stroke-width=".6" stroke-dasharray="4 10"/>
+<path d="M44 175 V185 M316 175 V185 M175 38 H185 M175 322 H185" stroke="#e9b949" stroke-opacity=".5"/>
+</svg>`)}`;
 
 /** Place in Landing/footer; it replays without reloading or clearing session progress. */
 export function IntroReplayButton({ className = '' }: { className?: string }) {
@@ -56,6 +65,10 @@ export function shouldShowIntro(path: string, search: string): boolean {
 
 export function Intro({ path, search }: { path: string; search: string }) {
   const effectsEnabled = useEffectsEnabled();
+  // The overlay mounts frozen on its first frame *behind* the preloader, so every layer is
+  // styled and rasterized while the logo is still on screen; its clock (CSS + cue timers)
+  // starts only once every critical asset is ready.
+  const booted = useBooted();
   const [phase, setPhase] = useState<'off' | 'play' | 'exit'>(() => (shouldShowIntro(path, search) ? 'play' : 'off'));
   const [cue, setCue] = useState<string>('draft');
   // Remove the overlay in the preference-change render, not after the exit animation.
@@ -127,9 +140,14 @@ export function Intro({ path, search }: { path: string; search: string }) {
     };
   }, [active]);
 
+  // One intro per tab: seen as soon as it is on screen, even if skipped before boot finishes.
   useEffect(() => {
     if (phase === 'off' || !effectsEnabled) return;
     try { sessionStorage.setItem(KEY, '1'); } catch { /* storage may be disabled */ }
+  }, [phase, effectsEnabled]);
+
+  useEffect(() => {
+    if (phase === 'off' || !effectsEnabled || !booted) return;
     if (phase === 'exit') {
       const done = window.setTimeout(() => setPhase('off'), INTRO_EXIT_MS);
       return () => window.clearTimeout(done);
@@ -138,29 +156,26 @@ export function Intro({ path, search }: { path: string; search: string }) {
     const timers = INTRO_CUES.slice(1).map((c) => window.setTimeout(() => setCue(c.name), c.at));
     if (!still) timers.push(window.setTimeout(() => setPhase('exit'), INTRO_MS - INTRO_EXIT_MS));
     return () => timers.forEach((id) => window.clearTimeout(id));
-  }, [phase, still, effectsEnabled]);
+  }, [phase, still, effectsEnabled, booted]);
 
   if (!active) return null;
   return (
-    <div ref={overlay} className={`dt-intro dt-intro-v2 ${phase}`} data-testid="intro" data-intro="cinematic-v2" data-intro-phase={phase === 'exit' ? 'reveal' : cue} data-intro-duration={INTRO_MS} onClick={() => setPhase('off')} role="dialog" aria-modal="true" aria-label="Presentación de Deutschtrainer">
+    <div ref={overlay} className={`dt-intro dt-intro-v2 ${phase}${booted ? '' : ' is-waiting'}`} data-testid="intro" data-intro="cinematic-v2" data-intro-phase={phase === 'exit' ? 'reveal' : cue} data-intro-duration={INTRO_MS} onClick={() => setPhase('off')} role="dialog" aria-modal="true" aria-label="Presentación de Deutschtrainer">
       <div className="dt-intro-field" aria-hidden="true"><i /><i /><i /></div>
       <div className="dt-intro-blueprint" aria-hidden="true"><i /><i /><i /></div>
       <div className="dt-intro-registration" aria-hidden="true"><i /><i /><i /><i /></div>
       <div className="dt-intro-masthead" aria-hidden="true"><span>Deutschtrainer<span className="dt-intro-slash"> / </span>Identität</span><span>D + T<span className="dt-intro-slash"> / </span>A</span></div>
       <div className="dt-intro-v2-stage" aria-hidden="true">
         <div className="dt-intro-drafting">
-          <svg className="dt-intro-convergence" data-intro-convergence viewBox="-720 -450 1440 900" preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false">
-            {CONVERGENCE.map((thread, i) => <g key={i} data-intro-edge={thread.edge} className={`dt-intro-thread is-${thread.tone}`} style={{ '--thread-delay': `${thread.delay}ms` } as CSSProperties}>
-              <path className="dt-intro-thread-rail" d={thread.d} pathLength="1" vectorEffect="non-scaling-stroke" />
-              <path className="dt-intro-thread-pulse" data-intro-beam={thread.tone} d={thread.d} pathLength="1" vectorEffect="non-scaling-stroke" />
-            </g>)}
-          </svg>
+          <div className="dt-intro-convergence" data-intro-convergence aria-hidden="true">
+            {CONVERGENCE.map((thread, i) => <i key={i} data-intro-edge={thread.edge} className={`dt-intro-thread is-${thread.tone} is-depth-${thread.depth}`} style={{ '--thread-delay': `${thread.delay}ms`, '--tx': thread.x, '--ty': thread.y } as CSSProperties}>
+              <b className="dt-intro-thread-rail" />
+              <b className="dt-intro-thread-pulse" data-intro-beam={thread.tone} />
+            </i>)}
+          </div>
           <div className="dt-intro-resonance" aria-hidden="true"><i /><i /></div>
-          <svg className="dt-intro-guides" viewBox="0 0 360 360" fill="none">
-            <path className="dt-guide-frame" d="M28 180 H332 M180 20 V340 M54 310 H307 M180 42 L53 310 M180 42 L307 310" />
-            <circle className="dt-guide-circle" cx="180" cy="180" r="145" />
-            <path className="dt-guide-ticks" d="M44 175 V185 M316 175 V185 M175 38 H185 M175 322 H185" />
-          </svg>
+          {/* Construction guides as a cached image layer: rasterized once, then only composited. */}
+          <img className="dt-intro-guides" src={GUIDES_SVG} alt="" width={360} height={360} decoding="sync" draggable={false} />
           <span className="dt-intro-letter dt-intro-letter-d">D</span>
           <span className="dt-intro-letter dt-intro-letter-t">T</span>
           <BrandSymbol size={260} tone="dark" animated className="dt-intro-emblem" />

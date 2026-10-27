@@ -51,7 +51,7 @@ try {
   assert(report.pointerSkipMs < 900, 'skip must not wait for the story');
 
   await p.go('/?intro=1');
-  await p.until(`!!document.querySelector('[data-intro]')`, 'natural intro setup');
+  await p.until(`!!document.querySelector('[data-intro]:not(.is-waiting)')`, 'natural intro setup', 15000);
   await p.eval(`window.__introMs=null;const t=performance.now();const mo=new MutationObserver(()=>{if(!document.querySelector('[data-intro]')){window.__introMs=performance.now()-t;mo.disconnect()}});mo.observe(document.body,{childList:true,subtree:true})`);
   await p.until(`window.__introMs!==null`, 'natural intro completes', 8500);
   report.autoMs = Math.round(await p.eval(`window.__introMs`));

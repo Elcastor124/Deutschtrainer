@@ -1,79 +1,77 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { VOCAB } from '../../shared/vocab.ts';
+import { useEffect, useRef, useState } from 'react';
 import { BrandSymbol } from './Logo.tsx';
 import { useEffectsEnabled } from './effects.ts';
-import type { Article, HeroHandle } from './hero3d.ts';
+import { holdBoot } from './boot.ts';
+import type { HeroHandle } from './hero3d.ts';
 
-function useWords() {
-  return useMemo(() => {
-    const out: Record<Article, { de: string; es: string }[]> = { der: [], die: [], das: [] };
-    for (const v of VOCAB) {
-      const m = /^(der|die|das) ([A-ZÄÖÜ][\wäöüß-]{2,13})$/.exec(v.de);
-      if (m && !v.pl?.includes('only')) out[m[1] as Article].push({ de: v.de, es: v.es });
-    }
-    // Mezcla estable por artículo
-    for (const k of Object.keys(out) as Article[]) out[k] = out[k].filter((_, i) => i % 2 === 0).concat(out[k].filter((_, i) => i % 2 === 1));
-    return out;
-  }, []);
-}
+/** Delay between the page being uncovered and the 3D scene starting to move. */
+export const HANDOFF_MS = 900;
 
 export function webglAvailable(): boolean {
   try {
     const c = document.createElement('canvas');
-    return !!(c.getContext('webgl2') || c.getContext('webgl'));
+    const gl = (c.getContext('webgl2') || c.getContext('webgl')) as WebGLRenderingContext | null;
+    // Release the probe context at once: browsers cap live contexts per page.
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    return !!gl;
   } catch { return false; }
 }
 
-/** Fallback estático (sin WebGL): el símbolo y los tres artículos en SVG/CSS. */
+/** Fallback estático (sin WebGL): la placa con el símbolo y sus órbitas en SVG/CSS. */
 export function HeroStatic() {
   return (
     <div className="dt-hero-static" aria-hidden="true">
-      <div className="dt-hero-static-ring" />
+      <div className="dt-hero-static-ring" /><div className="dt-hero-static-ring is-red" />
       <BrandSymbol size="58%" tile />
-      <span className="dt-art der">der</span><span className="dt-art die">die</span><span className="dt-art das">das</span>
     </div>
   );
 }
 
-/** Lienzo 3D: se carga three.js bajo demanda, se pausa fuera de pantalla y con la pestaña oculta. */
+/** Lienzo 3D. three.js se descarga y sus shaders se compilan detrás de la pantalla de carga;
+ * mientras dura la intro la escena queda en pausa para no competir con la animación. */
 export function Hero3D() {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'static'>('loading');
-  const [hit, setHit] = useState<{ article: Article; de: string; es: string } | null>(null);
-  const words = useWords();
   const effectsEnabled = useEffectsEnabled();
   useEffect(() => {
-    let handle: HeroHandle | null = null, cancelled = false, io: IntersectionObserver | null = null;
     if (!webglAvailable()) { setState('static'); return; }
-    const boot = () => import('./hero3d.ts').then(({ mountHero }) => {
-      if (cancelled || !canvas.current) return;
-      try {
-        handle = mountHero(canvas.current, { words, reduced: !effectsEnabled, onArticle: setHit });
-        setState('ready');
-        io = new IntersectionObserver(([e]) => handle?.setActive(e.isIntersecting), { threshold: 0.02 });
-        io.observe(wrap.current!);
-      } catch (err) { console.warn('3D desactivado:', err); setState('static'); }
-    }).catch(() => setState('static'));
-    // Primero la pintura de la página; luego el 3D.
-    const idle = (globalThis as { requestIdleCallback?: (f: () => void, o?: object) => number }).requestIdleCallback;
-    const schedule = () => (idle ? idle(boot, { timeout: 600 }) : setTimeout(boot, 120));
-    // Durante la intro el hilo principal es para la animación: el 3D arranca cuando termina.
+    const abort = new AbortController();
+    let handle: HeroHandle | null = null, io: IntersectionObserver | null = null, mo: MutationObserver | null = null;
+    let onScreen = true, settleTimer = 0, settled = false;
     const root = document.documentElement;
-    let mo: MutationObserver | null = null;
-    if (root.classList.contains('dt-intro-lock')) {
-      mo = new MutationObserver(() => { if (!root.classList.contains('dt-intro-lock')) { mo?.disconnect(); mo = null; schedule(); } });
-      mo.observe(root, { attributes: true, attributeFilter: ['class'] });
-    } else schedule();
-    return () => { cancelled = true; mo?.disconnect(); io?.disconnect(); handle?.dispose(); };
-  }, [words, effectsEnabled]);
+    const covered = () => root.classList.contains('dt-intro-lock') || root.classList.contains('dt-booting');
+    // After the intro, the headline's word entrance owns the first ~0.9 s; the scene keeps its
+    // already-drawn still frame and only starts moving afterwards, so the two never compete.
+    const sync = () => {
+      if (covered()) { settled = false; clearTimeout(settleTimer); settleTimer = 0; handle?.setActive(false); return; }
+      if (!settled) {
+        if (!settleTimer) settleTimer = window.setTimeout(() => { settled = true; settleTimer = 0; sync(); }, HANDOFF_MS);
+        return;
+      }
+      handle?.setActive(onScreen);
+    };
+    const mount = import('./hero3d.ts').then(async ({ mountHero }) => {
+      if (abort.signal.aborted || !canvas.current) return;
+      try {
+        handle = mountHero(canvas.current, { reduced: !effectsEnabled, signal: abort.signal });
+        sync();
+        await handle.ready;
+        if (abort.signal.aborted) return;
+        setState('ready');
+        io = new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; sync(); }, { threshold: 0.02 });
+        io.observe(wrap.current!);
+        mo = new MutationObserver(sync);
+        mo.observe(root, { attributes: true, attributeFilter: ['class'] });
+      } catch (err) { console.warn('3D desactivado:', err); handle?.dispose(); handle = null; setState('static'); }
+    }).catch(() => setState('static'));
+    // While the preloader is up, the hero (download + shader compile + first frame) is critical.
+    holdBoot(mount);
+    return () => { abort.abort(); clearTimeout(settleTimer); mo?.disconnect(); io?.disconnect(); handle?.dispose(); };
+  }, [effectsEnabled]);
   return (
     <div className={`dt-hero-3d is-${state}`} ref={wrap}>
-      {state === 'static' ? <HeroStatic /> : <canvas ref={canvas} aria-label="Símbolo de Deutschtrainer en 3D con los dados der, die y das. Toca un dado para ver una palabra." role="img" />}
-      {state !== 'static' && <p className="dt-hero-hint" aria-live="polite">
-        {hit ? <><b className={`dt-art-chip ${hit.article}`}>{hit.article}</b> <span lang="de">{hit.de.replace(/^(der|die|das) /, '')}</span> <span className="dim">· {hit.es}</span></>
-          : <>Toca un dado: <b className="dt-art-chip der">der</b> <b className="dt-art-chip die">die</b> <b className="dt-art-chip das">das</b></>}
-      </p>}
+      {state === 'static' ? <HeroStatic /> : <canvas ref={canvas} aria-label="Símbolo de Deutschtrainer en 3D: el cuaderno y el lápiz forman la A de aprender." role="img" />}
     </div>
   );
 }

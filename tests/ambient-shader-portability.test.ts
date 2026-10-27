@@ -10,7 +10,9 @@ describe('ambient GLSL ES portability', () => {
     expect(fragment).not.toMatch(/\bpow\s*\(/);
     expect(fragment).toMatch(/float redDistance = \(uv\.y - curve\) \/ \.23;/);
     expect(fragment).toMatch(/exp\(-redDistance \* redDistance\)/);
-    expect(fragment).toMatch(/float goldDistance = \(uv\.y - goldCurve \+ weave \* \.04\) \/ \.095;/);
+    expect(fragment).toMatch(/float goldDistance = \(uv\.y - goldCurve [^;]*\) \/ \.\d+;/);
     expect(fragment).toMatch(/exp\(-goldDistance \* goldDistance\)/);
+    // Every signed distance in the shader is squared by multiplication.
+    for (const name of fragment.match(/\b\w+Distance\b(?= =)/g) ?? []) expect(fragment).toContain(`exp(-${name} * ${name})`);
   });
 });
