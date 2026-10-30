@@ -1,4 +1,5 @@
 import type { BoxingAction, BoxingView, BoxingWelcome } from '../shared/boxing.ts';
+import { teacherKey } from './util.ts';
 
 type SessionStore = Pick<Storage, 'getItem' | 'setItem'>;
 const slot = (code: string, role: BoxingWelcome['role']) => `dt:boxing:${role}:${code}`;
@@ -26,7 +27,7 @@ export function readBoxingSession(code?: string, role?: BoxingWelcome['role'], s
 export async function boxingRequest<T>(path: string, body?: unknown, token?: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`/api/boxing/${path}`, {
     method: body === undefined ? 'GET' : 'POST', cache: 'no-store', signal,
-    headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(path === 'create' && teacherKey() ? { 'X-Teacher-Key': teacherKey()! } : {}) },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   let data;

@@ -13,6 +13,7 @@
     "start": "node --disable-warning=ExperimentalWarning server/index.ts",
     "test": "vitest run",
     "check": "tsc --noEmit",
+    "teacher": "node --disable-warning=ExperimentalWarning scripts/teacher-admin.mjs",
     "e2e": "node --disable-warning=ExperimentalWarning scripts/e2e.mjs",
     "ui": "node --disable-warning=ExperimentalWarning scripts/ui.mjs",
     "tour": "node --disable-warning=ExperimentalWarning scripts/tour.mjs",

@@ -1,4 +1,5 @@
 import type { RoadAction, RoadView, RoadWelcome, RoadRole } from '../shared/road.ts';
+import { teacherKey } from './util.ts';
 type SessionStore = Pick<Storage, 'getItem' | 'setItem'>;
 const memory = new Map<string,string>();
 const defaultStore: SessionStore = { getItem(k) { try { return localStorage.getItem(k) ?? memory.get(k) ?? null; } catch { return memory.get(k) ?? null; } }, setItem(k,v) { memory.set(k,v); try { localStorage.setItem(k,v); } catch { /* Memory fallback for restricted browsers. */ } } };
@@ -18,7 +19,7 @@ export async function roadRequest<T>(path:string, body?:unknown, token?:string, 
  const controller = new AbortController(); const abort = () => controller.abort(); signal?.addEventListener('abort',abort,{once:true}); if (signal?.aborted) controller.abort();
  const timer = setTimeout(abort,8000);
  try {
-  const response = await fetch(`/api/road/${path}`,{method:body === undefined ? 'GET':'POST',cache:'no-store',signal:controller.signal,keepalive,headers:{...(body === undefined ? {} : {'Content-Type':'application/json'}),...(token ? {Authorization:`Bearer ${token}`} : {})},...(body === undefined ? {} : {body:JSON.stringify(body)})});
+  const response = await fetch(`/api/road/${path}`,{method:body === undefined ? 'GET':'POST',cache:'no-store',signal:controller.signal,keepalive,headers:{...(body === undefined ? {} : {'Content-Type':'application/json'}),...(token ? {Authorization:`Bearer ${token}`} : {}),...(path === 'create' && teacherKey() ? {'X-Teacher-Key':teacherKey()!} : {})},...(body === undefined ? {} : {body:JSON.stringify(body)})});
   let data; try { data = await response.json(); } catch { throw new Error('Respuesta inválida del servidor. Reintenta.'); }
   if (!response.ok || data?.ok === false) throw new Error(data?.error ?? 'No se pudo confirmar la acción.');
   return data as T;

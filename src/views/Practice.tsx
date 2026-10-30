@@ -99,7 +99,7 @@ export function Practice() {
         <label className="row"><input type="checkbox" checked={focus} onChange={(e) => setFocus(e.target.checked)} /> Repasar sobre todo lo que he fallado (se completa con preguntas nuevas)</label>
         <label className="stack" style={{ gap: 6 }}>
           <span>¿Otro ordenador? Código de alumno <span className="dim">(aparece al final de la clase{myCode ? `; el tuyo: ${myCode}` : ''})</span></span>
-          <input className="field dot" style={{ letterSpacing: '0.15em' }} value={pcode} maxLength={6} onChange={(e) => setPcode(e.target.value.toUpperCase())} placeholder="opcional" />
+          <input className="field dot" style={{ letterSpacing: '0.15em' }} value={pcode} maxLength={8} onChange={(e) => setPcode(e.target.value.toUpperCase())} placeholder="opcional" />
         </label>
         <div className="row">
           <button className="btn primary lg" disabled={!name.trim() && !pcode.trim()}>Empezar práctica</button>

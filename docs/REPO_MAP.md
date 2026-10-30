@@ -5,7 +5,10 @@ Monolito TypeScript sin base de datos: **cliente React 19 + Vite** (`src/`), **s
 ```
 server/            Servidor (HTTP estático + WebSocket + APIs REST de juegos)
   index.ts         Arranque, WS de BlackCard/Jenga/práctica, montaje de manejadores HTTP, estáticos
-  static.ts        Resolución segura de rutas estáticas + cabeceras (nuevo)
+  static.ts        Resolución segura de rutas estáticas + cabeceras
+  security.ts limits.ts   Guard: límites de creación/intentos, IP real (TRUST_PROXY), modo TEACHER_AUTH
+  teacher-auth.ts  Claves de profesor respaldadas por el servidor (hash salado) · scripts/teacher-admin.mjs
+  room-ttl.ts instance-lock.ts   Caducidad de salas por inactividad · una instancia por DATA_DIR
   room.ts          ★ Máquina de estados de la sala BlackCard: fases, respuestas, objetos, cofres, vista por rol
   tasks.ts         Acto II: rol, escena, palabras, escritura libre, Wort-Jenga (torre, turnos, puntuación)
   grade.ts select.ts  Corrección de preguntas; selección anti-repetición y práctica adaptativa

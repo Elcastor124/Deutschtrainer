@@ -12,6 +12,9 @@ export const store = {
   },
 };
 
+/** Clave de profesor emitida por el servidor (npm run teacher -- add …). Opcional mientras dure la transición (TEACHER_AUTH). */
+export const teacherKey = (): string | undefined => store.get('dt:teacher-key') || undefined;
+
 export function profileId(): string {
   let id = store.get('bc:profile');
   if (!id) {

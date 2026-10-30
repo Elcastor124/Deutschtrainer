@@ -283,7 +283,7 @@ export type GameStart = 'blackcard' | 'jenga';
 
 // ---------- Protocolo ----------
 export type ClientMsg =
-  | { t: 'hello'; role: 'teacher'; create?: boolean; room?: string; token?: string; topics?: Topic[]; start?: GameStart }
+  | { t: 'hello'; role: 'teacher'; create?: boolean; room?: string; token?: string; teacherKey?: string; topics?: Topic[]; start?: GameStart }
   | { t: 'hello'; role: 'player'; room: string; token?: string; name?: string; profile?: string }
   | { t: 'hello'; role: 'practice'; room?: string; token?: string; profile?: string; profileCode?: string; name?: string; topics?: Topic[]; focus?: boolean; size?: number }
   | { t: 'answer'; id: number; qid: string; a: Answer }
