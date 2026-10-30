@@ -97,6 +97,6 @@ describe('Student learning hub', () => {
     expect(html).toContain('Imperativ');
     expect(html).not.toContain('aria-pressed="true"');
     expect(html).not.toContain('type="checkbox" checked');
-    expect(html).toContain('conexión con el servidor');
+    expect(html).toContain('Empezar práctica');
   });
 });
