@@ -59,7 +59,7 @@ function PasswordField({ value, onChange, alias, label, autoComplete, meter }: {
   );
 }
 
-export function AccountGate({ onSigned, compact = false }: { onSigned: (a: AccountPub) => void; compact?: boolean }) {
+export function AccountGate({ onSigned, compact = false, hideGuest = false }: { onSigned: (a: AccountPub) => void; compact?: boolean; hideGuest?: boolean }) {
   const [tab, setTab] = useState<'register' | 'login'>(() => (store.get('dt:has-account') ? 'login' : 'register'));
   const [alias, setAlias] = useState('');
   const [pw, setPw] = useState('');
@@ -126,7 +126,7 @@ export function AccountGate({ onSigned, compact = false }: { onSigned: (a: Accou
         {error && <p className="libre-err" role="alert">{error}</p>}
         <button className="btn primary lg" disabled={busy || (tab === 'register' ? !canRegister : !a || !pw)}>{busy ? 'Un momento…' : tab === 'register' ? 'Crear mi cuenta' : 'Entrar'}</button>
         {tab === 'login' && <p className="libre-note">¿Olvidaste la contraseña? No guardamos correo, así que no se puede recuperar: crea una cuenta nueva con otro alias.</p>}
-        <p className="libre-note acc-guest">¿Prefieres no crear cuenta? <a href="/libre" onClick={(e) => { e.preventDefault(); navigate(back() ?? '/libre'); }}>Juega como invitado</a>: todo funciona, pero no se guarda nada.</p>
+        {!hideGuest && <p className="libre-note acc-guest">¿Prefieres no crear cuenta? <a href="/libre" onClick={(e) => { e.preventDefault(); navigate(back() ?? '/libre'); }}>Juega como invitado</a>: todo funciona, pero no se guarda nada.</p>}
       </form>
     </section>
   );

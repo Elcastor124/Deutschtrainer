@@ -160,7 +160,7 @@ export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Ne
           {v.phase === 'final' && <Final view={v} onPractice={onNewPractice} />}
           {v.phase === 'final' && v.private && <div className="row practice-more"><button className="btn primary" onClick={() => navigate('/libre')}>Volver al modo libre</button></div>}
           {v.phase === 'final' && practice && onChangeTopics && (
-            <div className="row practice-more"><button className="btn" onClick={onChangeTopics}>Cambiar temas o número de preguntas</button></div>
+            <div className="row practice-more"><button className="btn" onClick={onChangeTopics}>Cambiar temas o número de preguntas</button><a className="btn" href="/ranking" onClick={(e) => { e.preventDefault(); navigate('/ranking'); }}>Ver ranking semanal</a></div>
           )}
           {v.phase === 'task' && <TaskPlay view={v} net={net} offset={st.offset} onAgain={onNewPractice} />}
 

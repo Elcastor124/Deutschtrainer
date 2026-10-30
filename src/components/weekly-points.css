@@ -137,3 +137,4 @@
   .wp-reco a { transition: none; }
   .wp-reco a:hover { transform: none; }
 }
+.wp-ranking-link { display: inline-block; margin-top: 10px; color: var(--wp-ink); font-size: 0.85rem; text-decoration: underline; text-decoration-color: var(--wp-red); text-underline-offset: 3px; }

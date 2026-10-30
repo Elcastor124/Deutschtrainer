@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { fetchLeaderboard, fetchMyProgress, weekLabel, type Leaderboard, type MyProgress } from '../progress-client.ts';
+import { fetchWeekly, weekLabel, type Leaderboard, type MyProgress } from '../progress-client.ts';
 import './weekly-points.css';
 
 export type WeeklyState =
@@ -133,6 +133,7 @@ export function WeeklyPointsView({ state, compact = false }: { state: WeeklyStat
       {empty ? <p className="wp-empty"><b>Los geht’s!</b> Empieza a practicar para sumar puntos.</p> : null}
       {!compact && !empty ? <Bars history={me.history} /> : null}
       {!compact && board ? <Podium board={board} me={me} /> : null}
+      <a className="wp-ranking-link" href="/ranking">Ver el ranking semanal completo →</a>
       {!compact && me.recommended.length ? (
         <nav className="wp-reco" aria-label="Recomendado para ti">
           <h3 className="wp-label">Recomendado para ti</h3>
@@ -165,7 +166,7 @@ export function WeeklyPoints({ compact }: { compact?: boolean }) {
     const load = async () => {
       ctl?.abort();
       ctl = new AbortController();
-      const [me, board] = await Promise.all([fetchMyProgress(undefined, ctl.signal), compact ? Promise.resolve(null) : fetchLeaderboard(ctl.signal)]);
+      const { me, board } = await fetchWeekly(ctl.signal, !compact);
       if (!alive) return;
       if (!me.ok) { setState((s) => (s.status === 'ready' ? s : { status: 'offline' })); return; }
       setState({ status: 'ready', me: me.data, board: board && board.ok ? board.data : null });

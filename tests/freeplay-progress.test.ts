@@ -123,3 +123,19 @@ describe('privacidad: las cuentas no aparecen en las APIs antiguas', () => {
     expect(isAccountProfile(ACC)).toBe(true);
   });
 });
+
+describe('semana del ranking (hora de Madrid)', () => {
+  it('el reinicio es el lunes 00:00 de Madrid, también con cambio de hora', async () => {
+    const { nextWeekStart, weekRange, isoWeek } = await import('../server/progress.ts');
+    expect(new Date(nextWeekStart(Date.parse('2026-10-30T15:00:00Z'))).toISOString()).toBe('2026-11-01T23:00:00.000Z'); // CET
+    expect(new Date(nextWeekStart(Date.parse('2026-03-29T12:00:00Z'))).toISOString()).toBe('2026-03-29T22:00:00.000Z'); // CEST
+    expect(weekRange(Date.parse('2026-10-30T15:00:00Z'))).toEqual({ from: '2026-10-26', to: '2026-11-01' });
+    const t = Date.parse('2026-12-31T23:30:00Z');
+    expect(isoWeek(nextWeekStart(t) - 1)).toBe('2026-W53');
+    expect(isoWeek(nextWeekStart(t))).toBe('2027-W01');
+  });
+  it('una práctica sin nivel (la de /practica) puntúa como A2 al completarse', () => {
+    const { log } = mk();
+    expect(log.activity(ACC, { game: 'blackcard', total: 10, correct: 7 })!.points).toBe(FREEPLAY.levelPoints.A2);
+  });
+});

@@ -46,8 +46,22 @@ export const PASSWORD_MIN = 10;
 export interface AccountPub { alias: string; rankingOptIn: boolean }
 export interface SessionWelcome { token: string; account: AccountPub }
 export interface RankingEntry { rank: number; alias: string; points: number }
+/** GET /api/play/leaderboard?week=current|previous&limit=n — solo alias que activaron el ranking. */
+export interface RankingView {
+  week: string; which: 'current' | 'previous';
+  range: { from: string; to: string };
+  /** Instante (ms) en que se reinicia la semana actual (lunes 00:00, hora de Madrid). */
+  resetsAt: number;
+  /** Cuentas con puntos en el ranking esa semana. */
+  players: number;
+  entries: RankingEntry[];
+  /** Solo con sesión de alumno: tus puntos de esa semana y tu puesto (si apareces en el ranking). */
+  me?: { alias: string; points: number; rank: number | null; optedIn: boolean };
+}
 export interface ProgressSummary {
   week: string; weekPoints: number; streak: number; rank: number | null; rankingOptIn: boolean;
+  /** Puntos de las últimas 8 semanas (de la más antigua a la actual). */
+  history: { week: string; points: number }[];
   activities: { at: number; game: PlayGame; level: Level | null; correct: number; total: number }[];
   topics: { topic: string; attempts: number; correct: number; accuracy: number }[];
   frequentErrors: { qid: string; prompt: string; topic: string; wrong: number; attempts: number }[];
@@ -55,3 +69,12 @@ export interface ProgressSummary {
   recommended: string[];
   advice: string[];
 }
+
+/** Reglas de puntos, en palabras para el alumno (las aplica server/progress.ts: POINTS y FREEPLAY). */
+export const FREEPLAY_RULES: readonly { points: string; title: string; text: string }[] = [
+  { points: '+10', title: 'Respuesta correcta', text: 'Cada pregunta puntúa una vez al día: repetir la misma no suma.' },
+  { points: '+2', title: 'Intento', text: 'Equivocarse también cuenta: es parte de aprender.' },
+  { points: '+5', title: 'Primera respuesta del día', text: '+10 si llevas 3 días o más seguidos practicando.' },
+  { points: '+4–10', title: 'Actividad completada', text: 'A1 / A2 / B1 (la práctica de /practica cuenta como A2), con 8 preguntas o más y al menos un 40 % de acierto. Hasta 3 al día.' },
+  { points: '200', title: 'Máximo por día', text: 'Para que gane quien practica a menudo, no quien se queda horas.' },
+];

@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { TOPICS } from '../../shared/rules.ts';
 import type { Topic } from '../../shared/types.ts';
 import { Net, useNet } from '../net.ts';
-import { navigate, profileId, store } from '../util.ts';
+import { navigate, profileId, store, studentSession } from '../util.ts';
+import type { AccountPub } from '../../shared/play.ts';
+import { cachedAlias, refreshAccount } from '../play-client.ts';
+import { AccountGate } from './Account.tsx';
+import '../libre.css';
+import '../account.css';
 import { PlayScreen } from './Player.tsx';
 import { followLearningLink } from '../components/LearningNav.tsx';
 import { ErrorBoundary } from '../components/ErrorBoundary.tsx';
@@ -11,7 +16,8 @@ import { KlausPracticeStage } from '../klaus/KlausPracticeStage.tsx';
 
 type Hello = Extract<ConstructorParameters<typeof Net>[0], { role: 'practice' }>;
 interface Opts { topics: Topic[]; focus: boolean; size: number }
-interface Saved { room: string; token: string; opts?: Opts }
+/** `account`: la práctica se abrió con la cuenta de alumno (cuenta para el ranking semanal). */
+interface Saved { room: string; token: string; opts?: Opts; account?: boolean }
 
 export const PRACTICE_SIZES = [10, 15, 25] as const;
 const KEY = 'bc:practice';
@@ -41,32 +47,58 @@ export function Practice() {
   const [pcode, setPcode] = useState('');
   const myCode = store.get('bc:pcode');
 
+  // Con cuenta, la práctica va por la cuenta: sus respuestas cuentan para el ranking semanal (ver /ranking).
+  const [account, setAccount] = useState<AccountPub | null>(() => (cachedAlias() && studentSession() ? { alias: cachedAlias()!, rankingOptIn: false } : null));
+  useEffect(() => {
+    void refreshAccount().then(setAccount);
+    const on = () => setAccount(cachedAlias() ? { alias: cachedAlias()!, rankingOptIn: false } : null);
+    addEventListener('dt:account', on);
+    return () => removeEventListener('dt:account', on);
+  }, []);
+  const asAccount = () => { const session = studentSession(); return session ? { free: true, session } : {}; };
   const resume = (s: Saved) => setHello({
     t: 'hello', role: 'practice', room: s.room, token: s.token, profile: profileId(), name: store.get('bc:name') ?? undefined,
     ...(s.opts ? { topics: s.opts.topics, focus: s.opts.focus, size: s.opts.size } : {}),
+    ...(s.account ? asAccount() : {}),
   });
   // Recarga a mitad de práctica: se retoma sola (sin pasar por el formulario).
   useEffect(() => { if (saved) resume(saved); }, []);
 
   if (hello) {
-    const again = () => setHello({ t: 'hello', role: 'practice', profile: profileId(), name: store.get('bc:name') ?? hello.name, topics: hello.topics, focus: hello.focus, size: hello.size });
+    const again = () => setHello({ t: 'hello', role: 'practice', profile: profileId(), name: store.get('bc:name') ?? hello.name, topics: hello.topics, focus: hello.focus, size: hello.size, ...(hello.free ? asAccount() : {}) });
     const toForm = () => { store.del(KEY); setHello(null); };
     return <PracticeConn key={run} hello={hello} onAgain={again} onForm={toForm} />;
   }
 
   const start = (e: FormEvent) => {
     e.preventDefault();
+    store.set('bc:psize', String(size));
+    // Con cuenta: el servidor usa la cuenta (y suma el historial de repaso de este dispositivo). profile = este dispositivo.
+    if (account && studentSession()) { setHello({ t: 'hello', role: 'practice', topics, focus, size, profile: profileId(), ...asAccount() }); return; }
     if (!name.trim() && !pcode.trim()) return;
     store.set('bc:name', name.trim());
-    store.set('bc:psize', String(size));
     setHello({ t: 'hello', role: 'practice', name: name.trim(), topics, focus, size, profile: profileId(), ...(pcode.trim() ? { profileCode: pcode.trim().toUpperCase() } : {}) });
   };
   const toggle = (t: Topic) => setTopics((x) => (x.includes(t) ? x.filter((y) => y !== t) : [...x, t]));
   return (
-    <form className="home" onSubmit={start} style={{ alignContent: 'start', paddingTop: '8vh' }}>
+    <div className="home" style={{ alignContent: 'start', paddingTop: '8vh' }}>
       <h1 className="home-title" style={{ fontSize: 'clamp(2.2rem, 1.4rem + 4vw, 4.6rem)' }}>Tema 1<b>// práctica</b></h1>
       <p className="home-sub">Todo el banco de preguntas preparado, en sesiones sin tiempo. Cada práctica trae preguntas nuevas y mezcla un repaso de lo que fallaste en otras sesiones. Si fallas una, vuelve a salir unas preguntas después.</p>
       <p className="home-sub small">Necesitas conexión con el servidor. Los talleres de escritura y ensayo de escenas tienen su propio espacio de práctica.</p>
+      <section className="practice-account" aria-label="Tu cuenta">
+      {account ? (
+        <div className="libre-card acc-strip" data-practice-account="">
+          <span className="acc-avatar small" aria-hidden="true">{account.alias.slice(0, 1).toUpperCase()}</span>
+          <div><b>Practicas como {account.alias}</b><span className="libre-note">Cada respuesta cuenta para tu progreso y para el ranking semanal.</span></div>
+          <a className="btn" href="/ranking" onClick={followLearningLink}>Ver ranking</a>
+        </div>
+      ) : (
+        <div data-practice-gate="">
+          <p className="libre-note" style={{ margin: '0 0 12px' }}><b>Entra con tu cuenta</b> para que tu práctica cuente en el <a href="/ranking" onClick={followLearningLink}>ranking semanal</a> y se guarde tu progreso. Sin cuenta también puedes practicar (abajo), pero no cuenta.</p>
+          <AccountGate compact hideGuest onSigned={(a) => setAccount(a)} />
+        </div>
+      )}
+      </section>
       <KlausCompanion />
       <div className="row"><a className="btn" href="/tema/1" onClick={followLearningLink}>Ver materiales de Tema 1</a><a className="btn" href="/tema/1/taller" onClick={followLearningLink}>Practicar escritura y escenas</a></div>
       {saved && (
@@ -76,10 +108,10 @@ export function Practice() {
           <button type="button" className="btn ghost" onClick={() => { store.del(KEY); location.reload(); }}>Empezar otra</button>
         </div>
       )}
-      <div className="panel stack" style={{ width: '100%' }}>
-        <label className="stack" style={{ gap: 6 }}>Tu nombre
+      <form className="panel stack" style={{ width: '100%' }} onSubmit={start}>
+        {!account && <label className="stack" style={{ gap: 6 }}>Tu nombre <span className="dim small">(sin cuenta: no cuenta para el ranking)</span>
           <input className="field" value={name} maxLength={16} onChange={(e) => setName(e.target.value)} />
-        </label>
+        </label>}
         <div className="stack" style={{ gap: 6 }}>
           <span>Temas <span className="dim">(sin marcar = todos)</span></span>
           <div className="chips">
@@ -97,23 +129,23 @@ export function Practice() {
           </div>
         </div>
         <label className="row"><input type="checkbox" checked={focus} onChange={(e) => setFocus(e.target.checked)} /> Repasar sobre todo lo que he fallado (se completa con preguntas nuevas)</label>
-        <label className="stack" style={{ gap: 6 }}>
+        {!account && <label className="stack" style={{ gap: 6 }}>
           <span>¿Otro ordenador? Código de alumno <span className="dim">(aparece al final de la clase{myCode ? `; el tuyo: ${myCode}` : ''})</span></span>
           <input className="field dot" style={{ letterSpacing: '0.15em' }} value={pcode} maxLength={8} onChange={(e) => setPcode(e.target.value.toUpperCase())} placeholder="opcional" />
-        </label>
+        </label>}
         <div className="row">
-          <button className="btn primary lg" disabled={!name.trim() && !pcode.trim()}>Empezar práctica</button>
+          <button className="btn primary lg" disabled={!account && !name.trim() && !pcode.trim()}>Empezar práctica</button>
           <button type="button" className="btn ghost" onClick={() => navigate('/')}>Volver</button>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
 
 function PracticeConn({ hello, onAgain, onForm }: { hello: Hello; onAgain: () => void; onForm: () => void }) {
   const net = useMemo(() => new Net(hello, (m) => {
     const opts: Opts = { topics: hello.topics ?? [], focus: !!hello.focus, size: hello.size ?? 15 };
-    store.set(KEY, JSON.stringify({ room: m.room, token: m.token, opts } satisfies Saved));
+    store.set(KEY, JSON.stringify({ room: m.room, token: m.token, opts, ...(hello.free ? { account: true } : {}) } satisfies Saved));
     if (m.profile) store.set('bc:profile', m.profile);
     if (m.profileCode) store.set('bc:pcode', m.profileCode);
   }), [hello]);

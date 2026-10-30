@@ -1,0 +1,117 @@
+/* Ranking semanal (/ranking): solo design tokens. Medallas: --gold, --silver, --bronze (tokens del aparato). */
+.rk { --podium-h: clamp(140px, 22vw, 230px); display: grid; gap: var(--dt-space-9); max-width: 1040px; margin: 0 auto; padding: 4vh var(--dt-pad) 12vh; }
+.rk-head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--dt-space-9); flex-wrap: wrap; }
+.rk-head h1 { margin: var(--dt-space-3) 0 0; font-family: var(--dt-display); font-size: var(--dt-t-h1); line-height: 1; letter-spacing: -0.035em; }
+.rk-sub { margin: var(--dt-space-5) 0 0; display: flex; align-items: center; gap: var(--dt-space-5); flex-wrap: wrap; color: var(--dt-paper-2); font-family: var(--dt-mono); font-size: var(--dt-t-small); letter-spacing: 0.04em; }
+.rk-pill { padding: var(--dt-space-2) var(--dt-space-5); border-radius: var(--dt-r-pill); border: 1px solid var(--dt-hair-2); background: var(--dt-ink-2); color: var(--dt-gold); }
+.rk-tabs { display: grid; grid-template-columns: 1fr 1fr; padding: var(--dt-space-1); border-radius: var(--dt-r-pill); background: var(--dt-ink-1); border: 1px solid var(--dt-hair); min-width: min(100%, 320px); }
+.rk-tabs button { border: 0; background: none; color: var(--dt-paper-2); padding: var(--dt-space-4) var(--dt-space-7); border-radius: var(--dt-r-pill); font-weight: 600; cursor: pointer; transition: background var(--dt-fast) var(--dt-ease), color var(--dt-fast); }
+.rk-tabs button.on { background: var(--dt-paper); color: var(--dt-black); }
+.rk-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--dt-space-5); }
+.rk-stats div { display: grid; gap: var(--dt-space-1); padding: var(--dt-space-5) var(--dt-space-7); border-radius: var(--dt-r-md); background: var(--dt-ink-2); border: 1px solid var(--dt-hair); }
+.rk-stats span { color: var(--dt-muted); font-size: var(--dt-t-small); }
+.rk-stats b { font-size: 1.9rem; color: var(--dt-paper); line-height: 1.1; }
+.rk-skel { height: 420px; border-radius: var(--dt-r-xl); background: linear-gradient(90deg, var(--dt-ink-1), var(--dt-ink-2), var(--dt-ink-1)); background-size: 200% 100%; animation: rk-shimmer 1.4s linear infinite; }
+
+/* ───── Podio ───── */
+.rk-stage { position: relative; isolation: isolate; padding: var(--dt-space-11) var(--dt-space-7) 0; border-radius: var(--dt-r-xl); overflow: hidden;
+  background: radial-gradient(ellipse 70% 60% at 50% 100%, color-mix(in srgb, var(--dt-gold) 9%, transparent), transparent 70%), var(--dt-ink-1); border: 1px solid var(--dt-hair); box-shadow: var(--dt-shadow-2); }
+.rk-podium { list-style: none; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: clamp(8px, 2vw, 22px); max-width: 760px; position: relative; z-index: 2; }
+.rk-step { --medal: var(--gold); display: grid; justify-items: center; gap: var(--dt-space-5); min-width: 0; }
+.rk-p2 { --medal: var(--silver); }
+.rk-p3 { --medal: var(--bronze); }
+.rk-who { position: relative; display: grid; justify-items: center; gap: var(--dt-space-2); min-width: 0; max-width: 100%; text-align: center; }
+.rk-avatar { width: clamp(52px, 8vw, 76px); height: clamp(52px, 8vw, 76px); border-radius: 50%; display: grid; place-items: center; font-family: var(--dt-display); font-weight: 700; font-size: clamp(1.4rem, 2.6vw, 2.1rem); color: var(--dt-black);
+  background: radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--medal) 55%, white), var(--medal) 55%, color-mix(in srgb, var(--medal) 60%, black)); box-shadow: 0 0 0 3px var(--dt-ink-1), 0 0 0 5px color-mix(in srgb, var(--medal) 70%, transparent), 0 14px 30px -12px color-mix(in srgb, var(--medal) 80%, transparent); }
+.rk-p1 .rk-avatar { width: clamp(64px, 10vw, 96px); height: clamp(64px, 10vw, 96px); font-size: clamp(1.8rem, 3.4vw, 2.8rem); }
+.rk-alias { font-family: var(--dt-display); font-size: clamp(0.95rem, 1.6vw, 1.2rem); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-points { display: inline-flex; align-items: baseline; gap: 4px; color: var(--medal); }
+.rk-points .dotnum { font-size: clamp(1.4rem, 2.8vw, 2.1rem); }
+.rk-points small { color: var(--dt-muted); font-family: var(--dt-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.rk-you { margin-left: 6px; padding: 1px 7px; border-radius: var(--dt-r-pill); background: var(--dt-red); color: var(--dt-black); font-family: var(--dt-mono); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; vertical-align: middle; }
+.rk-block { width: 100%; height: calc(var(--podium-h) * var(--h) / 100); display: grid; align-content: start; justify-items: center; gap: var(--dt-space-1); padding-top: var(--dt-space-7); border-radius: var(--dt-r-md) var(--dt-r-md) 0 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--medal) 30%, var(--dt-ink-3)), var(--dt-ink-2) 70%); border: 1px solid color-mix(in srgb, var(--medal) 45%, transparent); border-bottom: 0;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--medal) 70%, white), 0 -10px 40px -24px var(--medal); transform-origin: 50% 100%; }
+.rk-place { font-size: clamp(2.6rem, 6vw, 4.6rem); line-height: 1; color: var(--medal); text-shadow: 0 0 24px color-mix(in srgb, var(--medal) 45%, transparent); }
+.rk-medal { font-family: var(--dt-mono); font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: color-mix(in srgb, var(--medal) 70%, var(--dt-paper)); }
+.rk-step.is-empty .rk-avatar { background: var(--dt-ink-3); color: var(--dt-muted); box-shadow: 0 0 0 3px var(--dt-ink-1), 0 0 0 5px var(--dt-hair-2); }
+.rk-step.is-empty .rk-alias { color: var(--dt-muted); font-weight: 500; }
+.rk-step.is-me .rk-avatar { box-shadow: 0 0 0 3px var(--dt-ink-1), 0 0 0 5px var(--dt-red), 0 0 34px -4px var(--dt-red-glow); }
+.rk-crown { position: absolute; top: -34px; left: 50%; width: 46px; transform: translateX(-50%) rotate(-8deg); fill: var(--gold); filter: drop-shadow(0 4px 12px color-mix(in srgb, var(--gold) 55%, transparent)); }
+.rk-floor { position: relative; z-index: 2; height: 10px; margin: 0 calc(var(--dt-space-7) * -1); background: linear-gradient(90deg, transparent, var(--dt-hair-2) 15%, color-mix(in srgb, var(--dt-gold) 50%, var(--dt-hair-2)) 50%, var(--dt-hair-2) 85%, transparent); }
+.rk-spot { position: absolute; inset: -20% 25% 0; z-index: 1; pointer-events: none; background: conic-gradient(from 180deg at 50% 0%, transparent 160deg, color-mix(in srgb, var(--dt-gold) 16%, transparent) 180deg, transparent 200deg); filter: blur(6px); opacity: 0; }
+.rk-confetti { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+.rk-confetti i { position: absolute; top: -16px; left: var(--x); width: var(--w); height: 12px; border-radius: 2px; background: var(--c); opacity: 0; transform: rotate(var(--r)); }
+
+/* ───── Lista ───── */
+.rk-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--dt-space-3); }
+.rk-list li { display: grid; grid-template-columns: 3.2ch 40px minmax(0, 1fr) minmax(60px, 34%) auto; align-items: center; gap: var(--dt-space-5); padding: var(--dt-space-4) var(--dt-space-7); border-radius: var(--dt-r-md); background: var(--dt-ink-2); border: 1px solid var(--dt-hair); }
+.rk-list li.is-me { border-color: var(--dt-red); box-shadow: 0 0 0 1px var(--dt-red), 0 10px 30px -18px var(--dt-red-glow); }
+.rk-list b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--dt-display); }
+.rk-rank { font-size: 1.3rem; color: var(--dt-muted); text-align: right; }
+.rk-avatar.sm { --medal: var(--dt-paper-2); width: 36px; height: 36px; font-size: 1rem; box-shadow: none; }
+.rk-bar { height: 6px; border-radius: var(--dt-r-pill); background: var(--dt-ink-0); overflow: hidden; }
+.rk-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--dt-red-deep), var(--dt-red)); transform-origin: 0 50%; }
+.rk-row-pts { font-family: var(--dt-mono); font-weight: 600; white-space: nowrap; }
+.rk-row-pts small { color: var(--dt-muted); }
+.rk-empty { margin: 0; text-align: center; color: var(--dt-paper-2); }
+
+/* ───── Tu posición ───── */
+.rk-me { display: flex; align-items: center; gap: var(--dt-space-7); flex-wrap: wrap; padding: var(--dt-space-7) var(--dt-space-9); border-radius: var(--dt-r-lg); background: var(--dt-ink-2); border: 1px dashed var(--dt-hair-2); }
+.rk-me.is-in { border-style: solid; border-color: color-mix(in srgb, var(--dt-red) 55%, transparent); background: linear-gradient(90deg, color-mix(in srgb, var(--dt-red) 10%, var(--dt-ink-2)), var(--dt-ink-2)); }
+.rk-me > div { flex: 1; min-width: 220px; display: grid; gap: var(--dt-space-1); }
+.rk-me span { color: var(--dt-paper-2); font-size: var(--dt-t-small); }
+.rk-me .rk-avatar.sm { --medal: var(--dt-red); color: var(--dt-black); }
+
+/* ───── Reglas ───── */
+.rk-rules { display: grid; gap: var(--dt-space-7); padding: var(--dt-space-9); border-radius: var(--dt-r-lg); background: var(--dt-ink-2); border: 1px solid var(--dt-hair); }
+.rk-rules h2 { margin: 0; font-family: var(--dt-display); font-size: var(--dt-t-h3); }
+.rk-rules ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--dt-space-5); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.rk-rules li { display: grid; grid-template-columns: 6.5ch 1fr; gap: var(--dt-space-5); align-items: start; }
+.rk-rules li > b { font-family: var(--dt-dot); font-size: 1.2rem; color: var(--dt-gold); overflow-wrap: anywhere; line-height: 1.15; }
+.rk-rules li span { display: grid; gap: 2px; color: var(--dt-paper-2); font-size: var(--dt-t-small); }
+.rk-rules strong { color: var(--dt-paper); font-size: var(--dt-t-body); }
+
+/* ───── Coreografía de ENTRADA: sube el 3.º, luego el 2.º, por último el 1.º (corona, foco y confeti) ───── */
+.rk-stage.is-animated.rk-enter .rk-block { animation: rk-rise 760ms var(--dt-spring) both; animation-delay: var(--delay); }
+.rk-stage.is-animated.rk-enter .rk-who { animation: rk-drop 620ms var(--dt-ease) both; animation-delay: calc(var(--delay) + 360ms); }
+.rk-stage.is-animated.rk-enter .rk-crown { animation: rk-crown 700ms var(--dt-spring) 1700ms both, rk-float 3.2s ease-in-out 2.4s infinite alternate; }
+.rk-stage.is-animated.rk-enter .rk-spot { animation: rk-spot 1.4s var(--dt-ease) 1300ms forwards, rk-sweep 6s ease-in-out 2.7s infinite alternate; }
+.rk-stage.is-animated.rk-enter .rk-p1 .rk-place { animation: rk-glow 2.4s ease-in-out 1.8s infinite alternate; }
+.rk-confetti i { animation: rk-fall calc(2.6s * var(--s) + 0.6s) cubic-bezier(.3,.6,.5,1) calc(1500ms + var(--d)) forwards; }
+.rk-list.is-animated.rk-enter li { animation: rk-row 520ms var(--dt-ease) both; animation-delay: calc(1250ms + var(--i) * 55ms); }
+.rk-list.is-animated.rk-enter .rk-bar i { animation: rk-bar 900ms var(--dt-ease) both; animation-delay: calc(1450ms + var(--i) * 55ms); }
+
+/* ───── Coreografía de SALIDA: el podio se hunde (el 1.º el último) y la lista se va hacia abajo ───── */
+.rk-stage.is-animated.rk-exit .rk-block { animation: rk-sink 440ms var(--dt-ease-in) both; animation-delay: calc((900ms - var(--delay)) / 12); }
+.rk-stage.is-animated.rk-exit .rk-who { animation: rk-lift 360ms var(--dt-ease-in) both; }
+.rk-stage.is-animated.rk-exit .rk-spot { opacity: 0; transition: opacity 300ms; }
+.rk-list.is-animated.rk-exit li { animation: rk-row-out 380ms var(--dt-ease-in) both; animation-delay: calc(var(--i) * 25ms); }
+
+@keyframes rk-rise { from { transform: scaleY(0); } 70% { transform: scaleY(1.04); } to { transform: scaleY(1); } }
+@keyframes rk-sink { from { transform: scaleY(1); opacity: 1; } to { transform: scaleY(0); opacity: 0.3; } }
+@keyframes rk-drop { from { opacity: 0; transform: translateY(-44px) scale(0.85); } to { opacity: 1; transform: none; } }
+@keyframes rk-lift { to { opacity: 0; transform: translateY(-26px) scale(0.92); } }
+@keyframes rk-crown { from { opacity: 0; transform: translateX(-50%) translateY(-30px) rotate(-30deg) scale(0.4); } to { opacity: 1; transform: translateX(-50%) rotate(-8deg); } }
+@keyframes rk-float { from { transform: translateX(-50%) rotate(-8deg) translateY(0); } to { transform: translateX(-50%) rotate(-3deg) translateY(-5px); } }
+@keyframes rk-spot { to { opacity: 1; } }
+@keyframes rk-sweep { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+@keyframes rk-glow { to { text-shadow: 0 0 40px color-mix(in srgb, var(--gold) 75%, transparent); } }
+@keyframes rk-fall { 0% { opacity: 0; transform: translateY(0) rotate(var(--r)); } 8% { opacity: 1; } 100% { opacity: 0; transform: translateY(520px) translateX(30px) rotate(calc(var(--r) + 540deg)); } }
+@keyframes rk-row { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes rk-row-out { to { opacity: 0; transform: translateY(16px); } }
+@keyframes rk-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes rk-shimmer { to { background-position: -200% 0; } }
+
+@media (max-width: 640px) {
+  .rk-stats { grid-template-columns: 1fr 1fr 1fr; }
+  .rk-stats b { font-size: 1.4rem; }
+  .rk-stage { padding: var(--dt-space-11) var(--dt-space-3) 0; }
+  .rk-list li { grid-template-columns: 3ch 32px minmax(0, 1fr) auto; }
+  .rk-list .rk-bar { display: none; }
+  .rk-crown { width: 36px; top: -28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rk *, .rk *::before, .rk *::after { animation: none !important; transition: none !important; }
+  .rk-confetti, .rk-spot { display: none; }
+}

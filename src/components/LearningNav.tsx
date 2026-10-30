@@ -19,9 +19,10 @@ export function followLearningLink(event: MouseEvent<HTMLAnchorElement>) {
   else window.scrollTo({ top: 0 });
 }
 
-export type NavSection = 'home' | 'course' | 'practice' | 'games' | 'road' | 'teacher' | 'account';
+export type NavSection = 'home' | 'course' | 'practice' | 'games' | 'ranking' | 'road' | 'teacher' | 'account';
 export function navSection(path: string): NavSection {
   if (path.startsWith('/cuenta')) return 'account';
+  if (path.startsWith('/ranking')) return 'ranking';
   if (path.startsWith('/road-to-b1')) return 'road';
   if (path.startsWith('/curso') || /^\/tema\/1\/?$/.test(path)) return 'course';
   if (path.startsWith('/practi') || path.startsWith('/tema/1/taller')) return 'practice';
@@ -35,6 +36,7 @@ const LINKS: { id: NavSection; href: string; label: string; de: string }[] = [
   { id: 'course', href: '/curso', label: 'Curso', de: 'Kurs' },
   { id: 'practice', href: '/practica', label: 'Practicar', de: 'Üben' },
   { id: 'games', href: '/#juegos', label: 'Juegos', de: 'Spiele' },
+  { id: 'ranking', href: '/ranking', label: 'Ranking', de: 'Rangliste' },
   { id: 'road', href: '/road-to-b1', label: 'Road to B1', de: 'Prüfung' },
 ];
 

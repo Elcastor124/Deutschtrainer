@@ -17,6 +17,20 @@ export function isoWeek(at: number): string {
   return isoWeekOfDay(madridDay(at));
 }
 
+/** Primer instante (ms) de la semana ISO siguiente a la de `at`, en hora de Madrid (lunes 00:00). */
+export function nextWeekStart(at: number): number {
+  // Madrid siempre está a horas enteras de UTC (CET/CEST): el lunes 00:00 local cae justo en una hora UTC.
+  const week = isoWeek(at);
+  let t = Math.floor(at / 3_600_000) * 3_600_000;
+  while (isoWeek(t + 3_600_000) === week) t += 3_600_000;
+  return t + 3_600_000;
+}
+/** Lunes y domingo (YYYY-MM-DD, Madrid) de la semana ISO de `at`. */
+export function weekRange(at: number): { from: string; to: string } {
+  const end = nextWeekStart(at);
+  return { from: madridDay(end - 7 * 86_400_000 + 3_600_000 * 3), to: madridDay(end - 3_600_000) };
+}
+
 function isoWeekOfDay(day: string): string {
   const [y, m, d] = day.split('-').map(Number);
   const date = new Date(Date.UTC(y, m - 1, d));
@@ -173,7 +187,8 @@ export class ProgressLog {
     const day = madridDay(this.now());
     const rewardedToday = this.events.filter((e) => e.profile === profile && e.kind === 'game' && e.game && e.points > 0 && madridDay(e.at) === day).length;
     const valid = a.total >= FREEPLAY.minQuestions && a.correct / Math.max(1, a.total) >= FREEPLAY.minAccuracy;
-    const points = valid && rewardedToday < FREEPLAY.rewardedPerDay ? FREEPLAY.levelPoints[a.level ?? ''] ?? 0 : 0;
+    // Sin nivel (la práctica de /practica mezcla todas las dificultades) puntúa como A2.
+    const points = valid && rewardedToday < FREEPLAY.rewardedPerDay ? FREEPLAY.levelPoints[a.level ?? 'A2'] ?? 0 : 0;
     return this.record({ profile, kind: 'game', source: a.game === 'boxing' ? 'boxing' : a.game === 'jenga' ? 'jenga' : 'practice', points, room: a.room, game: a.game, level: a.level, total: a.total, correct: a.correct });
   }
 

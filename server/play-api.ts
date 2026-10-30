@@ -3,11 +3,11 @@
 //   GET  /api/play/catalog                                               GET /api/play/leaderboard
 // Identidad del alumno: cabecera `X-Student-Session: dts_…`. NO sirve ninguna credencial de profesor aquí, ni al revés.
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { GAMES, LEVELS, LEVEL_DIFFS, LEVEL_LABEL, BOXING_TOPICS, type ProgressSummary, type RankingEntry } from '../shared/play.ts';
+import { GAMES, LEVELS, LEVEL_DIFFS, LEVEL_LABEL, BOXING_TOPICS, type ProgressSummary, type RankingEntry, type RankingView } from '../shared/play.ts';
 import { TOPICS } from '../shared/rules.ts';
 import type { Question } from '../shared/types.ts';
 import { AccountStore, aliasKey, type Account } from './accounts.ts';
-import { isoWeek, standings, type ProgressLog } from './progress.ts';
+import { isoWeek, nextWeekStart, standings, weekRange, type ProgressLog } from './progress.ts';
 import type { Guard } from './security.ts';
 import { BOXING_BANK } from './boxing-bank.ts';
 
@@ -71,7 +71,7 @@ export function createPlayApi({ accounts, guard, log, bank, now = Date.now }: Pl
     if (!acts.length && !topics.length) advice.push('Completa tu primera actividad (8 preguntas o más) para ver aquí tu progreso.');
     return {
       week, weekPoints: mine.weekPoints, streak: mine.streak, rank: a.rankingOptIn && a.aliasStatus === 'approved' ? (table.find((r) => r.profile === a.id)?.rank ?? null) : null,
-      rankingOptIn: a.rankingOptIn, activities: acts as ProgressSummary['activities'], topics, frequentErrors: errors, accuracy: l.accuracyByWeek(a.id), recommended: rec, advice,
+      rankingOptIn: a.rankingOptIn, history: mine.history, activities: acts as ProgressSummary['activities'], topics, frequentErrors: errors, accuracy: l.accuracyByWeek(a.id), recommended: rec, advice,
     };
   }
 
@@ -95,10 +95,21 @@ export function createPlayApi({ accounts, guard, log, bank, now = Date.now }: Pl
     if (route === '/api/play/leaderboard') {
       only('GET');
       // SOLO alias de cuentas que activaron el ranking y con alias aprobado. Ningún nombre real, horario ni estadística privada.
-      const l = log(); const week = isoWeek(l.now()); const rankable = accounts.rankable();
+      const which = url.searchParams.get('week') === 'previous' ? 'previous' : 'current';
+      const limit = Math.max(1, Math.min(50, Number(url.searchParams.get('limit')) || 10));
+      const l = log(); const now = l.now();
+      const at = which === 'previous' ? nextWeekStart(now) - 7 * 86_400_000 - 3_600_000 : now;
+      const week = isoWeek(at); const rankable = accounts.rankable();
       const table = standings(l, week, (p) => rankable.has(p));
-      const entries: RankingEntry[] = table.slice(0, 10).map((r) => ({ rank: r.rank, alias: rankable.get(r.profile)!, points: r.points }));
-      return json(res, 200, { week, entries });
+      const entries: RankingEntry[] = table.slice(0, limit).map((r) => ({ rank: r.rank, alias: rankable.get(r.profile)!, points: r.points }));
+      const view: RankingView = { week, which, range: weekRange(at), resetsAt: nextWeekStart(now), players: table.length, entries };
+      const who = identify(accounts, req);
+      if (who.kind === 'account') {
+        const a = who.account;
+        const optedIn = a.rankingOptIn && a.aliasStatus === 'approved';
+        view.me = { alias: a.alias, points: l.weekPoints(a.id, week), rank: optedIn ? table.find((r) => r.profile === a.id)?.rank ?? null : null, optedIn };
+      }
+      return json(res, 200, view);
     }
 
     if (route === '/api/account/register') {

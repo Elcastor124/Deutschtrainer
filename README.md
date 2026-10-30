@@ -33,7 +33,7 @@ npm run build
 
 ## Modo libre (sin profesor)
 
-`/libre`: el alumno elige juego (BlackCard, Wort-Jenga, Boxeo), nivel (A1, A2, B1 Training) y temas, y juega **sin que el profesor cree ninguna sala** — en solitario (el boxeo, contra un sparring del sistema) o, en Boxeo, en una sala privada por código con un amigo. Con cuenta opcional se guarda el progreso (resultados, errores frecuentes, evolución, recomendaciones); como invitado se practica sin guardar nada. Ranking semanal opcional, solo con alias. Las clases tradicionales no cambian. [Diseño, límites y lo que falta](docs/FREE_PLAY.md).
+`/libre`: el alumno elige juego (BlackCard, Wort-Jenga, Boxeo), nivel (A1, A2, B1 Training) y temas, y juega **sin que el profesor cree ninguna sala** — en solitario (el boxeo, contra un sparring del sistema) o, en Boxeo, en una sala privada por código con un amigo. Con cuenta opcional se guarda el progreso (resultados, errores frecuentes, evolución, recomendaciones); como invitado se practica sin guardar nada. Ranking semanal opcional, solo con alias, en su propia pestaña (`/ranking`, con podio animado); la práctica de `/practica` va por la cuenta y cuenta para él. Las clases tradicionales no cambian. [Diseño, límites y lo que falta](docs/FREE_PLAY.md).
 
 ## Road to B1 — Level 1
 
