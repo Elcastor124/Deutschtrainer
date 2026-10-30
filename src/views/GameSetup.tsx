@@ -1,11 +1,13 @@
 // /jugar (BlackCard) y /jenga (Wort-Jenga): el profesor elige temas y crea la sala; los alumnos entran con el código.
 import { useState, type FormEvent } from 'react';
-import { PLAN_MIN, TOPICS, blockDef } from '../../shared/rules.ts';
+import { PLAN_MIN, blockDef } from '../../shared/rules.ts';
 import type { GameStart, Topic } from '../../shared/types.ts';
 import { sfx } from '../fx/sound.ts';
 import { navigate, store } from '../util.ts';
 import { topicsFromQuery } from './Practice.tsx';
 import '../gamesetup.css';
+import { TopicPicker } from '../components/TopicPicker.tsx';
+import { KlausCompanion } from '../klaus/KlausCompanion.tsx';
 
 /** URL del profesor que crea la sala con esos temas y ese juego (la lee teacherHello). */
 export function setupTarget(mode: GameStart, topics: Topic[]): string {
@@ -36,9 +38,6 @@ export function GameSetup({ mode }: { mode: 'blackcard' | 'jenga' }) {
   const [name, setName] = useState(() => store.get('bc:name') ?? '');
   const last = store.get('bc:last-teacher');
   const c = COPY[mode];
-  const toggle = (t: Topic) => setTopics((x) => (x.includes(t) ? x.filter((y) => y !== t) : [...x, t]));
-  // En el Jenga no hay preguntas de lectura (necesitan el texto delante).
-  const list = (Object.keys(TOPICS) as Topic[]).filter((t) => mode !== 'jenga' || t !== 'lesen');
   const join = (e: FormEvent) => {
     e.preventDefault();
     const k = code.trim().toUpperCase();
@@ -48,49 +47,46 @@ export function GameSetup({ mode }: { mode: 'blackcard' | 'jenga' }) {
     navigate(`/p/${k}`);
   };
   return (
-    <div className="home game-setup" data-mode={mode}>
-      <h1 className="home-title">{c.title}<b>// {c.sub}</b></h1>
-      <p className="home-sub">{c.lead}</p>
-      <p className="home-sub small">¿Quieres jugar sin profesor? <a href="/libre" onClick={(e) => { e.preventDefault(); navigate('/libre'); }}>Modo libre: en solitario o con un amigo por código</a>.</p>
-      <div className="home-grid">
-        <section className="panel home-card" aria-labelledby="gs-teacher">
-          <h2 id="gs-teacher"><span className="idx">01</span>Profesor</h2>
-          <fieldset className="gs-topics">
-            <legend>Temas <span className="dim">({topics.length ? `${topics.length} elegido${topics.length > 1 ? 's' : ''}` : 'sin marcar = todos'})</span></legend>
-            <div className="chips">
-              {list.map((t) => (
-                <button key={t} type="button" className={`btn sm${topics.includes(t) ? ' on' : ''}`} aria-pressed={topics.includes(t)} title={TOPICS[t].es} onClick={() => toggle(t)}>{TOPICS[t].de}</button>
-              ))}
+    <div className="setup-stage game-setup" data-mode={mode}>
+      <div className="setup-main">
+        <header className="setup-head">
+          <h1>{c.title} <b>// {c.sub}</b></h1>
+          <p>{c.lead}</p>
+        </header>
+        <section className="panel stack" aria-labelledby="gs-teacher">
+          <h2 id="gs-teacher" className="sr">Profesor</h2>
+          <TopicPicker value={topics} onChange={setTopics} exclude={mode === 'jenga' ? ['lesen'] : []} />
+          <div className="setup-go">
+            <button className="btn primary lg" onClick={() => { sfx.lock(); navigate(setupTarget(mode, topics)); }}>{c.create} →</button>
+            {last && <button className="btn" onClick={() => navigate(`/t/${last}`)}>Volver a la sala {last}</button>}
+            <span className="libre-note">Para el profesor: crea la sala y proyecta el código.</span>
+          </div>
+        </section>
+        <div className="setup-row">
+          <form className="panel" onSubmit={join} aria-labelledby="gs-student">
+            <h2 id="gs-student">¿Eres alumno? Entra con el código</h2>
+            <div className="setup-bar">
+              <input className="field dotnum" style={{ flex: '0 1 140px', letterSpacing: '0.2em', textTransform: 'uppercase' }} placeholder="CÓDIGO" maxLength={5}
+                value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} aria-label="Código de sala" autoComplete="off" />
+              <input className="field" style={{ flex: '1 1 140px' }} placeholder="Tu nombre" maxLength={16} value={name} onChange={(e) => setName(e.target.value)} aria-label="Tu nombre" />
+              <button className="btn primary" disabled={!code.trim() || !name.trim()}>Entrar en la sala</button>
             </div>
-            {topics.length > 0 && <button type="button" className="btn ghost sm" onClick={() => setTopics([])}>Quitar temas</button>}
-          </fieldset>
-          <button className="btn primary lg" onClick={() => { sfx.lock(); navigate(setupTarget(mode, topics)); }}>{c.create}</button>
-          {last && <button className="btn" onClick={() => navigate(`/t/${last}`)}>Volver a la sala {last}</button>}
-        </section>
-        <form className="panel home-card" onSubmit={join} aria-labelledby="gs-student">
-          <h2 id="gs-student"><span className="idx">02</span>Alumno</h2>
-          <p>Escribe el código que ves en el proyector y tu nombre.</p>
-          <input className="field big dotnum" style={{ letterSpacing: '0.2em', textTransform: 'uppercase' }} placeholder="CÓDIGO" maxLength={5}
-            value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} aria-label="Código de sala" autoComplete="off" />
-          <input className="field" placeholder="Tu nombre" maxLength={16} value={name} onChange={(e) => setName(e.target.value)} aria-label="Tu nombre" />
-          <button className="btn primary lg" disabled={!code.trim() || !name.trim()}>Entrar en la sala</button>
-        </form>
-        <section className="panel home-card">
-          <h2><span className="idx">03</span>{mode === 'jenga' ? 'Otros juegos' : 'Práctica en casa'}</h2>
-          {mode === 'jenga' ? (
-            <>
-              <p>¿Prefieres el quiz por rondas con cofres y objetos?</p>
-              <button className="btn lg" onClick={() => navigate(`/jugar${topics.length ? `?temas=${topics.join(',')}` : ''}`)}>BlackCard por temas</button>
-            </>
-          ) : (
-            <>
-              <p>Practica a tu ritmo, sin tiempo. Cada sesión trae preguntas nuevas y repasa tus errores.</p>
-              <button className="btn lg" onClick={() => navigate(`/practica?tema=1${topics.length ? `&temas=${topics.join(',')}` : ''}`)}>Practicar</button>
-              <button className="btn" onClick={() => navigate(`/jenga${topics.length ? `?temas=${topics.join(',')}` : ''}`)}>Wort-Jenga directo</button>
-            </>
-          )}
-        </section>
+          </form>
+          <section className="panel">
+            <h2>{mode === 'jenga' ? 'Otros juegos' : 'Sin profesor'}</h2>
+            <div className="setup-links">
+              {mode === 'jenga'
+                ? <button className="btn" onClick={() => navigate(`/jugar${topics.length ? `?temas=${topics.join(',')}` : ''}`)}>BlackCard por temas</button>
+                : <>
+                  <button className="btn" onClick={() => navigate(`/practica?tema=1${topics.length ? `&temas=${topics.join(',')}` : ''}`)}>Practicar</button>
+                  <button className="btn" onClick={() => navigate(`/jenga${topics.length ? `?temas=${topics.join(',')}` : ''}`)}>Wort-Jenga directo</button>
+                </>}
+              <a className="btn ghost" href="/libre" onClick={(e) => { e.preventDefault(); navigate('/libre'); }}>Modo libre</a>
+            </div>
+          </section>
+        </div>
       </div>
+      <aside className="setup-side"><KlausCompanion /></aside>
     </div>
   );
 }

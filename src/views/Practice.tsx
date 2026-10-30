@@ -12,6 +12,7 @@ import { followLearningLink } from '../components/LearningNav.tsx';
 import { ErrorBoundary } from '../components/ErrorBoundary.tsx';
 import { KlausCompanion } from '../klaus/KlausCompanion.tsx';
 import { KlausPracticeStage } from '../klaus/KlausPracticeStage.tsx';
+import { TopicPicker } from '../components/TopicPicker.tsx';
 
 type Hello = Extract<ConstructorParameters<typeof Net>[0], { role: 'practice' }>;
 interface Opts { topics: Topic[]; focus: boolean; size: number }
@@ -78,68 +79,51 @@ export function Practice() {
     store.set('bc:name', name.trim());
     setHello({ t: 'hello', role: 'practice', name: name.trim(), topics, focus, size, profile: profileId(), ...(pcode.trim() ? { profileCode: pcode.trim().toUpperCase() } : {}) });
   };
-  const toggle = (t: Topic) => setTopics((x) => (x.includes(t) ? x.filter((y) => y !== t) : [...x, t]));
   return (
-    <div className="home" style={{ alignContent: 'start', paddingTop: '8vh' }}>
-      <h1 className="home-title" style={{ fontSize: 'clamp(2.2rem, 1.4rem + 4vw, 4.6rem)' }}>Tema 1<b>// práctica</b></h1>
-      <p className="home-sub">Todo el banco de preguntas preparado, en sesiones sin tiempo. Cada práctica trae preguntas nuevas y mezcla un repaso de lo que fallaste en otras sesiones. Si fallas una, vuelve a salir unas preguntas después.</p>
-      <p className="home-sub small">Necesitas conexión con el servidor. Los talleres de escritura y ensayo de escenas tienen su propio espacio de práctica.</p>
-      {saved && (
-        <div className="panel row" style={{ width: '100%' }}>
-          <span>Tienes una práctica a medias.</span><span className="spacer" />
-          <button type="button" className="btn primary" onClick={() => resume(saved)}>Continuar</button>
-          <button type="button" className="btn ghost" onClick={() => { store.del(KEY); location.reload(); }}>Empezar otra</button>
-        </div>
-      )}
-      <form className="panel stack" style={{ width: '100%' }} onSubmit={start}>
-        <div className="stack" style={{ gap: 6 }}>
-          <h2 className="practice-pick-title">1. Elige qué quieres practicar <span className="dim small">(sin marcar = todos los temas)</span></h2>
-          <div className="chips">
-            {(Object.keys(TOPICS) as Topic[]).map((t) => (
-              <button key={t} type="button" className={`btn sm${topics.includes(t) ? ' on' : ''}`} aria-pressed={topics.includes(t)} onClick={() => toggle(t)}>{TOPICS[t].de}</button>
-            ))}
+    <div className="setup-stage practice-setup">
+      <div className="setup-main">
+        <header className="setup-head">
+          <h1>Práctica <b>// sin reloj</b></h1>
+          <p>Todo el banco de preguntas, sin tiempo. Elige temas y empieza: cada sesión trae preguntas nuevas y repasa lo que fallaste.</p>
+        </header>
+        {saved && (
+          <div className="panel row" style={{ width: '100%' }}>
+            <span>Tienes una práctica a medias.</span><span className="spacer" />
+            <button type="button" className="btn primary" onClick={() => resume(saved)}>Continuar</button>
+            <button type="button" className="btn ghost" onClick={() => { store.del(KEY); location.reload(); }}>Empezar otra</button>
           </div>
-        </div>
-        {!account && <label className="stack" style={{ gap: 6 }}>Tu nombre <span className="dim small">(sin cuenta: no cuenta para el ranking)</span>
-          <input className="field" value={name} maxLength={16} onChange={(e) => setName(e.target.value)} />
-        </label>}
-        <div className="stack" style={{ gap: 6 }} role="radiogroup" aria-label="Preguntas por sesión">
-          <span>Preguntas por sesión</span>
-          <div className="chips">
-            {PRACTICE_SIZES.map((n) => (
-              <button key={n} type="button" role="radio" aria-checked={size === n} className={`btn sm${size === n ? ' on' : ''}`} onClick={() => setSize(n)}>{n}</button>
-            ))}
+        )}
+        <form className="panel stack" onSubmit={start}>
+          <TopicPicker value={topics} onChange={setTopics} />
+          <div className="setup-bar">
+            <div className="row" role="radiogroup" aria-label="Preguntas por sesión" style={{ gap: 8 }}>
+              <span className="dim">Preguntas</span>
+              <div className="chips">
+                {PRACTICE_SIZES.map((n) => (
+                  <button key={n} type="button" role="radio" aria-checked={size === n} className={`btn sm${size === n ? ' on' : ''}`} onClick={() => setSize(n)}>{n}</button>
+                ))}
+              </div>
+            </div>
+            <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={focus} onChange={(e) => setFocus(e.target.checked)} /> Repasar sobre todo mis fallos</label>
           </div>
-        </div>
-        <label className="row"><input type="checkbox" checked={focus} onChange={(e) => setFocus(e.target.checked)} /> Repasar sobre todo lo que he fallado (se completa con preguntas nuevas)</label>
-        {!account && <label className="stack" style={{ gap: 6 }}>
-          <span>¿Otro ordenador? Código de alumno <span className="dim">(aparece al final de la clase{myCode ? `; el tuyo: ${myCode}` : ''})</span></span>
-          <input className="field dot" style={{ letterSpacing: '0.15em' }} value={pcode} maxLength={8} onChange={(e) => setPcode(e.target.value.toUpperCase())} placeholder="opcional" />
-        </label>}
-        <div className="row">
-          <button className="btn primary lg" disabled={!account && !name.trim() && !pcode.trim()}>Empezar práctica</button>
-          <button type="button" className="btn ghost" onClick={() => navigate('/')}>Volver</button>
-        </div>
-      </form>
-      <section className="practice-account" aria-label="Tu cuenta">
-      {account ? (
-        <div className="libre-card acc-strip" data-practice-account="">
-          <span className="acc-avatar small" aria-hidden="true">{account.alias.slice(0, 1).toUpperCase()}</span>
-          <div><b>Practicas como {account.alias}</b><span className="libre-note">Cada respuesta cuenta para tu progreso y para el ranking semanal.</span></div>
-          <a className="btn" href="/ranking" onClick={followLearningLink}>Ver ranking</a>
-        </div>
-      ) : (
-        <div data-practice-gate="">
-          <p className="libre-note" style={{ margin: '0 0 12px' }}><b>Entra con tu cuenta</b> para que tu práctica cuente en el <a href="/ranking" onClick={followLearningLink}>ranking semanal</a> y se guarde tu progreso. Sin cuenta también puedes practicar (abajo), pero no cuenta.</p>
-          <div className="libre-row">
-            <a className="btn primary" href="/registro?volver=/practica" onClick={(e) => { e.preventDefault(); navigate('/registro?volver=/practica'); }}>Crear cuenta</a>
-            <a className="btn" href="/entrar?volver=/practica" onClick={(e) => { e.preventDefault(); navigate('/entrar?volver=/practica'); }}>Iniciar sesión</a>
+          {!account && <div className="setup-bar">
+            <input className="field" style={{ flex: '1 1 200px' }} value={name} maxLength={16} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" aria-label="Tu nombre" />
+            <input className="field dot" style={{ flex: '0 1 170px', letterSpacing: '0.15em' }} value={pcode} maxLength={8} onChange={(e) => setPcode(e.target.value.toUpperCase())} placeholder={myCode ? `código: ${myCode}` : 'código'} aria-label="Código de alumno (opcional)" />
+          </div>}
+          <div className="setup-go">
+            <button className="btn primary lg" disabled={!account && !name.trim() && !pcode.trim()}>Empezar práctica →</button>
+            <section className="practice-account" aria-label="Tu cuenta" style={{ flex: 1, minWidth: 220 }}>
+              {account ? (
+                <span className="libre-note" data-practice-account="">Practicas como <b>{account.alias}</b>: cuenta para tu progreso y el <a href="/ranking" onClick={followLearningLink}>ranking</a>.</span>
+              ) : (
+                <span className="libre-note" data-practice-gate="">Sin cuenta no cuenta para el ranking. <a href="/entrar?volver=/practica" onClick={(e) => { e.preventDefault(); navigate('/entrar?volver=/practica'); }}>Iniciar sesión</a> · <a href="/registro?volver=/practica" onClick={(e) => { e.preventDefault(); navigate('/registro?volver=/practica'); }}>Crear cuenta</a></span>
+              )}
+            </section>
           </div>
-        </div>
-      )}
-      </section>
-      <KlausCompanion />
-      <div className="row"><a className="btn" href="/tema/1" onClick={followLearningLink}>Ver materiales de Tema 1</a><a className="btn" href="/tema/1/taller" onClick={followLearningLink}>Practicar escritura y escenas</a></div>
+        </form>
+        <div className="setup-links"><a className="btn ghost sm" href="/tema/1" onClick={followLearningLink}>Materiales de Tema 1</a><a className="btn ghost sm" href="/tema/1/taller" onClick={followLearningLink}>Escritura y escenas</a></div>
+      </div>
+      <aside className="setup-side"><KlausCompanion /></aside>
     </div>
   );
 }
