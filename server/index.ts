@@ -1,9 +1,9 @@
 // Servidor de juego: HTTP (cliente compilado) + WebSocket (estado en tiempo real).
 // Arranque: node server/index.ts   (Node ≥ 22.18 ejecuta TypeScript directamente)
 import { createReadStream, existsSync, statSync } from 'node:fs';
-import { createServer } from 'node:http';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { networkInterfaces } from 'node:os';
-import { extname, join, normalize, resolve } from 'node:path';
+import { extname, join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { BlockId, ChestTier, ClientMsg, CtlAction, ItemId, ServerMsg } from '../shared/types.ts';
@@ -16,22 +16,33 @@ import { Store, type Profile } from './store.ts';
 import { createBoxingHandler } from './boxing.ts';
 import { createRoadHandler } from './road.ts';
 import { createProgressHandler, recordEvent } from './progress.ts';
+import { resolveStatic, SECURITY_HEADERS } from './static.ts';
+import { createGuard } from './security.ts';
+import { acquireInstanceLock } from './instance-lock.ts';
+import { TokenBucket } from './limits.ts';
+import { CLASS_ROOM_TTL_MS, staleRooms } from './room-ttl.ts';
 
 const PORT = Number(process.env.PORT) || 4747;
 const ROOT = resolve(import.meta.dirname, '..');
 const DIST = join(ROOT, 'dist');
-const store = new Store<RoomState>(process.env.DATA_DIR || join(ROOT, 'data'));
+const DATA_DIR = process.env.DATA_DIR || join(ROOT, 'data');
+// Una sola instancia por directorio de datos (el estado vive en memoria): si hay otra viva, no arrancamos.
+const instanceLock = await acquireInstanceLock(DATA_DIR, { waitMs: Number(process.env.INSTANCE_LOCK_WAIT_MS ?? 35_000) }).catch((e: Error) => { console.error(`[lock] ${e.message}`); process.exit(1); });
+const guard = createGuard({ dataDir: DATA_DIR });
+const store = new Store<RoomState>(DATA_DIR);
 const bank = loadBank();
-const ROOM_TTL = 1000 * 60 * 60 * 24 * 14;
+const ROOM_TTL = CLASS_ROOM_TTL_MS;
 
 // ───────────── perfiles (historial para el modo práctica) ─────────────
+/** Códigos de alumno nuevos: 8 caracteres (≈2⁴⁰). Los de 6 (≈2³⁰) ya emitidos siguen valiendo. */
+const PROFILE_CODE_LEN = 8;
 function profileCodeFor(id: string) { return store.data.profiles[id]?.code ?? ''; }
 function ensureProfile(id: string | undefined, name: string): Profile {
   const key = id && /^[\w-]{8,64}$/.test(id) ? id : randomUUID();
   let p = store.data.profiles[key];
   if (!p) {
-    let code = newCode(6);
-    while (store.profileByCode(code)) code = newCode(6);
+    let code = newCode(PROFILE_CODE_LEN);
+    while (store.profileByCode(code)) code = newCode(PROFILE_CODE_LEN);
     p = store.data.profiles[key] = { id: key, code, name: name.slice(0, 16), stats: {}, createdAt: Date.now() };
   }
   if (name) p.name = name.slice(0, 16);
@@ -68,7 +79,8 @@ for (const [code, s] of Object.entries(store.data.rooms)) {
 }
 console.log(`[store] ${rooms.size} sala(s) restaurada(s) · banco: ${bank.size} preguntas`);
 
-interface Client { ws: WebSocket; room: string; role: 'teacher' | 'player' | 'practice'; pid?: string; alive: boolean }
+interface Client { ws: WebSocket; room: string; role: 'teacher' | 'player' | 'practice'; pid?: string; alive: boolean; ip: string; bucket: TokenBucket }
+const countRooms = (mode: 'class' | 'practice') => { let n = 0; for (const r of rooms.values()) if (r.s.mode === mode) n++; return n; };
 const clients = new Set<Client>();
 
 function persist(room: Room) {
@@ -116,16 +128,27 @@ function ctl(room: Room, a: CtlAction): Result {
   }
 }
 
+class LimitError extends Error {}
+
 function hello(c: Client, m: Extract<ClientMsg, { t: 'hello' }>) {
   if (m.role === 'teacher') {
     let room = m.room ? rooms.get(String(m.room).toUpperCase()) : undefined;
+    if (!m.create && guard.roomLookupBlocked(c.ip)) return send(c.ws, { t: 'err', msg: 'Demasiados intentos con códigos de sala. Espera unos minutos.', fatal: true });
     if (m.create) {
+      const adm = guard.admitCreate('class', c.ip, countRooms('class'), m.teacherKey);
+      if (!adm.ok) return send(c.ws, { t: 'err', msg: adm.error, fatal: true });
       room = Room.create(deps, uniqueCode(4));
+      if (adm.owner) room.s.owner = adm.owner;
       // Juego por temas (/jugar?temas=…) o Wort-Jenga directo (/jenga).
       room.configure({ topics: m.topics, start: m.start });
       rooms.set(room.s.code, room);
     } else if (!room || room.s.teacherToken !== m.token) {
-      return send(c.ws, { t: 'err', msg: 'Sala no encontrada o sin permiso de profesor.', fatal: true });
+      // Recuperación con credencial del servidor: solo el profesor que creó la sala (owner) la recupera sin su token.
+      const owned = room?.s.owner && m.teacherKey ? guard.teacherFor(m.teacherKey, c.ip) : null;
+      if (!room || !owned?.ok || owned.id !== room.s.owner) {
+        if (!room) guard.roomMiss(c.ip);
+        return send(c.ws, { t: 'err', msg: owned && !owned.ok ? owned.error : 'Sala no encontrada o sin permiso de profesor.', fatal: true });
+      }
     }
     Object.assign(c, { room: room.s.code, role: 'teacher' });
     send(c.ws, { t: 'welcome', role: 'teacher', room: room.s.code, token: room.s.teacherToken });
@@ -133,8 +156,9 @@ function hello(c: Client, m: Extract<ClientMsg, { t: 'hello' }>) {
   }
 
   if (m.role === 'player') {
+    if (guard.roomLookupBlocked(c.ip)) return send(c.ws, { t: 'err', msg: 'Demasiados intentos con códigos de sala. Espera unos minutos.', fatal: true });
     const room = rooms.get(String(m.room ?? '').toUpperCase());
-    if (!room || room.s.mode !== 'class') return send(c.ws, { t: 'err', msg: 'No existe ninguna sala con ese código.', fatal: true });
+    if (!room || room.s.mode !== 'class') { guard.roomMiss(c.ip); return send(c.ws, { t: 'err', msg: 'No existe ninguna sala con ese código.', fatal: true }); }
     let p = m.token ? room.byToken(String(m.token)) : undefined;
     if (!p) {
       if (!m.name) return send(c.ws, { t: 'err', msg: 'Tu sesión ya no existe: vuelve a entrar con tu nombre.', fatal: true });
@@ -151,12 +175,32 @@ function hello(c: Client, m: Extract<ClientMsg, { t: 'hello' }>) {
 
   if (m.role === 'practice') {
     // Reanudar una práctica (recarga de página) o empezar una nueva; si la sala guardada ya no existe, otra nueva con aviso.
-    const r = openPractice({
-      rooms, deps, newRoomCode: () => 'P' + uniqueCode(5),
-      profileByCode: (code) => store.profileByCode(code),
-      ensureProfile,
-    }, m);
-    if (!r.ok) return send(c.ws, { t: 'err', msg: r.error, fatal: true });
+    let locked: string | null = null;
+    let r: ReturnType<typeof openPractice>;
+    try {
+      r = openPractice({
+        rooms, deps,
+        // Solo se llama al CREAR una práctica (reanudar con token no pasa por aquí): ahí se aplican los límites.
+        newRoomCode: () => {
+          const adm = guard.admitCreate('practice', c.ip, countRooms('practice'));
+          if (!adm.ok) throw new LimitError(adm.error);
+          return 'P' + uniqueCode(5);
+        },
+        // Recuperar historial por código de alumno: intentos fallidos limitados por IP y en global.
+        profileByCode: (code) => {
+          locked = guard.codeLocked(c.ip);
+          if (locked) return undefined;
+          const p = store.profileByCode(code);
+          if (!p) guard.codeFailed(c.ip);
+          return p;
+        },
+        ensureProfile,
+      }, m);
+    } catch (e) {
+      if (e instanceof LimitError) return send(c.ws, { t: 'err', msg: e.message, fatal: true });
+      throw e;
+    }
+    if (!r.ok) return send(c.ws, { t: 'err', msg: locked ?? r.error, fatal: true });
     for (const code of Object.keys(store.data.rooms)) if (!rooms.has(code)) delete store.data.rooms[code];
     const { room, profile: prof } = r;
     const p = room.s.players[0];
@@ -179,6 +223,11 @@ function handle(c: Client, raw: string) {
 }
 
 function handleMsg(c: Client, raw: string) {
+  // Ritmo por conexión (ráfaga 40, 20 mensajes/s sostenidos): cada acción válida provoca un broadcast a toda la sala.
+  if (!c.bucket.take()) {
+    const id = (() => { try { return Number(JSON.parse(raw)?.id) || 0; } catch { return 0; } })();
+    return send(c.ws, id ? { t: 'ack', id, ok: false, error: 'Demasiado rápido. Espera un momento.' } : { t: 'err', msg: 'Demasiado rápido. Espera un momento.' });
+  }
   let m: ClientMsg;
   try { m = JSON.parse(raw); } catch { return; }
   if (!m || typeof m !== 'object' || Array.isArray(m)) return;
@@ -212,10 +261,24 @@ const MIME: Record<string, string> = {
   '.woff2': 'font/woff2', '.woff': 'font/woff', '.json': 'application/json', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json', '.pdf': 'application/pdf',
 };
 
-const progressHandler = createProgressHandler({dataDir: process.env.DATA_DIR || join(ROOT, 'data'), profiles: id => store.data.profiles[id]});
-const roadHandler = createRoadHandler({ dataDir: process.env.DATA_DIR || join(ROOT, 'data') });
-const boxingHandler = createBoxingHandler({ dataDir: process.env.DATA_DIR || join(ROOT, 'data') });
+const progressHandler = createProgressHandler({dataDir: DATA_DIR, profiles: id => store.data.profiles[id]});
+const roadHandler = createRoadHandler({ dataDir: DATA_DIR, guard });
+const boxingHandler = createBoxingHandler({ dataDir: DATA_DIR, guard });
 const server = createServer((req, res) => {
+  // Un fallo en una petición HTTP nunca debe tumbar el proceso (y con él todas las salas en curso).
+  try { serve(req, res); } catch (e) {
+    console.error('[http] error procesando', req.url, e);
+    if (!res.headersSent) res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+    res.end('Error interno del servidor.');
+  }
+});
+
+function serve(req: IncomingMessage, res: ServerResponse) {
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
+  if (req.url?.startsWith('/api/progress') && !guard.allow('progress', guard.ip(req))) {
+    res.writeHead(429, { 'content-type': 'application/json; charset=utf-8', 'retry-after': '60' });
+    return void res.end(JSON.stringify({ error: 'Demasiadas peticiones. Espera un minuto.' }));
+  }
   if (progressHandler(req, res)) return;
   if (roadHandler(req, res)) return;
   if (boxingHandler(req, res)) return;
@@ -226,29 +289,33 @@ const server = createServer((req, res) => {
   }
   if (url.pathname === '/api/health') {
     res.writeHead(200, { 'content-type': 'application/json' });
-    return res.end(JSON.stringify({ ok: true, rooms: rooms.size, bank: bank.size }));
+    return res.end(JSON.stringify({ ok: true, rooms: rooms.size, bank: bank.size, teacherAuth: guard.stats() }));
   }
   if (!existsSync(DIST)) {
     res.writeHead(503, { 'content-type': 'text/plain; charset=utf-8' });
     return res.end('Falta compilar el cliente: ejecuta «npm run build».');
   }
-  let file = normalize(join(DIST, decodeURIComponent(url.pathname)));
-  if (!file.startsWith(DIST) || !existsSync(file) || statSync(file).isDirectory()) file = join(DIST, 'index.html');
+  let file = resolveStatic(DIST, url.pathname);
+  if (!file) { res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' }); return res.end('Petición no válida.'); }
+  if (!existsSync(file) || statSync(file).isDirectory()) file = join(DIST, 'index.html');
   const ext = extname(file);
   res.writeHead(200, {
     'content-type': MIME[ext] ?? 'application/octet-stream',
     'cache-control': file.includes(`${join(DIST, 'assets')}`) ? 'public, max-age=31536000, immutable' : 'no-cache',
   });
-  createReadStream(file).pipe(res);
-});
+  createReadStream(file).on('error', () => res.destroy()).pipe(res);
+}
 
 const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 16 * 1024 });
-wss.on('connection', (ws) => {
-  const c: Client = { ws, room: '', role: 'player', alive: true };
+wss.on('connection', (ws, req) => {
+  const ip = guard.ip(req);
+  if (!guard.wsOpen(ip)) { ws.close(1013, 'Demasiadas conexiones'); return; }
+  const c: Client = { ws, room: '', role: 'player', alive: true, ip, bucket: new TokenBucket(40, 20) };
   clients.add(c);
   ws.on('pong', () => { c.alive = true; });
   ws.on('message', (data) => handle(c, data.toString()));
   ws.on('close', () => {
+    guard.wsClose(ip);
     clients.delete(c);
     const room = rooms.get(c.room);
     if (room && c.pid && ![...clients].some((x) => x.room === c.room && x.pid === c.pid)) {
@@ -274,8 +341,28 @@ setInterval(() => {
   }
 }, 250);
 
-process.on('SIGINT', () => { store.data.rooms = Object.fromEntries([...rooms].map(([k, r]) => [k, r.s])); store.flush(); progressHandler.log.flush(); process.exit(0); });
-process.on('SIGTERM', () => { store.data.rooms = Object.fromEntries([...rooms].map(([k, r]) => [k, r.s])); store.flush(); progressHandler.log.flush(); process.exit(0); });
+const shutdown = () => {
+  store.data.rooms = Object.fromEntries([...rooms].map(([k, r]) => [k, r.s]));
+  store.flush(); progressHandler.log.flush(); instanceLock.release(); process.exit(0);
+};
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
+
+// Limpieza periódica: salas abandonadas (sin nadie conectado) y contadores de los limitadores.
+// Una sala con algún cliente conectado NUNCA se descarta; ver server/room-ttl.ts para los TTL.
+function sweepRooms(at = Date.now()) {
+  let removed = 0;
+  for (const code of staleRooms([...rooms].map(([k, r]) => [k, r.s] as const), (code) => [...clients].some((c) => c.room === code), at)) {
+    rooms.delete(code);
+    delete store.data.rooms[code];
+    removed++;
+  }
+  removed += roadHandler.sweep(at) + boxingHandler.sweep(at);
+  guard.sweep();
+  if (removed) { store.saveSoon(); console.log(`[ttl] ${removed} sala(s) caducada(s) eliminada(s)`); }
+}
+setInterval(() => { try { sweepRooms(); } catch (e) { console.error('[ttl] error en la limpieza:', e); } }, 10 * 60_000).unref();
+sweepRooms();
 
 /** IPs de la red local (wifi/ethernet), sin adaptadores virtuales; primero las típicas de casa/escuela. */
 function lanIps(): string[] {

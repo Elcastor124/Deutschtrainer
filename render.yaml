@@ -7,7 +7,12 @@ services:
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
+    numInstances: 1          # el estado vive en memoria y en el disco: UNA sola instancia (ver docs/SECURITY_AUDIT.md)
     envVars:
+      - key: TRUST_PROXY       # Render añade 1 salto a X-Forwarded-For: así los límites usan la IP real del cliente
+        value: "1"
+      - key: TEACHER_AUTH      # optional | required | off. Pasar a «required» solo tras validar la migración
+        value: optional
       - key: NODE_VERSION
         value: 22.19.0
       - key: DATA_DIR

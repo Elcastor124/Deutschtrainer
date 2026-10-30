@@ -2,13 +2,15 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join, resolve } from 'node:path';
+import type { Guard } from './security.ts';
+import { roomsToExpire } from './room-ttl.ts';
 import type { RoadActivity, RoadRole, RoadSection, RoadView, RoadSecret, RoadScore } from '../shared/road.ts';
 import { ROAD_LEVEL, ROAD_SECRET } from './road-content.ts';
 
 const token = () => randomBytes(32).toString('base64url');
 const flags = (): Record<RoadActivity, boolean> => ({ lesen: false, diktat: false, horen: false });
 interface Player { id: string; name: string; token: string; lastSeen: number; answers: Record<string,string>; dictation: string; submitted: Record<RoadActivity,boolean>; listens: Record<string,number>; attempts?: Record<string,{audioId:string; started:boolean}>; pendingAudio?: Record<string,string>; listenLimits?: Record<string,number>; rubric?: boolean[] }
-interface Room { code: string; teacherToken: string; projectors: string[]; players: Player[]; section: RoadSection; paused: boolean; locked: Record<RoadActivity,boolean>; released: Record<RoadActivity,boolean>; exposed: Record<RoadActivity,boolean>; elapsed: number; sectionTimes: Record<string,number>; tick: number; cue?: {serial:number; audioId:string} }
+interface Room { code: string; teacherToken: string; owner?: string; lastActive?: number; projectors: string[]; players: Player[]; section: RoadSection; paused: boolean; locked: Record<RoadActivity,boolean>; released: Record<RoadActivity,boolean>; exposed: Record<RoadActivity,boolean>; elapsed: number; sectionTimes: Record<string,number>; tick: number; cue?: {serial:number; audioId:string} }
 class ApiError extends Error { status: number; constructor(status: number, message: string) { super(message); this.status = status; } }
 function fail(status: number, message: string): never { throw new ApiError(status, message); }
 function json(res: ServerResponse, status: number, value: unknown) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(value)); }
@@ -35,7 +37,7 @@ async function body(req: IncomingMessage): Promise<Record<string,unknown>> {
  * Two starts are an educational restriction, not DRM: a downloaded/recorded blob can be replayed
  * outside the app. This must not be advertised as high-stakes anti-cheating/proctoring.
  */
-export function createRoadHandler({ dataDir = process.env.DATA_DIR || resolve(import.meta.dirname, '../data'), now = Date.now }: { dataDir?: string; now?: () => number } = {}) {
+export function createRoadHandler({ dataDir = process.env.DATA_DIR || resolve(import.meta.dirname, '../data'), now = Date.now, guard, ttlMs = Number(process.env.ROAD_ROOM_TTL_HOURS || 24) * 3_600_000 }: { dataDir?: string; now?: () => number; guard?: Guard; ttlMs?: number } = {}) {
   interface Grant { audioId: string; code: string; owner: string; expires: number; attemptId: string; playerId?: string }
   const grants = new Map<string, Grant>();
   const latest = new Map<string, {id:string; url:string}>();
@@ -48,7 +50,9 @@ export function createRoadHandler({ dataDir = process.env.DATA_DIR || resolve(im
   const rooms: Record<string,Room> = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).rooms : {};
   function save() { mkdirSync(dataDir, { recursive: true }); const tmp = `${file}.${randomUUID()}.tmp`; writeFileSync(tmp, JSON.stringify({ version: 1, rooms }), { mode: 0o600 }); renameSync(tmp, file); }
   function roomFor(code: unknown): Room { if (typeof code !== 'string' || !/^[A-F0-9]{6}$/.test(code)) fail(400, 'Código no válido.'); return rooms[code] || fail(404, 'Sala desconocida.'); }
-  function auth(req: IncomingMessage, room: Room): { role: RoadRole; player?: Player } {
+  /** Solo una petición autenticada cuenta como actividad (un token inválido no mantiene viva una sala). */
+  function auth(req: IncomingMessage, room: Room): { role: RoadRole; player?: Player } { const who = authenticated(req, room); room.lastActive = now(); return who; }
+  function authenticated(req: IncomingMessage, room: Room): { role: RoadRole; player?: Player } {
     const t = req.headers.authorization?.match(/^Bearer ([A-Za-z0-9_-]+)$/)?.[1];
     if (!t) fail(401, 'Sesión requerida.');
     if (t === room.teacherToken) return { role: 'teacher' };
@@ -224,8 +228,9 @@ export function createRoadHandler({ dataDir = process.env.DATA_DIR || resolve(im
     if (route === 'levels') { const { id, version, title, schedule, maxPoints } = ROAD_LEVEL; return json(res, 200, [{ id, version, title, schedule, maxPoints }]); }
     if (route === 'create') {
       const input = await body(req); if (input.levelId !== ROAD_LEVEL.id) fail(400, 'Nivel desconocido.');
+      const adm = guard?.admitCreate('road', guard.ip(req), Object.keys(rooms).length, req.headers['x-teacher-key']); if (adm && !adm.ok) fail(adm.status, adm.error);
       let code: string; do { code = randomBytes(3).toString('hex').toUpperCase(); } while (rooms[code]);
-      const room: Room = { code, teacherToken: token(), projectors: [], players: [], section: 'intro', paused: false, locked: flags(), released: flags(), exposed: flags(), elapsed: 0, sectionTimes: {}, tick: now() }; rooms[code] = room; save();
+      const room: Room = { code, teacherToken: token(), projectors: [], players: [], section: 'intro', paused: false, locked: flags(), released: flags(), exposed: flags(), elapsed: 0, sectionTimes: {}, tick: now(), lastActive: now(), ...(adm?.ok && adm.owner ? { owner: adm.owner } : {}) }; rooms[code] = room; save();
       return json(res, 200, { code, token: room.teacherToken, role: 'teacher' });
     }
     if (route === 'join') {
@@ -246,9 +251,28 @@ export function createRoadHandler({ dataDir = process.env.DATA_DIR || resolve(im
     if (route === 'state') { const room = roomFor(url.searchParams.get('code')), who = auth(req, room); settle(room); save(); return json(res, 200, view(room, who)); }
     fail(404, 'Ruta desconocida.');
   }
-  return function roadHandler(req: IncomingMessage, res: ServerResponse): boolean {
+  /** Elimina las salas sin actividad autenticada durante `ttlMs` (y sus permisos de audio). Una sala con tráfico nunca caduca. */
+  function sweep(at = now()): number {
+    const gone = roomsToExpire(rooms, (r) => r.lastActive, (r, t) => { r.lastActive = t; }, at, ttlMs);
+    for (const code of gone) {
+      const tokens = new Set([rooms[code].teacherToken, ...rooms[code].projectors, ...rooms[code].players.map((p) => p.token)]);
+      for (const [key, g] of grants) if (g.code === code) grants.delete(key);
+      for (const t of tokens) latest.delete(t);
+      delete rooms[code];
+    }
+    if (gone.length) save();
+    return gone.length;
+  }
+  const handler = function roadHandler(req: IncomingMessage, res: ServerResponse): boolean {
     const url = new URL(req.url || '/', 'http://road.local');
     if (url.pathname !== '/api/road' && !url.pathname.startsWith('/api/road/')) return false;
-    void dispatch(req, res, url).catch((e: unknown) => json(res, e instanceof ApiError ? e.status : 500, { error: e instanceof ApiError ? e.message : 'No se pudo procesar o guardar la sala.' })); return true;
+    const ip = guard?.ip(req);
+    const lookup = !/\/(create|levels|audio)$/.test(url.pathname);
+    if (guard && ip && lookup && guard.roomLookupBlocked(ip)) { json(res, 429, { error: 'Demasiados intentos con códigos de sala. Espera unos minutos.' }); return true; }
+    void dispatch(req, res, url).catch((e: unknown) => {
+      if (guard && ip && e instanceof ApiError && e.status === 404) guard.roomMiss(ip);
+      json(res, e instanceof ApiError ? e.status : 500, { error: e instanceof ApiError ? e.message : 'No se pudo procesar o guardar la sala.' });
+    }); return true;
   };
+  return Object.assign(handler, { sweep });
 }

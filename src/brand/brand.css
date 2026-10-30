@@ -3,52 +3,7 @@
    Negro lacado · rojo señal · oro (los colores de Alemania), papel cálido como tinta.
    Se apoya en las variables de styles.css (las pantallas de juego siguen igual) y las amplía.
    ═══════════════════════════════════════════════════════════════════════════ */
-:root {
-  /* Color */
-  --dt-black: #0A0A0A;
-  --dt-ink-0: #070707;
-  --dt-ink-1: #0f0f0e;
-  --dt-ink-2: #151514;
-  --dt-ink-3: #1d1d1b;
-  --dt-hair: rgba(242, 241, 238, 0.09);
-  --dt-hair-2: rgba(242, 241, 238, 0.16);
-  --dt-paper: #F2F1EE;
-  --dt-paper-2: #C9C7C1;
-  --dt-muted: #9a9892;          /* 7.0:1 sobre --dt-ink-1 */
-  --dt-red: #FF3832;
-  --dt-red-deep: #B3201B;
-  --dt-red-glow: rgba(255, 56, 50, 0.32);
-  --dt-gold: #E9B949;
-  --dt-gold-deep: #A87C1E;
-  --dt-gold-glow: rgba(233, 185, 73, 0.28);
-  /* Tipo */
-  --dt-display: 'Space Grotesk Variable', system-ui, sans-serif;
-  --dt-dot: 'Doto Variable', 'JetBrains Mono Variable', monospace;
-  --dt-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
-  --dt-t-hero: clamp(2.6rem, 1.2rem + 4.4vw, 5.5rem);
-  --dt-t-h1: clamp(2.3rem, 1.4rem + 3.6vw, 4.6rem);
-  --dt-t-h2: clamp(1.8rem, 1.2rem + 2.3vw, 3.2rem);
-  --dt-t-h3: clamp(1.15rem, 1rem + 0.5vw, 1.4rem);
-  --dt-t-body: 1.0625rem;
-  --dt-t-small: 0.875rem;
-  /* Espacio y forma */
-  --dt-max: 1240px;
-  --dt-pad: clamp(18px, 4vw, 48px);
-  --dt-r-sm: 10px;
-  --dt-r-md: 16px;
-  --dt-r-lg: 24px;
-  --dt-r-xl: 32px;
-  --dt-shadow-1: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 40px -24px rgba(0, 0, 0, 0.9);
-  --dt-shadow-2: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 40px 80px -40px rgba(0, 0, 0, 0.95), 0 0 0 1px var(--dt-hair);
-  --dt-shadow-red: 0 18px 50px -18px var(--dt-red-glow);
-  /* Movimiento */
-  --dt-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --dt-ease-in: cubic-bezier(0.7, 0, 0.84, 0);
-  --dt-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --dt-fast: 160ms;
-  --dt-med: 420ms;
-  --dt-slow: 900ms;
-}
+/* Los tokens --dt-* viven en design/tokens.css. */
 
 html { scroll-padding-top: 88px; overflow-x: clip; }
 body { overflow-x: clip; }

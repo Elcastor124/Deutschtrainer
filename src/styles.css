@@ -1,57 +1,6 @@
 /* DEUTSCH TRAINER // BLACKCARD — un aparato: carcasa negra, pantallas de puntos, teclas con recorrido y un LED rojo.
    Acto I (el juego) es noche de arcade; Acto II (después del juego) pasa a papel: ahora se escribe. */
-:root {
-  --void: #080808;
-  --body: #0e0e0d;
-  --bezel: #131312;
-  --cap: #1c1c1a;
-  --cap-hi: #252523;
-  --skirt: #030303;
-  --line: #222220;
-  --line-2: #2e2e2b;
-  --steel-2: #5f5e5a;
-  --steel: #8f8e89;
-  --paper: #F2F1EE;
-  --paper-2: #d6d5d0;
-  --signal: #FF3832;
-  --signal-deep: #8f1d1a;
-  --glow: rgba(255, 56, 50, 0.38);
-  --gold: #E9B949;
-  --silver: #CFCFCB;
-  --bronze: #B9763F;
-  --led-off: rgba(242, 241, 238, 0.09);
-  --dotgrid: rgba(242, 241, 238, 0.055);
-  --dot: 'Doto Variable', 'JetBrains Mono Variable', monospace;
-  --sans: 'Space Grotesk Variable', system-ui, sans-serif;
-  --mono: 'JetBrains Mono Variable', ui-monospace, monospace;
-  --gut: clamp(12px, 2vw, 28px);
-  --r-key: 9px;
-  --r-panel: 16px;
-  --prompt: clamp(1.3rem, 0.95rem + 1.6vw, 2.35rem);
-  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --ease-back: cubic-bezier(0.3, 1.5, 0.5, 1);
-  color-scheme: dark;
-}
-
-/* Acto II: el aparato se vuelve papel (mismas variables, valores invertidos). */
-body[data-theme='workshop'] {
-  --void: #E9E7E1;
-  --body: #F4F3EF;
-  --bezel: #FAF9F6;
-  --cap: #FFFFFF;
-  --cap-hi: #FFFFFF;
-  --skirt: #BDBAB2;
-  --line: #D7D4CC;
-  --line-2: #C6C2B9;
-  --steel-2: #9b9891;
-  --steel: #66645f;
-  --paper: #121211;
-  --paper-2: #2b2b29;
-  --led-off: rgba(18, 18, 17, 0.12);
-  --dotgrid: rgba(18, 18, 17, 0.07);
-  --glow: rgba(255, 56, 50, 0.25);
-  color-scheme: light;
-}
+/* Los tokens (colores, fuentes, radios, easings y el tema «workshop») viven en design/tokens.css. */
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }

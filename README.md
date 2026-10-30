@@ -70,7 +70,7 @@ Si un alumno recarga la página o pierde la wifi, vuelve como el mismo jugador y
 | **Docker** (Fly.io, Railway, VPS) | `docker build -t blackcard . && docker run -p 4747:4747 -v blackcard-data:/data blackcard` |
 | **Túnel rápido desde tu portátil** | Con `npm start` en marcha: `npx cloudflared tunnel --url http://localhost:4747` |
 
-El servidor necesita WebSockets (las tres opciones los admiten). Variables: `PORT`, `DATA_DIR` (carpeta de persistencia).
+El servidor necesita WebSockets (las tres opciones los admiten). Variables: `PORT`, `DATA_DIR` (carpeta de persistencia; una sola instancia por carpeta), `TRUST_PROXY` (saltos de proxy de confianza para los límites por IP), `TEACHER_AUTH` (`optional`|`required`|`off`, ver `docs/SECURITY_AUDIT.md`) y los límites `ROOM_CREATE_PER_HOUR`, `MAX_*_ROOMS`…
 
 ### Práctica en casa
 

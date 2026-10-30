@@ -4,6 +4,8 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join, resolve } from 'node:path';
 import { BOXING_MOVES, type BoxingMove, type BoxingFighter, type BoxingPhase, type BoxingQuestion, type BoxingResolution, type BoxingView } from '../shared/boxing.ts';
 import { BOXING_BANK } from './boxing-bank.ts';
+import type { Guard } from './security.ts';
+import { roomsToExpire } from './room-ttl.ts';
 
 const DECK_TOPICS = ['Akkusativ', 'Dativ', 'Präpositionen', 'Pronomen', 'Wo/Wohin'];
 function shuffled<T>(items: T[]): T[] {
@@ -35,6 +37,8 @@ interface Fighter extends Omit<BoxingFighter, 'connected' | 'answered' | 'locked
 interface Room {
   code: string;
   teacherToken: string;
+  owner?: string;
+  lastActive?: number;
   phase: BoxingPhase;
   exchange: number;
   maxExchanges: number;
@@ -69,7 +73,7 @@ async function body(req: IncomingMessage): Promise<Record<string, unknown>> {
 }
 
 /** Mount before the existing HTTP routes. Returns synchronously, even for POSTs. */
-export function createBoxingHandler({ dataDir = process.env.DATA_DIR || resolve(import.meta.dirname, '../data') }: { dataDir?: string } = {}) {
+export function createBoxingHandler({ dataDir = process.env.DATA_DIR || resolve(import.meta.dirname, '../data'), now = Date.now, guard, ttlMs = Number(process.env.BOXING_ROOM_TTL_HOURS || 24) * 3_600_000 }: { dataDir?: string; now?: () => number; guard?: Guard; ttlMs?: number } = {}) {
   const file = join(dataDir, 'boxing.json');
   const rooms: Record<string, Room> = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).rooms : {};
   function save() {
@@ -82,7 +86,9 @@ export function createBoxingHandler({ dataDir = process.env.DATA_DIR || resolve(
     if (typeof value !== 'string' || !/^[A-Z2-9]{4}$/.test(value)) fail(400, 'Código de sala no válido.');
     return rooms[value] || fail(404, 'No existe esa sala.');
   }
-  function authenticate(req: IncomingMessage, room: Room) {
+  /** Solo una petición autenticada cuenta como actividad (un token inválido no mantiene viva una sala). */
+  function authenticate(req: IncomingMessage, room: Room) { const who = authenticated(req, room); room.lastActive = now(); return who; }
+  function authenticated(req: IncomingMessage, room: Room) {
     const token = req.headers.authorization?.match(/^Bearer ([A-Za-z0-9_-]+)$/)?.[1];
     if (!token) fail(401, 'Falta una sesión válida.');
     if (token === room.teacherToken) return undefined;
@@ -211,11 +217,12 @@ export function createBoxingHandler({ dataDir = process.env.DATA_DIR || resolve(
     }
     if (url.pathname === '/api/boxing/create' && req.method === 'POST') {
       await body(req);
+      const adm = guard?.admitCreate('boxing', guard.ip(req), Object.keys(rooms).length, req.headers['x-teacher-key']); if (adm && !adm.ok) fail(adm.status, adm.error);
       let code: string;
       const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       do { code = Array.from({ length: 4 }, () => alphabet[randomInt(alphabet.length)]).join(''); } while (rooms[code]);
       const room: Room = { code, teacherToken: randomBytes(32).toString('base64url'), phase: 'lobby', exchange: 0,
-        maxExchanges: 12, paused: false, fighters: [] };
+        maxExchanges: 12, paused: false, fighters: [], lastActive: now(), ...(adm?.ok && adm.owner ? { owner: adm.owner } : {}) };
       rooms[code] = room; save();
       return json(res, 200, { code, token: room.teacherToken, role: 'teacher' });
     }
@@ -242,12 +249,23 @@ export function createBoxingHandler({ dataDir = process.env.DATA_DIR || resolve(
     }
     fail(404, 'Ruta de boxeo no encontrada.');
   }
-  return function boxingHandler(req: IncomingMessage, res: ServerResponse): boolean {
+  /** Elimina las salas sin actividad autenticada durante `ttlMs`. Una sala con tráfico (sondeos incluidos) nunca caduca. */
+  function sweep(at = now()): number {
+    const gone = roomsToExpire(rooms, (r) => r.lastActive, (r, t) => { r.lastActive = t; }, at, ttlMs);
+    for (const code of gone) delete rooms[code];
+    if (gone.length) save();
+    return gone.length;
+  }
+  const handler = function boxingHandler(req: IncomingMessage, res: ServerResponse): boolean {
     const url = new URL(req.url || '/', 'http://boxing.local');
     if (url.pathname !== '/api/boxing' && !url.pathname.startsWith('/api/boxing/')) return false;
+    const ip = guard?.ip(req);
+    if (guard && ip && !url.pathname.endsWith('/create') && guard.roomLookupBlocked(ip)) { json(res, 429, { error: 'Demasiados intentos con códigos de sala. Espera unos minutos.' }); return true; }
     void dispatch(req, res, url).catch((error: unknown) => {
+      if (guard && ip && error instanceof ApiError && error.status === 404) guard.roomMiss(ip);
       json(res, error instanceof ApiError ? error.status : 500, { error: error instanceof ApiError ? error.message : 'No se pudo guardar o procesar la partida.' });
     });
     return true;
   };
+  return Object.assign(handler, { sweep });
 }

@@ -11,13 +11,14 @@ import { Shell } from '../components/Shell.tsx';
 import { TaskControls, TaskStage } from '../components/Tasks.tsx';
 import { sfx } from '../fx/sound.ts';
 import { Net, useNet } from '../net.ts';
-import { navigate, store } from '../util.ts';
+import { navigate, store, teacherKey } from '../util.ts';
 
 /** Hello del profesor: /t/new?temas=…&juego=jenga crea la sala con esos temas; /t/CODE entra con su token. */
 export function teacherHello(code: string, search: string, token?: string): Extract<ClientMsg, { t: 'hello'; role: 'teacher' }> {
-  if (code !== 'new') return { t: 'hello', role: 'teacher', room: code, token };
+  const key = teacherKey();
+  if (code !== 'new') return { t: 'hello', role: 'teacher', room: code, token, ...(key ? { teacherKey: key } : {}) };
   const start = new URLSearchParams(search).get('juego') === 'jenga' ? 'jenga' : 'blackcard';
-  return { t: 'hello', role: 'teacher', create: true, topics: topicsFromQuery(search), start };
+  return { t: 'hello', role: 'teacher', create: true, topics: topicsFromQuery(search), start, ...(key ? { teacherKey: key } : {}) };
 }
 
 export function Teacher({ code }: { code: string }) {

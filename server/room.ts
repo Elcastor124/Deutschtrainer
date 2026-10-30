@@ -48,6 +48,8 @@ export interface RoomState {
   code: string;
   mode: 'class' | 'practice';
   teacherToken: string;
+  /** Profesor con credencial del servidor que creó la sala (server/teacher-auth.ts); ausente en salas «legacy». */
+  owner?: string;
   createdAt: number;
   updatedAt: number;
   phase: Phase;
