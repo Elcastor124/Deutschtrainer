@@ -3,6 +3,7 @@ import type { NetState } from '../net.ts';
 import { KlausEvents, restingReaction, type KlausReaction } from './events.ts';
 import { KlausComments, REACTION_LABELS } from './comments.ts';
 import { KlausFigure } from './KlausFigure.tsx';
+import { useKlausSkin } from './skin-client.ts';
 import { useEffectsEnabled } from '../brand/effects.ts';
 import { readKlausPreferences, saveKlausPreferences, type KlausPreferences } from './preferences.ts';
 
@@ -106,13 +107,14 @@ export function KlausPanel({ model: incomingModel, restingModel }: { model: Klau
       try { audio.current ??= new AudioContext(); void audio.current.resume(); } catch { /* Silent fallback. */ }
     }
   };
+  const look = useKlausSkin();
   const reducedMotion = !effectsEnabled || systemReduced || preferences.still;
   return <aside className={`klaus-companion${preferences.hidden ? ' is-hidden' : ''}`} aria-label="Klaus, tu compañero de práctica"
     data-klaus-panel="" data-klaus-state={preferences.hidden ? 'hidden' : model.reaction} data-klaus-event={model.id}
     data-klaus-muted={preferences.muted ? 'true' : 'false'} data-klaus-reduced={reducedMotion ? 'true' : 'false'}
     onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') event.stopPropagation(); }}>
     {!preferences.hidden && <>
-      <div className="klaus-portrait"><KlausFigure key={model.id} reaction={model.reaction} reducedMotion={reducedMotion} /></div>
+      <div className="klaus-portrait"><KlausFigure key={model.id} reaction={model.reaction} reducedMotion={reducedMotion} look={look} /></div>
       <div className="klaus-copy">
         <span className="klaus-wordmark">KLAUS <span>// DEIN LERNBUDDY</span></span>
         <div className="klaus-caption"><strong>{REACTION_LABELS[model.reaction]}</strong>

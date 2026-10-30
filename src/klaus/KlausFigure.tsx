@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { KlausReaction } from './events.ts';
 import './klaus.css';
+import type { KlausSkinDef } from '../../shared/klaus-skins.ts';
 
 export type KlausSkin = 'original' | 'professor' | 'fire' | 'royal';
 export function reactionSkin(reaction: KlausReaction): KlausSkin {
@@ -14,14 +15,20 @@ export function reactionSkin(reaction: KlausReaction): KlausSkin {
  * Keep the 1.20 signature-rect ratio. The extra right margin holds the real paw.
  * No filled cat head, pupil eyes, substitute font glyphs or replacement mouth.
  */
-export function KlausFigure({ reaction = 'idle', reducedMotion = false, skin = reactionSkin(reaction) }: {
+export function KlausFigure({ reaction = 'idle', reducedMotion = false, skin = reactionSkin(reaction), look }: {
   reaction?: KlausReaction; reducedMotion?: boolean; skin?: KlausSkin;
+  /** Skin de colección del alumno (colores, brillo y emblema). Sin ella, el Klaus original. */
+  look?: KlausSkinDef;
 }) {
+  const custom = look && look.id !== 'default';
+  const style = custom ? { color: look.line, '--klaus-accent': look.accent, '--klaus-secondary': look.secondary, filter: look.glow ? `drop-shadow(0 0 4px ${look.accent})` : undefined } as CSSProperties : undefined;
   const celebrating = ['correct', 'streak3', 'streak5', 'streak10', 'complete'].includes(reaction);
   const waving = reaction === 'waving' || reaction === 'complete';
   return <svg className="klaus-figure" viewBox="-14 -14 190 139" aria-hidden="true" focusable="false"
-    data-klaus-figure="" data-klaus-reaction={reaction} data-klaus-skin={skin} data-klaus-motion={reducedMotion ? 'reduced' : 'full'}>
+    data-klaus-figure="" data-klaus-reaction={reaction} data-klaus-skin={skin} data-klaus-motion={reducedMotion ? 'reduced' : 'full'} data-klaus-look={look?.id ?? 'default'} style={style}>
+    {custom && <ellipse className="klaus-aura" cx="60" cy="62" rx="64" ry="52" fill={look.secondary} opacity=".1" />}
     <ellipse className="klaus-shadow" cx="60" cy="112" rx="41" ry="2.8" />
+    {custom && look.emoji && <text className="klaus-emblem" x="128" y="20" fontSize="22" textAnchor="middle">{look.emoji}</text>}
     <g className="klaus-rig">
       <g transform="scale(1.2 1)" stroke="currentColor" strokeWidth="1.05" fill="none" strokeLinecap="round" strokeLinejoin="round">
         {skin === 'fire' && <g className="klaus-fire" stroke="none" fill="var(--klaus-accent)">

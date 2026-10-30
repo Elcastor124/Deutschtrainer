@@ -1,5 +1,20 @@
 [
   {
+    "id": "mission-01",
+    "unit": 1,
+    "title": "Mission 01 · Mantén una conversación",
+    "description": "Preguntas básicas, W-Wörter, el patrón pregunta → respuesta, verbos con ich/du y los conectores und & aber.",
+    "file": "/presentaciones/mission-01.html",
+    "topics": [
+      "Präsens",
+      "Conversación",
+      "Vocabulario"
+    ],
+    "level": "A1",
+    "source": "DEUTSCHTRAINER.pptx",
+    "sha256": "946ccefb4c62fb2792ae8ae2e669704fc25ca00cd6d5cfedb2679ca862445089"
+  },
+  {
     "id": "bruecke-a1",
     "unit": 1,
     "title": "Brücke A1 · Empieza aquí",

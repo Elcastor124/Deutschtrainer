@@ -23,6 +23,8 @@ export interface Account {
   disabled?: boolean;
   /** Alta creada por un profesor (contraseña temporal entregada en mano). */
   createdBy?: 'teacher';
+  /** Colección de Klaus: skins ganadas, la equipada, lootboxes por abrir y semanas ganadas ya cobradas. */
+  klaus?: { owned: string[]; equipped: string; boxes: number; won: string[] };
 }
 
 const RESERVED = ['admin', 'administrador', 'profesor', 'profesora', 'teacher', 'lehrer', 'lehrerin', 'invitado', 'guest', 'gast', 'klaus', 'ashlabs', 'deutschtrainer', 'sistema', 'system', 'moderador', 'root', 'null', 'undefined'];
@@ -142,6 +144,8 @@ export class AccountStore {
     const h = sha(token);
     a.sessions = a.sessions.filter((s) => s.h !== h); this.byToken.delete(h); this.save();
   }
+  /** Guarda cambios hechos sobre la cuenta (p. ej. su colección de Klaus). */
+  persist() { this.save(); }
   setRanking(a: Account, on: boolean) { a.rankingOptIn = on; this.save(); }
   /** Cambia la contraseña verificando la actual. Cierra todas las demás sesiones (por si alguien más la conocía). */
   async changePassword(a: Account, current: unknown, next: unknown, keepToken: string): Promise<{ ok: true } | Fail> {

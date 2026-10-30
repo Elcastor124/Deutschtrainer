@@ -198,7 +198,7 @@ describe('clases, análisis y biblioteca', () => {
   it('la biblioteca lista presentaciones reales, juegos, examen y repasos con nivel y temas', async () => {
     const { s, t } = await teacherServer();
     const lib = (await req(s, '/api/teacher/library', { cookie: t })).body;
-    expect(lib.items.filter((i: Msg) => i.type === 'presentacion')).toHaveLength(9);
+    expect(lib.items.filter((i: Msg) => i.type === 'presentacion')).toHaveLength(10);
     expect(lib.items.find((i: Msg) => i.id === 'exam:road-b1-1')).toMatchObject({ levels: ['B1'] });
     expect(lib.items.every((i: Msg) => Array.isArray(i.levels) && i.levels.length)).toBe(true);
   });

@@ -226,6 +226,7 @@ export function Ranking() {
         <ul>
           {FREEPLAY_RULES.map((r) => <li key={r.title}><b>{r.points}</b><span><strong>{r.title}</strong>{r.text}</span></li>)}
         </ul>
+        <p className="libre-note">🏆 <b>Premio semanal:</b> el 1.º de cada semana gana una lootbox con un Klaus nuevo. <a href="/klaus">Ver tu colección de Klaus</a>.</p>
         <p className="libre-note">Cuenta todo lo que haces con tu cuenta: la práctica, el modo libre y las salas privadas. El tiempo conectado no suma. Solo se publica tu alias, y solo si activas el ranking en tu cuenta.</p>
       </section>
     </main>
