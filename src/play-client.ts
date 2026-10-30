@@ -28,6 +28,12 @@ export async function playRequest<T>(path: string, body?: unknown, signal?: Abor
 
 export const getCatalog = () => playRequest<Catalog>('/api/play/catalog');
 export const getLeaderboard = () => playRequest<{ week: string; entries: RankingEntry[] }>('/api/play/leaderboard');
+export interface Dashboard {
+  account: AccountPub; summary: ProgressSummary; challenges: { id: string; title: string; value: number; goal: number; done: boolean; topic?: string }[];
+  level: Level | null; reviews: { id: string; at: number; topics: string[]; note?: string }[];
+  classes: { id: string; title: string; date: string; game: string; topics: string[]; status: string; room?: string }[]; groups: string[];
+}
+export const getDashboard = () => playRequest<Dashboard>('/api/account/dashboard');
 export const getAchievements = () => playRequest<{ achievements: AchievementState[] }>('/api/account/achievements');
 export const getRanking = (which: 'current' | 'previous' = 'current', limit = 50, signal?: AbortSignal) => playRequest<RankingView>(`/api/play/leaderboard?week=${which}&limit=${limit}`, undefined, signal);
 export const getMe = () => playRequest<{ account: AccountPub }>('/api/account/me');
@@ -38,9 +44,9 @@ function announce(account: AccountPub | null) {
   dispatchEvent(new CustomEvent('dt:account'));
 }
 export const cachedAlias = () => store.get('dt:student-alias');
-export async function signIn(kind: 'login' | 'register', alias: string, password: string, rankingOptIn = false) {
-  const r = await playRequest<SessionWelcome>(`/api/account/${kind}`, { alias, password, ...(kind === 'register' ? { rankingOptIn } : {}) });
-  setStudentSession(r.token);
+export async function signIn(kind: 'login' | 'register', alias: string, password: string, rankingOptIn = false, confirm?: string) {
+  const r = await playRequest<Omit<SessionWelcome, 'token'>>(`/api/account/${kind}`, { alias, password, ...(kind === 'register' ? { rankingOptIn, ...(confirm !== undefined ? { confirm } : {}) } : {}) });
+  setStudentSession('cookie');
   announce(r.account);
   return r.account;
 }

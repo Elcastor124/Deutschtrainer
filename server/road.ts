@@ -228,7 +228,7 @@ export function createRoadHandler({ dataDir = process.env.DATA_DIR || resolve(im
     if (route === 'levels') { const { id, version, title, schedule, maxPoints } = ROAD_LEVEL; return json(res, 200, [{ id, version, title, schedule, maxPoints }]); }
     if (route === 'create') {
       const input = await body(req); if (input.levelId !== ROAD_LEVEL.id) fail(400, 'Nivel desconocido.');
-      const adm = guard?.admitCreate('road', guard.ip(req), Object.keys(rooms).length, req.headers['x-teacher-key']); if (adm && !adm.ok) fail(adm.status, adm.error);
+      const adm = guard?.admitCreate('road', guard.ip(req), Object.keys(rooms).length, req.headers['x-teacher-key'], guard.teacherFromRequest(req)); if (adm && !adm.ok) fail(adm.status, adm.error);
       let code: string; do { code = randomBytes(3).toString('hex').toUpperCase(); } while (rooms[code]);
       const room: Room = { code, teacherToken: token(), projectors: [], players: [], section: 'intro', paused: false, locked: flags(), released: flags(), exposed: flags(), elapsed: 0, sectionTimes: {}, tick: now(), lastActive: now(), ...(adm?.ok && adm.owner ? { owner: adm.owner } : {}) }; rooms[code] = room; save();
       return json(res, 200, { code, token: room.teacherToken, role: 'teacher' });

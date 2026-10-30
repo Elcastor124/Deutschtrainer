@@ -7,7 +7,8 @@ import { GAMES, LEVELS, LEVEL_DIFFS, LEVEL_LABEL, BOXING_TOPICS, type ProgressSu
 import { TOPICS } from '../shared/rules.ts';
 import type { Question } from '../shared/types.ts';
 import { AccountStore, aliasKey, type Account } from './accounts.ts';
-import { isoWeek, nextWeekStart, standings, weekRange, type ProgressLog } from './progress.ts';
+import { STUDENT_COOKIE, clearCookie, readCookie, sameOriginJson, setCookie } from './cookies.ts';
+import { isoWeek, madridDay, nextWeekStart, standings, weekRange, type ProgressLog } from './progress.ts';
 import type { Guard } from './security.ts';
 import { BOXING_BANK } from './boxing-bank.ts';
 import { computeAchievements, weeklyPlaces } from './achievements.ts';
@@ -31,16 +32,21 @@ async function body(req: IncomingMessage): Promise<Record<string, unknown>> {
 /** Quién hace la petición: cuenta de alumno, invitado (sin cabecera) o sesión inválida/caducada. */
 export type Identity = { kind: 'account'; account: Account } | { kind: 'guest' } | { kind: 'invalid' };
 export function identify(accounts: AccountStore, req: Pick<IncomingMessage, 'headers'>): Identity {
+  // Navegador: cookie HttpOnly (el token nunca está en JS). Clientes de API/tests: cabecera con el token.
+  // La cabecera con el valor «cookie» solo indica «usa mi cookie».
   const raw = req.headers['x-student-session'];
-  const t = Array.isArray(raw) ? raw[0] : raw;
+  const h = Array.isArray(raw) ? raw[0] : raw;
+  const t = h && h !== 'cookie' ? h : readCookie(req, STUDENT_COOKIE);
   if (!t) return { kind: 'guest' };
   const account = accounts.verify(t);
   return account ? { kind: 'account', account } : { kind: 'invalid' };
 }
 
-export interface PlayApiDeps { accounts: AccountStore; guard: Guard; log: () => ProgressLog; bank: Map<string, Question>; now?: () => number }
+export interface PlayApiDeps { accounts: AccountStore; guard: Guard; log: () => ProgressLog; bank: Map<string, Question>; now?: () => number;
+  /** Lo que la academia (Teacher OS) dice de este alumno y que él puede ver: nivel, repasos asignados, sus clases. */
+  studentExtras?: (a: Account) => Record<string, unknown> }
 
-export function createPlayApi({ accounts, guard, log, bank, now = Date.now }: PlayApiDeps) {
+export function createPlayApi({ accounts, guard, log, bank, now = Date.now, studentExtras }: PlayApiDeps) {
   const pub = (a: Account) => ({ alias: a.alias, rankingOptIn: a.rankingOptIn });
   const need = (req: IncomingMessage): Account => {
     const who = identify(accounts, req);
@@ -90,7 +96,16 @@ export function createPlayApi({ accounts, guard, log, bank, now = Date.now }: Pl
     const ip = guard.ip(req);
     const route = url.pathname;
     const method = req.method ?? 'GET';
-    const only = (m: string) => { if (method !== m) { res.setHeader('Allow', m); fail(405, 'Método no permitido.'); } };
+    const only = (m: string) => {
+      if (method !== m) { res.setHeader('Allow', m); fail(405, 'Método no permitido.'); }
+      // Con cookie, toda petición que cambia algo debe ser JSON del mismo origen (CSRF).
+      if (m === 'POST' && !req.headers['x-student-session'] && !sameOriginJson(req)) fail(403, 'Petición no permitida.');
+    };
+    /** Abre la sesión: cookie HttpOnly. El token solo vuelve en el cuerpo para clientes de API que lo piden explícitamente. */
+    const signedIn = (token: string, a: Account) => {
+      setCookie(res, req, STUDENT_COOKIE, token, AccountStore.SESSION_SECONDS);
+      return json(res, 200, { account: pub(a), ...(req.headers['x-token-response'] === '1' ? { token } : {}) });
+    };
 
     if (route === '/api/play/catalog') { only('GET'); return json(res, 200, catalog()); }
     if (route === '/api/play/leaderboard') {
@@ -117,9 +132,10 @@ export function createPlayApi({ accounts, guard, log, bank, now = Date.now }: Pl
       only('POST');
       const blocked = guard.registerBlocked(ip); if (blocked) fail(429, blocked);
       const input = await body(req);
+      if (input.confirm !== undefined && input.confirm !== input.password) fail(400, 'Las contraseñas no coinciden.');
       const r = await accounts.register(input.alias, input.password, input.rankingOptIn === true);
       if (!r.ok) return fail(r.status, r.error);
-      return json(res, 200, { token: r.token, account: pub(r.account) });
+      return signedIn(r.token, r.account);
     }
     if (route === '/api/account/login') {
       only('POST');
@@ -128,11 +144,14 @@ export function createPlayApi({ accounts, guard, log, bank, now = Date.now }: Pl
       const blocked = guard.loginBlocked(ip, key); if (blocked) fail(429, blocked);
       const r = await accounts.login(input.alias, input.password);
       if (!r.ok) { guard.loginFailed(ip, key); return fail(r.status, r.error); }
-      return json(res, 200, { token: r.token, account: pub(r.account) });
+      return signedIn(r.token, r.account);
     }
     if (route === '/api/account/logout') {
       only('POST');
-      const t = req.headers['x-student-session']; if (typeof t === 'string') accounts.logout(t);
+      const h = req.headers['x-student-session'];
+      const t = typeof h === 'string' && h !== 'cookie' ? h : readCookie(req, STUDENT_COOKIE);
+      if (t) accounts.logout(t);
+      clearCookie(res, req, STUDENT_COOKIE);
       return json(res, 200, { ok: true });
     }
     if (route === '/api/account/achievements') {
@@ -142,6 +161,21 @@ export function createPlayApi({ accounts, guard, log, bank, now = Date.now }: Pl
       // Los logros de ranking solo cuentan semanas en las que la cuenta aparecía en el ranking (lo activó).
       const podium = a.rankingOptIn && a.aliasStatus === 'approved' ? weeklyPlaces(l.events, a.id, (p) => rankable.has(p), l.now()) : [];
       return json(res, 200, { achievements: computeAchievements(mine, podium) });
+    }
+    if (route === '/api/account/dashboard') {
+      only('GET');
+      const a = need(req); const l = log(); const week = isoWeek(l.now());
+      const mine = l.events.filter((e) => e.profile === a.id && isoWeek(e.at) === week);
+      const s = summary(a);
+      const weak = s.recommended[0];
+      // Retos semanales: derivados de actividad real de esta semana (nunca de tiempo conectado).
+      const challenges = [
+        { id: 'acts', title: 'Completa 3 actividades', value: mine.filter((e) => e.kind === 'game' && e.game).length, goal: 3 },
+        { id: 'days', title: 'Practica 4 días distintos', value: new Set(mine.map((e) => madridDay(e.at))).size, goal: 4 },
+        { id: 'answers', title: 'Responde 50 preguntas', value: mine.filter((e) => e.kind === 'answer').length, goal: 50 },
+        ...(weak ? [{ id: 'weak', title: `Repasa «${(TOPICS as Record<string, { de: string }>)[weak]?.de ?? weak}» (10 preguntas)`, topic: weak, value: mine.filter((e) => e.kind === 'answer' && e.topic === weak).length, goal: 10 }] : []),
+      ].map((c) => ({ ...c, value: Math.min(c.value, c.goal), done: c.value >= c.goal }));
+      return json(res, 200, { account: pub(a), summary: s, challenges, ...(studentExtras?.(a) ?? {}) });
     }
     if (route === '/api/account/me') { only('GET'); return json(res, 200, { account: pub(need(req)) }); }
     if (route === '/api/account/progress') { only('GET'); return json(res, 200, summary(need(req))); }
@@ -156,7 +190,8 @@ export function createPlayApi({ accounts, guard, log, bank, now = Date.now }: Pl
       only('POST');
       const a = need(req); const input = await body(req);
       const blocked = guard.loginBlocked(ip, aliasKey(a.alias)); if (blocked) fail(429, blocked);
-      const r = await accounts.changePassword(a, input.current, input.next, String(req.headers['x-student-session']));
+      const h = req.headers['x-student-session'];
+      const r = await accounts.changePassword(a, input.current, input.next, String(typeof h === 'string' && h !== 'cookie' ? h : readCookie(req, STUDENT_COOKIE)));
       if (!r.ok) { if (r.status === 401) guard.loginFailed(ip, aliasKey(a.alias)); return fail(r.status, r.error); }
       return json(res, 200, { ok: true });
     }

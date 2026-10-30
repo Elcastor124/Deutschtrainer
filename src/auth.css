@@ -1,0 +1,18 @@
+/* Registro e inicio de sesión: solo tokens. */
+.auth { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: clamp(32px, 6vw, 88px); align-items: start; max-width: 1080px; margin: 0 auto; padding: 8vh var(--dt-pad) 12vh; }
+.auth-side { display: grid; gap: var(--dt-space-9); padding-top: var(--dt-space-7); }
+.auth-side h1 { margin: 0; font-family: var(--dt-display); font-size: var(--dt-t-h1); line-height: 1; letter-spacing: -0.035em; }
+.auth-card { padding: var(--dt-space-10); border-radius: var(--dt-r-xl); background: var(--dt-ink-2); border: 1px solid var(--dt-hair-2); box-shadow: var(--dt-shadow-2); position: relative; overflow: hidden; }
+.auth-card::before { content: ''; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--dt-red), var(--dt-gold)); }
+.auth-form { display: grid; gap: var(--dt-space-7); }
+.auth-form h2 { margin: 0; font-family: var(--dt-display); font-size: var(--dt-t-h3); }
+.auth-switch { margin: 0; text-align: center; color: var(--dt-paper-2); }
+.auth-switch a, .auth-card a { color: var(--dt-paper); font-weight: 600; text-decoration: underline; text-decoration-color: var(--dt-red); text-underline-offset: 3px; }
+.auth-join { display: flex; align-items: center; gap: var(--dt-space-7); padding: var(--dt-space-7) var(--dt-space-9); border-radius: var(--dt-r-lg); border: 1px solid var(--dt-hair-2); background: var(--dt-ink-1); color: var(--dt-paper); text-decoration: none; transition: border-color var(--dt-fast), transform var(--dt-fast) var(--dt-ease); }
+.auth-join:hover { border-color: var(--dt-gold); transform: translateY(-2px); }
+.auth-join > span:first-child { width: 44px; height: 44px; border-radius: var(--dt-r-ctl); display: grid; place-items: center; background: var(--dt-ink-3); color: var(--dt-gold); font-family: var(--dt-dot); font-size: 1.4rem; flex: none; }
+.auth-join > span:nth-child(2) { display: grid; gap: 2px; flex: 1; }
+.auth-join small { color: var(--dt-muted); }
+.auth-join i { font-style: normal; color: var(--dt-gold); font-size: 1.2rem; }
+@media (max-width: 820px) { .auth { grid-template-columns: minmax(0, 1fr); padding-top: 4vh; } .auth-side { order: 2; } .auth-side h1 { font-size: var(--dt-t-h2); } }
+@media (prefers-reduced-motion: reduce) { .auth-join { transition: none; } }

@@ -28,6 +28,9 @@ export function Teacher({ code }: { code: string }) {
     return new Net(teacherHello(code, location.search, token), (m) => {
       store.set(`bc:t:${m.room}`, m.token);
       store.set('bc:last-teacher', m.room);
+      // Clase planificada en Teacher OS: se vincula a la sala recién creada (con la sesión de profesor, cookie HttpOnly).
+      const tos = store.get('dt:tos-session');
+      if (tos && code === 'new') { store.del('dt:tos-session'); void fetch(`/api/teacher/sessions/${encodeURIComponent(tos)}/start`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room: m.room }) }).catch(() => {}); }
       if (code !== m.room) history.replaceState(null, '', `/t/${m.room}`);
     });
   }, [code]);

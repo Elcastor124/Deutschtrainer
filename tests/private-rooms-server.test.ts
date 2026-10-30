@@ -45,7 +45,7 @@ async function conn(srv: Srv, hello: Msg) {
   };
 }
 const http = async (srv: Srv, path: string, input?: unknown, token?: string) => {
-  const r = await fetch(srv.url(path), { method: input === undefined ? 'GET' : 'POST', headers: { 'content-type': 'application/json', ...(token ? { 'x-student-session': token } : {}) }, ...(input === undefined ? {} : { body: JSON.stringify(input) }) });
+  const r = await fetch(srv.url(path), { method: input === undefined ? 'GET' : 'POST', headers: { 'content-type': 'application/json', 'x-token-response': '1', ...(token ? { 'x-student-session': token } : {}) }, ...(input === undefined ? {} : { body: JSON.stringify(input) }) });
   return { status: r.status, body: await r.json() as Msg };
 };
 const PW = 'correct-horse-battery';

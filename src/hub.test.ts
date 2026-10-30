@@ -41,7 +41,10 @@ describe('Student learning hub', () => {
     expect(html).toContain('Marcar hecho');
     expect(html).toContain('Siguiente');
     const teacher = renderRoute('/profesor');
-    expect(teacher).toContain('Próximamente: modo profesor protegido');
+    // /profesor (= /teacher) es Teacher OS: se carga aparte y su HTML inicial no lleva ningún dato (todo exige sesión de profesor).
+    expect(teacher).not.toContain('Próximamente: modo profesor protegido');
+    expect(teacher).toContain('tos-skel');
+    expect(teacher).not.toMatch(/acc_|dtk_|dtt_/);
     expect(teacher).not.toMatch(/type="password"/);
   });
 

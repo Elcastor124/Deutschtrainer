@@ -5,7 +5,6 @@ import { Net, useNet } from '../net.ts';
 import { navigate, profileId, store, studentSession } from '../util.ts';
 import type { AccountPub } from '../../shared/play.ts';
 import { cachedAlias, refreshAccount } from '../play-client.ts';
-import { AccountGate } from './Account.tsx';
 import '../libre.css';
 import '../account.css';
 import { PlayScreen } from './Player.tsx';
@@ -95,7 +94,10 @@ export function Practice() {
       ) : (
         <div data-practice-gate="">
           <p className="libre-note" style={{ margin: '0 0 12px' }}><b>Entra con tu cuenta</b> para que tu práctica cuente en el <a href="/ranking" onClick={followLearningLink}>ranking semanal</a> y se guarde tu progreso. Sin cuenta también puedes practicar (abajo), pero no cuenta.</p>
-          <AccountGate compact hideGuest onSigned={(a) => setAccount(a)} />
+          <div className="libre-row">
+            <a className="btn primary" href="/registro?volver=/practica" onClick={(e) => { e.preventDefault(); navigate('/registro?volver=/practica'); }}>Crear cuenta</a>
+            <a className="btn" href="/entrar?volver=/practica" onClick={(e) => { e.preventDefault(); navigate('/entrar?volver=/practica'); }}>Iniciar sesión</a>
+          </div>
         </div>
       )}
       </section>
