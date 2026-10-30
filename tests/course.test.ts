@@ -79,6 +79,6 @@ describe('Progreso del curso', () => {
 
   it('ordena presentaciones según el curso (remaster justo tras Krankenhaus)', () => {
     const ids = catalog.map((c) => c.id).sort((a, b) => courseOrder(a) - courseOrder(b));
-    expect(ids).toEqual(['bruecke-a1', 'bank', 'nebensaetze-perfekt', 'krankenhaus', 'krankenhaus-remaster', 'unterwegs', 'akkusativ', 'sprache-in-bewegung']);
+    expect(ids).toEqual(['bruecke-a1', 'bank', 'nebensaetze-perfekt', 'zusammenfassung-thema-1', 'krankenhaus', 'krankenhaus-remaster', 'unterwegs', 'akkusativ', 'sprache-in-bewegung']);
   });
 });
