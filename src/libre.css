@@ -38,3 +38,15 @@
 .private-next b { color: var(--dt-gold); font-family: var(--dt-mono); }
 .libre a:not(.btn), .private-lobby a:not(.btn) { color: var(--dt-paper); text-decoration: underline; text-decoration-color: var(--dt-red); text-underline-offset: 3px; }
 .libre a:not(.btn):hover { color: var(--dt-gold); }
+
+.practice-pick-title { font-size: 1.25rem; margin: 0 0 4px; }
+
+/* Racha de aciertos: llamarada */
+.streak-fire { position: fixed; inset: auto 0 12vh; display: flex; justify-content: center; align-items: flex-end; gap: 6px; pointer-events: none; z-index: 60; animation: sf-out 1.6s ease-out forwards; }
+.streak-fire span { font-size: clamp(3rem, 2rem + 5vw, 6rem); filter: drop-shadow(0 0 18px rgba(255, 120, 0, .8)); animation: sf-flame .45s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+.streak-fire span:nth-child(2) { font-size: clamp(4rem, 2.6rem + 6vw, 8rem); animation-delay: .12s; }
+.streak-fire span:nth-child(3) { animation-delay: .24s; }
+.streak-fire b { position: absolute; bottom: -1.6em; font: 700 1.4rem/1 var(--dt-font-display, inherit); color: #ffb020; text-shadow: 0 0 12px rgba(255, 90, 0, .9); }
+@keyframes sf-flame { from { transform: scale(1, .9) rotate(-4deg); } to { transform: scale(1.08, 1.15) rotate(4deg); } }
+@keyframes sf-out { 0% { opacity: 0; transform: translateY(40px) scale(.6); } 15% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-60px); } }
+@media (prefers-reduced-motion: reduce) { .streak-fire, .streak-fire span { animation: none; } }

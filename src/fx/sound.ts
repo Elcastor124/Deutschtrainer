@@ -2,7 +2,8 @@
 // Paleta sonora de «aparato»: clics de tecla, pitidos cuadrados, golpes graves y ruido filtrado.
 let ac: AudioContext | null = null;
 let out: AudioNode | null = null;
-let enabled = false;
+import { store } from '../util.ts';
+let enabled = store.get('bc:sound') !== '0';
 export const setSound = (v: boolean) => { enabled = v; };
 
 function ctx(): AudioContext | null {
@@ -105,6 +106,15 @@ export const sfx = {
     const seq = [523, 523, 523, 659, 784, 659, 784, 1047];
     seq.forEach((f, i) => tone(f, i === seq.length - 1 ? 0.6 : 0.14, 'square', 0.045, i * 0.13));
     thump(0, 0.2); thump(0.91, 0.25);
+  },
+  /** Clic suave de interfaz (botones y enlaces). */
+  click: () => { noise(0.018, 0.035, 0, 'bandpass', 2600, undefined, 2.5); tone(1250, 0.025, 'triangle', 0.02); },
+  /** Racha: llamarada (whoosh grave + chisporroteo). */
+  fire: () => {
+    noise(0.9, 0.09, 0, 'bandpass', 180, 1400, 0.8);
+    noise(1.1, 0.04, 0.05, 'lowpass', 900, 250);
+    for (let i = 0; i < 14; i++) noise(0.012, 0.06, 0.08 + Math.random() * 0.9, 'highpass', 3000 + Math.random() * 3000);
+    thump(0, 0.14, 110, 45, 0.4);
   },
   type: () => noise(0.015, 0.025, 0, 'bandpass', 4200, undefined, 3),
 };
