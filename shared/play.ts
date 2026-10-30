@@ -78,3 +78,31 @@ export const FREEPLAY_RULES: readonly { points: string; title: string; text: str
   { points: '+4–10', title: 'Actividad completada', text: 'A1 / A2 / B1 (la práctica de /practica cuenta como A2), con 8 preguntas o más y al menos un 40 % de acierto. Hasta 3 al día.' },
   { points: '200', title: 'Máximo por día', text: 'Para que gane quien practica a menudo, no quien se queda horas.' },
 ];
+
+// ───────────── Logros e insignias ─────────────
+export type AchievementTier = 'bronze' | 'silver' | 'gold';
+export interface AchievementDef { id: string; name: string; desc: string; tier: AchievementTier; icon: string; goal: number; group: 'constancia' | 'aprendizaje' | 'juegos' | 'ranking' }
+export interface AchievementState { id: string; unlocked: boolean; at?: number; value: number; goal: number }
+/** Catálogo. Las condiciones las evalúa server/achievements.ts sobre eventos validados (nunca el cliente). */
+export const ACHIEVEMENTS: readonly AchievementDef[] = [
+  { id: 'first-answer', name: 'Los geht\'s!', desc: 'Responde tu primera pregunta.', tier: 'bronze', icon: 'spark', goal: 1, group: 'aprendizaje' },
+  { id: 'correct-100', name: 'Hundert', desc: '100 respuestas correctas.', tier: 'bronze', icon: 'check', goal: 100, group: 'aprendizaje' },
+  { id: 'correct-500', name: 'Fünfhundert', desc: '500 respuestas correctas.', tier: 'silver', icon: 'check', goal: 500, group: 'aprendizaje' },
+  { id: 'correct-1000', name: 'Tausend', desc: '1000 respuestas correctas.', tier: 'gold', icon: 'check', goal: 1000, group: 'aprendizaje' },
+  { id: 'master-1', name: 'Especialista', desc: 'Domina un tema: 30 intentos con un 85 % de acierto o más.', tier: 'silver', icon: 'star', goal: 1, group: 'aprendizaje' },
+  { id: 'master-3', name: 'Profi', desc: 'Domina tres temas distintos.', tier: 'gold', icon: 'star', goal: 3, group: 'aprendizaje' },
+  { id: 'explorer', name: 'Entdecker', desc: 'Practica 5 temas distintos en una misma semana.', tier: 'bronze', icon: 'compass', goal: 5, group: 'aprendizaje' },
+  { id: 'b1-ready', name: 'Auf dem Weg zu B1', desc: 'Completa una actividad de B1 Training con un 70 % o más.', tier: 'gold', icon: 'mountain', goal: 1, group: 'aprendizaje' },
+  { id: 'streak-3', name: 'Dranbleiben', desc: 'Practica 3 días seguidos.', tier: 'bronze', icon: 'flame', goal: 3, group: 'constancia' },
+  { id: 'streak-7', name: 'Eine Woche', desc: 'Practica 7 días seguidos.', tier: 'silver', icon: 'flame', goal: 7, group: 'constancia' },
+  { id: 'streak-30', name: 'Unaufhaltsam', desc: 'Practica 30 días seguidos.', tier: 'gold', icon: 'flame', goal: 30, group: 'constancia' },
+  { id: 'first-activity', name: 'Geschafft', desc: 'Completa tu primera actividad.', tier: 'bronze', icon: 'flag', goal: 1, group: 'constancia' },
+  { id: 'activities-10', name: 'Fleißig', desc: 'Completa 10 actividades.', tier: 'silver', icon: 'flag', goal: 10, group: 'constancia' },
+  { id: 'activities-50', name: 'Unermüdlich', desc: 'Completa 50 actividades.', tier: 'gold', icon: 'flag', goal: 50, group: 'constancia' },
+  { id: 'perfect', name: 'Fehlerfrei', desc: 'Una actividad de 10 preguntas o más sin un solo fallo.', tier: 'silver', icon: 'diamond', goal: 1, group: 'juegos' },
+  { id: 'boxer', name: 'Ringfrei', desc: 'Termina un combate de boxeo.', tier: 'bronze', icon: 'glove', goal: 1, group: 'juegos' },
+  { id: 'builder', name: 'Turmbauer', desc: 'Completa una partida de Wort-Jenga.', tier: 'bronze', icon: 'tower', goal: 1, group: 'juegos' },
+  { id: 'all-games', name: 'Allrounder', desc: 'Completa actividades en BlackCard, Wort-Jenga y Boxeo.', tier: 'silver', icon: 'grid', goal: 3, group: 'juegos' },
+  { id: 'podium', name: 'Auf dem Podest', desc: 'Termina una semana entre los 3 primeros del ranking.', tier: 'silver', icon: 'podium', goal: 1, group: 'ranking' },
+  { id: 'champion', name: 'Wochensieger', desc: 'Gana una semana del ranking.', tier: 'gold', icon: 'crown', goal: 1, group: 'ranking' },
+];

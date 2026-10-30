@@ -2,7 +2,9 @@
 // alias sugerido, contraseña con indicador claro, ranking opcional explicado, y todo lo de la cuenta en un sitio.
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { PASSWORD_MIN, type AccountPub, type ProgressSummary } from '../../shared/play.ts';
-import { changePassword, deleteAccount, getProgress, refreshAccount, setRanking, signIn, signOut } from '../play-client.ts';
+import { changePassword, deleteAccount, getAchievements, getProgress, refreshAccount, setRanking, signIn, signOut } from '../play-client.ts';
+import type { AchievementState } from '../../shared/play.ts';
+import { BadgeGrid } from '../components/Badges.tsx';
 import { navigate, store } from '../util.ts';
 import '../libre.css';
 import '../account.css';
@@ -136,7 +138,9 @@ function AccountHome({ account, onChange }: { account: AccountPub; onChange: (a:
   const [p, setP] = useState<ProgressSummary | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => { void getProgress().then(setP).catch(() => setP(null)); }, []);
+  const [ach, setAch] = useState<AchievementState[] | null>(null);
+  useEffect(() => { void getProgress().then(setP).catch(() => setP(null)); void getAchievements().then((r) => setAch(r.achievements)).catch(() => setAch(null)); }, []);
+  useEffect(() => { if (ach && location.hash === '#logros') document.getElementById('logros')?.scrollIntoView({ block: 'start' }); }, [ach]);
   const toggleRanking = async (on: boolean) => {
     setError(null);
     try { onChange((await setRanking(on)).account); setMsg(on ? 'Ahora apareces en el ranking con tu alias.' : 'Ya no apareces en el ranking.'); } catch (cause) { setError((cause as Error).message); }
@@ -156,10 +160,11 @@ function AccountHome({ account, onChange }: { account: AccountPub; onChange: (a:
         <div className="libre-stats">
           <div className="libre-stat"><span>Puntos esta semana</span><b>{p.weekPoints}</b></div>
           <div className="libre-stat"><span>Días seguidos</span><b>{p.streak}</b></div>
-          <div className="libre-stat"><span>Actividades</span><b>{p.activities.length}</b></div>
+          <div className="libre-stat"><span>Logros</span><b>{ach ? ach.filter((a) => a.unlocked).length : '—'}</b></div>
           <div className="libre-stat"><span>Ranking</span><b>{p.rank ?? '—'}</b></div>
         </div>
       )}
+      {ach && <div id="logros"><BadgeGrid list={ach} /></div>}
       {p && <ProgressDetails p={p} />}
       <section className="libre-card" aria-label="Ajustes">
         <h2>Ajustes</h2>

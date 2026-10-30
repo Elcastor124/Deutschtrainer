@@ -74,6 +74,8 @@ export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Ne
   useEffect(() => { if (chest && me && !me.chests.some((c) => c.id === chest.id) && !document.querySelector('.chest-ovl .prize, .chest-big.waiting')) setChest(null); }, [me?.chests.length]);
 
   const practice = v?.mode === 'practice';
+  // Al terminar (práctica o sala privada) puede haber logros nuevos: que el aviso global lo compruebe ya.
+  useEffect(() => { if (v?.phase === 'final') dispatchEvent(new CustomEvent('dt:activity')); }, [v?.phase]);
   const submit = async (a: Answer) => {
     if (!v?.q || busy) return;
     setBusy(true);

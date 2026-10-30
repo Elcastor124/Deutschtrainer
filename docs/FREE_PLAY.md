@@ -124,6 +124,18 @@ Pestaña propia en la navegación. Solo cuentas que activaron el ranking, solo `
 - Accesibilidad: con «reducir movimiento» no hay animaciones (todo aparece al instante); con los efectos apagados no hay confeti ni foco.
 - API: `GET /api/play/leaderboard?week=current|previous&limit=1..50` → `RankingView` (`week`, `range`, `resetsAt`, `players`, `entries` y, solo con sesión, `me` con **tus** puntos y puesto).
 
+## Logros e insignias
+20 logros en 4 grupos (aprendizaje, constancia, juegos, ranking), con niveles bronce, plata y oro (`ACHIEVEMENTS` en `shared/play.ts`).
+- **Se calculan en el servidor** (`server/achievements.ts`) a partir de los eventos ya validados de la cuenta: no hay nada que el cliente pueda enviar para desbloquearlos ni un almacén aparte. Cada logro tiene su fecha exacta de desbloqueo y su progreso (p. ej. 37/100).
+- Logros de ranking (podio, campeón) solo cuentan semanas **cerradas** y en las que la cuenta estaba en el ranking.
+- Ninguno premia el tiempo conectado: todos salen de respuestas, actividades completadas, días con práctica o puestos.
+- `/cuenta#logros`: grid de insignias (las bloqueadas, en gris con candado y barra de progreso).
+- **Aviso global** al desbloquear (en cualquier página): el medallón gira y aterriza, lo cruza un brillo, y se va solo. Se comprueba al cambiar de página, al volver a la pestaña y al terminar una partida. La primera vez que un navegador ve una cuenta solo apunta lo ya conseguido (no avisa de golpe de todo lo antiguo).
+- API: `GET /api/account/achievements` (solo con sesión, solo los propios).
+
+## Animaciones al desplazarse
+`src/brand/ScrollReveal.tsx`: un único `IntersectionObserver` para toda la web hace aparecer en cascada las piezas de contenido (tarjetas, secciones, insignias, reglas…) al entrar en pantalla, y una barra fina roja→oro arriba indica cuánto llevas de página. No toca las pantallas de juego ni lo que ya tiene su propia animación (portada, podio). Con los efectos apagados o «reducir movimiento», todo visible desde el principio y sin barra; sin JavaScript, también visible.
+
 ## Qué NO está hecho (honesto)
 - **Deutsch Deck**: el juego no existe.
 - El ranking es **opcional y desactivado por defecto** (decisión de privacidad): hasta que cada alumno lo active, no aparece. La página lo pide con un botón.

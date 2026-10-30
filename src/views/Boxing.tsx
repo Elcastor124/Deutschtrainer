@@ -118,6 +118,7 @@ function BoxingRoom({ session, sound, onExit }: { session: BoxingWelcome; sound:
   const state = useSyncExternalStore(client.subscribe, client.getSnapshot);
   useEffect(() => { client.start(); return () => client.close(); }, [client]);
   const view = state.view;
+  useEffect(() => { if (view?.phase === 'finished') dispatchEvent(new CustomEvent('dt:activity')); }, [view?.phase]);
   return <>
     <div className="bx-match-heading"><div><p className="bx-eyebrow">{session.role === 'teacher' ? 'MODO PROYECTOR / PROFESOR' : session.free ? 'MODO LIBRE / SIN PROFESOR' : 'TU ESQUINA / ALUMNO'}</p><h1>{view?.phase === 'finished' ? 'Fin del combate.' : view?.phase === 'lobby' ? 'El ring os espera.' : 'Piensa. Elige. Boxen.'}</h1></div><div className={`bx-connection ${state.connection}`} role="status"><i />{state.connection === 'online' ? 'En directo' : state.connection === 'offline' ? 'Reconectando' : 'Conectando…'}<b data-box-room="">{session.code}</b></div></div>
     {state.error && <div className="bx-error" role="alert"><span>{state.error} Tu sesión se conserva.</span><button className="bx-text-button" disabled={state.busy} onClick={() => { void client.refresh(); }}>Reintentar conexión</button></div>}

@@ -10,6 +10,7 @@ import { AccountStore, aliasKey, type Account } from './accounts.ts';
 import { isoWeek, nextWeekStart, standings, weekRange, type ProgressLog } from './progress.ts';
 import type { Guard } from './security.ts';
 import { BOXING_BANK } from './boxing-bank.ts';
+import { computeAchievements, weeklyPlaces } from './achievements.ts';
 
 class ApiError extends Error { status: number; constructor(status: number, message: string) { super(message); this.status = status; } }
 const fail = (status: number, message: string): never => { throw new ApiError(status, message); };
@@ -133,6 +134,14 @@ export function createPlayApi({ accounts, guard, log, bank, now = Date.now }: Pl
       only('POST');
       const t = req.headers['x-student-session']; if (typeof t === 'string') accounts.logout(t);
       return json(res, 200, { ok: true });
+    }
+    if (route === '/api/account/achievements') {
+      only('GET');
+      const a = need(req); const l = log(); const rankable = accounts.rankable();
+      const mine = l.events.filter((e) => e.profile === a.id);
+      // Los logros de ranking solo cuentan semanas en las que la cuenta aparecía en el ranking (lo activó).
+      const podium = a.rankingOptIn && a.aliasStatus === 'approved' ? weeklyPlaces(l.events, a.id, (p) => rankable.has(p), l.now()) : [];
+      return json(res, 200, { achievements: computeAchievements(mine, podium) });
     }
     if (route === '/api/account/me') { only('GET'); return json(res, 200, { account: pub(need(req)) }); }
     if (route === '/api/account/progress') { only('GET'); return json(res, 200, summary(need(req))); }
