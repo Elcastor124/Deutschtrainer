@@ -163,4 +163,20 @@ Diseño y límites funcionales en `docs/FREE_PLAY.md`. Aquí, solo lo relevante 
 | S17 | Baja | Los límites por IP siguen siendo por proceso y dependen de `TRUST_PROXY` correcto (ver fase 2). Los invitados de WebSocket (BlackCard/Jenga solitario) comparten el cupo de «prácticas» por IP, no el de partidas libres por cuenta. |
 | S18 | Baja | Un anfitrión de sala privada ve el nombre de su rival (alias o nombre de invitado recortado). Es el comportamiento esperado de una partida con código; no hay chat ni mensajes libres. |
 | S19 | Info | `S12` (profesor) sigue abierto hasta activar `TEACHER_AUTH=required` en producción con profesores registrados. |
-| S20 | Info | No se implementaron salas privadas de BlackCard/Wort-Jenga ni Deutsch Deck (ver `FREE_PLAY.md`): no hay superficie de ataque asociada todavía. |
+| S20 | Info | Deutsch Deck no existe (sin superficie). Las salas privadas de BlackCard/Wort-Jenga **sí** existen desde la fase 4 (abajo). |
+
+---
+
+# Fase 4 — salas privadas de BlackCard/Wort-Jenga, cuentas y cambio de contraseña
+
+| Superficie nueva | Garantía | Prueba |
+|---|---|---|
+| `POST /api/play/room` (jugador) | Crea una sala de clase **sin profesor**: no devuelve token de profesor (nadie lo tiene), no pasa por `TEACHER_AUTH`, usa el cupo del modo libre (por IP, por cuenta y global) y valida juego, nivel y que haya preguntas suficientes | `private-rooms-server` |
+| Entrar en una sala privada | Solo en el vestíbulo, máx. 6, cuenta → alias, sesión caducada → error, misma cuenta no duplica plaza | `private-rooms-server` |
+| Roles | Nadie entra como profesor (ni con el token del anfitrión ni con una sesión de alumno); todo `ctl` se rechaza; el anfitrión **solo** puede expulsar y solo antes de empezar | `private-rooms-server`, `private-rooms` |
+| Avance automático | Sin «revisión del profesor»: corrección automática; esperas fijas o votos; quien no saca pieza en el Jenga no bloquea | `private-rooms` |
+| Progreso | Una sola actividad por jugador al terminar, con aciertos contados por el servidor (corregido un fallo: el Jenga perdía los recuentos por jugador al cerrar la tarea) | `private-rooms`, `private-rooms-server` |
+| Caducidad | 2 h sin actividad / 10 min tras terminar, nunca con alguien conectado; no gastan el cupo de salas del profesor | `limits` (lógica), revisión |
+| `POST /api/account/password` | Exige la contraseña actual (con el mismo límite de intentos que el acceso), valida la nueva y **cierra las demás sesiones** | `freeplay-accounts` |
+
+Riesgo residual nuevo: un anfitrión ve los nombres de quienes entran (alias o nombre de invitado recortado) y puede expulsarlos en el vestíbulo; no hay chat ni mensajes libres. Un código de 4 caracteres compartido fuera del grupo permite entrar hasta que empieza la partida (mitigado por la expulsión y el límite de intentos con códigos inexistentes).

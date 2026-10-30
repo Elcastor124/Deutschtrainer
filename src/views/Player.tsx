@@ -13,14 +13,17 @@ import { Shell } from '../components/Shell.tsx';
 import { TaskPlay } from '../components/Tasks.tsx';
 import { sfx } from '../fx/sound.ts';
 import { Net, useNet, type NetState } from '../net.ts';
-import { navigate, profileId, store } from '../util.ts';
+import { navigate, profileId, store, studentSession } from '../util.ts';
+import { PrivateLobby, PrivateNext } from '../components/PrivateRoom.tsx';
+import '../libre.css';
 import { PracticeProgress } from '../brand/PracticeProgress.tsx';
 import { usePracticeFeedback } from '../brand/usePracticeFeedback.ts';
 import { readEffectsEnabled } from '../brand/effects.ts';
 
 export function Player({ code }: { code: string }) {
-  const [name, setName] = useState(() => store.get('bc:name') ?? '');
-  const [ready, setReady] = useState(() => !!store.get(`bc:p:${code}`) || !!store.get('bc:name'));
+  // Con cuenta del modo libre, el alias sirve de nombre (en una sala privada el servidor usa siempre el alias).
+  const [name, setName] = useState(() => store.get('bc:name') ?? store.get('dt:student-alias') ?? '');
+  const [ready, setReady] = useState(() => !!store.get(`bc:p:${code}`) || !!store.get('bc:name') || !!studentSession());
   if (!ready) {
     return (
       <form className="home join-form" onSubmit={(e) => { e.preventDefault(); if (name.trim()) { store.set('bc:name', name.trim()); setReady(true); } }}>
@@ -35,7 +38,7 @@ export function Player({ code }: { code: string }) {
 
 function PlayerConn({ code, onReset }: { code: string; onReset: () => void }) {
   const net = useMemo(() => new Net(
-    { t: 'hello', role: 'player', room: code, token: store.get(`bc:p:${code}`) ?? undefined, name: store.get('bc:name') ?? undefined, profile: profileId() },
+    { t: 'hello', role: 'player', room: code, token: store.get(`bc:p:${code}`) ?? undefined, name: store.get('bc:name') ?? store.get('dt:student-alias') ?? undefined, profile: profileId(), ...(studentSession() ? { session: studentSession() } : {}) },
     (m) => { store.set(`bc:p:${code}`, m.token); if (m.profile) store.set('bc:profile', m.profile); if (m.profileCode) store.set('bc:pcode', m.profileCode); },
   ), [code]);
   useEffect(() => () => net.close(), [net]);
@@ -135,7 +138,9 @@ export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Ne
             </div>
           )}
 
-          {v.phase === 'lobby' && (
+          {v.private && <PrivateNext view={v} me={me.id} net={net} offset={st.offset} />}
+          {v.phase === 'lobby' && v.private && <PrivateLobby view={v} me={me.id} net={net} />}
+          {v.phase === 'lobby' && !v.private && (
             <section className="intro lobby-wait">
               <div className="intro-idx"><span className="big-n">OK</span><span>Estás dentro<br />Sala {v.code}</span></div>
               <DotTitle text="Gleich geht's los!" />
@@ -153,6 +158,7 @@ export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Ne
             </>
           )}
           {v.phase === 'final' && <Final view={v} onPractice={onNewPractice} />}
+          {v.phase === 'final' && v.private && <div className="row practice-more"><button className="btn primary" onClick={() => navigate('/libre')}>Volver al modo libre</button></div>}
           {v.phase === 'final' && practice && onChangeTopics && (
             <div className="row practice-more"><button className="btn" onClick={onChangeTopics}>Cambiar temas o número de preguntas</button></div>
           )}

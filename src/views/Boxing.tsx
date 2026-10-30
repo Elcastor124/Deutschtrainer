@@ -34,7 +34,7 @@ export function Boxing() {
   };
   return <main className="boxing">
     <header className="bx-header">
-      <a className="bx-brand" href="/" aria-label="Volver al hub de alemán" onClick={(event) => { event.preventDefault(); navigate('/'); }}><span className="bx-brand-mark">D<span> / </span>B</span><span>DEUTSCH <b>BOXCLUB</b></span></a>
+      <a className="bx-crumb" href="/#juegos" aria-label="Volver a los juegos" onClick={(event) => { event.preventDefault(); navigate('/#juegos'); }}><span>Juegos</span><span aria-hidden="true">/</span><b>Boxeo</b></a>
       <div className="bx-header-actions">
         <button className="bx-text-button bx-sound" type="button" aria-pressed={sound} onClick={() => setSound(!sound)}>{sound ? '♪ Sonido activado' : '♪ Sonido apagado'}</button>
         {session ? <button className="bx-text-button" onClick={exit}>Salir</button> : <a className="bx-text-button" href="/" onClick={(event) => { event.preventDefault(); navigate('/'); }}>← Volver al hub</a>}

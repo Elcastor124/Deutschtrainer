@@ -23,6 +23,9 @@ import { createGuard } from './security.ts';
 import { acquireInstanceLock } from './instance-lock.ts';
 import { TokenBucket } from './limits.ts';
 import { CLASS_ROOM_TTL_MS, staleRooms } from './room-ttl.ts';
+import { cleanName } from './boxing-free.ts';
+import { cleanTopics } from './practice-session.ts';
+import { LEVEL_DIFFS, isLevel } from '../shared/play.ts';
 
 const PORT = Number(process.env.PORT) || 4747;
 const ROOT = resolve(import.meta.dirname, '..');
@@ -103,7 +106,9 @@ for (const [code, s] of Object.entries(store.data.rooms)) {
 console.log(`[store] ${rooms.size} sala(s) restaurada(s) · banco: ${bank.size} preguntas`);
 
 interface Client { ws: WebSocket; room: string; role: 'teacher' | 'player' | 'practice'; pid?: string; alive: boolean; ip: string; bucket: TokenBucket }
-const countRooms = (mode: 'class' | 'practice') => { let n = 0; for (const r of rooms.values()) if (r.s.mode === mode) n++; return n; };
+/** Salas de profesor y prácticas por tipo; las privadas del modo libre se cuentan aparte (no gastan el cupo del profesor). */
+const countRooms = (mode: 'class' | 'practice' | 'private') => { let n = 0; for (const r of rooms.values()) if (mode === 'private' ? !!r.s.private : r.s.mode === mode && !r.s.private) n++; return n; };
+const PRIVATE_MAX = 6;
 const clients = new Set<Client>();
 
 function persist(room: Room) {
@@ -183,6 +188,18 @@ function hello(c: Client, m: Extract<ClientMsg, { t: 'hello' }>) {
     const room = rooms.get(String(m.room ?? '').toUpperCase());
     if (!room || room.s.mode !== 'class') { guard.roomMiss(c.ip); return send(c.ws, { t: 'err', msg: 'No existe ninguna sala con ese código.', fatal: true }); }
     let p = m.token ? room.byToken(String(m.token)) : undefined;
+    if (!p && room.s.private) {
+      // Sala privada del modo libre: solo antes de empezar, con cuenta (su alias) o como invitado (no se guarda nada).
+      if (room.s.phase !== 'lobby') return send(c.ws, { t: 'err', msg: 'Esa partida privada ya ha empezado.', fatal: true });
+      if (room.s.players.length >= PRIVATE_MAX) return send(c.ws, { t: 'err', msg: `La sala privada está llena (máx. ${PRIVATE_MAX}).`, fatal: true });
+      if (!m.name && !m.session) return send(c.ws, { t: 'err', msg: 'Escribe tu nombre para entrar.', fatal: true });
+      const fp = freeProfile(m, cleanName(m.name, 'Invitado'));
+      if ('error' in fp) return send(c.ws, { t: 'err', msg: fp.error, fatal: true });
+      if (isAccountProfile(fp.id) && room.s.players.some((x) => x.profile === fp.id)) return send(c.ws, { t: 'err', msg: 'Ya estás en esta sala con tu cuenta.', fatal: true });
+      const r = room.join(isAccountProfile(fp.id) ? fp.name : cleanName(m.name, 'Invitado'), fp.id);
+      if ('ok' in r) return send(c.ws, { t: 'err', msg: r.ok ? 'Error' : r.error, fatal: true });
+      p = r;
+    }
     if (!p) {
       if (!m.name) return send(c.ws, { t: 'err', msg: 'Tu sesión ya no existe: vuelve a entrar con tu nombre.', fatal: true });
       const prof = ensureProfile(m.profile, String(m.name));
@@ -272,7 +289,8 @@ function handleMsg(c: Client, raw: string) {
   else if (m.t === 'text') r = taskText(room, c.pid, typeof m.text === 'string' ? m.text : '', !!m.done);
   else if (m.t === 'pick') r = taskPick(room, c.pid, Number(m.n));
   else if (m.t === 'pull') r = jengaPull(room, c.pid, Number(m.level), Number(m.slot));
-  else if (m.t === 'pnext') r = room.practiceNext();
+  else if (m.t === 'pnext') r = room.s.private ? room.privateVote(c.pid) : room.practiceNext();
+  else if (m.t === 'pkick') r = room.privateKick(c.pid, String(m.pid));
   else r = { ok: false, error: 'Mensaje desconocido.' };
   send(c.ws, r.ok ? { t: 'ack', id, ok: true, ...(r.retry ? { retry: true } : {}) } : { t: 'ack', id, ok: false, error: r.error });
   if (r.ok) broadcast(room);
@@ -304,12 +322,58 @@ const server = createServer((req, res) => {
   }
 });
 
+function httpJson(res: ServerResponse, status: number, body: unknown, err?: unknown) {
+  if (err) console.error('[play-room]', err);
+  if (res.headersSent) return void res.end();
+  res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+  res.end(JSON.stringify(body));
+}
+
+/**
+ * POST /api/play/room — un ALUMNO (o invitado) crea una sala privada de BlackCard o Wort-Jenga. Endpoint de jugador:
+ * nunca devuelve el token de profesor de la sala (nadie lo tiene) ni pasa por TEACHER_AUTH; su cupo es el del modo libre.
+ */
+async function createPrivateRoom(req: IncomingMessage, res: ServerResponse) {
+  if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return httpJson(res, 405, { error: 'Método no permitido.' }); }
+  let raw = '';
+  for await (const chunk of req) { raw += chunk; if (raw.length > 4096) return httpJson(res, 413, { error: 'La petición es demasiado grande.' }); }
+  let input: Record<string, unknown>;
+  try { const v = JSON.parse(raw); if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error(); input = v; } catch { return httpJson(res, 400, { error: 'JSON no válido.' }); }
+  const who = identify(accounts, req);
+  if (who.kind === 'invalid') return httpJson(res, 401, { error: 'Tu sesión ha caducado: vuelve a iniciar sesión o juega como invitado.' });
+  const game = input.game === 'jenga' ? 'jenga' : input.game === 'blackcard' ? 'blackcard' : null;
+  if (!game) return httpJson(res, 400, { error: 'Juego desconocido.' });
+  if (input.level !== undefined && !isLevel(input.level)) return httpJson(res, 400, { error: 'Nivel desconocido.' });
+  const level = isLevel(input.level) ? input.level : undefined;
+  const topics = cleanTopics(input.topics);
+  const diffs = level ? LEVEL_DIFFS[level] : undefined;
+  const pool = [...bank.values()].filter((q) => (!topics.length || topics.includes(q.topic)) && (!diffs || diffs.includes(q.diff)) && q.topic !== 'lesen').length;
+  if (pool < 10) return httpJson(res, 400, { error: 'Hay muy pocas preguntas para esa combinación de nivel y temas. Elige más temas u otro nivel.' });
+  const account = who.kind === 'account' ? who.account : undefined;
+  const adm = guard.admitFree('private', guard.ip(req), countRooms('private'), account?.id);
+  if (!adm.ok) return httpJson(res, adm.status, { error: adm.error });
+  const room = Room.create(deps, uniqueCode(4));
+  room.s.private = { host: '', game, ready: [] };
+  room.s.topics = topics;
+  if (level) { room.s.level = level; room.s.diffs = [...LEVEL_DIFFS[level]]; }
+  if (game === 'jenga') room.s.start = 'jenga';
+  const prof = account ? (freeProfile({ session: req.headers['x-student-session'] }, account.alias) as Profile) : freeProfile({}, cleanName(input.name, 'Invitado')) as Profile;
+  const p = room.join(account ? account.alias : cleanName(input.name, 'Invitado'), prof.id);
+  if ('ok' in p) return httpJson(res, 500, { error: 'No se pudo crear la sala.' });
+  room.s.private.host = p.id;
+  room.setConnected(p.id, false); // aún no se ha conectado: no debe contar como «presente» hasta que abra la sala
+  rooms.set(room.s.code, room);
+  persist(room);
+  return httpJson(res, 200, { code: room.s.code, token: p.token, pid: p.id, game });
+}
+
 function serve(req: IncomingMessage, res: ServerResponse) {
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
   if (req.url?.startsWith('/api/progress') && !guard.allow('progress', guard.ip(req))) {
     res.writeHead(429, { 'content-type': 'application/json; charset=utf-8', 'retry-after': '60' });
     return void res.end(JSON.stringify({ error: 'Demasiadas peticiones. Espera un minuto.' }));
   }
+  if (req.url?.split('?')[0] === '/api/play/room') return void createPrivateRoom(req, res).catch((e: unknown) => httpJson(res, 500, { error: 'No se pudo crear la sala.' }, e));
   if (playApi(req, res)) return;
   if (progressHandler(req, res)) return;
   if (roadHandler(req, res)) return;

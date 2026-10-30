@@ -36,9 +36,10 @@ export function Hud({ view, conn, offset, onBlock, right }: {
     <header className="hud">
       <div className="brand" aria-label="Deutsch Trainer, BlackCard Edition">
         <span className="b-long">DEUTSCH TRAINER</span><span className="b-short">DT</span><b>//&nbsp;BLACKCARD</b>
-        <small>{practice ? 'Üben' : 'A1–A2'}</small>
+        <small>{practice ? 'Üben' : view?.private ? 'Libre' : 'A1–A2'}</small>
       </div>
-      {!practice ? (
+      {/* El secuenciador es el plan de la clase del profesor: no aplica a la práctica ni a las salas privadas. */}
+      {!practice && !view?.private ? (
         <nav className="seq" aria-label="Bloques de la clase">
           <div className="act" data-act="I" title="Acto I · el juego">{PLAN.filter((b) => b.act === 1).map(pad)}</div>
           <div className="act" data-act="II" title="Acto II · después del juego">{PLAN.filter((b) => b.act === 2).map(pad)}</div>

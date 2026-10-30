@@ -39,6 +39,8 @@ export interface JengaTask {
   /** Preguntas del banco respondidas y acertadas en esta torre (modo libre). */
   answered?: number;
   right?: number;
+  /** Por jugador (sala privada): preguntas respondidas y acertadas. */
+  per?: Record<string, { n: number; ok: number }>;
   stage: 'answer' | 'judge' | 'pull' | 'fallen';
   levels: number[][];
   order: string[];
@@ -223,7 +225,7 @@ function askJenga(room: Room, t: JengaTask) {
   t.stage = 'answer';
   const speakLeft = SPEAK_QUESTIONS.map((_, i) => i).filter((i) => !t.speakUsed.includes(i));
   // Sin profesor (modo libre) no hay quien juzgue una respuesta oral: solo preguntas del banco.
-  const useSpeak = room.s.mode !== 'practice' && speakLeft.length > 0 && room.d.rand() < 0.3;
+  const useSpeak = !room.autonomous && speakLeft.length > 0 && room.d.rand() < 0.3;
   const id = useSpeak ? null : jengaQuestion(room.d.bank, new Set(room.s.used), room.d.rand, room.selCtx());
   const q = id ? room.d.bank.get(id) : undefined;
   if (q) {
@@ -254,6 +256,8 @@ function resolveJenga(room: Room, t: JengaTask, ok: boolean, given: string) {
   }
   t.answered = (t.answered ?? 0) + 1;
   if (ok) t.right = (t.right ?? 0) + 1;
+  const mine = ((t.per ??= {})[pid] ??= { n: 0, ok: 0 });
+  mine.n++; if (ok) mine.ok++;
   t.pulls = ok ? 1 : 2;
   t.pending = null;
   if (t.answered >= SOLO_JENGA_ACTIVITY) room.reportActivity('jenga', t.answered, t.right ?? 0);
@@ -268,7 +272,7 @@ export function jengaAnswer(room: Room, pid: string, qid: string, a: Answer): Re
   if (!t.q || t.q.id !== qid) return fail('Esa pregunta ya no está activa.');
   const q = room.d.bank.get(t.q.id);
   if (!q) return fail('Pregunta desconocida.');
-  const g = grade(q, t.q.inst, a, room.s.mode === 'practice');
+  const g = grade(q, t.q.inst, a, room.autonomous);
   if (g.status === 'review') {
     t.stage = 'judge';
     t.pending = { given: g.given, expected: solution(q) };
@@ -304,6 +308,23 @@ export function jengaPull(room: Room, pid: string, level: number, slot: number):
   }
   room.touch();
   return OK;
+}
+
+/**
+ * Sala privada: quien no saca su pieza a tiempo no bloquea a los demás. Se saca la pieza más segura por él:
+ * un lateral de un piso completo (deja 2) y, si no hay, un lateral de un piso que conserva la central.
+ */
+export function autoPull(room: Room): Result {
+  const t = room.s.task;
+  if (t?.kind !== 'jenga' || t.stage !== 'pull' || !t.turn) return fail('Ahora no hay pieza que sacar.');
+  const maxL = maxPullLevel(t.levels);
+  const options: [number, number][] = [];
+  for (let l = 0; l <= maxL; l++) if (filled(t.levels[l]) === 3) options.push([l, 0]);
+  for (let l = 0; l <= maxL; l++) if (filled(t.levels[l]) === 2 && t.levels[l][1] === 1) options.push([l, t.levels[l][0] ? 0 : 2]);
+  for (let l = 0; l <= maxL; l++) for (let s = 0; s < 3; s++) if (t.levels[l][s]) options.push([l, s]);
+  const [level, slot] = options[0] ?? [0, 0];
+  room.fx('info', `Tiempo: el servidor saca una pieza por ${room.player(t.turn)?.name ?? '¿?'}`, { by: t.turn });
+  return jengaPull(room, t.turn, level, slot);
 }
 
 function collapse(room: Room, t: JengaTask, pid: string): Result {

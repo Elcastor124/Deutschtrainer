@@ -17,7 +17,7 @@ Una sala del profesor y una del modo libre **nunca se mezclan**: el código de u
 2. Elegir **juego**: BlackCard, Wort-Jenga, Boxeo. *Deutsch Deck está en el catálogo como «Próximamente»: no existe todavía en el repositorio.*
 3. Elegir **nivel**: A1, A2, B1 Training.
 4. Elegir **temas** (sin marcar = todos; la interfaz muestra cuántas preguntas hay por tema y nivel).
-5. Jugar **en solitario** o, solo en Boxeo, en **sala privada por código** con un amigo.
+5. Jugar **en solitario** o en **sala privada por código** con amigos (BlackCard y Wort-Jenga: 2–6 personas; Boxeo: 2).
 6. Corrección y explicación en cada respuesta; con cuenta, el servidor guarda resultados.
 
 ### Niveles: qué significan de verdad
@@ -27,13 +27,22 @@ El banco **no tiene etiquetas CEFR**. El nivel es una *banda de dificultad* del 
 ## Adaptación de cada juego sin profesor
 | Juego | Solo | Privado | Cómo funciona sin profesor |
 |---|---|---|---|
-| **BlackCard** | ✅ | ❌ | Reutiliza el motor de práctica (`Room` en modo `practice`): sesiones de 10/15/25 preguntas, repaso espaciado de fallos, corrección y explicación. Los objetos y la BlackCard son mecánicas de clase y **no** se adaptan: en solitario se juega el núcleo educativo. |
-| **Wort-Jenga** | ✅ | ❌ | Mismo `Room` + la torre existente (`tasks.ts`) con un jugador: aciertas → quitas 1 pieza; fallas → 2. Sin preguntas orales (no hay quien las juzgue) y sin respuestas «a juzgar». La actividad cuenta como completada a las 8 preguntas o al caer la torre. |
+| **BlackCard** | ✅ | ✅ 2–6 | Solo: el motor de práctica (`Room` en modo `practice`), con repaso espaciado, corrección y explicación; sin objetos (necesitan rivales). Privada: la **sala de clase sin profesor** (ver abajo), dos rondas (`r1`, `r2`) con cofres y objetos y el final. La BlackCard se desbloquea con preguntas «hard»: solo aparece en B1 Training. |
+| **Wort-Jenga** | ✅ | ✅ 2–6 | La torre existente (`tasks.ts`): aciertas → quitas 1 pieza; fallas → 2. Sin preguntas orales y sin respuestas «a juzgar». Solo: la actividad cuenta a las 8 preguntas o al caer la torre. Privada: por turnos; quien no saca su pieza en 30 s, el servidor saca por él la más segura; al caer la torre, final. |
 | **Boxeo** | ✅ sparring | ✅ 2 jugadores | Mismo motor de combate (`boxing.ts`). El profesor se sustituye por **plazos del servidor** y avance automático. |
 | **Deutsch Deck** | — | — | No existe. |
 
 ### Reglas del sparring (públicas, sin trampas)
 No ve la respuesta ni el movimiento del alumno. Acierta cada pregunta con **60 %** (`FREE_BOXING.botAccuracy`, fijo: lo importante es que el alumno practique, no vencer a una IA). Movimiento si acertó, por orden: vida < 35 y energía ≥ 1 → Defensa · energía ≥ 3 → Crochet (50 %) o Directo · energía 2 → Directo · energía 1 → Jab (70 %) o Esquiva · energía 0 → Defensa. Implementado y probado en `server/boxing-free.ts`.
+
+### Sala privada de BlackCard y Wort-Jenga (sin profesor)
+Es la **misma sala de clase** (`Room`, mismo WebSocket, misma pantalla de alumno `/p/CÓDIGO`) con `s.private` y **nadie** tiene su token de profesor:
+- Se crea con `POST /api/play/room` (endpoint de **jugador**: cupo del modo libre, nunca `TEACHER_AUTH`). Devuelve el token de *jugador* del anfitrión.
+- Se entra por código **solo en el vestíbulo** (máx. 6); con cuenta se muestra el alias; la misma cuenta no ocupa dos plazas.
+- **Empieza cuando todos los presentes (mínimo 2) pulsan «Estoy listo».** El anfitrión solo puede **expulsar** a alguien antes de empezar (por si el código llegó a quien no debía).
+- El servidor hace lo que hacía el profesor: corrección automática (nunca «revisión»), avance tras la intro (7 s), el resultado (9 s) y el fin de ronda (10 s), o antes si todos votan «Listo para seguir». Las preguntas siguen teniendo su temporizador: nadie bloquea la partida.
+- Al terminar, cada **cuenta** registra su actividad (aciertos/total contados por el servidor); los invitados no guardan nada.
+- Se cierra a las 2 h sin actividad o a los 10 min de terminar, salvo que haya alguien conectado.
 
 ### Sala privada (Boxeo)
 El anfitrión crea la sala y comparte el **código de 4 caracteres**; un único amigo se une; **cuando los dos pulsan «Estoy listo» empieza sola**. Sin emparejamiento público, sin chat, sin nombres libres (cuenta → alias; invitado → nombre recortado y sin marcado). La misma cuenta no puede ocupar las dos esquinas. Los plazos del servidor (pregunta 40 s, movimiento 20 s, resultado 12 s) evitan que un rival ausente bloquee la partida.
@@ -90,9 +99,16 @@ Una no vale como la otra (probado en ambos sentidos). Con `TEACHER_AUTH=required
 | Sesión de alumno | 30 días, máx. 5 a la vez | `accounts.ts` |
 Una sala con alguien conectado (WebSocket) nunca se descarta; en boxeo la actividad la marca cualquier petición autenticada.
 
+## Cuenta de alumno (`/cuenta`)
+Crear una cuenta pide **solo alias y contraseña**. La pantalla:
+- sugiere un alias anónimo (animal en alemán + número) para no usar el nombre real;
+- muestra los requisitos en vivo (alias y contraseña) y un indicador de fuerza, con botón para ver la contraseña;
+- explica el ranking opcional con un interruptor (desactivado por defecto).
+
+Con sesión, la misma página muestra el progreso (puntos, racha, actividades, precisión por tema y semanal, lo que más fallas y recomendaciones) y los ajustes: ranking, **cambiar contraseña** (cierra las demás sesiones), cerrar sesión y eliminar la cuenta con confirmación. La navegación muestra el alias (o «Entrar») en todas las páginas, y el modo libre indica si juegas con cuenta o como invitado.
+
 ## Qué NO está hecho (honesto)
-- **Salas privadas de BlackCard y Wort-Jenga**: no implementadas. Requieren un anfitrión con un subconjunto *restringido* de controles de `Room` (sin ver soluciones) y avance automático en el motor de clase; es un cambio en `room.ts`/`tasks.ts` de riesgo alto que merece su propio PR. El contrato está en `docs/GAME_CONTRACTS.md` (modo `private`, plazos del servidor, sin chat).
 - **Deutsch Deck**: el juego no existe.
 - **Recuperación de contraseña**: no hay correo; la única vía es darse de baja y crear otra cuenta.
 - **Progreso en Boxeo por pregunta**: el banco del boxeo no entra en la adaptación de repaso (`Profile.stats`), solo en estadísticas por tema/errores.
-- El **Jenga solitario** se probó en servidor real y que la torre se renderiza en el navegador; la caída de la torre y «Jugar otra vez» no se probaron en navegador.
+- El **Jenga solitario** se probó en servidor real y que la torre se renderiza en el navegador; la caída de la torre y «Jugar otra vez» no se probaron en navegador. El **Jenga privado** se probó en el motor y contra el servidor; en el navegador solo se recorrió la sala privada de BlackCard.

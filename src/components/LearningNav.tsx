@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
-import { navigate } from '../util.ts';
+import { navigate, store } from '../util.ts';
+import '../account.css';
 import { Logo } from '../brand/Logo.tsx';
 import { EffectsToggle } from '../brand/EffectsToggle.tsx';
 
@@ -18,8 +19,9 @@ export function followLearningLink(event: MouseEvent<HTMLAnchorElement>) {
   else window.scrollTo({ top: 0 });
 }
 
-export type NavSection = 'home' | 'course' | 'practice' | 'games' | 'road' | 'teacher';
+export type NavSection = 'home' | 'course' | 'practice' | 'games' | 'road' | 'teacher' | 'account';
 export function navSection(path: string): NavSection {
+  if (path.startsWith('/cuenta')) return 'account';
   if (path.startsWith('/road-to-b1')) return 'road';
   if (path.startsWith('/curso') || /^\/tema\/1\/?$/.test(path)) return 'course';
   if (path.startsWith('/practi') || path.startsWith('/tema/1/taller')) return 'practice';
@@ -36,8 +38,20 @@ const LINKS: { id: NavSection; href: string; label: string; de: string }[] = [
   { id: 'road', href: '/road-to-b1', label: 'Road to B1', de: 'Prüfung' },
 ];
 
+/** Alias de la cuenta de alumno (si hay sesión). Se actualiza al entrar/salir sin recargar. */
+function useAlias() {
+  const [alias, setAlias] = useState<string | null>(() => store.get('dt:student-alias'));
+  useEffect(() => {
+    const on = () => setAlias(store.get('dt:student-alias'));
+    addEventListener('dt:account', on); addEventListener('storage', on);
+    return () => { removeEventListener('dt:account', on); removeEventListener('storage', on); };
+  }, []);
+  return alias;
+}
+
 export function LearningNav({ path }: { path: string }) {
   const active = navSection(path);
+  const alias = useAlias();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -80,6 +94,9 @@ export function LearningNav({ path }: { path: string }) {
             </a>
           ))}
           <EffectsToggle />
+          <a className="acc-chip" href="/cuenta" onClick={go} aria-current={active === 'account' ? 'page' : undefined} aria-label={alias ? `Tu cuenta: ${alias}` : 'Entrar o crear cuenta'} data-account-chip="">
+            {alias ? <><i aria-hidden="true">{alias.slice(0, 1).toUpperCase()}</i><span>{alias}</span></> : <span>Entrar</span>}
+          </a>
           <a className="dt-nav-teacher" href="/profesor" onClick={go} aria-current={active === 'teacher' ? 'page' : undefined} aria-label="Área del profesor">
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2M3.5 7h9v6.5h-9z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
             <span>Profesor</span>

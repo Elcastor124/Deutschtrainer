@@ -1,6 +1,6 @@
 // Cliente del modo libre: cuentas de alumno, catálogo, progreso propio y ranking. La sesión va en `X-Student-Session`.
 import type { AccountPub, GameInfo, Level, ProgressSummary, RankingEntry, SessionWelcome } from '../shared/play.ts';
-import { setStudentSession, studentSession } from './util.ts';
+import { setStudentSession, store, studentSession } from './util.ts';
 
 export interface Catalog {
   games: GameInfo[];
@@ -30,13 +30,26 @@ export const getCatalog = () => playRequest<Catalog>('/api/play/catalog');
 export const getLeaderboard = () => playRequest<{ week: string; entries: RankingEntry[] }>('/api/play/leaderboard');
 export const getMe = () => playRequest<{ account: AccountPub }>('/api/account/me');
 export const getProgress = () => playRequest<ProgressSummary>('/api/account/progress');
+/** Avisa a la navegación (y a quien escuche) de que la cuenta cambió. El alias se guarda para mostrarlo sin pedirlo al servidor. */
+function announce(account: AccountPub | null) {
+  if (account) store.set('dt:student-alias', account.alias); else store.del('dt:student-alias');
+  dispatchEvent(new CustomEvent('dt:account'));
+}
+export const cachedAlias = () => store.get('dt:student-alias');
 export async function signIn(kind: 'login' | 'register', alias: string, password: string, rankingOptIn = false) {
   const r = await playRequest<SessionWelcome>(`/api/account/${kind}`, { alias, password, ...(kind === 'register' ? { rankingOptIn } : {}) });
   setStudentSession(r.token);
+  announce(r.account);
   return r.account;
 }
 export async function signOut() {
-  try { await playRequest('/api/account/logout', {}); } finally { setStudentSession(null); }
+  try { await playRequest('/api/account/logout', {}); } finally { setStudentSession(null); announce(null); }
+}
+export const changePassword = (current: string, next: string) => playRequest('/api/account/password', { current, next });
+/** Comprueba la sesión guardada; si caducó, la olvida. */
+export async function refreshAccount(): Promise<AccountPub | null> {
+  if (!studentSession()) { if (cachedAlias()) announce(null); return null; }
+  try { const a = (await getMe()).account; announce(a); return a; } catch { setStudentSession(null); announce(null); return null; }
 }
 export const setRanking = (rankingOptIn: boolean) => playRequest<{ account: AccountPub }>('/api/account/settings', { rankingOptIn });
-export async function deleteAccount(password: string) { await playRequest('/api/account/delete', { password }); setStudentSession(null); }
+export async function deleteAccount(password: string) { await playRequest('/api/account/delete', { password }); setStudentSession(null); announce(null); }

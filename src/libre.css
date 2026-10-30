@@ -20,3 +20,21 @@
 .libre-bar { display: grid; grid-template-columns: 7ch 1fr 5ch; gap: var(--dt-space-3); align-items: center; font-family: var(--dt-mono); font-size: var(--dt-t-small); }
 .libre-bar i { display: block; height: 8px; border-radius: var(--dt-r-pill); background: var(--dt-red); }
 @media (prefers-reduced-motion: reduce) { .libre-game { transition: none; } }
+
+/* Sala privada (vista del alumno) */
+.private-lobby { display: grid; gap: var(--dt-space-7); padding: var(--dt-space-9); border: 1px solid var(--dt-hair-2); border-radius: var(--dt-r-lg); background: var(--dt-ink-2); box-shadow: var(--dt-shadow-1); }
+.private-code { display: flex; align-items: center; gap: var(--dt-space-7); flex-wrap: wrap; }
+.private-code span { font-family: var(--dt-mono); font-size: var(--dt-t-small); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dt-muted); }
+.private-code b { font-size: clamp(2.4rem, 1.6rem + 3vw, 3.6rem); color: var(--dt-gold); letter-spacing: 0.12em; }
+.private-hint { margin: 0; color: var(--dt-paper-2); max-width: 60ch; }
+.private-roster { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--dt-space-3); }
+.private-roster li { display: flex; align-items: center; gap: var(--dt-space-5); padding: var(--dt-space-5) var(--dt-space-7); border-radius: var(--dt-r-sm); background: var(--dt-ink-1); border: 1px solid var(--dt-hair); }
+.private-roster li.off { opacity: 0.55; }
+.private-roster small { font-family: var(--dt-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dt-gold); }
+.private-state { margin-left: auto; color: var(--dt-muted); font-size: var(--dt-t-small); }
+.private-dot { width: 10px; height: 10px; border-radius: var(--dt-r-pill); background: var(--dt-hair-2); flex: none; }
+.private-dot.on { background: var(--dt-red); box-shadow: 0 0 10px var(--dt-red-glow); }
+.private-next { display: flex; align-items: center; justify-content: space-between; gap: var(--dt-space-5); flex-wrap: wrap; padding: var(--dt-space-4) var(--dt-space-7); border-radius: var(--dt-r-pill); border: 1px solid var(--dt-hair-2); background: var(--dt-ink-2); font-size: var(--dt-t-small); }
+.private-next b { color: var(--dt-gold); font-family: var(--dt-mono); }
+.libre a:not(.btn), .private-lobby a:not(.btn) { color: var(--dt-paper); text-decoration: underline; text-decoration-color: var(--dt-red); text-underline-offset: 3px; }
+.libre a:not(.btn):hover { color: var(--dt-gold); }

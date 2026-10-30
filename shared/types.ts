@@ -243,7 +243,11 @@ export interface TeacherView {
   bankSize: number;
 }
 
+/** Sala privada del modo libre (sin profesor). `next`: instante (ms) en que el servidor avanza solo; null si no espera nada. */
+export interface PrivateView { host: string; game: 'blackcard' | 'jenga'; ready: string[]; next: number | null }
+
 export interface RoomView {
+  private?: PrivateView;
   code: string;
   mode: 'class' | 'practice';
   phase: Phase;
@@ -284,7 +288,7 @@ export type GameStart = 'blackcard' | 'jenga';
 // ---------- Protocolo ----------
 export type ClientMsg =
   | { t: 'hello'; role: 'teacher'; create?: boolean; room?: string; token?: string; teacherKey?: string; topics?: Topic[]; start?: GameStart }
-  | { t: 'hello'; role: 'player'; room: string; token?: string; name?: string; profile?: string }
+  | { t: 'hello'; role: 'player'; room: string; token?: string; name?: string; profile?: string; /** Solo cuenta en salas privadas del modo libre. */ session?: string }
   | { t: 'hello'; role: 'practice'; room?: string; token?: string; profile?: string; profileCode?: string; name?: string; topics?: Topic[]; focus?: boolean; size?: number;
       /** Modo libre (docs/FREE_PLAY.md): sin `free` es la práctica de siempre. `session` = sesión de alumno (opcional: sin ella, invitado). */
       free?: boolean; session?: string; game?: 'blackcard' | 'jenga'; level?: 'A1' | 'A2' | 'B1' }
@@ -293,6 +297,8 @@ export type ClientMsg =
   | { t: 'wild'; id: number; topic: Topic }
   | { t: 'pickup'; id: number; discard: number }
   | { t: 'pnext'; id: number }
+  /** Sala privada: el anfitrión expulsa a alguien antes de empezar. */
+  | { t: 'pkick'; id: number; pid: string }
   | { t: 'open'; id: number; chest: string }
   | { t: 'text'; id: number; text: string; done?: boolean }
   | { t: 'pick'; id: number; n: number }

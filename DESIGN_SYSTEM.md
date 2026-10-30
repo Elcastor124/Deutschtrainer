@@ -21,6 +21,7 @@ Negro lacado · **rojo señal** · **oro** (los colores de Alemania) · papel c�
 - **Espaciado:** `--dt-space-1…11` = 4 · 6 · 8 · 10 · 12 · 14 · 16 · 20 · 24 · 32 · 48 px; márgenes de página `--dt-pad`, ancho máximo `--dt-max`, gutter de juego `--gut`.
 - **Radios:** `--dt-r-sm 10` · `--dt-r-ctl 12` · `--dt-r-md 16` · `--dt-r-lg 24` · `--dt-r-xl 32` · `--dt-r-pill 999`; teclas del aparato `--r-key`, paneles `--r-panel`.
 - **Sombras:** `--dt-shadow-1` (tarjeta), `--dt-shadow-2` (superficie elevada), `--dt-shadow-red` (CTA); tecla con recorrido: `box-shadow: var(--dt-key-shadow)` con `--depth: 3–6px`.
+- **Estados y juegos:** `--dt-ok` (acierto, el verde ya usado en Road). El boxeo usa además `--dt-corner-blue` / `--dt-corner-blue-deep`: es el azul **semántico** de la esquina azul del ring y solo se usa en el ring y sus marcadores.
 - **Movimiento:** `--dt-ease`, `--dt-spring`, `--dt-ease-in`; duraciones `--dt-fast 160ms`, `--dt-med 420ms`, `--dt-slow 900ms`. Respeta `prefers-reduced-motion`.
 
 ## Cómo usarlos
@@ -38,6 +39,9 @@ Las fuentes (Space Grotesk, JetBrains Mono, Doto) las carga el bundle de la app;
 2. Contraste mínimo AA: `--dt-muted` (#9a9892) pasa 7:1 sobre `--dt-ink-1`; no pongas texto `--dt-red` pequeño sobre `--dt-ink-3`.
 3. Un tema = un bloque de sobrescritura de variables (`body[data-theme='workshop']`), nunca valores sueltos en los componentes.
 4. Un componente nuevo se diseña con tokens y no depende de `styles.css` (~1 100 líneas, compartido); su CSS vive junto a él (`Componente.css`).
+
+## Boxeo
+El boxeo usa la navegación común y los tokens de la marca en todo su «cromo» (paneles, botones con recorrido, respuestas, avisos): sus variables `--bx-*` ya apuntan a tokens (bloque «Coherencia» al final de `src/boxing.css`). La ilustración del ring conserva su paleta propia.
 
 ## Deuda conocida (no tocada en este PR, a propósito)
 - `editorial.css` sobrescribe `--dt-black` a `#080808` en la portada (el token global es `#0A0A0A`); `intro-v2.css` y `weekly-points.css` repiten hex como `--intro-*`/`--wp-*`. Unificar en un PR visual aparte.
