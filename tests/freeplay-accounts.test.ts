@@ -182,6 +182,20 @@ describe('ranking semanal opcional con alias autorizado', () => {
     expect((await s.call('/api/account/me', undefined, a.token)).status).toBe(401);
     expect((await s.call('/api/account/register', { alias: 'Ana_Lee', password: PW })).status).toBe(200);
   });
+  it('cambiar contraseña: exige la actual, valida la nueva y cierra las demás sesiones', async () => {
+    const s = await api();
+    const a = await s.reg('Ana_Lee');
+    const other = (await s.call('/api/account/login', { alias: 'Ana_Lee', password: PW })).body.token;
+    expect((await s.call('/api/account/password', { current: 'no-es-esta-xx', next: 'otra-clave-larga-1' }, a.token)).status).toBe(401);
+    expect((await s.call('/api/account/password', { current: PW, next: 'corta' }, a.token)).status).toBe(400);
+    expect((await s.call('/api/account/password', { current: PW, next: PW }, a.token)).status).toBe(400);
+    expect((await s.call('/api/account/password', { current: PW, next: 'otra-clave-larga-1' })).status).toBe(401);
+    expect((await s.call('/api/account/password', { current: PW, next: 'otra-clave-larga-1' }, a.token)).status).toBe(200);
+    expect((await s.call('/api/account/me', undefined, a.token)).status).toBe(200);      // esta sesión sigue
+    expect((await s.call('/api/account/me', undefined, other)).status).toBe(401);        // las demás se cierran
+    expect((await s.call('/api/account/login', { alias: 'Ana_Lee', password: PW })).status).toBe(401);
+    expect((await s.call('/api/account/login', { alias: 'Ana_Lee', password: 'otra-clave-larga-1' })).status).toBe(200);
+  });
   it('el catálogo es público e informa de niveles, temas y de que Deutsch Deck aún no existe', async () => {
     const s = await api();
     const c = (await s.call('/api/play/catalog')).body;

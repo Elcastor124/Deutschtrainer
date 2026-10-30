@@ -6,6 +6,7 @@ const KlausShowcase = lazy(() => import('./klaus/KlausShowcase.tsx'));
 import { Road } from './views/Road.tsx';
 import { Libre } from './views/Libre.tsx';
 import { FreeGame } from './views/FreeGame.tsx';
+import { Account } from './views/Account.tsx';
 import { Boxing } from './views/Boxing.tsx';
 import { Landing } from './views/Landing.tsx';
 import { Course } from './views/Course.tsx';
@@ -38,6 +39,7 @@ export function App() {
   else if (m) screen = <Player key={m[2]} code={m[2].toUpperCase()} />;
   else if (/^\/road-to-b1(?:\/level-1)?\/?$/.test(path)) screen = <Road />;
   else if (/^\/libre\/?$/.test(path)) screen = <Libre />;
+  else if (/^\/cuenta\/?$/.test(path)) screen = <Account />;
   else if (/^\/libre\/jugar\/?$/.test(path)) screen = <FreeGame key={search} />;
   else if (path === '/preview/klaus') screen = <Suspense fallback={<p className="home">Cargando a Klaus…</p>}><KlausShowcase /></Suspense>;
   else if (/^\/curso\/?$/.test(path)) screen = <Course />;
@@ -48,5 +50,5 @@ export function App() {
   else if (/^\/jenga\/?$/.test(path)) screen = <GameSetup mode="jenga" />;
   else if (/^\/jugar\/?$/.test(path) || invited) screen = <GameSetup mode="blackcard" />;
   else screen = <Landing />;
-  return <><AmbientField path={path} search={search} /><Intro path={path} search={search} />{!boxing && <LearningNav path={invited ? '/jugar' : path} />}<PageTransition path={path}>{screen}</PageTransition></>;
+  return <><AmbientField path={path} search={search} /><Intro path={path} search={search} /><LearningNav path={invited ? '/jugar' : path} /><PageTransition path={path}>{screen}</PageTransition></>;
 }

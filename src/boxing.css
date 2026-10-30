@@ -1,4 +1,4 @@
-/* Deutsch Boxclub: scoped, self-contained fight-night surfaces. No changes to the hub. */
+/* Boxeo: superficies propias del ring, pero con los tokens de la marca (ver bloque «Coherencia» al final y DESIGN_SYSTEM.md). */
 .boxing { --bx-ink:#f6f2ec; --bx-muted:#b4b3bb; --bx-dim:#8d8c96; --bx-line:#2f313b; --bx-panel:#14151c; --bx-panel-2:#1c1e27; --bx-red:#ff665b; --bx-red-deep:#c3272d; --bx-blue:#8cc4e8; --bx-blue-deep:#2a6eb0; --bx-gold:#ffd36e; --bx-green:#8fe0ad;
   color:var(--bx-ink); color-scheme:dark; min-height:calc(100dvh - 52px); padding:0 clamp(14px,2.4vw,40px) 4px; font-family:var(--sans,system-ui,sans-serif);
   background:radial-gradient(ellipse 60% 50% at 18% 0%,#3a1a1f80 0,transparent 70%),radial-gradient(ellipse 50% 45% at 85% 5%,#16304a70 0,transparent 70%),linear-gradient(#0d0e13,#08090c); }
@@ -193,3 +193,64 @@
   .bx-button:hover:not(:disabled),.bx-move:hover:not(:disabled),.bx-answer:not(:disabled):hover { transform:none; }
   .bx-banner,.bx-confetti,.bx-ring .bx-flashes { display:none; }
 }
+
+
+/* ═════════ Coherencia con la web: mismos tokens, mismas superficies, mismos botones ═════════
+   Solo cambia el «cromo» (paneles, botones, textos). La ilustración del ring y su animación no se tocan. */
+.boxing { --bx-ink: var(--dt-paper); --bx-muted: var(--dt-paper-2); --bx-dim: var(--dt-muted); --bx-line: var(--dt-hair-2); --bx-panel: var(--dt-ink-2); --bx-panel-2: var(--dt-ink-3);
+  --bx-red: var(--dt-red); --bx-red-deep: var(--dt-red-deep); --bx-blue: var(--dt-corner-blue); --bx-blue-deep: var(--dt-corner-blue-deep); --bx-gold: var(--dt-gold); --bx-green: var(--dt-ok);
+  background: transparent; font-family: var(--dt-display); max-width: var(--dt-max); margin: 0 auto; padding: 0 var(--dt-pad) var(--dt-space-9); min-height: auto; }
+.boxing :focus-visible { outline: 2px solid var(--dt-gold); outline-offset: 3px; }
+.bx-header { min-height: 52px; border-bottom-color: var(--dt-hair); }
+.bx-crumb { display: flex; align-items: center; gap: var(--dt-space-3); font-family: var(--dt-mono); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dt-muted); }
+.bx-crumb b { color: var(--dt-red); font-weight: 600; }
+.bx-eyebrow { font-family: var(--dt-mono); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em; color: var(--dt-red); }
+.bx-intro h1, .bx-match-heading h1 { font-family: var(--dt-display); letter-spacing: -0.03em; }
+.bx-intro h1 { font-size: var(--dt-t-h1); }
+.bx-intro h1 em { background: none; -webkit-background-clip: initial; background-clip: initial; -webkit-text-fill-color: currentColor; color: var(--dt-red); }
+.bx-lead { color: var(--dt-paper-2); font-size: var(--dt-t-body); }
+.bx-edition { border-left-color: var(--dt-red); font-family: var(--dt-display); }
+.bx-edition b { color: var(--dt-gold); }
+/* Paneles: como las tarjetas de la web */
+.bx-entry-panel, .bx-play-panel { background: var(--dt-ink-2); border: 1px solid var(--dt-hair-2); border-radius: var(--dt-r-lg); box-shadow: var(--dt-shadow-2); }
+.bx-rules span, .bx-teacher-entry { background: var(--dt-ink-1); border-color: var(--dt-hair); border-radius: var(--dt-r-md); }
+.bx-rules span b, .bx-rules b { color: var(--dt-gold); font-family: var(--dt-mono); }
+.bx-ring { border-color: var(--dt-hair-2); border-radius: var(--dt-r-lg); background: var(--dt-ink-0); box-shadow: var(--dt-shadow-2); }
+.bx-share { background: var(--dt-ink-2); border: 1px solid var(--dt-hair-2); border-left: 3px solid var(--dt-red); border-radius: var(--dt-r-md); }
+/* Campos */
+.bx-input { background: var(--dt-ink-0); border: 1px solid var(--dt-hair-2); border-radius: var(--dt-r-ctl); font-family: var(--dt-display); }
+.bx-input:focus { border-color: var(--dt-gold); box-shadow: 0 0 0 3px var(--dt-gold-glow); }
+/* Botones: teclas con recorrido, como .btn de la web (primario = rojo señal) */
+.bx-button { --depth: 4px; border-radius: var(--r-key); font-family: var(--dt-display); font-weight: 600; box-shadow: 0 var(--depth) 0 0 var(--skirt); margin-bottom: var(--depth); transition: transform var(--dt-fast) var(--dt-ease), box-shadow var(--dt-fast) var(--dt-ease), filter var(--dt-fast); }
+.bx-button:active:not(:disabled) { transform: translateY(var(--depth)); box-shadow: 0 0 0 0 var(--skirt); }
+.bx-primary { background: linear-gradient(180deg, color-mix(in srgb, var(--dt-red) 82%, white), var(--dt-red)); color: var(--dt-black); border-color: var(--dt-red); --skirt: var(--dt-red-deep); }
+.bx-primary:hover:not(:disabled) { filter: brightness(1.08); box-shadow: 0 var(--depth) 0 0 var(--skirt), var(--dt-shadow-red); }
+.bx-primary:disabled { background: var(--dt-ink-3); color: var(--dt-muted); border-color: var(--dt-hair-2); --skirt: var(--skirt, #030303); box-shadow: 0 2px 0 0 var(--dt-ink-0); }
+.bx-secondary { background: var(--cap); color: var(--dt-paper); border-color: var(--line-2); --skirt: var(--skirt); }
+.bx-secondary:hover:not(:disabled) { background: var(--cap-hi); }
+.bx-text-button { color: var(--dt-paper-2); font-family: var(--dt-display); }
+.bx-sound[aria-pressed=true] { color: var(--dt-gold); }
+/* Pregunta y respuestas: como las opciones del resto de juegos */
+.bx-question { font-family: var(--dt-display); letter-spacing: -0.02em; }
+.bx-answer { background: var(--dt-ink-1); border: 1px solid var(--dt-hair-2); border-radius: var(--dt-r-ctl); }
+.bx-answer > span { background: var(--dt-ink-3); color: var(--dt-paper); font-family: var(--dt-mono); border-radius: var(--dt-r-sm); }
+.bx-answer:not(:disabled):hover { border-color: var(--dt-red); background: var(--dt-ink-3); }
+.bx-answer.selected { border-color: var(--dt-gold); background: var(--dt-ink-3); box-shadow: 0 0 0 3px var(--dt-gold-glow); }
+.bx-move { background: var(--dt-ink-1); border: 1px solid var(--dt-hair-2); border-radius: var(--dt-r-ctl); }
+.bx-move-icon { background: color-mix(in srgb, var(--dt-red) 14%, transparent); color: var(--dt-red); }
+.bx-move-cost { color: var(--dt-gold); }
+.bx-move.selected { border-color: var(--dt-gold); background: var(--dt-ink-3); box-shadow: 0 0 0 3px var(--dt-gold-glow); }
+/* Avisos y resultados con la paleta de la marca */
+.bx-unlocked, .bx-verdict.ok { background: color-mix(in srgb, var(--dt-ok) 10%, var(--dt-ink-1)); border: 1px solid color-mix(in srgb, var(--dt-ok) 40%, transparent); }
+.bx-verdict.bad, .bx-error { background: color-mix(in srgb, var(--dt-red) 10%, var(--dt-ink-1)); border: 1px solid color-mix(in srgb, var(--dt-red) 45%, transparent); color: var(--dt-paper); }
+.bx-solution { background: var(--dt-ink-1); border-left-color: var(--dt-gold); }
+.bx-recover, .bx-paused { background: color-mix(in srgb, var(--dt-gold) 10%, var(--dt-ink-1)); border-color: color-mix(in srgb, var(--dt-gold) 40%, transparent); color: var(--dt-paper); }
+.bx-ranking i { background: var(--dt-ink-3); color: var(--dt-gold); }
+.bx-fighter-name > small { background: var(--dt-red); color: var(--dt-black); }
+.bx-footer { color: var(--dt-muted); font-family: var(--dt-mono); }
+@media (prefers-reduced-motion: reduce) { .bx-button { transition: none; } }
+.bx-connection b { background: var(--dt-ink-2); border-color: var(--dt-hair-2); color: var(--dt-gold); font-family: var(--dt-dot); border-radius: var(--dt-r-sm); }
+.bx-roster > div { background: var(--dt-ink-1); border-color: var(--dt-hair); border-radius: var(--dt-r-ctl); }
+.bx-answers.read-only .bx-answer { background: var(--dt-ink-1); border-color: var(--dt-hair); }
+.bx-question-meta > span:last-child { background: var(--dt-ink-3); border-radius: var(--dt-r-pill); }
+.bx-question-meta .bx-eyebrow { color: var(--dt-gold); }

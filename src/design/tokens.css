@@ -125,6 +125,11 @@ body[data-theme='workshop'] {
   /* Radios sueltos frecuentes. */
   --dt-r-ctl: 12px;
   --dt-r-pill: 999px;
+  /* Estado «correcto» (ya usado en road.css para aciertos). */
+  --dt-ok: #5fd38d;
+  /* Esquina azul del boxeo: color SEMÁNTICO de la ilustración del ring (rojo contra azul). Solo para el ring y sus marcadores. */
+  --dt-corner-blue: #8cc4e8;
+  --dt-corner-blue-deep: #2a6eb0;
   /* Tecla con recorrido del aparato: box-shadow: var(--dt-key-shadow) (la altura sale de --depth, 3–6px). */
   --dt-key-shadow: 0 var(--depth, 4px) 0 var(--skirt);
 }

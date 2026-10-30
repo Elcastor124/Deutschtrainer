@@ -33,8 +33,8 @@ export interface GameInfo {
   note?: string;
 }
 export const GAMES: readonly GameInfo[] = [
-  { id: 'blackcard', name: 'BlackCard', available: true, modes: ['solo'], levels: LEVELS, solo: 'Sesiones de preguntas con corrección y explicación; repasa lo que fallaste.', note: 'Los objetos y la BlackCard son mecánicas de clase: en solitario se juega el núcleo educativo.' },
-  { id: 'jenga', name: 'Wort-Jenga', available: true, modes: ['solo'], levels: LEVELS, solo: 'Una torre para ti: aciertas y quitas 1 pieza, fallas y quitas 2. Si cae, acaba la partida.' },
+  { id: 'blackcard', name: 'BlackCard', available: true, modes: ['solo', 'private'], levels: LEVELS, solo: 'Solo: sesiones con corrección y explicación. Con amigos: dos rondas con cofres y objetos.', note: 'Los objetos solo existen con rivales (sala privada). La BlackCard se desbloquea con preguntas de examen: solo en B1 Training.' },
+  { id: 'jenga', name: 'Wort-Jenga', available: true, modes: ['solo', 'private'], levels: LEVELS, solo: 'Aciertas y quitas 1 pieza, fallas y quitas 2. Solo o por turnos con amigos: si cae, acaba la partida.' },
   { id: 'boxing', name: 'Boxeo', available: true, modes: ['solo', 'private'], levels: ['A2'], solo: 'Combate contra un sparring del sistema con reglas fijas, o contra un amigo con código.', note: 'Su banco propio (casos A2) no tiene niveles: solo A2.' },
   { id: 'deck', name: 'Deutsch Deck', available: false, modes: [], levels: [], solo: 'Próximamente.', note: 'Este juego aún no existe en la plataforma.' },
 ];

@@ -138,6 +138,22 @@ export class AccountStore {
     a.sessions = a.sessions.filter((s) => s.h !== h); this.byToken.delete(h); this.save();
   }
   setRanking(a: Account, on: boolean) { a.rankingOptIn = on; this.save(); }
+  /** Cambia la contraseña verificando la actual. Cierra todas las demás sesiones (por si alguien más la conocía). */
+  async changePassword(a: Account, current: unknown, next: unknown, keepToken: string): Promise<{ ok: true } | Fail> {
+    if (typeof current !== 'string' || current.length > 128) return { ok: false, status: 401, error: 'La contraseña actual no es correcta.' };
+    const got = await kdf(current, a.salt); const exp = Buffer.from(a.hash, 'hex');
+    if (got.length !== exp.length || !timingSafeEqual(got, exp)) return { ok: false, status: 401, error: 'La contraseña actual no es correcta.' };
+    const e = validatePassword(next, a.alias);
+    if (e) return { ok: false, status: 400, error: e };
+    if (next === current) return { ok: false, status: 400, error: 'La nueva contraseña debe ser distinta de la actual.' };
+    a.salt = randomBytes(16).toString('hex');
+    a.hash = (await kdf(next as string, a.salt)).toString('hex');
+    const keep = sha(keepToken);
+    for (const s of a.sessions) if (s.h !== keep) this.byToken.delete(s.h);
+    a.sessions = a.sessions.filter((s) => s.h === keep);
+    this.save();
+    return { ok: true };
+  }
   async remove(a: Account, password: unknown): Promise<boolean> {
     if (typeof password !== 'string') return false;
     const got = await kdf(password, a.salt); const exp = Buffer.from(a.hash, 'hex');

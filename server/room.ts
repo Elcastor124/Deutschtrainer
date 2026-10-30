@@ -11,7 +11,12 @@ import type {
 } from '../shared/types.ts';
 import { grade, makeInstance, publicView, solution, type Instance } from './grade.ts';
 import { buildQueue, drawTopic, practiceQueue, wildTopics, type SelCtx, type Stat } from './select.ts';
-import { addTaskPlayer, endTask, jengaAnswer, pendingStars, removeFromTask, startTask, taskNext, taskTick, taskView, type TaskState } from './tasks.ts';
+import { addTaskPlayer, autoPull, endTask, jengaAnswer, pendingStars, removeFromTask, startTask, taskNext, taskTick, taskView, type TaskState } from './tasks.ts';
+
+/** Sala privada de BlackCard: dos rondas con objetos y cofres, y el final. Sin Leseverstehen ni Acto II (necesitan profesor). */
+export const PRIVATE_BLOCKS: BlockId[] = ['r1', 'r2'];
+/** Esperas automáticas de la sala privada (ms): lo que antes decidía el profesor al pulsar «siguiente». */
+export const PRIVATE_WAIT = { intro: 7000, reveal: 9000, roundEnd: 10000, pull: 30000, fallen: 8000 } as const;
 
 export interface Player {
   id: string;
@@ -87,6 +92,11 @@ export interface RoomState {
   diffs?: Difficulty[];
   /** Modo libre: la actividad ya se comunicó (una sola vez por sala). */
   activityReported?: boolean;
+  /**
+   * SALA PRIVADA del modo libre: sala de clase SIN profesor. Nadie tiene su token de profesor; el anfitrión solo puede expulsar en el
+   * vestíbulo. Empieza cuando todos están listos y el servidor avanza solo (ver privateTick). Corrección automática, sin preguntas orales.
+   */
+  private?: { host: string; game: 'blackcard' | 'jenga'; ready: string[]; key?: string; at?: number };
   /** Temas elegidos por el profesor para el juego de clase y el Wort-Jenga (vacío = todos). */
   topics?: Topic[];
   /** Con qué empieza la sala: el plan BlackCard o directamente el Wort-Jenga. */
@@ -184,6 +194,8 @@ export class Room {
   byToken(token: string) { return this.s.players.find((p) => p.token === token); }
   private name(id: string | null | undefined) { return this.player(id)?.name ?? '¿?'; }
   private get practice() { return this.s.mode === 'practice'; }
+  /** Sin profesor (práctica, solitario o sala privada): nadie juzga, así que la corrección es automática. */
+  get autonomous() { return this.s.mode === 'practice' || !!this.s.private; }
   private get blockItems() { return !this.practice && !!blockDef(this.s.block)?.items; }
 
   fx(kind: Fx['kind'], text: string, extra: Partial<Fx> = {}) {
@@ -191,7 +203,16 @@ export class Room {
     if (this.s.log.length > 40) this.s.log.splice(0, this.s.log.length - 40);
   }
 
-  touch() { this.s.updatedAt = this.now; }
+  touch() { this.s.updatedAt = this.now; if (this.s.private) this.syncPrivate(); }
+  /** Sala privada: al cambiar de fase se reinicia la espera automática (y los votos) en ese mismo instante. */
+  private syncPrivate(): boolean {
+    const p = this.s.private!;
+    const key = this.privateKey();
+    if (p.key === key) return false;
+    p.key = key; p.at = this.now;
+    if (this.s.phase !== 'lobby') p.ready = [];
+    return true;
+  }
 
   /** Historial de estos alumnos en otras partidas: se prefieren preguntas nuevas para ellos. */
   selCtx(): SelCtx {
@@ -317,6 +338,8 @@ export class Room {
     if (!blockDef(id)) return fail('Bloque desconocido.');
     if (this.s.phase === 'question' || this.s.phase === 'review' || this.s.phase === 'wild') this.cancelQuestion();
     if (this.s.wildPending) this.refundWild();
+    // Sala privada: se informa ANTES de cerrar la tarea (endTask borra la torre y sus recuentos por jugador).
+    if (id === 'final' && this.s.private) this.reportPrivate();
     if (this.s.task) endTask(this);
     this.expireRoundEffects();
     if (!this.s.startedAt) this.s.reading = this.chooseReading();
@@ -356,6 +379,7 @@ export class Room {
           const r = this.startBlock('jenga');
           return r.ok ? startTask(this, 'jenga') : r;
         }
+        if (this.s.private) return this.startBlock(PRIVATE_BLOCKS[0]);
         // Juego por temas sin Leseverstehen: se empieza directamente por el Calentamiento.
         const first = this.s.topics?.length && !this.s.topics.includes('lesen') ? 'warmup' : PLAN[0].id;
         return this.startBlock(first as BlockId);
@@ -383,6 +407,11 @@ export class Room {
       case 'roundEnd':
       case 'final': {
         if (this.practice) return fail('No hay nada más.');
+        if (this.s.private) {
+          if (this.s.phase === 'final') return fail('La partida ha terminado.');
+          const k = PRIVATE_BLOCKS.indexOf(this.s.block as BlockId);
+          return this.startBlock(PRIVATE_BLOCKS[k + 1] ?? 'final');
+        }
         const i = PLAN.findIndex((b) => b.id === this.s.block);
         const nxt = PLAN[i + 1];
         return nxt ? this.startBlock(nxt.id) : fail('La clase ha terminado.');
@@ -492,7 +521,7 @@ export class Room {
     if (rec?.final) return fail('Ya has respondido.');
     const q = this.question as Question;
     const a = sanitizeAnswer(raw);
-    const g = grade(q, this.s.q.inst, a, this.practice);
+    const g = grade(q, this.s.q.inst, a, this.autonomous);
     const second = this.s.uses[pid]?.item === 'second';
     if (!rec && second && g.status === 'wrong') {
       this.s.answers[pid] = { a, given: g.given, status: 'wrong', note: g.note, attempt: 1, final: false, at: this.now };
@@ -562,7 +591,7 @@ export class Room {
     if (this.s.phase !== 'question') return fail('No hay ninguna pregunta abierta.');
     this.s.timer = null;
     for (const r of Object.values(this.s.answers)) r.final = true;
-    if (!this.practice && Object.values(this.s.answers).some((r) => r.status === 'review')) {
+    if (!this.autonomous && Object.values(this.s.answers).some((r) => r.status === 'review')) {
       this.s.phase = 'review';
       this.touch();
       return OK;
@@ -771,8 +800,76 @@ export class Room {
     return OK;
   }
 
+  // ───────────── sala privada (sin profesor) ─────────────
+  private connectedIds() { return this.s.players.filter((p) => p.connected).map((p) => p.id); }
+  private allVoted() { const ids = this.connectedIds(); const r = this.s.private!.ready; return ids.length > 0 && ids.every((id) => r.includes(id)); }
+  /** Qué espera la sala ahora mismo y cuánto (ms). null = nada que hacer por tiempo. */
+  private privateWait(): number | null {
+    const t = this.s.task;
+    if (this.s.phase === 'intro') return PRIVATE_WAIT.intro;
+    if (this.s.phase === 'reveal') return PRIVATE_WAIT.reveal;
+    if (this.s.phase === 'roundEnd') return PRIVATE_WAIT.roundEnd;
+    if (this.s.phase === 'task' && t?.kind === 'jenga') return t.stage === 'pull' ? PRIVATE_WAIT.pull : t.stage === 'fallen' ? PRIVATE_WAIT.fallen : null;
+    return null;
+  }
+  private privateKey() {
+    const t = this.s.task;
+    return [this.s.phase, this.s.block, this.s.qNo, t?.kind === 'jenga' ? `${t.stage}:${t.turn}:${t.pulls}:${t.levels.length}` : ''].join('|');
+  }
+  /** Lo que haría el profesor: pasar de fase, sacar la pieza de quien no la saca, o cerrar la partida al caer la torre. */
+  private privateAct(): Result {
+    const t = this.s.task;
+    if (this.s.phase === 'task' && t?.kind === 'jenga') return t.stage === 'fallen' ? this.startBlock('final') : autoPull(this);
+    return this.next();
+  }
+  /** Avance automático de la sala privada. Llamado desde tick(). */
+  private privateTick(): boolean {
+    const p = this.s.private!;
+    if (this.s.phase === 'lobby' || this.s.phase === 'final') return false;
+    if (this.syncPrivate()) return true;
+    const wait = this.privateWait();
+    if (wait === null || this.now - (p.at ?? this.now) < wait) return false;
+    return this.privateAct().ok;
+  }
+  /** «Listo»: en el vestíbulo, empieza cuando TODOS los conectados (mínimo 2) lo están; en pausas, avanza en cuanto todos votan. */
+  privateVote(pid: string): Result {
+    const p = this.s.private;
+    if (!p) return fail('Solo en salas privadas.');
+    if (!this.player(pid)) return fail('Jugador desconocido.');
+    if (!p.ready.includes(pid)) p.ready.push(pid);
+    this.touch();
+    if (this.s.phase === 'lobby') {
+      if (this.connectedIds().length >= 2 && this.allVoted()) { p.ready = []; return this.next(); }
+      return OK;
+    }
+    if (this.privateWait() !== null && this.allVoted()) return this.privateAct();
+    return OK;
+  }
+  /** El anfitrión puede expulsar a alguien, solo antes de empezar (para quien entró con un código que no era para él). */
+  privateKick(by: string, pid: string): Result {
+    const p = this.s.private;
+    if (!p || p.host !== by) return fail('Solo el anfitrión de la sala.');
+    if (this.s.phase !== 'lobby') return fail('Solo antes de empezar.');
+    if (pid === by) return fail('No puedes expulsarte a ti.');
+    p.ready = p.ready.filter((id) => id !== pid);
+    return this.kick(pid);
+  }
+  /** Al terminar: actividad completada por cada cuenta (el servidor cuenta aciertos; los invitados no guardan nada). */
+  private reportPrivate() {
+    if (this.s.activityReported || !this.s.private) return;
+    this.s.activityReported = true;
+    const game = this.s.private.game;
+    const per = this.s.task?.kind === 'jenga' ? this.s.task.per ?? {} : {};
+    for (const p of this.s.players) {
+      const total = game === 'jenga' ? per[p.id]?.n ?? 0 : p.total;
+      const correct = game === 'jenga' ? per[p.id]?.ok ?? 0 : p.correct;
+      this.d.onActivity?.(p.profile, { game, level: this.s.level, topics: this.s.topics ?? [], total, correct, room: this.s.code });
+    }
+  }
+
   /** Llamado periódicamente por el servidor. Devuelve true si cambió algo. */
   tick(): boolean {
+    if (this.s.private && this.privateTick()) return true;
     const t = this.s.timer;
     if (!t || t.endsAt === null || this.now < t.endsAt) return false;
     if (this.s.phase === 'question') { this.lock(); return true; }
@@ -914,6 +1011,7 @@ export class Room {
     if (s.start === 'jenga') v.start = 'jenga';
     if (s.practice) v.practice = { topics: s.practice.topics, done: s.practice.done, correct: s.practice.correct, size: s.practice.size, focus: s.practice.focus };
     if (s.phase === 'final') v.final = this.finalView();
+    if (s.private) v.private = { host: s.private.host, game: s.private.game, ready: s.private.ready, next: (() => { const w = this.privateWait(); return w === null || s.private!.at === undefined ? null : s.private!.at + w; })() };
     if ('teacher' in viewer) {
       v.teacher = {
         solution: q ? solution(q) : '',

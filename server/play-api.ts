@@ -132,6 +132,14 @@ export function createPlayApi({ accounts, guard, log, bank, now = Date.now }: Pl
       accounts.setRanking(a, input.rankingOptIn as boolean);
       return json(res, 200, { account: pub(a) });
     }
+    if (route === '/api/account/password') {
+      only('POST');
+      const a = need(req); const input = await body(req);
+      const blocked = guard.loginBlocked(ip, aliasKey(a.alias)); if (blocked) fail(429, blocked);
+      const r = await accounts.changePassword(a, input.current, input.next, String(req.headers['x-student-session']));
+      if (!r.ok) { if (r.status === 401) guard.loginFailed(ip, aliasKey(a.alias)); return fail(r.status, r.error); }
+      return json(res, 200, { ok: true });
+    }
     if (route === '/api/account/delete') {
       only('POST');
       const a = need(req); const input = await body(req);
