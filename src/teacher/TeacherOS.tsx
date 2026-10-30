@@ -75,7 +75,7 @@ function Login({ onIn, closed }: { onIn: () => void; closed: boolean }) {
         <p className="dt-eyebrow">Teacher OS · acceso privado</p>
         <h1>Lehrerzimmer.</h1>
         <p className="libre-lead">El panel de tu academia. Solo para profesores con una clave emitida en el servidor.</p>
-        {closed ? <p className="libre-err" role="alert">Este servidor aún no tiene profesores registrados. Por seguridad, Teacher OS está cerrado hasta que el administrador cree uno en privado con <code>npm run teacher -- add "Nombre"</code>.</p> : (
+        {closed ? <p className="libre-err" role="alert">Teacher OS está cerrado: el servidor no tiene la contraseña de profesor. En Render → <b>Environment</b> añade <code>TEACHER_PASSWORD</code> con tu contraseña, guarda y vuelve a desplegar.</p> : (
           <form onSubmit={submit} className="auth-form">
             <label className="acc-field"><span>Contraseña o clave de profesor</span><input className="field" type="password" value={key} onChange={(e) => setKey(e.target.value)} autoComplete="current-password" required autoFocus spellCheck={false} /></label>
             {error && <p className="libre-err" role="alert">{error}</p>}
