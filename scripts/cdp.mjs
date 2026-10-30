@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const EDGE = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
-  'C:/Program Files/Google/Chrome/Application/chrome.exe', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(existsSync);
+  'C:/Program Files/Google/Chrome/Application/chrome.exe', '/usr/bin/google-chrome', '/usr/bin/chromium', '/opt/pw-browsers/chromium'].find(existsSync);
 
 async function waitHttp(url) {
   for (let i = 0; i < 80; i++) { try { const r = await fetch(url); if (r.ok) return r; } catch { /* aún no */ } await sleep(200); }
@@ -29,7 +29,7 @@ export async function launch({ shots = 'shots', base } = {}) {
   const server = base ? null : spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'],
     { env: { ...process.env, PORT: String(port), DATA_DIR: data }, stdio: 'ignore' });
   const edge = spawn(EDGE, ['--headless=new', `--remote-debugging-port=${dbg}`, `--user-data-dir=${profile}`, '--no-first-run', '--hide-scrollbars',
-    '--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--mute-audio', '--autoplay-policy=no-user-gesture-required', 'about:blank'], { stdio: 'ignore' });
+    '--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--mute-audio', '--autoplay-policy=no-user-gesture-required', ...(process.platform === 'linux' ? ['--no-sandbox'] : []), 'about:blank'], { stdio: 'ignore' });
 
   await waitHttp(`${BASE}/api/health`);
   const ver = await (await waitHttp(`http://127.0.0.1:${dbg}/json/version`)).json();

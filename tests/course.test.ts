@@ -25,16 +25,16 @@ describe('Ruta del curso', () => {
     for (const c of catalog) expect(c.unit, c.id).toBe(COURSE.find((u) => u.presentation === c.id || u.review?.id === c.id)!.n);
   });
 
-  it('cada Lektion tiene el flujo Ver → Practicar → Jugar → Repaso con enlaces a sus temas', () => {
+  it('cada Lektion tiene el flujo Ver → Practicar → Repaso (sin juegos: viven en /juegos) con enlaces a sus temas', () => {
     for (const u of COURSE.filter((x) => !x.exam)) {
-      expect(u.steps.map((s) => s.kind), u.id).toEqual(['ver', 'practicar', 'jugar', 'repaso']);
+      expect(u.steps.map((s) => s.kind), u.id).toEqual(['ver', 'practicar', 'repaso']);
       expect(u.steps[0].primary.href).toBe(`/presentaciones/${u.presentation}.html`);
       expect(u.steps[1].primary.href).toBe(`/practica?temas=${u.topics.join(',')}`);
-      expect(u.steps[2].primary.href).toMatch(/^\/(jenga|jugar|boxeo)/);
+      for (const s of u.steps) for (const l of [s.primary, ...s.extra]) expect(l.href, u.id).not.toMatch(/^\/(jenga|jugar|boxeo)/);
       for (const t of u.topics) expect(Object.keys(TOPICS)).toContain(t);
     }
-    expect(COURSE.find((u) => u.id === 'akkusativ')!.steps[2].primary.href).toBe('/boxeo');
-    expect(COURSE.find((u) => u.id === 'krankenhaus')!.steps[3].primary.href).toBe('/presentaciones/krankenhaus-remaster.html');
+    expect(COURSE[0].steps[0].desc).toContain('Traducción web de la presentación original');
+    expect(COURSE.find((u) => u.id === 'krankenhaus')!.steps[2].primary.href).toBe('/presentaciones/krankenhaus-remaster.html');
     expect(COURSE.at(-1)!.steps.map((s) => s.primary.href)).toContain('/road-to-b1');
     expect(new Set(ALL_STEP_IDS).size).toBe(ALL_STEP_IDS.length);
   });
@@ -51,7 +51,7 @@ describe('Progreso del curso', () => {
     expect(nextStep(done)!.step.id).toBe('bruecke-a1:ver');
     done = toggleStep(done, 'bruecke-a1:ver');
     expect(nextStep(done)!.step.id).toBe('bruecke-a1:practicar');
-    expect(unitProgress(COURSE[0], done)).toEqual({ done: 1, total: 4, pct: 25 });
+    expect(unitProgress(COURSE[0], done)).toEqual({ done: 1, total: 3, pct: 33 });
     expect(unitStatus(COURSE[0], done)).toBe('current');
     // Saltar pasos no se pierde: la recomendación vuelve al hueco más temprano.
     done = toggleStep(done, 'bank:ver');
@@ -69,9 +69,9 @@ describe('Progreso del curso', () => {
   });
 
   it('serializa y tolera datos corruptos o pasos desconocidos', () => {
-    const done = toggleStep(toggleStep(new Set(), 'bank:jugar'), 'bruecke-a1:ver');
+    const done = toggleStep(toggleStep(new Set(), 'bank:practicar'), 'bruecke-a1:ver');
     expect(parseProgress(serializeProgress(done))).toEqual(done);
-    expect(JSON.parse(serializeProgress(done)).done).toEqual(['bruecke-a1:ver', 'bank:jugar']);
+    expect(JSON.parse(serializeProgress(done)).done).toEqual(['bruecke-a1:ver', 'bank:practicar']);
     for (const raw of [null, '', '{', '42', '{"done":"x"}']) expect(parseProgress(raw).size).toBe(0);
     expect([...parseProgress('["bank:ver","hack:ver",3]')]).toEqual(['bank:ver']);
     expect(toggleStep(new Set(), 'nope:ver').size).toBe(0);

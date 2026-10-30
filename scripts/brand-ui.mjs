@@ -62,20 +62,20 @@ try {
   // 3 · Curso: el siguiente paso está destacado; marcarlo actualiza anillo y recomendación.
   const c = await env.newPage('curso', 1366, 768);
   await c.go('/curso?intro=0');
-  await c.until(`!!document.querySelector('.dt-step.is-next')`, 'paso recomendado');
-  const first = await c.eval(`document.querySelector('.dt-step.is-next input').id`);
+  await c.until(`!!document.querySelector('.cg-step.is-next')`, 'paso recomendado');
+  const first = await c.eval(`document.querySelector('.cg-step.is-next input').id`);
   assert.equal(first, 'step-bruecke-a1-ver');
-  await c.click('.dt-step.is-next .dt-check');
-  await c.until(`document.querySelector('.dt-step.is-next input')?.id==='step-bruecke-a1-practicar'`, 'avanza al paso 2');
+  await c.click('.cg-step.is-next .dt-check');
+  await c.until(`document.querySelector('.cg-step.is-next input')?.id==='step-bruecke-a1-practicar'`, 'avanza al paso 2');
   const ring = await c.eval(`document.querySelector('#bruecke-a1 .dt-ring').getAttribute('aria-label')`);
-  assert.match(ring, /1 de 4/);
+  assert.match(ring, /1 de 3/);
   // Teclado: espacio sobre la casilla enfocada.
   await c.eval(`document.getElementById('step-bruecke-a1-practicar').focus()`);
   await c.key(' ');
   await c.until(`document.getElementById('step-bruecke-a1-practicar').checked`, 'marcar con teclado');
   await c.reload();
   await c.until(`document.getElementById('step-bruecke-a1-practicar')?.checked`, 'progreso persistente');
-  report.checks.courseNext = await c.eval(`document.querySelector('.dt-step.is-next input').id`);
+  report.checks.courseNext = await c.eval(`document.querySelector('.cg-step.is-next input').id`);
   await c.shot('course-progress-1366');
   // La portada refleja el progreso.
   await c.go('/?intro=0');
@@ -83,8 +83,8 @@ try {
   report.checks.resume = await c.eval(`document.querySelector('.dt-resume h2').textContent`);
   // Paso 1 abre la presentación real.
   const presHref = await c.eval(`(()=>{location.href='/curso?intro=0';return true})()`);
-  await c.until(`!!document.querySelector('#bruecke-a1 .dt-step a[href$=".html"]')`, 'enlace presentación');
-  const href = await c.eval(`document.querySelector('#bruecke-a1 .dt-step a[href$=".html"]').getAttribute('href')`);
+  await c.until(`!!document.querySelector('#bruecke-a1 .cg-step a[href$=".html"]')`, 'enlace presentación');
+  const href = await c.eval(`document.querySelector('#bruecke-a1 .cg-step a[href$=".html"]').getAttribute('href')`);
   const r = await fetch(env.base + href); assert.equal(r.status, 200); void presHref;
   // /tema/1 enlaza al curso.
   await c.go('/tema/1');
