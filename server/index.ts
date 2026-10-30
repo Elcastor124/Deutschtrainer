@@ -1,9 +1,9 @@
 // Servidor de juego: HTTP (cliente compilado) + WebSocket (estado en tiempo real).
 // Arranque: node server/index.ts   (Node ≥ 22.18 ejecuta TypeScript directamente)
 import { createReadStream, existsSync, statSync } from 'node:fs';
-import { createServer } from 'node:http';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { networkInterfaces } from 'node:os';
-import { extname, join, normalize, resolve } from 'node:path';
+import { extname, join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { BlockId, ChestTier, ClientMsg, CtlAction, ItemId, ServerMsg } from '../shared/types.ts';
@@ -16,6 +16,7 @@ import { Store, type Profile } from './store.ts';
 import { createBoxingHandler } from './boxing.ts';
 import { createRoadHandler } from './road.ts';
 import { createProgressHandler, recordEvent } from './progress.ts';
+import { resolveStatic, SECURITY_HEADERS } from './static.ts';
 
 const PORT = Number(process.env.PORT) || 4747;
 const ROOT = resolve(import.meta.dirname, '..');
@@ -216,6 +217,16 @@ const progressHandler = createProgressHandler({dataDir: process.env.DATA_DIR || 
 const roadHandler = createRoadHandler({ dataDir: process.env.DATA_DIR || join(ROOT, 'data') });
 const boxingHandler = createBoxingHandler({ dataDir: process.env.DATA_DIR || join(ROOT, 'data') });
 const server = createServer((req, res) => {
+  // Un fallo en una petición HTTP nunca debe tumbar el proceso (y con él todas las salas en curso).
+  try { serve(req, res); } catch (e) {
+    console.error('[http] error procesando', req.url, e);
+    if (!res.headersSent) res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+    res.end('Error interno del servidor.');
+  }
+});
+
+function serve(req: IncomingMessage, res: ServerResponse) {
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
   if (progressHandler(req, res)) return;
   if (roadHandler(req, res)) return;
   if (boxingHandler(req, res)) return;
@@ -232,15 +243,16 @@ const server = createServer((req, res) => {
     res.writeHead(503, { 'content-type': 'text/plain; charset=utf-8' });
     return res.end('Falta compilar el cliente: ejecuta «npm run build».');
   }
-  let file = normalize(join(DIST, decodeURIComponent(url.pathname)));
-  if (!file.startsWith(DIST) || !existsSync(file) || statSync(file).isDirectory()) file = join(DIST, 'index.html');
+  let file = resolveStatic(DIST, url.pathname);
+  if (!file) { res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' }); return res.end('Petición no válida.'); }
+  if (!existsSync(file) || statSync(file).isDirectory()) file = join(DIST, 'index.html');
   const ext = extname(file);
   res.writeHead(200, {
     'content-type': MIME[ext] ?? 'application/octet-stream',
     'cache-control': file.includes(`${join(DIST, 'assets')}`) ? 'public, max-age=31536000, immutable' : 'no-cache',
   });
-  createReadStream(file).pipe(res);
-});
+  createReadStream(file).on('error', () => res.destroy()).pipe(res);
+}
 
 const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 16 * 1024 });
 wss.on('connection', (ws) => {

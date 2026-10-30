@@ -33,7 +33,7 @@ export class Store<R> {
 
   flush() {
     const tmp = this.file + '.tmp';
-    writeFileSync(tmp, JSON.stringify(this.data));
+    writeFileSync(tmp, JSON.stringify(this.data), { mode: 0o600 }); // contiene tokens de sala: solo el usuario del servidor
     renameSync(tmp, this.file);
   }
 
