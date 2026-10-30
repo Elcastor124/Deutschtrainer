@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zusammenfassung Thema 1 · Deutschtrainer</title>
+<style>
+:root{--bg:#0b0b0c;--bg2:#141416;--card:#1b1b1f;--line:#2c2c33;--w:#f4f1ea;--mut:#a8a39a;--red:#e2231a;--red2:#ff4b3e;--gold:#e9b949;--gold2:#ffd77a;--ok:#3ccf7a;--bad:#ff4b3e;
+--f:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;--mono:Consolas,"Cascadia Mono",ui-monospace,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--w);font-family:var(--f);overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+#deck{position:fixed;inset:0}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;padding:4.2vh 5vw 8vh;overflow:hidden;
+ background:radial-gradient(120% 90% at 100% 0%,#2a0d0b 0%,transparent 55%),radial-gradient(90% 80% at 0% 100%,#2a2108 0%,transparent 60%),var(--bg)}
+.slide.active{display:flex;animation:in .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.slide::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(90deg,#111 0 33%,var(--red) 33% 66%,var(--gold) 66%)}
+.kick{font:600 clamp(12px,1.05vw,17px) var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:.6vh}
+.kick b{color:var(--red2);font-weight:700}
+h1{font-size:clamp(46px,7.4vw,124px);line-height:.92;font-weight:900;letter-spacing:-.02em;white-space:nowrap}
+h2{font-size:clamp(28px,3.4vw,58px);line-height:1.02;font-weight:850;letter-spacing:-.01em;margin-bottom:1.6vh}
+h3{font-size:clamp(17px,1.5vw,25px);font-weight:800;margin-bottom:.8vh;color:var(--gold2)}
+p,li,td,th{font-size:clamp(15px,1.35vw,23px);line-height:1.35}
+.sub{color:var(--mut);font-size:clamp(15px,1.35vw,22px);margin-bottom:1.6vh}
+.red{color:var(--red2)}.gold{color:var(--gold)}.mut{color:var(--mut)}
+.v{color:var(--red2);font-weight:800}.k{color:var(--gold);font-weight:800}
+.grid{display:grid;gap:1.6vh 1.4vw;flex:1;min-height:0}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:linear-gradient(180deg,#1e1e23,#16161a);border:1px solid var(--line);border-radius:16px;padding:1.8vh 1.3vw;min-width:0}
+.card.r{border-color:#5a1612;box-shadow:inset 0 3px 0 var(--red)}
+.card.g{border-color:#5c4a17;box-shadow:inset 0 3px 0 var(--gold)}
+.tag{display:inline-block;font:700 clamp(11px,.85vw,14px) var(--mono);letter-spacing:.1em;padding:.35vh .55vw;border-radius:6px;background:#2a2a30;color:var(--gold);margin-bottom:.8vh}
+.chips{display:flex;flex-wrap:wrap;gap:.8vh .6vw}
+.chip{border:1px solid var(--line);background:#18181c;border-radius:999px;padding:.6vh 1vw;font-size:clamp(13px,1.1vw,19px)}
+a.chip{color:var(--w);text-decoration:none}a.chip:hover{border-color:var(--gold)}
+.chip b{color:var(--gold);margin-right:.4em;font-family:var(--mono)}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:.9vh .7vw;text-align:left}
+th{color:var(--gold);font-weight:800;font-size:clamp(13px,1.1vw,19px);text-transform:uppercase;letter-spacing:.06em}
+td.end{color:var(--red2);font-weight:800}
+.rule{margin-top:1.4vh;border-left:4px solid var(--red);background:#1d1012;padding:1.1vh 1vw;border-radius:0 10px 10px 0}
+.rule.g{border-color:var(--gold);background:#1d190d}
+/* reveal */
+.rv{cursor:pointer;position:relative}
+.rv .ans{display:block;margin-top:.7vh;color:var(--gold2);font-weight:800;filter:blur(9px);opacity:.35;transition:.3s;user-select:none}
+.rv.open .ans{filter:none;opacity:1}
+.rv:not(.open)::after{content:"clic";position:absolute;right:.8vw;top:1vh;font:600 11px var(--mono);color:var(--mut);letter-spacing:.1em}
+/* flip warm-up */
+.flip{perspective:900px;cursor:pointer;min-height:0}
+.flip .in{position:relative;width:100%;height:100%;transition:transform .55s cubic-bezier(.2,.8,.2,1);transform-style:preserve-3d}
+.flip.open .in{transform:rotateY(180deg)}
+.flip .fa,.flip .fb{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;justify-content:center;padding:1.4vh 1vw;border:1px solid var(--line)}
+.flip .fa{background:#18181c}
+.flip .fb{background:linear-gradient(160deg,#3a0f0c,#241a08);transform:rotateY(180deg);border-color:#6b4c12}
+.flip .n{font:700 clamp(11px,.85vw,14px) var(--mono);color:var(--red2);margin-bottom:.6vh}
+.flip p{font-size:clamp(15px,1.4vw,24px);font-weight:700}
+.flip .fb p{color:var(--gold2)}
+.flip small{display:block;color:var(--mut);margin-top:.5vh;font-size:clamp(12px,.95vw,16px)}
+/* quiz */
+.quiz{display:grid;grid-template-columns:1fr 1fr;gap:1.8vh 1.4vw;flex:1;min-height:0}
+.q{background:#17171b;border:1px solid var(--line);border-radius:16px;padding:1.8vh 1.3vw;display:flex;flex-direction:column;justify-content:center;gap:1.2vh;min-height:0}
+.q .txt{font-size:clamp(18px,2vw,32px);font-weight:750;line-height:1.2;color:var(--w)}
+.q .txt i{font-style:normal;color:var(--gold)}
+.opts{display:flex;flex-wrap:wrap;gap:.8vw}
+.opt{border:2px solid #3a3a42;background:#222228;border-radius:12px;padding:1vh 1.2vw;font-size:clamp(15px,1.5vw,24px);font-weight:700;transition:.15s}
+.opt:hover{border-color:var(--gold)}
+.opt.ok{background:#123b25;border-color:var(--ok);color:#c9ffe0}
+.opt.no{background:#3d1210;border-color:var(--bad);color:#ffd4cf;text-decoration:line-through}
+.q .why{font-size:clamp(13px,1.1vw,19px);color:var(--mut);min-height:1.3em}
+.q.done .why{color:var(--gold2)}
+.qbar{display:flex;align-items:center;gap:1vw;margin-top:1.4vh}
+.pill{font:700 clamp(13px,1.1vw,18px) var(--mono);background:#202026;border:1px solid var(--line);border-radius:999px;padding:.6vh 1vw}
+.btn{border:1px solid #4a4a52;background:#232329;border-radius:10px;padding:.8vh 1vw;font-weight:700;font-size:clamp(13px,1.1vw,18px)}
+.btn:hover{border-color:var(--gold)}
+.btn.p{background:var(--red);border-color:var(--red);color:#fff}
+/* binary hs */
+.hsbox{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4vh;text-align:center}
+.hsverb{font-size:clamp(54px,8vw,140px);font-weight:900;letter-spacing:-.02em}
+.hses{color:var(--mut);font-size:clamp(16px,1.6vw,26px)}
+.hsopts{display:flex;gap:2vw}
+.hsopts .opt{font-size:clamp(22px,2.6vw,42px);padding:1.6vh 3vw}
+.hsres{font-size:clamp(20px,2.2vw,36px);font-weight:800;min-height:1.4em;color:var(--gold2)}
+/* builder */
+.bld{flex:1;display:flex;flex-direction:column;gap:2vh;justify-content:center}
+.drop{min-height:11vh;border:2px dashed #4a4a52;border-radius:16px;padding:1.4vh 1vw;display:flex;flex-wrap:wrap;gap:.8vw;align-items:center;cursor:pointer}
+.drop.ok{border-color:var(--ok);background:#0f2a1b}.drop.no{border-color:var(--bad);background:#2a0f0d}
+.tiles{display:flex;flex-wrap:wrap;gap:.8vw;min-height:9vh}
+.tile{background:#26262d;border:2px solid #44444c;border-radius:12px;padding:1.1vh 1.2vw;font-size:clamp(18px,2vw,32px);font-weight:750}
+.tile.v{border-color:var(--red);color:#ffd2cc}
+.drop .tile{background:#30303a}
+/* fehler */
+.fe .txt s{text-decoration:none;color:var(--red2);border-bottom:3px wavy var(--red)}
+/* roulette */
+.rou{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4vh;text-align:center}
+.rou .cat{font:700 clamp(13px,1.2vw,20px) var(--mono);letter-spacing:.14em;color:var(--red2);text-transform:uppercase}
+.rou .rq{font-size:clamp(28px,3.8vw,66px);font-weight:850;max-width:80vw;line-height:1.1}
+.rou .ra{font-size:clamp(22px,2.6vw,44px);font-weight:800;color:var(--gold2);min-height:1.3em;filter:blur(12px);opacity:.3;transition:.3s}
+.rou .ra.open{filter:none;opacity:1}
+/* map title */
+.units{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2vh 1vw;margin-top:3vh}
+.unit{border:1px solid var(--line);background:#141418cc;border-radius:14px;padding:1.4vh 1vw;text-decoration:none;color:var(--w);transition:.2s}
+.unit:hover{border-color:var(--gold);transform:translateY(-2px)}
+.unit b{display:block;font:700 clamp(11px,.85vw,14px) var(--mono);color:var(--red2);letter-spacing:.1em;margin-bottom:.4vh}
+.unit span{font-size:clamp(14px,1.15vw,20px);font-weight:700}
+.unit small{display:block;color:var(--mut);font-size:clamp(11px,.9vw,15px);margin-top:.3vh}
+.check li{list-style:none;padding:.8vh 0;border-bottom:1px solid var(--line);cursor:pointer}
+.check li::before{content:"☐";color:var(--gold);margin-right:.7vw}
+.check li.on::before{content:"☑";color:var(--ok)}
+.src{position:absolute;right:5vw;top:4.4vh;font:600 clamp(11px,.85vw,14px) var(--mono);color:var(--mut)}
+.src a{color:var(--mut)}
+/* hud */
+#hud{position:fixed;left:0;right:0;bottom:0;height:5.4vh;display:flex;align-items:center;gap:1vw;padding:0 2vw;background:linear-gradient(0deg,#000d,#0000);z-index:5;font:600 clamp(11px,.9vw,15px) var(--mono);color:var(--mut)}
+#bar{flex:1;height:4px;background:#26262b;border-radius:4px;overflow:hidden}#bar i{display:block;height:100%;background:linear-gradient(90deg,var(--red),var(--gold));width:0;transition:width .3s}
+#hud button{background:#1c1c21;border:1px solid var(--line);border-radius:8px;padding:.4vh .7vw}
+#notes{position:fixed;left:2vw;right:2vw;bottom:6.4vh;background:#111114f2;border:1px solid var(--gold);border-radius:14px;padding:1.6vh 1.4vw;z-index:6;display:none;font-size:clamp(14px,1.15vw,19px);line-height:1.4}
+#notes.on{display:block}#notes b{color:var(--gold)}
+#timer{position:fixed;right:2vw;top:2.4vh;z-index:6;font:800 clamp(22px,2.4vw,40px) var(--mono);background:#111;border:2px solid var(--red);border-radius:12px;padding:.6vh 1vw;display:none}
+#timer.on{display:block}#timer.end{background:var(--red);color:#fff}
+#score{position:fixed;left:50%;top:2.4vh;transform:translateX(-50%);z-index:6;display:none;gap:1vw;background:#111114f2;border:1px solid var(--gold);border-radius:14px;padding:1vh 1.2vw}
+#score.on{display:flex}
+#score .team{display:flex;align-items:center;gap:.6vw;font-weight:800;font-size:clamp(15px,1.4vw,24px)}
+#score input{width:9em;background:#1c1c21;border:1px solid var(--line);border-radius:8px;color:var(--w);padding:.4vh .5vw;font:inherit;font-size:.8em}
+#score .pts{font-family:var(--mono);color:var(--gold2);min-width:2ch;text-align:center}
+#score button{background:#24242a;border:1px solid var(--line);border-radius:8px;width:2em}
+#help{position:fixed;inset:0;background:#000c;z-index:9;display:none;align-items:center;justify-content:center}
+#help.on{display:flex}#help .card{max-width:640px}
+@media(max-height:780px){.slide{padding:3.2vh 4.4vw 7.4vh}h2{font-size:clamp(26px,3vw,48px);margin-bottom:1.1vh}.card{padding:1.3vh 1.1vw}th,td{padding:.6vh .6vw}.q{padding:1.3vh 1.1vw;gap:.9vh}.q .txt{font-size:clamp(17px,1.8vw,28px)}.sub{margin-bottom:1vh}}
+/* projector scale: body centred under the header, larger type */
+.slide>h2+*{margin-top:auto}.slide>:last-child{margin-bottom:auto}
+.slide>.src+.kick{margin-top:0}
+p,li,td{font-size:clamp(17px,1.75vw,31px)}
+th{font-size:clamp(14px,1.3vw,23px)}
+h3{font-size:clamp(19px,1.95vw,33px)}
+.tag{font-size:clamp(12px,1.05vw,18px)}
+.card{padding:2.2vh 1.5vw}
+.rv .ans{font-size:clamp(18px,1.85vw,32px)}
+.flip p{font-size:clamp(20px,2.4vw,42px)}
+.flip small{font-size:clamp(14px,1.35vw,23px)}
+.flip .n{font-size:clamp(12px,1.05vw,17px)}
+.unit{padding:2vh 1.2vw}.unit span{font-size:clamp(17px,1.6vw,28px)}.unit b{font-size:clamp(12px,1vw,17px)}.unit small{font-size:clamp(13px,1.15vw,20px)}
+.units{margin-top:5vh;gap:1.8vh 1.2vw}
+.q .txt{font-size:clamp(20px,2.4vw,40px)}.opt{font-size:clamp(17px,1.85vw,31px);padding:1.2vh 1.5vw}.q .why{font-size:clamp(15px,1.4vw,24px)}
+.tile{font-size:clamp(22px,2.7vw,46px)}.drop{min-height:14vh}
+.bld .sub{font-size:clamp(17px,1.8vw,30px)}
+.chip{font-size:clamp(16px,1.6vw,28px);padding:.8vh 1.3vw}
+.rule p{font-size:clamp(16px,1.6vw,28px)}
+.sub{font-size:clamp(16px,1.6vw,27px)}
+@media(max-height:780px){.card{padding:1.5vh 1.2vw}p,li,td{font-size:clamp(15px,1.6vw,26px)}.q .txt{font-size:clamp(18px,2.1vw,32px)}.flip p{font-size:clamp(18px,2.1vw,34px)}.units{margin-top:3vh}}
+.print .rv .ans,.print .rou .ra{filter:none!important;opacity:1!important}
+
+/* v2 · 120 min */
+.sec{display:flex;gap:.6vw;align-items:center;margin-bottom:.4vh}
+.sec .no{font:800 clamp(12px,1vw,17px) var(--mono);background:var(--red);color:#fff;border-radius:6px;padding:.2vh .5vw}
+.toc{display:grid;grid-template-columns:repeat(4,1fr);gap:1.4vh 1vw;margin-top:3.4vh}
+.toc button{text-align:left;border:1px solid var(--line);background:#141418cc;border-radius:14px;padding:1.6vh 1vw;transition:.2s}
+.toc button:hover{border-color:var(--gold);transform:translateY(-2px)}
+.toc b{display:block;font:700 clamp(12px,1vw,17px) var(--mono);color:var(--red2);letter-spacing:.08em;margin-bottom:.4vh}
+.toc span{font-size:clamp(16px,1.5vw,26px);font-weight:800}
+.toc small{display:block;color:var(--mut);font-size:clamp(12px,1.05vw,18px);margin-top:.3vh}
+.orig{position:absolute;right:5vw;top:4.4vh;display:flex;gap:.5vw}
+.orig a{font:600 clamp(11px,.85vw,14px) var(--mono);color:var(--mut);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:.3vh .7vw}
+.orig a:hover{color:var(--gold);border-color:var(--gold)}
+.mini td,.mini th{padding:.45vh .5vw}
+.mini td{font-size:clamp(15px,1.45vw,25px)}
+.lab{display:grid;grid-template-columns:1fr 1fr;gap:1.4vh 1.2vw;flex:1;min-height:0}
+.lab .card{display:flex;flex-direction:column;justify-content:center}
+.lab .card p{font-size:clamp(17px,1.9vw,32px);margin:.4vh 0}.lab .card .ans{font-size:clamp(19px,2.1vw,36px)}
+.lab .task{font:700 clamp(11px,.9vw,15px) var(--mono);color:var(--red2);letter-spacing:.08em;text-transform:uppercase}
+.big{font-size:clamp(22px,2.6vw,44px)!important;font-weight:850}
+.pause{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2vh}
+.flowrow{display:flex;gap:.6vw;align-items:center;flex-wrap:wrap}
+.box{border:2px solid var(--line);border-radius:10px;padding:.5vh .8vw;font-weight:800;font-size:clamp(16px,1.6vw,28px)}
+.box.v{border-color:var(--red);color:#ffd2cc}.box.k{border-color:var(--gold);color:var(--gold2)}
+/* theory slides fill the projector: column stacks stretch, card content centred */
+.grid>div[style*="flex-direction:column"]>*{flex:1 1 auto}
+.grid>.card,.grid>div>.card{display:flex;flex-direction:column;justify-content:center}
+.mini td{font-size:clamp(16px,1.65vw,30px)}.mini th{font-size:clamp(13px,1.2vw,21px)}
+.card.rv{justify-content:center}
+/* theory slides (have a section badge): projector-size text */
+.slide:has(.sec) .card p,.slide:has(.sec) .rule p{font-size:clamp(17px,1.9vw,33px);line-height:1.38}
+.slide:has(.sec) .mini td{font-size:clamp(16px,1.8vw,32px)}
+.slide:has(.sec) .tag{font-size:clamp(13px,1.15vw,20px)}
+.slide:has(.sec) .box{font-size:clamp(17px,1.9vw,33px)}
+.slide:has(.sec) .big{font-size:clamp(24px,2.9vw,50px)!important}
+@media(max-height:780px){.toc{margin-top:2vh}.toc button{padding:1.1vh .8vw}.mini td{font-size:clamp(14px,1.35vw,22px)}}
+</style>
+</head>
+<body>
+<div id="deck">
+<section class="slide" data-min="0–2" data-note="Presentación: hoy repasamos TODO el Tema 1 en 2 horas. Cada bloque = esquema de teoría + ejercicios. Clic en un bloque del índice salta directamente a él. Los botones ↗ de cada esquema abren la presentación original de clase.">
+
+ <div class="kick">Deutschtrainer · Thema 1 · <b>Wiederholung</b> · 120 Min.</div>
+ <h1>ZUSAMMEN&shy;<span class="red">FASSUNG</span></h1>
+ <h1 style="font-size:clamp(30px,4.2vw,72px);margin-top:.6vh" class="gold">Thema 1</h1>
+ <p class="sub" style="margin-top:1.4vh">Die ganze Theorie in Schemas — und viele Übungen. · Toda la teoría en esquemas y muchos ejercicios.</p>
+ <div class="toc">
+  <button data-jump="vorstellen"><b>A · PRÄSENS</b><span>Sich vorstellen</span><small>W-Fragen · Verben · Position 2</small></button>
+  <button data-jump="bank"><b>B · AUF DER BANK</b><span>Formell sprechen</span><small>Sie · Ich möchte … · Wörter</small></button>
+  <button data-jump="neben"><b>C · NEBENSÄTZE</b><span>Verb am Ende</span><small>weil · obwohl · dass · wenn · deshalb</small></button>
+  <button data-jump="perfekt"><b>D · PERFEKT</b><span>Die Vergangenheit</span><small>haben / sein · Partizip II</small></button>
+  <button data-jump="kh"><b>E · KRANKENHAUS</b><span>Körper &amp; Gesundheit</span><small>Mir tut … weh · dass … soll</small></button>
+  <button data-jump="dativ"><b>F · DATIV</b><span>Wem? Wo?</span><small>dem · der · mit · nach · zu · bei</small></button>
+  <button data-jump="akk"><b>G · AKKUSATIV</b><span>Wen? Was? Wohin?</span><small>den · für · Wechselpräpositionen</small></button>
+  <button data-jump="mix"><b>H · ALLES ZUSAMMEN</b><span>Große Übungsrunde</span><small>Sätze bauen · Fehler · Finale</small></button>
+ </div>
+</section>
+<section class="slide" data-min="2–6" data-note="12 cartas, una o dos por bloque. Primero responden en voz alta, luego clic. R gira una al azar. Apunta qué bloques fallan: ahí te detienes más.">
+
+ <div class="kick">Warm-up · 12 Karten · <b>erst sagen, dann klicken</b></div>
+ <h2>Blitz-Start ⚡</h2>
+ <div class="grid g4" id="warm" style="grid-template-rows:repeat(3,1fr)"></div>
+</section>
+<section class="slide" data-min="6–8" data-note="Bloque A. Las preguntas personales con su respuesta y su forma formal (Sie). Que contesten ellos con sus datos antes de revelar. Remarca: en la W-Frage el verbo va en posición 2; en la pregunta Ja/Nein, en posición 1." id="id-vorstellen">
+<div class="kick"><span class="sec"><span class="no">A</span>Präsens · Sich vorstellen</span></div><h2>Fragen zur Person 🙋</h2>
+ <div class="grid g2">
+  <table class="mini"><tr><th>du (informell)</th><th>Sie (formell)</th><th>Antwort</th></tr>
+   <tr><td>Wie heißt du?</td><td>Wie heißen Sie?</td><td>Ich heiße …</td></tr>
+   <tr><td>Wie alt bist du?</td><td>Wie alt sind Sie?</td><td>Ich bin 16 (Jahre alt).</td></tr>
+   <tr><td>Woher kommst du?</td><td>Woher kommen Sie?</td><td>Ich komme aus Spanien.</td></tr>
+   <tr><td>Wo wohnst du?</td><td>Wo wohnen Sie?</td><td>Ich wohne in Sevilla.</td></tr>
+   <tr><td>Welche Sprachen sprichst du?</td><td>… sprechen Sie?</td><td>Ich spreche Spanisch und ein bisschen Deutsch.</td></tr>
+   <tr><td>Was machst du gern?</td><td>Was machen Sie gern?</td><td>Ich spiele gern Fußball.</td></tr></table>
+  <div style="display:flex;flex-direction:column;gap:1.4vh">
+   <div class="card g"><span class="tag">Position des Verbs</span>
+    <div class="flowrow"><span class="box">Ich</span><span class="box v">wohne</span><span class="box">in Sevilla.</span></div>
+    <div class="flowrow" style="margin-top:.8vh"><span class="box">Heute</span><span class="box v">lerne</span><span class="box">ich Deutsch.</span></div>
+    <div class="flowrow" style="margin-top:.8vh"><span class="box k">Wo</span><span class="box v">wohnst</span><span class="box">du?</span></div>
+    <p class="mut" style="margin-top:.6vh">Aussage &amp; W-Frage → Verb auf <b class="red">Position 2</b></p></div>
+   <div class="card r"><span class="tag">Ja/Nein-Frage</span>
+    <div class="flowrow"><span class="box v">Wohnst</span><span class="box">du in Sevilla?</span><span class="mut">→ Ja. / Nein.</span></div>
+    <p class="mut" style="margin-top:.6vh">Verb auf <b class="red">Position 1</b></p></div>
+  </div>
+ </div>
+</section>
+<section class="slide" data-min="8–10" data-note="Las terminaciones del presente. Los irregulares que más usamos: sein, haben, sprechen (e→i), möchten. Sie/sie/wir: misma forma que el infinitivo.">
+<div class="kick"><span class="sec"><span class="no">A</span>Präsens</span></div><h2>Verben konjugieren 🔧</h2>
+ <div class="grid g2" style="grid-template-columns:1.15fr 1fr">
+  <table class="mini"><tr><th></th><th>wohnen</th><th>sein</th><th>haben</th><th>sprechen</th><th>möchten</th></tr>
+   <tr><td class="k">ich</td><td>wohn<span class="v">e</span></td><td>bin</td><td>habe</td><td>spreche</td><td>möchte</td></tr>
+   <tr><td class="k">du</td><td>wohn<span class="v">st</span></td><td>bist</td><td>hast</td><td>spr<span class="v">i</span>chst</td><td>möchtest</td></tr>
+   <tr><td class="k">er/sie/es</td><td>wohn<span class="v">t</span></td><td>ist</td><td>hat</td><td>spr<span class="v">i</span>cht</td><td>möchte</td></tr>
+   <tr><td class="k">wir</td><td>wohn<span class="v">en</span></td><td>sind</td><td>haben</td><td>sprechen</td><td>möchten</td></tr>
+   <tr><td class="k">ihr</td><td>wohn<span class="v">t</span></td><td>seid</td><td>habt</td><td>sprecht</td><td>möchtet</td></tr>
+   <tr><td class="k">sie/Sie</td><td>wohn<span class="v">en</span></td><td>sind</td><td>haben</td><td>sprechen</td><td>möchten</td></tr></table>
+  <div style="display:flex;flex-direction:column;gap:1.4vh">
+   <div class="card g"><span class="tag">Endungen</span><p class="big" style="font-family:var(--mono)">-e · -st · -t · -en · -t · -en</p>
+    <p class="mut">heißen → du heißt · arbeiten → du arbeitest, er arbeitet</p></div>
+   <div class="card r"><span class="tag">trennbare Verben</span><p>auf|stehen → Ich stehe um 7 Uhr <span class="v">auf</span>.<br>ein|kaufen → Wir kaufen am Samstag <span class="v">ein</span>.</p></div>
+   <div class="card"><span class="tag">ein → kein</span><p>Ich habe <b>einen</b> Bruder. → Ich habe <b class="red">keinen</b> Bruder.</p></div>
+  </div>
+ </div>
+</section>
+<section class="slide" data-min="10–16" data-note="Quiz A: 10 preguntas de presente en 3 páginas. Primera respuesta bloquea. Equipos con P.">
+<div class="kick">Übung A · Präsens</div><h2>Welche Form passt? ✅</h2><div class="quiz" data-quiz="A"></div>
+</section>
+<section class="slide" data-min="16–20" data-note="De la respuesta a la pregunta: leen la respuesta y forman la pregunta (du o Sie según se indica). Clic para comprobar.">
+<div class="kick">Übung A2 · Satz-Labor</div><h2>Welche Frage passt? ❓</h2><div class="lab" data-lab="A"></div>
+</section>
+<section class="slide" data-min="20–22" data-note="Bloque B. Sie = formal: se conjuga como «sie» plural y se escribe siempre con mayúscula; dativo Ihnen. Ich möchte + … + infinitivo AL FINAL. Vocabulario siempre con artículo. Frases salvavidas para cuando algo falla." id="id-bank">
+<div class="orig"><a href="blackcard/public/presentaciones/bank.html" target="_blank">↗ Bank</a></div><div class="kick"><span class="sec"><span class="no">B</span>Auf der Bank</span></div><h2>Formell sprechen 🏦</h2>
+ <div class="grid g3">
+  <div class="card g"><span class="tag">du ↔ Sie</span><p>Wie heißt <b>du</b>? → Wie heißen <span class="v">Sie</span>?<br>Wie kann ich <b>dir</b> helfen? → … <span class="v">Ihnen</span> helfen?<br>Hast <b>du</b> einen Ausweis? → Haben <span class="v">Sie</span> einen Ausweis?</p>
+   <div class="rule g"><p>Bank · Arzt · Chef → <b>Sie</b><br>Freund · Familie → <b>du</b></p></div></div>
+  <div class="card r"><span class="tag">Ich möchte + … + Infinitiv</span><p>Ich möchte ein Konto <span class="v">eröffnen</span>.<br>Ich möchte Geld <span class="v">abheben</span>.<br>Ich möchte Geld <span class="v">einzahlen</span>.<br>Ich möchte eine Karte <span class="v">beantragen</span>.</p>
+   <div class="rule"><p>Problem? <b>Entschuldigung</b>, meine Karte funktioniert nicht. · Ich habe meine Karte verloren. · Wie bitte? · Noch einmal, bitte.</p></div></div>
+  <div class="card"><span class="tag">Wörter mit Artikel</span><p><b class="gold">die</b> Bank · <b class="gold">die</b> Karte<br><b class="gold">das</b> Konto · <b class="gold">das</b> Geld<br><b class="gold">der</b> Ausweis · <b class="gold">der</b> Reisepass<br><b class="gold">die</b> Unterschrift · <b class="gold">die</b> Adresse<br><b class="gold">das</b> Formular</p><p class="mut" style="margin-top:.6vh">Truco: -ung / -schrift → meist <b>die</b></p></div>
+ </div>
+</section>
+<section class="slide" data-min="22–26" data-note="Quiz B: formal, möchte, vocabulario del banco y frases del problema.">
+<div class="kick">Übung B · Auf der Bank</div><h2>In der Bank 💬</h2><div class="quiz" data-quiz="B"></div>
+</section>
+<section class="slide" data-min="26–29" data-note="Pasar de du a Sie y frases del banco con las palabras dadas.">
+<div class="kick">Übung B2 · Satz-Labor</div><h2>du → Sie · in der Bank 🏦</h2><div class="lab" data-lab="B"></div>
+</section>
+<section class="slide" data-min="29–31" data-note="Bloque C (1/2). weil = causa lógica; obwohl = sorpresa; deshalb = consecuencia y NO es subordinada (verbo en posición 2, sujeto detrás). Coma siempre antes de weil/obwohl." id="id-neben">
+<div class="orig"><a href="blackcard/public/presentaciones/nebensaetze-perfekt.html" target="_blank">↗ Warum? Deshalb!</a></div><div class="kick"><span class="sec"><span class="no">C</span>Nebensätze</span></div><h2>weil · obwohl · deshalb 🔗</h2>
+ <div class="grid g3">
+  <div class="card g"><span class="tag">weil = porque · Grund</span><p>Ich bleibe zu Hause.<br>Ich bin krank.</p><p style="margin-top:.6vh">→ Ich bleibe zu Hause, <b class="k">weil</b> ich krank <span class="v">bin</span>.</p><p class="mut" style="margin-top:.6vh">Modalverb: …, weil er arbeiten <span class="v">muss</span>.</p></div>
+  <div class="card r"><span class="tag">obwohl = aunque · Überraschung</span><p>Es regnet.<br>Ich gehe spazieren.</p><p style="margin-top:.6vh">→ Ich gehe spazieren, <b class="k">obwohl</b> es <span class="v">regnet</span>.</p><p class="mut" style="margin-top:.6vh">weil ✔ lógico · obwohl ⚡ sorpresa</p></div>
+  <div class="card g"><span class="tag">deshalb = por eso · Folge</span><p>Ich bin müde.</p><p style="margin-top:.6vh">→ <b class="k">Deshalb</b> <span class="v">gehe</span> ich ins Bett.</p>
+   <div class="flowrow" style="margin-top:1vh"><span class="box k">Deshalb</span><span class="box v">gehe</span><span class="box">ich</span><span class="box">ins Bett.</span></div>
+   <p class="mut" style="margin-top:.6vh">kein Nebensatz → Verb auf Position 2 (= deswegen)</p></div>
+ </div>
+</section>
+<section class="slide" data-min="31–34" data-note="Bloque C (2/2). dass y wenn también mandan el verbo al final. Si la subordinada va PRIMERO: verbo, verbo. Trampas: das ≠ dass; wenn ≠ wann.">
+<div class="orig"><a href="blackcard/public/presentaciones/krankenhaus.html" target="_blank">↗ Krankenhaus</a></div><div class="kick"><span class="sec"><span class="no">C</span>Nebensätze</span></div><h2>dass · wenn · Wo steht das Verb? 🧭</h2>
+ <table class="mini">
+  <tr><th>Wort</th><th>Bedeutung</th><th>Beispiel</th><th>Verb</th></tr>
+  <tr><td class="k">weil</td><td>porque</td><td>…, weil ich krank <span class="v">bin</span>.</td><td class="end">→ Ende</td></tr>
+  <tr><td class="k">obwohl</td><td>aunque</td><td>…, obwohl es <span class="v">regnet</span>.</td><td class="end">→ Ende</td></tr>
+  <tr><td class="k">dass</td><td>que</td><td>Ich glaube, dass er krank <span class="v">ist</span>.</td><td class="end">→ Ende</td></tr>
+  <tr><td class="k">wenn</td><td>si / cuando</td><td>Ruf mich an, wenn du Zeit <span class="v">hast</span>.</td><td class="end">→ Ende</td></tr>
+  <tr><td class="k">deshalb</td><td>por eso</td><td>Es regnet. Deshalb <span class="v">bleibe</span> ich zu Hause.</td><td class="end">→ Pos. 2</td></tr>
+ </table>
+ <div class="grid g3" style="margin-top:1.4vh;flex:none">
+  <div class="rule"><p>⭐ <b>Wenn</b> ich Zeit <span class="v">habe</span>, <span class="v">spiele</span> ich Fußball. → <b>Verb, Verb</b></p></div>
+  <div class="rule g"><p>sagen · glauben · denken · hoffen · wissen + <b>, dass …</b></p></div>
+  <div class="rule"><p>⚠️ das ≠ <b>dass</b> · wenn ≠ <b>wann?</b> (¿cuándo?)</p></div>
+ </div>
+</section>
+<section class="slide" data-min="34–39" data-note="Quiz C: 10 frases. Pide siempre el porqué: ¿lógico o sorpresa? ¿causa o consecuencia?">
+<div class="kick">Übung C1 · Konnektoren</div><h2>Welches Wort passt? 🔗</h2><div class="quiz" data-quiz="C"></div>
+</section>
+<section class="slide" data-min="39–43" data-note="Constructor: 6 frases con subordinadas. Las fichas rojas son verbos: mira dónde acaban.">
+<div class="kick">Übung C2 · Baue den Satz</div><h2>Ordne die Wörter 🧩</h2><div class="bld" data-build="C"></div>
+</section>
+<section class="slide" data-min="43–47" data-note="Unir dos frases con el conector indicado. Dicen solo el final de la frase y luego clic.">
+<div class="kick">Übung C3 · Satz-Labor</div><h2>Zwei Sätze → ein Satz 🔄</h2><div class="lab" data-lab="C"></div>
+</section>
+<section class="slide" data-min="47–52" data-note="Pausa de 5 minutos (se puede saltar). T arranca el temporizador.">
+
+ <div class="pause"><div class="kick">Halbzeit</div><h1>☕ PAUSE</h1><p class="sub">5 Minuten. Bis gleich! 👋</p>
+ <div class="card g"><p>🤓 Wusstest du? „Ich gehe <s>zu Hause</s>“ ✗ — Ich gehe <b>nach Hause</b> ✓ · Ich bin <b>zu Hause</b> ✓</p></div></div>
+</section>
+<section class="slide" data-min="52–55" data-note="Bloque D (1/2). El Perfekt es el pasado hablado. La pinza: auxiliar en posición 2 + participio al final. En subordinada el auxiliar va el ÚLTIMO. sein = movimiento de A a B o cambio de estado, más bleiben, sein, passieren." id="id-perfekt">
+<div class="orig"><a href="blackcard/public/presentaciones/nebensaetze-perfekt.html" target="_blank">↗ Warum? Deshalb!</a><a href="blackcard/public/presentaciones/unterwegs.html" target="_blank">↗ Unterwegs</a></div><div class="kick"><span class="sec"><span class="no">D</span>Perfekt</span></div><h2>haben / sein + Partizip II ⏪</h2>
+ <div class="card g" style="flex:none;margin-bottom:1.4vh">
+  <div class="flowrow"><span class="box">Ich</span><span class="box v">habe</span><span class="box">gestern Pizza</span><span class="box v">gegessen.</span><span class="mut">← Satzklammer</span></div>
+  <div class="flowrow" style="margin-top:.8vh"><span class="box">…, weil ich</span><span class="box">schlecht</span><span class="box v">geschlafen</span><span class="box v">habe.</span><span class="mut">← Hilfsverb ganz am Ende</span></div></div>
+ <div class="grid g2">
+  <div class="card r"><span class="tag">SEIN · 10 %</span><p><b>Bewegung A → B:</b> gehen · fahren · fliegen · kommen · laufen · fallen<br><b>Zustandswechsel:</b> aufstehen · einschlafen · werden<br><b>+ 3:</b> sein → gewesen · bleiben → geblieben · passieren → passiert</p></div>
+  <div class="card g"><span class="tag">HABEN · 90 %</span><p>alles andere: essen · trinken · spielen · lernen · sehen · schlafen · kaufen · machen · besuchen …</p>
+   <div class="rule g"><p>Ich <b>habe</b> geschlafen — aber Ich <b>bin</b> eingeschlafen (Zustand ändert sich).</p></div></div>
+ </div>
+</section>
+<section class="slide" data-min="55–57" data-note="Bloque D (2/2). Las cuatro familias del participio. Trampas: separables con -ge- en medio; be-/ver-/-ieren sin ge-.">
+<div class="kick"><span class="sec"><span class="no">D</span>Perfekt</span></div><h2>Das Partizip II · 4 Familien 👨‍👩‍👧‍👦</h2>
+ <div class="grid g4">
+  <div class="card"><span class="tag">1 · ge- … -t</span><p>machen → gemacht<br>spielen → gespielt<br>kaufen → gekauft<br>lernen → gelernt<br>arbeiten → gearbeitet</p><p class="mut">regelmäßig</p></div>
+  <div class="card"><span class="tag">2 · ge- … -en</span><p>essen → gegessen<br>trinken → getrunken<br>sehen → gesehen<br>schreiben → geschrieben<br>fahren → gefahren</p><p class="mut">unregelmäßig</p></div>
+  <div class="card g"><span class="tag">3 · trennbar</span><p>aufstehen → auf<b class="red">ge</b>standen<br>einkaufen → ein<b class="red">ge</b>kauft<br>anrufen → an<b class="red">ge</b>rufen<br>fernsehen → fern<b class="red">ge</b>sehen</p><p class="mut">ge- in der Mitte</p></div>
+  <div class="card r"><span class="tag">4 · ohne ge-</span><p>studieren → studiert<br>telefonieren → telefoniert<br>besuchen → besucht<br>verstehen → verstanden<br>vergessen → vergessen</p><p class="mut">-ieren · be- · ver-</p></div>
+ </div>
+</section>
+<section class="slide" data-min="57–60" data-note="Juego binario: sale un verbo, eligen hat o ist. Bloquea tras la primera respuesta. R = siguiente verbo.">
+<div class="kick">Übung D1 · R = neues Verb</div><h2>haben oder sein? ⚡ <span class="pill" id="hsScore">✔ 0 · ✘ 0</span></h2>
+ <div class="hsbox">
+  <div class="hsverb" id="hsVerb">fahren</div><div class="hses" id="hsEs">ir (en vehículo)</div>
+  <div class="hsopts"><button class="opt" data-hs="hat">hat …</button><button class="opt" data-hs="ist">ist …</button></div>
+  <div class="hsres" id="hsRes"></div><button class="btn p" id="hsNext">🎲 Nächstes Verb (R)</button></div>
+</section>
+<section class="slide" data-min="60–65" data-note="Quiz D: participios y auxiliares, 10 preguntas.">
+<div class="kick">Übung D2 · Partizip II</div><h2>Welches Partizip? 🎯</h2><div class="quiz" data-quiz="D"></div>
+</section>
+<section class="slide" data-min="65–69" data-note="Transformar del presente al Perfekt. Dicen solo auxiliar + participio y luego la frase entera.">
+<div class="kick">Übung D3 · Satz-Labor</div><h2>Präsens → Perfekt ⏪</h2><div class="lab" data-lab="D"></div>
+</section>
+<section class="slide" data-min="69–72" data-note="Contar el fin de semana: cada uno responde «Was hast du gestern gemacht?» con la pista. Ojo haben/sein.">
+<div class="kick">Übung D4 · Satz-Labor</div><h2>Was hast du gestern gemacht? 🗓️</h2><div class="lab" data-lab="D2"></div>
+</section>
+<section class="slide" data-min="72–74" data-note="Bloque E. Partes del cuerpo con artículo. Doler: Mir tut … weh (dativo; plural tun). Reportar a la médica: dass … sollen (sollen al final)." id="id-kh">
+<div class="orig"><a href="blackcard/public/presentaciones/krankenhaus.html" target="_blank">↗ Krankenhaus</a><a href="blackcard/public/presentaciones/krankenhaus-remaster.html" target="_blank">↗ 3D</a></div><div class="kick"><span class="sec"><span class="no">E</span>Im Krankenhaus</span></div><h2>Was fehlt Ihnen? 🤒</h2>
+ <div class="grid g3">
+  <div class="card"><span class="tag">der Körper</span><p><b class="gold">der</b> Kopf · Arm · Bauch · Rücken · Fuß · Hals · Zahn<br><b class="gold">die</b> Nase · Hand<br><b class="gold">das</b> Auge · Ohr · Bein</p>
+   <p class="mut" style="margin-top:.6vh">die Notaufnahme · der Krankenwagen · die Ärztin · das Rezept · die Tablette · der Gips</p></div>
+  <div class="card g"><span class="tag">Mir tut … weh</span><p>Mir <span class="v">tut</span> der Kopf weh.<br>Mir <span class="v">tun</span> die Füße weh. <span class="mut">(Plural)</span><br>Ich habe Kopfschmerzen / Bauchschmerzen.<br>Ich habe Fieber / Husten / Schnupfen.<br>Mir ist schlecht. · Mir ist schwindelig.</p></div>
+  <div class="card r"><span class="tag">dass … soll</span><p>„Trinken Sie viel Wasser!“<br>→ Die Ärztin sagt, dass ich viel Wasser trinken <span class="v">soll</span>.</p>
+   <p style="margin-top:1vh">Was ist passiert?<br>→ Ich <span class="v">bin</span> vom Fahrrad <span class="v">gefallen</span>.<br>→ Ich <span class="v">habe</span> mir den Arm <span class="v">gebrochen</span>.</p></div>
+ </div>
+</section>
+<section class="slide" data-min="74–78" data-note="Quiz E: cuerpo, doler, dass/wenn en contexto médico.">
+<div class="kick">Übung E · Krankenhaus</div><h2>Medizin-Check 🩺</h2><div class="quiz" data-quiz="E"></div>
+</section>
+<section class="slide" data-min="78–81" data-note="Consulta médica: pasar la orden a «dass … soll», doler y Perfekt del accidente.">
+<div class="kick">Übung E2 · Satz-Labor</div><h2>In der Notaufnahme 🚑</h2><div class="lab" data-lab="E"></div>
+</section>
+<section class="slide" data-min="81–83" data-note="Bloque F (1/2). -m -r -m -n; plural +n en el sustantivo. Pronombres. Verbos con dativo: helfen, danken, gehören, gefallen. Mir tut weh también es dativo." id="id-dativ">
+<div class="orig"><a href="blackcard/public/presentaciones/unterwegs.html" target="_blank">↗ Unterwegs</a></div><div class="kick"><span class="sec"><span class="no">F</span>Dativ</span></div><h2>Wem? → dem · der · dem · den …n 🔵</h2>
+ <div class="grid g2">
+  <div style="display:flex;flex-direction:column;gap:1.4vh">
+   <table class="mini card"><tr><th></th><th>mask.</th><th>fem.</th><th>neutr.</th><th>Plural</th></tr>
+    <tr><td class="mut">Nom.</td><td>der / ein</td><td>die / eine</td><td>das / ein</td><td>die / –</td></tr>
+    <tr><td class="gold">Dativ</td><td class="end">dem / einem</td><td class="end">der / einer</td><td class="end">dem / einem</td><td class="end">den …n</td></tr>
+    <tr><td class="gold">mein</td><td>meinem</td><td>meiner</td><td>meinem</td><td>meinen</td></tr></table>
+   <div class="rule g"><p>Truco: <b>-m · -r · -m · -n</b> · mit den Freunde<b class="red">n</b> · seit zwei Jahre<b class="red">n</b> · <span class="mut">aber: mit den Autos</span></p></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:1.4vh">
+   <div class="card g"><span class="tag">Pronomen</span><table class="mini"><tr><td>ich → <b>mir</b></td><td>du → <b>dir</b></td><td>er → <b>ihm</b></td><td>sie → <b>ihr</b></td></tr><tr><td>es → <b>ihm</b></td><td>wir → <b>uns</b></td><td>ihr → <b>euch</b></td><td>sie/Sie → <b>ihnen/Ihnen</b></td></tr></table></div>
+   <div class="card r"><span class="tag">Verben mit Dativ</span><p>Ich helfe <b>dir</b>. · Ich danke <b>Ihnen</b>.<br>Das Buch gehört <b>mir</b>. · Mir tut der Kopf weh.</p></div>
+  </div>
+ </div>
+</section>
+<section class="slide" data-min="83–85" data-note="Bloque F (2/2). 9 preposiciones SIEMPRE con dativo, aunque indiquen dirección. Contracciones. nach / zu / bei.">
+<div class="kick"><span class="sec"><span class="no">F</span>Dativ</span></div><h2>Immer Dativ! 🚇</h2>
+ <div class="card r" style="flex:none;margin-bottom:1.4vh"><p class="big">aus · außer · bei · mit · nach · seit · von · zu · gegenüber</p></div>
+ <div class="grid g2">
+  <div class="card g"><span class="tag">Abkürzungen</span><p>zu + dem = <b>zum</b> Arzt · zu + der = <b>zur</b> Schule<br>bei + dem = <b>beim</b> Bäcker · von + dem = <b>vom</b> Training<br>in + dem = <b>im</b> Kino · an + dem = <b>am</b> Strand</p><p class="mut">zu den Freunden → keine Abkürzung (Plural)</p></div>
+  <div class="card"><span class="tag">nach · zu · bei</span><table class="mini">
+   <tr><td class="k">nach</td><td>Stadt · Land · Hause</td><td>nach Berlin</td></tr>
+   <tr><td class="k">zu</td><td>Person · Ort (→)</td><td>zum Arzt</td></tr>
+   <tr><td class="k">bei</td><td>Person · Firma (dort)</td><td>beim Arzt</td></tr>
+   <tr><td class="k">aus</td><td>Herkunft</td><td>aus Spanien</td></tr></table>
+   <p class="mut">nach Hause (Wohin?) ↔ zu Hause (Wo?)</p></div>
+ </div>
+</section>
+<section class="slide" data-min="85–90" data-note="Quiz F: artículos, pronombres y preposiciones del dativo, 10 preguntas.">
+<div class="kick">Übung F · Dativ</div><h2>Dativ-Blitz ⚡</h2><div class="quiz" data-quiz="F"></div>
+</section>
+<section class="slide" data-min="90–93" data-note="Preposición + artículo en dativo: dicen la forma contraída si existe.">
+<div class="kick">Übung F2 · Satz-Labor</div><h2>Präposition + Dativ 🔵</h2><div class="lab" data-lab="F"></div>
+</section>
+<section class="slide" data-min="93–95" data-note="Bloque G (1/2). Akkusativ = objeto directo (Wen? Was?). Solo cambia el masculino. Pronombres. 5 preposiciones siempre con acusativo." id="id-akk">
+<div class="orig"><a href="blackcard/public/presentaciones/akkusativ.html" target="_blank">↗ Mission Stadt</a></div><div class="kick"><span class="sec"><span class="no">G</span>Akkusativ</span></div><h2>Wen? Was? → nur maskulin ändert sich 🎯</h2>
+ <div class="grid g2">
+  <div style="display:flex;flex-direction:column;gap:1.4vh">
+   <table class="mini card"><tr><th></th><th>mask.</th><th>fem.</th><th>neutr.</th><th>Plural</th></tr>
+    <tr><td class="mut">Nom.</td><td>der / ein</td><td>die / eine</td><td>das / ein</td><td>die / –</td></tr>
+    <tr><td class="gold">Akk.</td><td class="end">den / einen</td><td>die / eine</td><td>das / ein</td><td>die / –</td></tr>
+    <tr><td class="gold">kein</td><td class="end">keinen</td><td>keine</td><td>kein</td><td>keine</td></tr></table>
+   <div class="card g"><span class="tag">Pronomen</span><p>mich · dich · <b class="red">ihn</b> · sie · es · uns · euch · sie / Sie</p><p class="mut">Der Schlüssel? Ich finde <b>ihn</b>.</p></div>
+  </div>
+  <div class="card r"><span class="tag">immer Akkusativ</span><p class="big" style="margin-bottom:1vh">durch · für · gegen · ohne · um</p>
+   <p>durch <b>den</b> Park · für <b>meinen</b> Bruder<br>gegen <b>die</b> Wand · ohne <b>mein</b> Handy<br>um <b>den</b> Tisch</p>
+   <div class="rule g"><p>Ich sehe <b>dich</b> (Akk.) ↔ Ich helfe <b>dir</b> (Dat.)</p></div></div>
+ </div>
+</section>
+<section class="slide" data-min="95–97" data-note="Bloque G (2/2). Solo las 9 Wechselpräpositionen cambian: Wo? (lugar) → Dativ; Wohin? (destino) → Akkusativ. Correr dentro del parque es Wo? (im Park). Las preposiciones fijas nunca cambian.">
+<div class="kick"><span class="sec"><span class="no">G</span>Wechselpräpositionen</span></div><h2>Wo? → Dativ · Wohin? → Akkusativ 🧭</h2>
+ <div class="chips" style="margin-bottom:1.4vh"><span class="chip">an</span><span class="chip">auf</span><span class="chip">hinter</span><span class="chip">in</span><span class="chip">neben</span><span class="chip">über</span><span class="chip">unter</span><span class="chip">vor</span><span class="chip">zwischen</span></div>
+ <div class="grid g2" style="flex:none">
+  <div class="card g"><span class="tag">Wo? · Dativ · Ort</span><p class="big" style="font-weight:600!important">Das Buch liegt auf <span class="v">dem</span> Tisch.<br>Ich bin <span class="v">im</span> Park.</p></div>
+  <div class="card r"><span class="tag">Wohin? · Akkusativ · Ziel</span><p class="big" style="font-weight:600!important">Ich lege das Buch auf <span class="v">den</span> Tisch.<br>Ich gehe <span class="v">in den</span> Park.</p></div>
+ </div>
+ <div class="grid g2" style="margin-top:1.4vh;flex:none">
+  <div class="rule g"><p>in + dem = <b>im</b> · an + dem = <b>am</b> · in + das = <b>ins</b> · an + das = <b>ans</b></p></div>
+  <div class="rule"><p>⚠️ feste Präposition → nie wechseln: <b>zum</b> Arzt (Dat.) · <b>für</b> dich (Akk.)</p></div>
+ </div>
+</section>
+<section class="slide" data-min="97–102" data-note="Quiz G: 12 frases mezcladas Dativ/Akkusativ. Antes de clicar: ¿preposición fija o Wechsel? ¿Wo o Wohin? ¿Wen o Wem?">
+<div class="kick">Übung G · Dativ oder Akkusativ?</div><h2>Welcher Fall? 🎯</h2><div class="quiz" data-quiz="G"></div>
+</section>
+<section class="slide" data-min="102–105" data-note="Pares Wo/Wohin: primero dicen si es Wo o Wohin, luego el artículo.">
+<div class="kick">Übung G2 · Satz-Labor</div><h2>Wo oder Wohin? 🧭</h2><div class="lab" data-lab="G"></div>
+</section>
+<section class="slide" data-min="105–109" data-note="Constructor mezclado: 6 frases que combinan Perfekt, casos y subordinadas." id="id-mix">
+<div class="kick"><span class="sec" id="h-mix"><span class="no">H</span>Alles zusammen</span></div><h2>Baue lange Sätze 🏗️</h2><div class="bld" data-build="H"></div>
+</section>
+<section class="slide" data-min="109–113" data-note="10 frases con un error subrayado. Eligen la reparación; después dicen la regla en una palabra.">
+<div class="kick">Fehlerjagd 🕵️ · wähle die Reparatur</div><h2>Finde den Fehler!</h2><div class="quiz fe" data-quiz="H"></div>
+</section>
+<section class="slide" data-min="113–117" data-note="Final por equipos: R saca un reto (30), 10 s para responder (T = temporizador), clic para la solución. P = marcador.">
+<div class="kick">Großes Finale 👑 · R = neue Aufgabe · Klick = Lösung</div><h2>Alles zusammen</h2>
+ <div class="rou"><div class="cat" id="rouCat">Thema 1</div><div class="rq" id="rouQ">Drück R!</div><div class="ra" id="rouA">—</div>
+  <div class="qbar"><button class="btn p" id="rouNext">🎲 Neue Aufgabe (R)</button><button class="btn" id="rouShow">Lösung zeigen</button><span class="pill" id="rouN">0 / 30</span></div></div>
+</section>
+<section class="slide" data-min="117–120" data-note="Cierre: cada uno marca lo que ya sabe. Lo que quede sin marcar se practica en Deutschtrainer → Práctica · Tema 1.">
+
+ <div class="kick">Endstation 🏁 · Heute kann ich …</div><h2>Geschafft! 🎉</h2>
+ <div class="grid g2">
+  <ul class="check card"><li>mich vorstellen und Fragen mit <b>du</b> und <b>Sie</b> stellen</li><li>Verben im <b>Präsens</b> konjugieren (sein, haben, sprechen)</li><li>in der Bank sagen, was ich <b>möchte</b></li><li>mit <b>weil · obwohl · dass · wenn</b> das Verb ans Ende stellen</li><li>mit <b>deshalb</b> das Verb auf Position 2 lassen</li></ul>
+  <ul class="check card"><li>das <b>Perfekt</b> mit haben oder sein bilden</li><li>sagen, was mir wehtut (<b>Mir tut … weh</b>)</li><li><b>Dativ</b>: dem · der · dem · den …n</li><li><b>Akkusativ</b>: den · einen · für · ohne</li><li><b>Wo?</b> Dativ ↔ <b>Wohin?</b> Akkusativ</li></ul></div>
+ <div class="rule g"><p>📝 Hausaufgabe: <b>Deutschtrainer → Práctica · Tema 1</b> — lo que no esté marcado ☐ es lo que más practicas.</p></div>
+</section>
+</div>
+<div id="hud"><span id="pos"></span><span id="min"></span><div id="bar"><i></i></div><button id="hPrev">←</button><button id="hNext">→</button><button id="hHelp">?</button></div>
+<div id="notes"></div><div id="timer">1:00</div>
+<div id="score"><div class="team"><input value="Team Rot"><button data-d="-1" data-t="0">−</button><span class="pts" id="s0">0</span><button data-d="1" data-t="0">+</button></div><div class="team"><input value="Team Gold"><button data-d="-1" data-t="1">−</button><span class="pts" id="s1">0</span><button data-d="1" data-t="1">+</button></div></div>
+<div id="help"><div class="card"><h3>Tasten · Atajos</h3><p>← / → · Espacio — diapositiva<br>R — aleatorio en la diapositiva actual<br>T — temporizador (1 min; 5 min en la pausa)<br>N — notas del profesor<br>P — marcador de equipos<br>I — índice · F — pantalla completa<br>Home / End — inicio / final · ? — ayuda</p></div></div>
+<script>
+const LESSON={"warm": [["A · Präsens", "du ___ (sprechen)", "sprichst", "e → i"], ["A · Präsens", "Wie alt ___ du?", "bist", "sein"], ["B · Bank", "„Wie kann ich ___ helfen?“", "Ihnen", "formell"], ["B · Bank", "sacar dinero", "Geld abheben", ""], ["C · Nebensatz", "…, weil ich krank ___.", "bin", "Verb am Ende"], ["C · deshalb", "Ich bin müde. Deshalb ___ ich ins Bett.", "gehe", "Position 2"], ["D · Perfekt", "gehen → ?", "ist gegangen", "Bewegung"], ["D · Perfekt", "besuchen → ?", "hat besucht", "ohne ge-"], ["E · Körper", "Mir tut der Kopf ___.", "weh", ""], ["F · Dativ", "mit ___ Bus", "dem", "der → dem"], ["G · Akkusativ", "für ___ Bruder (mein)", "meinen", "für + Akk."], ["G · Wo/Wohin", "Ich gehe ___ Kino.", "ins", "Wohin?"]], "quiz": {"A": [{"q": "Du ___ sehr gut Deutsch. <i>(sprechen)</i>", "o": ["sprichst", "sprechst"], "a": 0, "w": "e → i: du sprichst, er spricht"}, {"q": "Wir ___ aus Spanien. <i>(kommen)</i>", "o": ["kommt", "kommen"], "a": 1, "w": "wir → -en"}, {"q": "Er ___ 16 Jahre alt.", "o": ["ist", "hat"], "a": 0, "w": "Alter mit sein"}, {"q": "Ihr ___ in Sevilla. <i>(wohnen)</i>", "o": ["wohnt", "wohnen"], "a": 0, "w": "ihr → -t"}, {"q": "Wie ___ du? <i>(heißen)</i>", "o": ["heißst", "heißt"], "a": 1, "w": "heißen → du heißt"}, {"q": "Heute ___ ich Deutsch.", "o": ["lerne", "ich lerne"], "a": 0, "w": "Verb auf Position 2"}, {"q": "___ du in Sevilla? <i>(Ja/Nein)</i>", "o": ["Wohnst", "Du wohnst"], "a": 0, "w": "Ja/Nein-Frage: Verb auf Position 1"}, {"q": "Ich ___ um 7 Uhr ___. <i>(aufstehen)</i>", "o": ["stehe … auf", "aufstehe …"], "a": 0, "w": "trennbar: auf geht ans Ende"}, {"q": "Ich habe ___ Hund. <i>(no tengo)</i>", "o": ["kein", "keinen"], "a": 1, "w": "der Hund → Akk.: keinen"}, {"q": "Sie (ella) ___ eine Schwester. <i>(haben)</i>", "o": ["hat", "habt"], "a": 0, "w": "er/sie/es hat"}, {"q": "___ kommst du? — Aus Spanien.", "o": ["Wo", "Woher"], "a": 1, "w": "Herkunft → woher"}, {"q": "___ wohnst du? — In Sevilla.", "o": ["Wo", "Wohin"], "a": 0, "w": "Ort → wo"}, {"q": "Was ___ du gern? <i>(machen)</i>", "o": ["machst", "macht"], "a": 0, "w": "du → -st"}, {"q": "Er ___ in einer Bank. <i>(arbeiten)</i>", "o": ["arbeitt", "arbeitet"], "a": 1, "w": "-t + e: er arbeitet"}], "B": [{"q": "Bankangestellter: „Wie ___ Sie?“", "o": ["heißt", "heißen"], "a": 1, "w": "Sie → wie Plural"}, {"q": "„Wie kann ich ___ helfen?“", "o": ["Sie", "Ihnen"], "a": 1, "w": "helfen + Dativ: Ihnen"}, {"q": "Ich möchte ein Konto ___.", "o": ["eröffnen", "eröffne"], "a": 0, "w": "möchte + Infinitiv am Ende"}, {"q": "Ich möchte Geld ___. <i>(ingresar)</i>", "o": ["abheben", "einzahlen"], "a": 1, "w": "einzahlen = ingresar"}, {"q": "___ Ausweis", "o": ["der", "die"], "a": 0, "w": "der Ausweis"}, {"q": "___ Unterschrift", "o": ["das", "die"], "a": 1, "w": "-schrift → die"}, {"q": "Meine Karte funktioniert nicht. Was sagst du zuerst?", "o": ["Entschuldigung, …", "Tschüss, …"], "a": 0, "w": "Entschuldigung abre el problema"}, {"q": "Mit dem Chef sprichst du …", "o": ["du", "Sie"], "a": 1, "w": "formell → Sie"}, {"q": "Ich habe meine Karte ___.", "o": ["verloren", "verliert"], "a": 0, "w": "verlieren → verloren"}, {"q": "Können Sie das bitte ___?", "o": ["wiederholen", "wiederholt"], "a": 0, "w": "Modalverb + Infinitiv"}, {"q": "___ Konto", "o": ["der", "das"], "a": 1, "w": "das Konto"}, {"q": "Bank: „Haben ___ einen Ausweis?“", "o": ["du", "Sie"], "a": 1, "w": "Bank → Sie"}], "C": [{"q": "Ich trage eine Jacke, ___ es kalt ist.", "o": ["weil", "obwohl", "deshalb"], "a": 0, "w": "lógico → weil"}, {"q": "Ich esse den Salat, ___ ich ihn nicht mag.", "o": ["weil", "obwohl", "dass"], "a": 1, "w": "sorpresa → obwohl"}, {"q": "Ich glaube, ___ er krank ist.", "o": ["dass", "das", "wenn"], "a": 0, "w": "glauben, dass …"}, {"q": "___ ich Zeit habe, spiele ich Fußball.", "o": ["Wenn", "Wann", "Deshalb"], "a": 0, "w": "Wenn …, Verb, Verb"}, {"q": "Es regnet. ___ bleibe ich zu Hause.", "o": ["Weil", "Deshalb", "Obwohl"], "a": 1, "w": "Folge → deshalb + Pos. 2"}, {"q": "Ich lerne Deutsch, weil …", "o": ["ich mag die Sprache.", "ich die Sprache mag."], "a": 1, "w": "weil → Verb am Ende"}, {"q": "Es regnet. Deshalb …", "o": ["ich bleibe zu Hause.", "bleibe ich zu Hause."], "a": 1, "w": "deshalb → Verb auf Pos. 2"}, {"q": "Er kommt nicht, weil er arbeiten ___.", "o": ["muss", "müssen"], "a": 0, "w": "Modalverb ganz am Ende, konjugiert"}, {"q": "Weil ich müde bin, …", "o": ["ich gehe ins Bett.", "gehe ich ins Bett."], "a": 1, "w": "Nebensatz zuerst → Verb, Verb"}, {"q": "___ kommt der Arzt? (¿cuándo?)", "o": ["Wenn", "Wann"], "a": 1, "w": "Frage → wann"}, {"q": "Ich hoffe, ___ du morgen kommst.", "o": ["dass", "weil"], "a": 0, "w": "hoffen, dass …"}, {"q": "Sie ist glücklich, ___ sie eine gute Note hat.", "o": ["weil", "obwohl"], "a": 0, "w": "lógico → weil"}, {"q": "Er ist krank. ___ geht er nicht zur Schule.", "o": ["Deshalb", "Weil"], "a": 0, "w": "Folge → Verb auf Pos. 2"}, {"q": "Ich weiß, dass er heute ___.", "o": ["kommt", "kommen"], "a": 0, "w": "er kommt → am Ende"}], "D": [{"q": "machen → ?", "o": ["gemacht", "gemachen"], "a": 0, "w": "regelmäßig: ge-…-t"}, {"q": "essen → ?", "o": ["gegesst", "gegessen"], "a": 1, "w": "unregelmäßig: ge-…-en"}, {"q": "aufstehen → ?", "o": ["geaufstanden", "aufgestanden"], "a": 1, "w": "trennbar: ge in der Mitte"}, {"q": "studieren → ?", "o": ["studiert", "gestudiert"], "a": 0, "w": "-ieren ohne ge-"}, {"q": "besuchen → ?", "o": ["besucht", "gebesucht"], "a": 0, "w": "be- ohne ge-"}, {"q": "Ich ___ nach Berlin gefahren.", "o": ["habe", "bin"], "a": 1, "w": "Bewegung → sein"}, {"q": "Wir ___ Fußball gespielt.", "o": ["haben", "sind"], "a": 0, "w": "haben"}, {"q": "Er ___ zu Hause geblieben.", "o": ["hat", "ist"], "a": 1, "w": "bleiben → sein"}, {"q": "Ich bin müde, weil ich schlecht ___.", "o": ["habe geschlafen", "geschlafen habe"], "a": 1, "w": "Hilfsverb ganz am Ende"}, {"q": "einkaufen → ?", "o": ["eingekauft", "geeinkauft"], "a": 0, "w": "trennbar: ein-ge-kauft"}, {"q": "anrufen → ?", "o": ["angerufen", "geanruft"], "a": 0, "w": "trennbar + unregelmäßig"}, {"q": "Wann ___ du gestern eingeschlafen?", "o": ["hast", "bist"], "a": 1, "w": "einschlafen → sein"}, {"q": "Wir ___ einen Film gesehen.", "o": ["haben", "sind"], "a": 0, "w": "sehen → haben"}, {"q": "verstehen → ?", "o": ["verstanden", "geverstanden"], "a": 0, "w": "ver- ohne ge-"}], "E": [{"q": "Mir ___ der Kopf weh.", "o": ["tut", "tun"], "a": 0, "w": "der Kopf → Singular"}, {"q": "Mir ___ die Füße weh.", "o": ["tut", "tun"], "a": 1, "w": "Plural → tun"}, {"q": "___ Bein", "o": ["der", "das"], "a": 1, "w": "das Bein"}, {"q": "Die Ärztin sagt, dass ich im Bett bleiben ___.", "o": ["soll", "sollen"], "a": 0, "w": "dass … soll (ich)"}, {"q": "Ich ___ vom Fahrrad gefallen.", "o": ["habe", "bin"], "a": 1, "w": "fallen → sein"}, {"q": "urgencias = ?", "o": ["die Notaufnahme", "die Apotheke"], "a": 0, "w": "die Apotheke = la farmacia"}, {"q": "___ es wehtut, nehme ich eine Tablette.", "o": ["Wenn", "Dass"], "a": 0, "w": "Bedingung → wenn"}, {"q": "Ich habe ___ Arm gebrochen.", "o": ["mir den", "mich den"], "a": 0, "w": "Ich habe mir den Arm gebrochen."}, {"q": "___ Hand", "o": ["der", "die"], "a": 1, "w": "die Hand"}, {"q": "tengo fiebre → Ich habe ___.", "o": ["Fieber", "Husten"], "a": 0, "w": "Husten = tos"}, {"q": "estoy mareado → Mir ist ___.", "o": ["schwindelig", "schlecht"], "a": 0, "w": "schlecht = mal / náuseas"}, {"q": "Der Arzt sagt, dass wir Tabletten nehmen ___.", "o": ["soll", "sollen"], "a": 1, "w": "wir → sollen"}], "F": [{"q": "Ich fahre mit ___ U-Bahn.", "o": ["die", "der"], "a": 1, "w": "mit + Dativ: die → der"}, {"q": "Ich wohne bei ___ Vater.", "o": ["meinem", "meinen"], "a": 0, "w": "bei + Dativ"}, {"q": "Ich lerne seit zwei ___ Deutsch.", "o": ["Jahre", "Jahren"], "a": 1, "w": "Dativ Plural +n"}, {"q": "Ich gehe ___ Arzt.", "o": ["zum", "zur"], "a": 0, "w": "der Arzt → zu dem = zum"}, {"q": "Ich gehe ___ Schule.", "o": ["zum", "zur"], "a": 1, "w": "die Schule → zu der = zur"}, {"q": "Im Sommer fahre ich ___ Berlin.", "o": ["nach", "zu"], "a": 0, "w": "nach + Stadt"}, {"q": "Ich helfe ___. <i>(du)</i>", "o": ["dich", "dir"], "a": 1, "w": "helfen + Dativ"}, {"q": "Das Buch gehört ___. <i>(er)</i>", "o": ["ihm", "ihn"], "a": 0, "w": "gehören + Dativ"}, {"q": "Ich komme ___ Spanien.", "o": ["aus", "von"], "a": 0, "w": "Herkunft → aus"}, {"q": "Wir fahren mit ___ Freunden.", "o": ["den", "dem"], "a": 0, "w": "Plural → den …n"}, {"q": "Ich gehe jetzt ___ Hause.", "o": ["nach", "zu"], "a": 0, "w": "Wohin? → nach Hause"}, {"q": "Sie wohnt ___ ihrer Oma.", "o": ["bei", "zu"], "a": 0, "w": "dort → bei"}, {"q": "Ich danke ___. <i>(Sie)</i>", "o": ["Sie", "Ihnen"], "a": 1, "w": "danken + Dativ"}, {"q": "Ich komme gerade ___ Training.", "o": ["vom", "von das"], "a": 0, "w": "von + dem = vom"}], "G": [{"q": "Ich kaufe ___ Kaffee.", "o": ["den", "dem"], "a": 0, "w": "Was? → Akk."}, {"q": "Das Geschenk ist für ___ Bruder.", "o": ["meinen", "meinem"], "a": 0, "w": "für + Akk."}, {"q": "Ich gehe ohne ___ Handy.", "o": ["mein", "meinem"], "a": 0, "w": "ohne + Akk.; das bleibt"}, {"q": "Ich sehe ___. <i>(er)</i>", "o": ["ihn", "ihm"], "a": 0, "w": "sehen + Akk."}, {"q": "Wo? Ich bin ___ Park.", "o": ["im", "in den"], "a": 0, "w": "Wo? → Dativ"}, {"q": "Wohin? Ich gehe ___ Kino.", "o": ["im", "ins"], "a": 1, "w": "Wohin? → in + das = ins"}, {"q": "Ich lege das Handy auf ___ Tisch.", "o": ["den", "dem"], "a": 0, "w": "legen → Wohin? → Akk."}, {"q": "Das Handy liegt auf ___ Tisch.", "o": ["den", "dem"], "a": 1, "w": "liegen → Wo? → Dativ"}, {"q": "Wir laufen im Park. Wir bleiben dort. → Wir laufen ___ Park.", "o": ["im", "in den"], "a": 0, "w": "ganze Runde dort → Wo?"}, {"q": "Ich gehe ___ Arzt. <i>(Ziel!)</i>", "o": ["zum", "zu den"], "a": 0, "w": "zu = immer Dativ, auch mit Ziel"}, {"q": "Ich fahre mit dem Bus in ___ Stadt.", "o": ["die", "der"], "a": 0, "w": "in → Wohin? → Akk."}, {"q": "Der Ball fliegt gegen ___ Wand.", "o": ["die", "der"], "a": 0, "w": "gegen + Akk."}, {"q": "Ich habe ___ Bruder. <i>(ein)</i>", "o": ["einen", "ein"], "a": 0, "w": "der → einen"}, {"q": "Wir gehen durch ___ Park.", "o": ["den", "dem"], "a": 0, "w": "durch + Akk."}, {"q": "Die Lampe hängt über ___ Tisch.", "o": ["den", "dem"], "a": 1, "w": "Wo? → Dativ"}, {"q": "Ich hänge die Lampe über ___ Tisch.", "o": ["den", "dem"], "a": 0, "w": "Wohin? → Akk."}], "H": [{"q": "Ich fahre mit <s>der</s> Bus.", "o": ["mit dem Bus", "mit den Bus"], "a": 0, "w": "der Bus → mit dem"}, {"q": "Ich <s>habe</s> nach Berlin gefahren.", "o": ["Ich bin nach Berlin gefahren.", "Ich habe nach Berlin gefahrt."], "a": 0, "w": "Bewegung → sein"}, {"q": "…, weil ich <s>mag die Sprache</s>.", "o": ["… weil mag ich die Sprache.", "… weil ich die Sprache mag."], "a": 1, "w": "Verb am Ende"}, {"q": "Es regnet. Deshalb <s>ich bleibe</s> zu Hause.", "o": ["Deshalb bleibe ich zu Hause.", "Deshalb ich zu Hause bleibe."], "a": 0, "w": "Pos. 2"}, {"q": "Das Geschenk ist für <s>meinem</s> Bruder.", "o": ["für mein Bruder", "für meinen Bruder"], "a": 1, "w": "für + Akk."}, {"q": "Ich sehe <s>ihm</s>.", "o": ["Ich sehe ihn.", "Ich sehe ihr."], "a": 0, "w": "sehen + Akk."}, {"q": "Er hat Medizin <s>gestudiert</s>.", "o": ["Er ist Medizin studiert.", "Er hat Medizin studiert."], "a": 1, "w": "-ieren → ohne ge-"}, {"q": "Heute bleibe ich <s>nach</s> Hause.", "o": ["zu Hause", "in Hause"], "a": 0, "w": "Wo? → zu Hause"}, {"q": "Die Ärztin sagt, dass <s>ich muss</s> im Bett bleiben.", "o": ["… dass ich im Bett bleiben muss.", "… dass muss ich im Bett bleiben."], "a": 0, "w": "dass → Verb am Ende"}, {"q": "Wie <s>heißt</s> Sie?", "o": ["Wie heißen Sie?", "Wie heißst Sie?"], "a": 0, "w": "Sie → -en"}, {"q": "Er <s>spreche</s> Deutsch.", "o": ["Er spricht Deutsch.", "Er sprecht Deutsch."], "a": 0, "w": "e → i"}, {"q": "Mir <s>tut</s> die Füße weh.", "o": ["Mir tun die Füße weh.", "Mich tut die Füße weh."], "a": 0, "w": "Plural → tun"}, {"q": "Ich wohne <s>bei meinen</s> Vater.", "o": ["bei meinem Vater", "bei mein Vater"], "a": 0, "w": "bei + Dativ"}, {"q": "Ich <s>bin</s> eine Pizza gegessen.", "o": ["Ich habe eine Pizza gegessen.", "Ich bin eine Pizza gegesst."], "a": 0, "w": "essen → haben"}]}, "hs": [["fahren", "ir (en vehículo)", "ist", "gefahren"], ["gehen", "ir (a pie)", "ist", "gegangen"], ["kommen", "venir", "ist", "gekommen"], ["aufstehen", "levantarse", "ist", "aufgestanden"], ["bleiben", "quedarse", "ist", "geblieben"], ["fallen", "caer", "ist", "gefallen"], ["einschlafen", "dormirse", "ist", "eingeschlafen"], ["fliegen", "volar", "ist", "geflogen"], ["passieren", "pasar (ocurrir)", "ist", "passiert"], ["essen", "comer", "hat", "gegessen"], ["spielen", "jugar", "hat", "gespielt"], ["sehen", "ver", "hat", "gesehen"], ["schlafen", "dormir", "hat", "geschlafen"], ["besuchen", "visitar", "hat", "besucht"], ["einkaufen", "hacer la compra", "hat", "eingekauft"], ["studieren", "estudiar", "hat", "studiert"], ["trinken", "beber", "hat", "getrunken"], ["anrufen", "llamar por teléfono", "hat", "angerufen"], ["laufen", "correr", "ist", "gelaufen"], ["werden", "convertirse", "ist", "geworden"], ["sein", "ser / estar", "ist", "gewesen"], ["kaufen", "comprar", "hat", "gekauft"], ["schreiben", "escribir", "hat", "geschrieben"], ["telefonieren", "telefonear", "hat", "telefoniert"]], "build": {"C": [{"h": "weil · me quedo en casa porque estoy enfermo", "t": ["Ich", "bleibe", "zu", "Hause,", "weil", "ich", "krank", "bin."], "v": [1, 7]}, {"h": "obwohl · voy al colegio aunque estoy cansado", "t": ["Ich", "gehe", "zur", "Schule,", "obwohl", "ich", "müde", "bin."], "v": [1, 7]}, {"h": "deshalb · tengo hambre, por eso como una pizza", "t": ["Ich", "habe", "Hunger.", "Deshalb", "esse", "ich", "eine", "Pizza."], "v": [1, 4]}, {"h": "dass · creo que él está enfermo", "t": ["Ich", "glaube,", "dass", "er", "krank", "ist."], "v": [5]}, {"h": "wenn · si duele, tomo una pastilla", "t": ["Wenn", "es", "wehtut,", "nehme", "ich", "eine", "Tablette."], "v": [2, 3]}, {"h": "weil + Modalverb · no viene porque tiene que trabajar", "t": ["Er", "kommt", "nicht,", "weil", "er", "arbeiten", "muss."], "v": [1, 6]}, {"h": "deshalb · llueve, por eso me quedo en casa", "t": ["Es", "regnet.", "Deshalb", "bleibe", "ich", "zu", "Hause."], "v": [1, 3]}, {"h": "Wenn primero · si hace buen tiempo, vamos a la playa", "t": ["Wenn", "das", "Wetter", "gut", "ist,", "fahren", "wir", "zum", "Strand."], "v": [4, 5]}], "H": [{"h": "weil + Perfekt · estoy cansado porque he dormido mal", "t": ["Ich", "bin", "müde,", "weil", "ich", "schlecht", "geschlafen", "habe."], "v": [1, 7]}, {"h": "Perfekt + Dativ + Akk. · ayer fui en bus a la ciudad", "t": ["Gestern", "bin", "ich", "mit", "dem", "Bus", "in", "die", "Stadt", "gefahren."], "v": [1, 9]}, {"h": "dass + sollen · la médica dice que debo beber mucha agua", "t": ["Die", "Ärztin", "sagt,", "dass", "ich", "viel", "Wasser", "trinken", "soll."], "v": [2, 8]}, {"h": "Ich möchte · quiero abrir una cuenta", "t": ["Ich", "möchte", "ein", "Konto", "eröffnen."], "v": [1, 4]}, {"h": "dass + Perfekt · mi hermano cuenta que ha ido al cine con su novia", "t": ["Mein", "Bruder", "erzählt,", "dass", "er", "mit", "seiner", "Freundin", "ins", "Kino", "gegangen", "ist."], "v": [2, 11]}, {"h": "Akkusativ + Wohin · pongo el libro sobre la mesa", "t": ["Ich", "lege", "das", "Buch", "auf", "den", "Tisch."], "v": [1]}, {"h": "Perfekt trennbar · esta mañana me he levantado a las 7", "t": ["Heute", "Morgen", "bin", "ich", "um", "7", "Uhr", "aufgestanden."], "v": [2, 7]}, {"h": "obwohl + Dativ · voy en bici al colegio aunque llueve", "t": ["Ich", "fahre", "mit", "dem", "Fahrrad", "zur", "Schule,", "obwohl", "es", "regnet."], "v": [1, 9]}]}, "lab": {"A": [["Frage · du", "Ich heiße Laura.", "Wie heißt du?"], ["Frage · Sie", "Ich komme aus Italien.", "Woher kommen Sie?"], ["Frage · du", "Ich bin 16 Jahre alt.", "Wie alt bist du?"], ["Frage · Sie", "Ich wohne in Madrid.", "Wo wohnen Sie?"], ["Ja/Nein-Frage · du", "Ja, ich spreche Englisch.", "Sprichst du Englisch?"], ["Frage · du", "Ich spiele gern Tennis.", "Was machst du gern?"]], "B": [["du → Sie", "Wie heißt du?", "Wie heißen Sie?"], ["du → Sie", "Hast du einen Ausweis?", "Haben Sie einen Ausweis?"], ["du → Sie", "Wie kann ich dir helfen?", "Wie kann ich Ihnen helfen?"], ["du → Sie", "Wo wohnst du?", "Wo wohnen Sie?"], ["Ich möchte …", "ein Konto · eröffnen", "Ich möchte ein Konto eröffnen."], ["Problem", "meine Karte · verlieren (Perfekt)", "Ich habe meine Karte verloren."]], "D2": [["Perfekt · sein", "ins Kino gehen", "Ich bin ins Kino gegangen."], ["Perfekt · haben", "meine Oma besuchen", "Ich habe meine Oma besucht."], ["Perfekt · haben", "Pizza essen", "Ich habe Pizza gegessen."], ["Perfekt · sein", "um 10 Uhr einschlafen", "Ich bin um 10 Uhr eingeschlafen."], ["Perfekt · sein", "mit dem Zug nach Madrid fahren", "Ich bin mit dem Zug nach Madrid gefahren."], ["Perfekt · sein", "zu Hause bleiben", "Ich bin zu Hause geblieben."]], "E": [["dass … soll", "„Trinken Sie viel Wasser!“", "Die Ärztin sagt, dass ich viel Wasser trinken soll."], ["dass … soll", "„Bleiben Sie zwei Tage im Bett!“", "… dass ich zwei Tage im Bett bleiben soll."], ["dass … soll", "„Nehmen Sie die Tabletten!“", "… dass ich die Tabletten nehmen soll."], ["Mir tut … weh", "der Bauch", "Mir tut der Bauch weh."], ["Mir tut … weh", "die Beine", "Mir tun die Beine weh."], ["Was ist passiert?", "vom Fahrrad fallen (Perfekt)", "Ich bin vom Fahrrad gefallen."]], "F": [["Dativ", "mit + der Zug", "mit dem Zug"], ["Dativ", "zu + die Apotheke", "zur Apotheke"], ["Dativ", "bei + der Arzt", "beim Arzt"], ["Dativ Plural", "seit + drei Monate", "seit drei Monaten"], ["Dativ", "aus + die Schweiz", "aus der Schweiz"], ["Pronomen", "Ich helfe … (sie · ella)", "Ich helfe ihr."]], "G": [["Wo? oder Wohin?", "Ich gehe in … Schule. (die)", "Wohin? → in die Schule"], ["Wo? oder Wohin?", "Ich bin in … Schule. (die)", "Wo? → in der Schule"], ["Wo? oder Wohin?", "Ich stelle die Flasche auf … Tisch.", "Wohin? → auf den Tisch"], ["Wo? oder Wohin?", "Die Flasche steht auf … Tisch.", "Wo? → auf dem Tisch"], ["Wo? oder Wohin?", "Wir fahren an … Strand. (der)", "Wohin? → an den Strand"], ["Wo? oder Wohin?", "Wir liegen an … Strand. (der)", "Wo? → am Strand"]], "C": [["weil", "Ich trinke Kaffee. Ich bin müde.", "Ich trinke Kaffee, weil ich müde bin."], ["obwohl", "Er spielt Fußball. Es ist sehr kalt.", "Er spielt Fußball, obwohl es sehr kalt ist."], ["deshalb", "Es ist heiß. (schwimmen gehen)", "Es ist heiß. Deshalb gehen wir schwimmen."], ["dass", "Ich hoffe: Ich kann morgen nach Hause gehen.", "Ich hoffe, dass ich morgen nach Hause gehen kann."], ["wenn", "Ich habe Fieber. Ich bleibe im Bett.", "Wenn ich Fieber habe, bleibe ich im Bett."], ["weil → deshalb", "Ich esse einen Apfel, weil ich Hunger habe.", "Ich habe Hunger. Deshalb esse ich einen Apfel."]], "D": [["Perfekt", "Ich kaufe den Kaffee.", "Ich habe den Kaffee gekauft."], ["Perfekt", "Ich fahre mit dem Bus.", "Ich bin mit dem Bus gefahren."], ["Perfekt", "Wir stehen um 7 Uhr auf.", "Wir sind um 7 Uhr aufgestanden."], ["Perfekt", "Er besucht seine Oma.", "Er hat seine Oma besucht."], ["Perfekt + weil", "Ich bin froh. Ich finde den Schlüssel.", "Ich bin froh, weil ich den Schlüssel gefunden habe."], ["Perfekt + weil", "Ich bin müde. Ich gehe in die Stadt.", "Ich bin müde, weil ich in die Stadt gegangen bin."]]}, "finale": [["B · formell", "Sag es formell: „Woher kommst du?“", "Woher kommen Sie?"], ["A · Präsens", "er + sprechen", "er spricht"], ["D · Perfekt", "Ich stehe um 7 Uhr auf. → Perfekt", "Ich bin um 7 Uhr aufgestanden."], ["C · weil", "Ich bleibe zu Hause. Ich bin krank. → weil", "Ich bleibe zu Hause, weil ich krank bin."], ["F · Dativ", "mit + meine Mutter", "mit meiner Mutter"], ["G · Akkusativ", "für + er (Pronomen)", "für ihn"], ["F · Dativ", "Ich gehe ___ Schule. (zu)", "zur Schule"], ["E · Körper", "„Me duele la cabeza.“", "Mir tut der Kopf weh. / Ich habe Kopfschmerzen."], ["C · deshalb", "Ich habe Hunger. (eine Pizza essen) → deshalb", "Ich habe Hunger. Deshalb esse ich eine Pizza."], ["G · Akkusativ", "Ich habe ___ Bruder. (ein)", "Ich habe einen Bruder."], ["E · dass", "„Bleiben Sie im Bett!“ → Die Ärztin sagt, dass …", "… dass ich im Bett bleiben soll."], ["D · Partizip", "telefonieren → Perfekt?", "hat telefoniert (ohne ge-)"], ["C · wenn", "Ich habe Zeit. Ich spiele Fußball. → Wenn …", "Wenn ich Zeit habe, spiele ich Fußball."], ["B · Bank", "„Quiero sacar dinero.“", "Ich möchte Geld abheben."], ["F · Plural", "mit den Freund___", "mit den Freunden"], ["G · Wohin?", "Ich lege das Buch ___ Tisch. (auf)", "auf den Tisch"], ["G · Wo?", "Das Buch liegt ___ Tisch. (auf)", "auf dem Tisch"], ["A · Frage", "Ja/Nein-Frage: du / wohnen / in Sevilla", "Wohnst du in Sevilla?"], ["F · nach/zu", "Ich gehe ___ Hause. / Ich bin ___ Hause.", "nach Hause / zu Hause"], ["D · sein", "Was ist passiert? — Ich ___ vom Fahrrad ___. (fallen)", "Ich bin vom Fahrrad gefallen."], ["A · Präsens", "du + arbeiten", "du arbeitest"], ["B · Bank", "„Quiero ingresar dinero.“", "Ich möchte Geld einzahlen."], ["C · obwohl", "Ich gehe raus. Es ist kalt. → obwohl", "Ich gehe raus, obwohl es kalt ist."], ["C · dass", "Ich glaube: Er kommt heute. → dass", "Ich glaube, dass er heute kommt."], ["D · Partizip", "schreiben → Perfekt?", "hat geschrieben"], ["D · Perfekt", "Wir fliegen nach Berlin. → Perfekt", "Wir sind nach Berlin geflogen."], ["E · Körper", "Artikel: ___ Auge", "das Auge"], ["F · Dativ", "Das Handy gehört ___. (ich)", "Das Handy gehört mir."], ["G · Akkusativ", "ohne + der Schlüssel", "ohne den Schlüssel"], ["G · Pronomen", "Ich sehe ___. (du)", "Ich sehe dich."]]};
+window.LESSON=LESSON;
+
+const S=[...document.querySelectorAll('#deck > section.slide')];let cur=0;
+const $=s=>document.querySelector(s);
+function go(i){i=Math.max(0,Math.min(S.length-1,i));S[cur].classList.remove('active');cur=i;S[cur].classList.add('active');
+ $('#pos').textContent=`${cur+1} / ${S.length}`;$('#min').textContent=(S[cur].dataset.min||'')+' min';$('#bar i').style.width=((cur+1)/S.length*100)+'%';
+ $('#notes').innerHTML='<b>Notas · '+(S[cur].dataset.min||'')+' min</b><br>'+(S[cur].dataset.note||'');}
+window.go=go;window.S=S;
+document.addEventListener('click',e=>{const r=e.target.closest('.rv');if(r)r.classList.toggle('open');const f=e.target.closest('.flip');if(f)f.classList.toggle('open');const c=e.target.closest('.check li');if(c)c.classList.toggle('on');
+ const j=e.target.closest('[data-jump]');if(j){const t=document.getElementById('id-'+j.dataset.jump);if(t)go(S.indexOf(t))}});
+$('#warm').innerHTML=LESSON.warm.map((w,i)=>`<div class="flip"><div class="in"><div class="fa"><span class="n">${i+1} · ${w[0]}</span><p>${w[1]}</p></div><div class="fb"><span class="n">Lösung</span><p>${w[2]}</p>${w[3]?`<small>${w[3]}</small>`:''}</div></div></div>`).join('');
+
+/* quizzes */
+const QZ={};
+document.querySelectorAll('[data-quiz]').forEach(box=>{
+ const id=box.dataset.quiz,items=LESSON.quiz[id],pages=Math.ceil(items.length/4);
+ const st=QZ[id]={page:0,pages,score:0,box,items,ans:{}};
+ const bar=document.createElement('div');bar.className='qbar';
+ bar.innerHTML=`<span class="pill" data-sc>0 / ${items.length}</span><button class="btn" data-pp>←</button><span class="pill" data-pg>1 / ${pages}</span><button class="btn" data-np>→</button><button class="btn" data-rs>Zurücksetzen ↺</button>`;
+ box.after(bar);st.bar=bar;
+ bar.querySelector('[data-pp]').onclick=()=>{st.page=Math.max(0,st.page-1);renderQ(id)};
+ bar.querySelector('[data-np]').onclick=()=>{st.page=Math.min(pages-1,st.page+1);renderQ(id)};
+ bar.querySelector('[data-rs]').onclick=()=>{st.ans={};st.score=0;st.page=0;renderQ(id)};
+ renderQ(id);});
+function renderQ(id){const st=QZ[id];const from=st.page*4;
+ st.box.innerHTML=st.items.slice(from,from+4).map((it,k)=>{const n=from+k,a=st.ans[n];
+  return `<div class="q${a!=null?' done':''}" data-n="${n}"><div class="txt">${n+1}. ${it.q}</div><div class="opts">${it.o.map((o,j)=>`<button class="opt${a!=null&&j===it.a?' ok':''}${a===j&&j!==it.a?' no':''}" data-j="${j}">${o}</button>`).join('')}</div><div class="why">${a!=null?(a===it.a?'✔ ':'✘ ')+it.w:''}</div></div>`}).join('');
+ st.box.querySelectorAll('.q').forEach(q=>q.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const n=+q.dataset.n;if(st.ans[n]!=null)return;const j=+b.dataset.j;st.ans[n]=j;if(j===st.items[n].a)st.score++;renderQ(id)}));
+ st.bar.querySelector('[data-sc]').textContent=`${st.score} / ${st.items.length}`;st.bar.querySelector('[data-pg]').textContent=`${st.page+1} / ${st.pages}`;}
+window.QZ=QZ;window.renderQ=renderQ;
+
+/* satz-labor: reveal cards */
+document.querySelectorAll('[data-lab]').forEach(box=>{box.innerHTML=LESSON.lab[box.dataset.lab].map(([t,q,a])=>`<div class="card rv"><span class="task">${t}</span><p>${q}</p><span class="ans">${a}</span></div>`).join('')});
+
+/* haben oder sein */
+let hsI=0,hsLock=false,hsOk=0,hsNo=0,hsLast=-1;
+function hsShow(i){hsI=i;hsLock=false;const v=LESSON.hs[i];$('#hsVerb').textContent=v[0];$('#hsEs').textContent=v[1];$('#hsRes').textContent='';document.querySelectorAll('[data-hs]').forEach(b=>b.className='opt')}
+function hsNext(){let i;do{i=Math.floor(Math.random()*LESSON.hs.length)}while(i===hsLast);hsLast=i;hsShow(i)}
+document.querySelectorAll('[data-hs]').forEach(b=>b.onclick=()=>{if(hsLock)return;hsLock=true;const v=LESSON.hs[hsI],ok=b.dataset.hs===v[2];ok?hsOk++:hsNo++;
+ b.classList.add(ok?'ok':'no');if(!ok)document.querySelector(`[data-hs="${v[2]}"]`).classList.add('ok');
+ $('#hsRes').textContent=`${ok?'✔':'✘'} ${v[2]} ${v[3]}`;$('#hsScore').textContent=`✔ ${hsOk} · ✘ ${hsNo}`});
+$('#hsNext').onclick=hsNext;hsShow(0);
+
+/* builders */
+function shuffle(n){const a=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const BL={};
+document.querySelectorAll('[data-build]').forEach(box=>{const id=box.dataset.build;
+ box.innerHTML=`<p class="sub" data-hint></p><div class="drop" data-drop title="clic = quitar la última"></div><div class="tiles" data-tiles></div>
+ <div class="qbar"><button class="btn p" data-ck>Prüfen ✓</button><button class="btn" data-rs>Nochmal ↺</button><button class="btn" data-sol>Lösung</button><span style="flex:1"></span><span class="pill" data-n></span><button class="btn" data-pv>← Satz</button><button class="btn" data-nx>Satz →</button></div><p class="sub" data-msg style="min-height:1.4em"></p>`;
+ const B=BL[id]={i:0,picked:[],shuf:[],box,items:LESSON.build[id]};
+ const q=s=>box.querySelector(s);
+ B.render=()=>{const b=B.items[B.i];q('[data-n]').textContent=`${B.i+1} / ${B.items.length}`;q('[data-hint]').textContent=b.h;
+  const tile=k=>`<button class="tile${b.v.includes(k)?' v':''}" data-k="${k}">${b.t[k]}</button>`;
+  q('[data-drop]').className='drop';q('[data-drop]').innerHTML=B.picked.map(tile).join('')||'<span class="mut">↓ Klick auf die Wörter</span>';
+  q('[data-tiles]').innerHTML=B.shuf.filter(k=>!B.picked.includes(k)).map(tile).join('');
+  q('[data-tiles]').querySelectorAll('.tile').forEach(t=>t.onclick=()=>{B.picked.push(+t.dataset.k);B.render()});};
+ B.load=i=>{B.i=(i+B.items.length)%B.items.length;const b=B.items[B.i];B.picked=[];do{B.shuf=shuffle(b.t.length)}while(B.shuf.every((x,k)=>x===k));q('[data-msg]').textContent='';B.render()};
+ B.check=()=>{const b=B.items[B.i];const ok=B.picked.length===b.t.length&&B.picked.every((k,i)=>b.t[k]===b.t[i]);
+  q('[data-drop]').className='drop '+(ok?'ok':'no');q('[data-msg]').textContent=ok?'✔ Richtig! '+b.t.join(' '):(B.picked.length<b.t.length?'Faltan palabras…':'✘ Noch nicht — mira dónde va el verbo (rojo).');return ok};
+ B.set=a=>{B.picked=a;B.render()};
+ q('[data-drop]').onclick=()=>{if(B.picked.length){B.picked.pop();B.render()}};
+ q('[data-ck]').onclick=B.check;q('[data-rs]').onclick=()=>{B.picked=[];B.render();q('[data-msg]').textContent=''};
+ q('[data-sol]').onclick=()=>{B.set(B.items[B.i].t.map((x,i)=>i));B.check()};
+ q('[data-pv]').onclick=()=>B.load(B.i-1);q('[data-nx]').onclick=()=>B.load(B.i+1);B.load(0);});
+window.BL=BL;
+
+/* finale */
+let fOrder=shuffle(LESSON.finale.length),fPos=-1;
+function fNext(){fPos=(fPos+1)%fOrder.length;if(fPos===0)fOrder=shuffle(LESSON.finale.length);const f=LESSON.finale[fOrder[fPos]];$('#rouCat').textContent=f[0];$('#rouQ').textContent=f[1];$('#rouA').textContent=f[2];$('#rouA').classList.remove('open');$('#rouN').textContent=`${fPos+1} / ${fOrder.length}`}
+$('#rouNext').onclick=fNext;$('#rouShow').onclick=()=>$('#rouA').classList.add('open');$('#rouA').onclick=()=>$('#rouA').classList.toggle('open');
+
+/* timer: 1 min, 5 min on the pause slide */
+let tmr=null,tLeft=60;function beep(){try{const c=new AudioContext(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.15;o.start();setTimeout(()=>{o.stop();c.close()},600)}catch(e){}}
+const fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+function toggleTimer(){const t=$('#timer');if(tmr){clearInterval(tmr);tmr=null;t.className='';return}tLeft=S[cur].querySelector('.pause')?300:60;t.className='on';t.textContent=fmt(tLeft);tmr=setInterval(()=>{tLeft--;t.textContent=fmt(tLeft);if(tLeft<=0){clearInterval(tmr);tmr=null;t.className='on end';beep();setTimeout(()=>t.className='',2500)}},1000)}
+const pts=[0,0];document.querySelectorAll('#score button').forEach(b=>b.onclick=()=>{const t=+b.dataset.t;pts[t]=Math.max(0,pts[t]+ +b.dataset.d);$('#s'+t).textContent=pts[t]});
+function randomHere(){const s=S[cur];
+ if(s.querySelector('#warm')){const c=[...s.querySelectorAll('.flip:not(.open)')];if(c.length)c[Math.floor(Math.random()*c.length)].classList.add('open');return}
+ if(s.querySelector('#hsVerb'))return hsNext();
+ if(s.querySelector('#rouQ'))return fNext();
+ const b=s.querySelector('[data-build]');if(b){const B=BL[b.dataset.build];return B.load(Math.floor(Math.random()*B.items.length))}
+ const r=[...s.querySelectorAll('.rv:not(.open)')];if(r.length)r[Math.floor(Math.random()*r.length)].classList.add('open');}
+document.addEventListener('keydown',e=>{if(e.target.closest?.('input,textarea,select'))return;const k=e.key;
+ if(k==='ArrowRight'||k==='PageDown'||(k===' '&&!e.target.closest?.('button'))){e.preventDefault();go(cur+1)}
+ else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();go(cur-1)}
+ else if(k==='Home')go(0);else if(k==='End')go(S.length-1);
+ else if(k==='r'||k==='R')randomHere();else if(k==='t'||k==='T')toggleTimer();
+ else if(k==='n'||k==='N')$('#notes').classList.toggle('on');else if(k==='p'||k==='P')$('#score').classList.toggle('on');
+ else if(k==='i'||k==='I')go(0);
+ else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.()}
+ else if(k==='?')$('#help').classList.toggle('on');else if(k==='Escape'){$('#help').classList.remove('on');$('#notes').classList.remove('on')}});
+$('#hPrev').onclick=()=>go(cur-1);$('#hNext').onclick=()=>go(cur+1);$('#hHelp').onclick=()=>$('#help').classList.toggle('on');$('#help').onclick=()=>$('#help').classList.remove('on');
+window.printPrep=function(){document.body.classList.add('print');
+ document.querySelectorAll('.rv,.flip').forEach(x=>x.classList.add('open'));
+ Object.keys(QZ).forEach(id=>{const st=QZ[id];st.items.forEach((it,n)=>{st.ans[n]=it.a});st.score=st.items.length;renderQ(id)});
+ document.querySelector('[data-hs="ist"]').click();
+ Object.values(BL).forEach(B=>{B.set(B.items[B.i].t.map((x,i)=>i));B.check()});
+ fNext();$('#rouA').classList.add('open');};
+go(0);
+
+</script>
+</body>
+</html>

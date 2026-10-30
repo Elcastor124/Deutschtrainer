@@ -45,6 +45,21 @@
     "pdf": "/presentaciones/nebensaetze-perfekt.pdf"
   },
   {
+    "id": "zusammenfassung-thema-1",
+    "unit": 3,
+    "title": "Zusammenfassung · Thema 1",
+    "description": "Repaso de todo el Tema 1: preguntas personales, verbos, formal/informal, en el banco, weil/obwohl/deshalb, dass/wenn y orden de la frase.",
+    "file": "/presentaciones/zusammenfassung-thema-1.html",
+    "topics": [
+      "Präsens",
+      "Conversación",
+      "Nebensätze"
+    ],
+    "level": "A1",
+    "source": "zusammenfassung-thema-1.html",
+    "sha256": "f40de3dda81e4df564d9633a79e7a8afd1eb1eef9cf37d1f6d8cc6b8cc974fb9"
+  },
+  {
     "id": "krankenhaus",
     "unit": 4,
     "title": "Im Krankenhaus · Nebensätze",
