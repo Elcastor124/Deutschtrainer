@@ -190,3 +190,20 @@ Riesgo residual nuevo: un anfitrión ve los nombres de quienes entran (alias o n
 | `/practica` con cuenta (`free:true` + sesión) | Los puntos van a la cuenta y los calcula el servidor con las reglas y el tope diario de siempre | `freeplay-server` («/practica va por la cuenta») |
 | Fusión del historial del dispositivo | Solo estadísticas de repaso; **nunca puntos**: reclamar el id de otro dispositivo solo cambiaría tu propia cola de repaso. Ids reservados (`acc_`, `guest_`) ignorados | `freeplay-server` (puntos del dispositivo sin cambios) |
 | `GET /api/play/leaderboard?week&limit` | Solo semana actual o anterior; límite 1–50; solo alias que activaron el ranking; `me` solo con sesión y solo con tus propios puntos (quien no lo activó ve sus puntos, nadie más) | `freeplay-accounts` |
+
+---
+
+# Fase 6 — Teacher OS y cuentas (sesiones por cookie)
+
+| Cambio | Garantía | Prueba |
+|---|---|---|
+| Sesión de alumno en cookie HttpOnly | El token ya no está en `localStorage` ni al alcance de JavaScript; SameSite=Lax; Secure tras HTTPS | `teacher-os`, navegador (`localStorage` y `document.cookie` sin tokens) |
+| CSRF | Toda mutación con cookie exige JSON del mismo origen (formulario o `Origin` ajeno → 403) | `freeplay-accounts`, `teacher-os` |
+| Registro | Solo rol alumno; confirmación de contraseña comprobada también en el servidor | `freeplay-accounts`, navegador |
+| Teacher OS | Login con clave privada → cookie `dt_t` (12 h, hash en disco); fail-closed sin profesores; toda ruta comprueba la sesión; alumno/invitado/cookie inventada → 401; revocar o cerrar sesión la invalida | `teacher-os` |
+| Aislamiento | Notas y asistencia nunca en rutas de alumno o públicas; un alumno no ve datos de otro; el alumno solo ve su nivel, repasos y clases | `teacher-os` |
+| Desactivar cuenta | No puede entrar y sus sesiones abiertas dejan de valer al instante | `teacher-os` |
+| Restablecer contraseña | Contraseña temporal; cierra sus sesiones (sustituye la «recuperación» que no existía, S14) | `teacher-os` |
+| Salas desde Teacher OS | La cookie de profesor viaja en el WebSocket: con `TEACHER_AUTH=required` el profesor crea y recupera su sala sin clave en el navegador; un alumno no puede | `teacher-os`, navegador |
+
+S14 (sin recuperación de contraseña): **mitigado** — el profesor la restablece. Abierto: no hay recuperación autónoma (no se guarda correo, a propósito).

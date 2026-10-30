@@ -35,6 +35,10 @@ npm run build
 
 `/libre`: el alumno elige juego (BlackCard, Wort-Jenga, Boxeo), nivel (A1, A2, B1 Training) y temas, y juega **sin que el profesor cree ninguna sala** — en solitario (el boxeo, contra un sparring del sistema) o, en Boxeo, en una sala privada por código con un amigo. Con cuenta opcional se guarda el progreso (resultados, errores frecuentes, evolución, recomendaciones); como invitado se practica sin guardar nada. Ranking semanal opcional, solo con alias, en su propia pestaña (`/ranking`, con podio animado); la práctica de `/practica` va por la cuenta y cuenta para él. Las clases tradicionales no cambian. [Diseño, límites y lo que falta](docs/FREE_PLAY.md).
 
+## Cuentas y Teacher OS
+
+Los alumnos crean su cuenta en `/registro` (alias y contraseña, sin datos personales) y tienen su espacio en `/mi`. El profesor gestiona alumnos, clases, análisis y biblioteca en **Teacher OS** (`/teacher`), con una clave emitida en privado: `npm run teacher -- add "Nombre"`. Unirse a una clase con código sigue igual. [Detalles](docs/TEACHER_OS.md).
+
 ## Road to B1 — Level 1
 
 `/road-to-b1` integra **Die erste Prüfung**, una sesión guiada de 105 minutos con 30 preguntas de lectura, dictado con revisión del profesor y diez preguntas sobre cinco audios alemanes pregenerados. Profesor, alumno y proyector usan credenciales distintas; el servidor decide cuándo autoriza soluciones y resultados. No es un examen oficial Goethe. [Guía de clase, arquitectura y límites](docs/road-to-b1.md).

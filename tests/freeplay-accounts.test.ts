@@ -81,7 +81,7 @@ async function api(env: Record<string, string> = {}, dir = tmp()) {
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
   const call = async (path: string, input?: unknown, token?: string, headers: Record<string, string> = {}) => {
-    const res = await fetch(base + path, { method: input === undefined ? 'GET' : 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { 'X-Student-Session': token } : {}), ...headers }, ...(input === undefined ? {} : { body: JSON.stringify(input) }) });
+    const res = await fetch(base + path, { method: input === undefined ? 'GET' : 'POST', headers: { 'Content-Type': 'application/json', 'X-Token-Response': '1', ...(token ? { 'X-Student-Session': token } : {}), ...headers }, ...(input === undefined ? {} : { body: JSON.stringify(input) }) });
     return { status: res.status, body: await res.json() as any };
   };
   const reg = async (alias: string, extra: Record<string, unknown> = {}) => (await call('/api/account/register', { alias, password: PW, ...extra })).body;
@@ -131,8 +131,10 @@ describe('API de cuentas', () => {
     expect((await s.call('/api/account/register', { alias: 'admin', password: PW })).status).toBe(400);
     expect((await s.call('/api/account/register', { alias: 'Ana_Lee', password: 'corta' })).status).toBe(400);
     expect((await s.call('/api/account/register', { alias: 'x'.repeat(5000), password: PW })).status).toBe(413);
-    const bad = await fetch(`${(servers[0].address() as any) && `http://127.0.0.1:${(servers[0].address() as any).port}`}/api/account/register`, { method: 'POST', body: '{no json' });
-    expect(bad.status).toBe(400);
+    const base = `http://127.0.0.1:${(servers[0].address() as any).port}`;
+    expect((await fetch(`${base}/api/account/register`, { method: 'POST', body: '{no json' })).status).toBe(403);                         // sin JSON: CSRF
+    expect((await fetch(`${base}/api/account/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{no json' })).status).toBe(400);
+    expect((await fetch(`${base}/api/account/register`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://otro-sitio.example' }, body: JSON.stringify({ alias: 'Zeta_1', password: PW }) })).status).toBe(403); // otro origen
     expect((await s.call('/api/account/register', { alias: 'Ana_Lee', password: PW })).status).toBe(200);
     expect((await s.call('/api/account/register', { alias: 'ana_lee', password: PW })).status).toBe(409);
   });

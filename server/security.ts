@@ -3,6 +3,7 @@
 import type { IncomingMessage } from 'node:http';
 import { SlidingLimiter, clientIp, envInt } from './limits.ts';
 import { TeacherDirectory, parseMode, type TeacherAuthMode } from './teacher-auth.ts';
+import { TEACHER_COOKIE, readCookie } from './cookies.ts';
 
 export type RoomKind = 'class' | 'practice' | 'road' | 'boxing';
 /** Partidas del modo libre: las crea un alumno (o invitado) con endpoints de jugador; NUNCA dan permisos de profesor. */
@@ -19,7 +20,9 @@ export interface Guard {
   teachers: TeacherDirectory;
   ip(req: Pick<IncomingMessage, 'headers' | 'socket'>): string;
   /** ¿Se puede crear otra sala de este tipo? `count` = salas existentes. Registra la creación si se admite. */
-  admitCreate(kind: RoomKind, ip: string, count: number, teacherKey?: unknown): Admission;
+  admitCreate(kind: RoomKind, ip: string, count: number, teacherKey?: unknown, verifiedTeacher?: string | null): Admission;
+  /** Profesor con sesión de Teacher OS (cookie HttpOnly) o null. */
+  teacherFromRequest(req: Pick<IncomingMessage, 'headers'>): string | null;
   /** Crear una partida del modo libre: límite por IP y por cuenta, y tope global (independientes de las salas de profesor). */
   admitFree(kind: FreeKind, ip: string, count: number, accountId?: string): FreeAdmission;
   /** Cuentas de alumno: registro y acceso con límite de intentos (por IP y por alias). Devuelven un mensaje si hay que denegar. */
@@ -89,16 +92,17 @@ export function createGuard({ dataDir, env = process.env, now = Date.now }: { da
   return {
     mode: effective, teachers, caps,
     ip: (req) => clientIp(req, trust),
-    admitCreate(kind, ip, count, key) {
-      let owner: string | undefined;
-      const hasKey = key !== undefined && key !== null && key !== '';
+    teacherFromRequest: (req) => teachers.verifySession(readCookie(req, TEACHER_COOKIE)),
+    admitCreate(kind, ip, count, key, verifiedTeacher) {
+      let owner: string | undefined = verifiedTeacher ?? undefined;
+      const hasKey = !owner && key !== undefined && key !== null && key !== '';
       if (kind !== 'practice' && effective === 'required' && teachers.activeCount === 0) return { ok: false, status: 503, error: 'La creación de salas de profesor está bloqueada: no hay profesores registrados en el servidor.' };
       if (kind !== 'practice' && effective !== 'off') {
         if (hasKey) {
           const t = teacherFor(key, ip);
           if (!t.ok) return { ok: false, status: 401, error: t.error };
           owner = t.id;
-        } else if (effective === 'required') {
+        } else if (effective === 'required' && !owner) {
           return { ok: false, status: 401, error: 'Para crear salas hace falta la clave de profesor.' };
         }
       }

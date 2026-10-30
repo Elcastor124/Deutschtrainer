@@ -54,3 +54,22 @@
 .practice-account { width: 100%; max-width: 640px; }
 .practice-account a:not(.btn) { color: var(--dt-paper); text-decoration: underline; text-decoration-color: var(--dt-red); text-underline-offset: 3px; }
 .practice-account a:not(.btn):hover { color: var(--dt-gold); }
+/* Navegación: llamada principal «Crear cuenta», acceso a la sesión y a unirse a una clase con código. */
+.dt-nav-cta { display: inline-flex !important; align-items: center; min-height: 40px !important; padding: 0 18px !important; margin-left: 6px; border-radius: 999px; background: linear-gradient(180deg, color-mix(in srgb, var(--dt-red) 82%, white), var(--dt-red)) !important; color: var(--dt-black) !important; font-weight: 700 !important; box-shadow: 0 3px 0 var(--dt-red-deep), var(--dt-shadow-red); }
+.dt-nav-cta:hover { filter: brightness(1.08); }
+.dt-nav-join { font-size: 0.86rem !important; color: var(--dt-gold) !important; }
+.dt-nav-login { font-size: 0.9rem !important; }
+/* Navegación con cuenta: compacta en anchos medios para que quepan «Unirse a una clase», «Iniciar sesión» y «Crear cuenta». */
+.dt-nav-links a { white-space: nowrap; }
+@media (max-width: 1720px) and (min-width: 1361px) {
+  .dt-nav-links a small { display: none; }
+  .dt-effects-toggle > span:not(.dt-effects-toggle-track), .dt-effects-toggle small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .dt-nav-inner { gap: 10px; }
+  .dt-nav-links a { padding: 4px 8px; font-size: 0.88rem; }
+  .dt-nav-teacher { padding: 4px 10px !important; margin-left: 4px; }
+  .dt-nav-teacher span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .dt-nav-cta { padding: 0 14px !important; }
+}
+/* En el menú desplegable (≤ 1240 px), «Crear cuenta» se ve como botón ancho. */
+@media (max-width: 1360px) { .dt-nav-cta { justify-content: center !important; margin: 6px 0 0; min-height: 50px !important; } .dt-nav-join { color: var(--dt-gold) !important; } }
+.dt-nav .dt-nav-inner { max-width: max(var(--dt-max), 1560px); }

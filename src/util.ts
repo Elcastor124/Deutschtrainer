@@ -12,9 +12,13 @@ export const store = {
   },
 };
 
-/** Sesión de ALUMNO del modo libre (distinta de la clave de profesor). Sin ella se juega como invitado: sin progreso guardado. */
+/**
+ * Sesión de ALUMNO. El token vive SOLO en una cookie HttpOnly que pone el servidor: JavaScript nunca lo ve ni lo guarda.
+ * Aquí solo queda el indicador «hay sesión» ('cookie'), que viaja como `X-Student-Session: cookie` / `session: 'cookie'`
+ * para decir «usa mi cookie». (Un token antiguo `dts_…` guardado por versiones anteriores sigue valiendo hasta que caduque.)
+ */
 export const studentSession = (): string | undefined => store.get('dt:student-session') || undefined;
-export const setStudentSession = (token: string | null) => { if (token) store.set('dt:student-session', token); else store.del('dt:student-session'); };
+export const setStudentSession = (on: string | null) => { if (on) store.set('dt:student-session', 'cookie'); else store.del('dt:student-session'); };
 
 /** Clave de profesor emitida por el servidor (npm run teacher -- add …). Opcional mientras dure la transición (TEACHER_AUTH). */
 export const teacherKey = (): string | undefined => store.get('dt:teacher-key') || undefined;

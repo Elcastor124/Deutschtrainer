@@ -21,7 +21,7 @@ export function followLearningLink(event: MouseEvent<HTMLAnchorElement>) {
 
 export type NavSection = 'home' | 'course' | 'practice' | 'games' | 'ranking' | 'road' | 'teacher' | 'account';
 export function navSection(path: string): NavSection {
-  if (path.startsWith('/cuenta')) return 'account';
+  if (/^\/(cuenta|mi|registro|entrar)(\/|$)/.test(path)) return 'account';
   if (path.startsWith('/ranking')) return 'ranking';
   if (path.startsWith('/road-to-b1')) return 'road';
   if (path.startsWith('/curso') || /^\/tema\/1\/?$/.test(path)) return 'course';
@@ -96,9 +96,17 @@ export function LearningNav({ path }: { path: string }) {
             </a>
           ))}
           <EffectsToggle />
-          <a className="acc-chip" href="/cuenta" onClick={go} aria-current={active === 'account' ? 'page' : undefined} aria-label={alias ? `Tu cuenta: ${alias}` : 'Entrar o crear cuenta'} data-account-chip="">
-            {alias ? <><i aria-hidden="true">{alias.slice(0, 1).toUpperCase()}</i><span>{alias}</span></> : <span>Entrar</span>}
-          </a>
+          {alias ? (
+            <a className="acc-chip" href="/mi" onClick={go} aria-current={active === 'account' ? 'page' : undefined} aria-label={`Mi espacio: ${alias}`} data-account-chip="">
+              <i aria-hidden="true">{alias.slice(0, 1).toUpperCase()}</i><span>{alias}</span>
+            </a>
+          ) : (
+            <>
+              <a className="dt-nav-join" href="/jugar" onClick={go} data-nav-join="">Unirse a una clase</a>
+              <a className="dt-nav-login" href="/entrar" onClick={go} aria-current={active === 'account' ? 'page' : undefined} data-nav-login="">Iniciar sesión</a>
+              <a className="dt-nav-cta" href="/registro" onClick={go} data-nav-register="">Crear cuenta</a>
+            </>
+          )}
           <a className="dt-nav-teacher" href="/profesor" onClick={go} aria-current={active === 'teacher' ? 'page' : undefined} aria-label="Área del profesor">
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2M3.5 7h9v6.5h-9z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
             <span>Profesor</span>

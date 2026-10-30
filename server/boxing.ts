@@ -374,7 +374,7 @@ export function createBoxingHandler({ dataDir = process.env.DATA_DIR || resolve(
     }
     if (url.pathname === '/api/boxing/create' && req.method === 'POST') {
       await body(req);
-      const adm = guard?.admitCreate('boxing', guard.ip(req), Object.values(rooms).filter((r) => !r.free).length, req.headers['x-teacher-key']); if (adm && !adm.ok) fail(adm.status, adm.error);
+      const adm = guard?.admitCreate('boxing', guard.ip(req), Object.values(rooms).filter((r) => !r.free).length, req.headers['x-teacher-key'], guard.teacherFromRequest(req)); if (adm && !adm.ok) fail(adm.status, adm.error);
       let code: string;
       const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       do { code = Array.from({ length: 4 }, () => alphabet[randomInt(alphabet.length)]).join(''); } while (rooms[code]);

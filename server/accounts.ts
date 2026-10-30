@@ -19,6 +19,10 @@ interface SessionRec { h: string; exp: number }
 export interface Account {
   id: string; alias: string; aliasKey: string; salt: string; hash: string; createdAt: number;
   rankingOptIn: boolean; aliasStatus: 'approved' | 'blocked'; sessions: SessionRec[];
+  /** Desactivada por un profesor: no puede entrar y sus sesiones dejan de valer. Sus datos se conservan. */
+  disabled?: boolean;
+  /** Alta creada por un profesor (contraseña temporal entregada en mano). */
+  createdBy?: 'teacher';
 }
 
 const RESERVED = ['admin', 'administrador', 'profesor', 'profesora', 'teacher', 'lehrer', 'lehrerin', 'invitado', 'guest', 'gast', 'klaus', 'ashlabs', 'deutschtrainer', 'sistema', 'system', 'moderador', 'root', 'null', 'undefined'];
@@ -118,6 +122,7 @@ export class AccountStore {
     const expected = acc ? Buffer.from(acc.hash, 'hex') : await this.dummy;
     const same = expected.length === got.length && timingSafeEqual(expected, got);
     if (!acc || !same) return bad;
+    if (acc.disabled) return { ok: false, status: 401, error: 'Esta cuenta está desactivada. Habla con tu profesor.' };
     const token = this.startSession(acc);
     this.save();
     return { ok: true, token, account: acc };
@@ -129,7 +134,7 @@ export class AccountStore {
     const a = this.byToken.get(sha(token));
     if (!a) return null;
     const s = a.sessions.find((x) => x.h === sha(token));
-    if (!s || s.exp <= this.now()) return null;
+    if (!s || s.exp <= this.now() || a.disabled) return null;
     return a;
   }
   logout(token: string) {
@@ -169,6 +174,36 @@ export class AccountStore {
     a.aliasStatus = status; this.save(); return true;
   }
   byId(id: string) { return this.accounts.find((a) => a.id === id); }
+  all(): readonly Account[] { return this.accounts; }
+  static readonly SESSION_SECONDS = SESSION_MS / 1000;
+  /** Desactivar (o reactivar). Desactivar cierra todas sus sesiones. Solo lo llama la API de profesor. */
+  setDisabled(a: Account, disabled: boolean) {
+    a.disabled = disabled;
+    if (disabled) { for (const s of a.sessions) this.byToken.delete(s.h); a.sessions = []; }
+    this.save();
+  }
+  /** Alta por el profesor: contraseña temporal aleatoria (se muestra una vez). El alumno puede cambiarla en su cuenta. */
+  async createByTeacher(alias: unknown): Promise<{ ok: true; account: Account; password: string } | Fail> {
+    const words = ['Apfel', 'Brezel', 'Dackel', 'Fahrrad', 'Gurke', 'Kaffee', 'Laterne', 'Mond', 'Nebel', 'Ofen', 'Regen', 'Sonne', 'Tasse', 'Vogel', 'Wolke', 'Zug'];
+    const pick = () => words[randomBytes(1)[0] % words.length];
+    const password = `${pick()}-${pick()}-${pick()}-${100 + (randomBytes(2).readUInt16BE() % 900)}`;
+    const r = await this.register(alias, password, false);
+    if (!r.ok) return r;
+    r.account.createdBy = 'teacher';
+    r.account.sessions = []; this.byToken.forEach((v, k) => { if (v === r.account) this.byToken.delete(k); });
+    this.save();
+    return { ok: true, account: r.account, password };
+  }
+  /** El profesor genera una contraseña temporal nueva (p. ej. si el alumno la olvidó). Cierra sus sesiones. */
+  async resetByTeacher(a: Account): Promise<string> {
+    const password = `Neu-${randomBytes(6).toString('base64url')}`;
+    a.salt = randomBytes(16).toString('hex');
+    a.hash = (await kdf(password, a.salt)).toString('hex');
+    for (const s of a.sessions) this.byToken.delete(s.h);
+    a.sessions = [];
+    this.save();
+    return password;
+  }
   /** Cuentas que pueden aparecer en el ranking: lo activó el alumno Y el alias está aprobado. */
   rankable(): Map<string, string> {
     return new Map(this.accounts.filter((a) => a.rankingOptIn && a.aliasStatus === 'approved').map((a) => [a.id, a.alias]));

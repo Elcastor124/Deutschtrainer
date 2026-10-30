@@ -8,6 +8,7 @@ import { BadgeGrid } from '../components/Badges.tsx';
 import { navigate, store } from '../util.ts';
 import '../libre.css';
 import '../account.css';
+import { LoginPage } from './Auth.tsx';
 
 const ANIMALS = ['Fuchs', 'Igel', 'Dachs', 'Eule', 'Luchs', 'Otter', 'Biber', 'Falke', 'Hase', 'Adler', 'Spatz', 'Möwe', 'Elch', 'Panda', 'Wal', 'Kauz'];
 /** Alias sugerido: un animal en alemán + dos cifras. Así nadie tiene que pensar en algo que no sea su nombre real. */
@@ -28,21 +29,21 @@ const back = () => { const v = new URLSearchParams(location.search).get('volver'
 export function Account() {
   const [account, setAccount] = useState<AccountPub | null | undefined>(undefined);
   useEffect(() => { void refreshAccount().then(setAccount); }, []);
-  const onSigned = (a: AccountPub) => { const to = back(); if (to) navigate(to); else setAccount(a); };
+  if (account === null) return <LoginPage />;
   return (
     <main className="libre account" data-account-page="">
       {account === undefined ? <p className="libre-note">Comprobando tu sesión…</p>
         : account ? <AccountHome account={account} onChange={setAccount} />
-        : <AccountGate onSigned={onSigned} />}
+        : <LoginPage />}
     </main>
   );
 }
 
-function Check({ ok, children }: { ok: boolean; children: ReactNode }) {
+export function Check({ ok, children }: { ok: boolean; children: ReactNode }) {
   return <li className={ok ? 'ok' : ''}><span aria-hidden="true">{ok ? '✓' : '·'}</span>{children}</li>;
 }
 
-function PasswordField({ value, onChange, alias, label, autoComplete, meter }: { value: string; onChange: (v: string) => void; alias: string; label: string; autoComplete: string; meter?: boolean }) {
+export function PasswordField({ value, onChange, alias, label, autoComplete, meter }: { value: string; onChange: (v: string) => void; alias: string; label: string; autoComplete: string; meter?: boolean }) {
   const [show, setShow] = useState(false);
   const s = passwordStrength(value, alias);
   return (

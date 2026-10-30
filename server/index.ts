@@ -15,9 +15,12 @@ import { openPractice } from './practice-session.ts';
 import { Store, type Profile } from './store.ts';
 import { createBoxingHandler } from './boxing.ts';
 import { createRoadHandler } from './road.ts';
-import { createProgressHandler, isAccountProfile, recordEvent } from './progress.ts';
+import { createProgressHandler, isAccountProfile, madridDay, recordEvent } from './progress.ts';
 import { AccountStore } from './accounts.ts';
+import { STUDENT_COOKIE, readCookie } from './cookies.ts';
 import { createPlayApi, identify } from './play-api.ts';
+import { TeacherData } from './teacher-data.ts';
+import { createTeacherOs, studentView } from './teacher-os.ts';
 import { resolveStatic, SECURITY_HEADERS } from './static.ts';
 import { createGuard } from './security.ts';
 import { acquireInstanceLock } from './instance-lock.ts';
@@ -70,6 +73,10 @@ function freeProfile(m: { session?: unknown; profile?: unknown }, name: string):
   }
   return { id: `guest_${randomUUID().replaceAll('-', '')}`, code: '', name: name || 'Invitado', stats: {}, createdAt: Date.now() };
 }
+/** Perfil (estadísticas de repaso) de una cuenta ya autenticada. */
+function accountProfile(acc: { id: string; alias: string }): Profile {
+  return (store.data.profiles[acc.id] ??= { id: acc.id, code: '', name: acc.alias, stats: {}, createdAt: Date.now() });
+}
 function profileCodeFor(id: string) { return store.data.profiles[id]?.code ?? ''; }
 /** Ids reservados del modo libre: un cliente NO puede adoptar el perfil de una cuenta ni de un invitado diciendo su id. */
 const RESERVED_ID = /^(acc|guest)_/;
@@ -119,7 +126,9 @@ for (const [code, s] of Object.entries(store.data.rooms)) {
 }
 console.log(`[store] ${rooms.size} sala(s) restaurada(s) · banco: ${bank.size} preguntas`);
 
-interface Client { ws: WebSocket; room: string; role: 'teacher' | 'player' | 'practice'; pid?: string; alive: boolean; ip: string; bucket: TokenBucket }
+interface Client { ws: WebSocket; room: string; role: 'teacher' | 'player' | 'practice'; pid?: string; alive: boolean; ip: string; bucket: TokenBucket;
+  /** Cookies HttpOnly leídas al abrir el WebSocket: sesión de alumno y de profesor (Teacher OS). */
+  studentToken?: string; teacherId?: string | null }
 /** Salas de profesor y prácticas por tipo; las privadas del modo libre se cuentan aparte (no gastan el cupo del profesor). */
 const countRooms = (mode: 'class' | 'practice' | 'private') => { let n = 0; for (const r of rooms.values()) if (mode === 'private' ? !!r.s.private : r.s.mode === mode && !r.s.private) n++; return n; };
 const PRIVATE_MAX = 6;
@@ -173,11 +182,13 @@ function ctl(room: Room, a: CtlAction): Result {
 class LimitError extends Error {}
 
 function hello(c: Client, m: Extract<ClientMsg, { t: 'hello' }>) {
+  // «session: 'cookie'»: el navegador no conoce su token (cookie HttpOnly); se usa el de la cookie de esta conexión.
+  if ('session' in m && m.session === 'cookie') (m as { session?: string }).session = c.studentToken ?? 'dts_sin_cookie';
   if (m.role === 'teacher') {
     let room = m.room ? rooms.get(String(m.room).toUpperCase()) : undefined;
     if (!m.create && guard.roomLookupBlocked(c.ip)) return send(c.ws, { t: 'err', msg: 'Demasiados intentos con códigos de sala. Espera unos minutos.', fatal: true });
     if (m.create) {
-      const adm = guard.admitCreate('class', c.ip, countRooms('class'), m.teacherKey);
+      const adm = guard.admitCreate('class', c.ip, countRooms('class'), m.teacherKey, c.teacherId);
       if (!adm.ok) return send(c.ws, { t: 'err', msg: adm.error, fatal: true });
       room = Room.create(deps, uniqueCode(4));
       if (adm.owner) room.s.owner = adm.owner;
@@ -186,7 +197,8 @@ function hello(c: Client, m: Extract<ClientMsg, { t: 'hello' }>) {
       rooms.set(room.s.code, room);
     } else if (!room || room.s.teacherToken !== m.token) {
       // Recuperación con credencial del servidor: solo el profesor que creó la sala (owner) la recupera sin su token.
-      const owned = room?.s.owner && m.teacherKey ? guard.teacherFor(m.teacherKey, c.ip) : null;
+      // Teacher OS: el profesor dueño recupera su sala con su sesión; si no, con su clave.
+      const owned = room?.s.owner && c.teacherId ? { ok: true as const, id: c.teacherId } : room?.s.owner && m.teacherKey ? guard.teacherFor(m.teacherKey, c.ip) : null;
       if (!room || !owned?.ok || owned.id !== room.s.owner) {
         if (!room) guard.roomMiss(c.ip);
         return send(c.ws, { t: 'err', msg: owned && !owned.ok ? owned.error : 'Sala no encontrada o sin permiso de profesor.', fatal: true });
@@ -317,8 +329,16 @@ const MIME: Record<string, string> = {
 };
 
 const progressHandler = createProgressHandler({dataDir: DATA_DIR, profiles: id => store.data.profiles[id]});
-const playApi = createPlayApi({ accounts, guard, log: () => progressHandler.log, bank });
-playApi.setOnRemoved((id) => { delete store.data.profiles[id]; store.saveSoon(); });
+const teacherData = new TeacherData(DATA_DIR);
+const playApi = createPlayApi({ accounts, guard, log: () => progressHandler.log, bank, studentExtras: (a) => studentView(teacherData, a, madridDay(Date.now())) });
+playApi.setOnRemoved((id) => { delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); });
+const teacherOs = createTeacherOs({
+  accounts, guard, log: () => progressHandler.log, bank, data: teacherData, publicDir: join(ROOT, 'public'),
+  liveRooms: () => [...rooms.values()].filter((r) => r.s.mode === 'class').map((r) => ({
+    code: r.s.code, owner: r.s.owner, phase: r.s.phase, block: r.s.block, players: r.s.players.length, connected: r.s.players.filter((p) => p.connected).length,
+    review: Object.values(r.s.answers).filter((x) => x.status === 'review').length, private: !!r.s.private,
+  })),
+});
 const roadHandler = createRoadHandler({ dataDir: DATA_DIR, guard });
 const boxingHandler = createBoxingHandler({
   dataDir: DATA_DIR, guard, identify: (req) => identify(accounts, req),
@@ -371,7 +391,7 @@ async function createPrivateRoom(req: IncomingMessage, res: ServerResponse) {
   room.s.topics = topics;
   if (level) { room.s.level = level; room.s.diffs = [...LEVEL_DIFFS[level]]; }
   if (game === 'jenga') room.s.start = 'jenga';
-  const prof = account ? (freeProfile({ session: req.headers['x-student-session'] }, account.alias) as Profile) : freeProfile({}, cleanName(input.name, 'Invitado')) as Profile;
+  const prof = account ? accountProfile(account) : freeProfile({}, cleanName(input.name, 'Invitado')) as Profile;
   const p = room.join(account ? account.alias : cleanName(input.name, 'Invitado'), prof.id);
   if ('ok' in p) return httpJson(res, 500, { error: 'No se pudo crear la sala.' });
   room.s.private.host = p.id;
@@ -388,6 +408,7 @@ function serve(req: IncomingMessage, res: ServerResponse) {
     return void res.end(JSON.stringify({ error: 'Demasiadas peticiones. Espera un minuto.' }));
   }
   if (req.url?.split('?')[0] === '/api/play/room') return void createPrivateRoom(req, res).catch((e: unknown) => httpJson(res, 500, { error: 'No se pudo crear la sala.' }, e));
+  if (teacherOs(req, res)) return;
   if (playApi(req, res)) return;
   if (progressHandler(req, res)) return;
   if (roadHandler(req, res)) return;
@@ -420,7 +441,7 @@ const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 16 * 1024 });
 wss.on('connection', (ws, req) => {
   const ip = guard.ip(req);
   if (!guard.wsOpen(ip)) { ws.close(1013, 'Demasiadas conexiones'); return; }
-  const c: Client = { ws, room: '', role: 'player', alive: true, ip, bucket: new TokenBucket(40, 20) };
+  const c: Client = { ws, room: '', role: 'player', alive: true, ip, bucket: new TokenBucket(40, 20), studentToken: readCookie(req, STUDENT_COOKIE), teacherId: guard.teacherFromRequest(req) };
   clients.add(c);
   ws.on('pong', () => { c.alive = true; });
   ws.on('message', (data) => handle(c, data.toString()));

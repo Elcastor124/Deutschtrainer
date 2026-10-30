@@ -129,7 +129,7 @@ function MeCard({ view, onJoin }: { view: RankingView; onJoin: () => void }) {
     return (
       <aside className="rk-me" data-rk-me="guest">
         <div><b>¿Quieres aparecer aquí?</b><span>Practica con tu cuenta: cada respuesta suma. Solo se ve tu alias.</span></div>
-        <a className="btn primary" href="/cuenta?volver=/ranking" onClick={(e) => { e.preventDefault(); navigate('/cuenta?volver=/ranking'); }}>Entrar o crear cuenta</a>
+        <a className="btn primary" href="/registro?volver=/ranking" onClick={(e) => { e.preventDefault(); navigate('/registro?volver=/ranking'); }}>Crear cuenta</a>
       </aside>
     );
   }

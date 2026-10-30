@@ -38,7 +38,8 @@ export function Libre() {
 
 function Picker({ catalog, account }: { catalog: Catalog; account: AccountPub | null }) {
   const available = catalog.games.filter((g) => g.available);
-  const [gameId, setGameId] = useState<PlayGame>('blackcard');
+  // ?juego=boxing (desde «Mi espacio») preselecciona el juego.
+  const [gameId, setGameId] = useState<PlayGame>(() => { const g = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('juego') : null; return catalog.games.some((x) => x.id === g && x.available) ? g as PlayGame : 'blackcard'; });
   const game = catalog.games.find((g) => g.id === gameId) ?? available[0];
   const [level, setLevel] = useState<Level>('A1');
   const [topics, setTopics] = useState<string[]>([]);
@@ -131,7 +132,7 @@ function Picker({ catalog, account }: { catalog: Catalog; account: AccountPub | 
 }
 
 function AccountStrip({ account }: { account: AccountPub | null }) {
-  const go = (e: { preventDefault: () => void }) => { e.preventDefault(); navigate('/cuenta?volver=/libre'); };
+  const go = (e: { preventDefault: () => void }) => { e.preventDefault(); navigate('/registro?volver=/libre'); };
   return account ? (
     <section className="libre-card acc-strip" aria-label="Tu cuenta">
       <span className="acc-avatar small" aria-hidden="true">{account.alias.slice(0, 1).toUpperCase()}</span>
@@ -142,7 +143,7 @@ function AccountStrip({ account }: { account: AccountPub | null }) {
     <section className="libre-card acc-strip" aria-label="Cuenta">
       <span className="acc-avatar small guest" aria-hidden="true">?</span>
       <div><b>Juegas como invitado</b><span className="libre-note">Todo funciona, pero no se guarda tu progreso. Con una cuenta (solo alias y contraseña) sí.</span></div>
-      <a className="btn primary" href="/cuenta" onClick={go}>Entrar o crear cuenta</a>
+      <a className="btn primary" href="/cuenta" onClick={go}>Crear cuenta</a>
     </section>
   );
 }
