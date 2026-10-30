@@ -29,6 +29,8 @@ export interface CourseUnit {
   topics: Topic[];
   /** id en public/presentaciones/catalogo.json */
   presentation?: string;
+  /** Nota visible junto a la presentación (p. ej. de dónde viene). */
+  presentationNote?: string;
   pdf?: boolean;
   /** Presentación extra de repaso (p. ej. el remaster 3D). */
   review?: { id: string; label: string };
@@ -61,7 +63,7 @@ const SEEDS: UnitSeed[] = [
   { id: 'bruecke-a1', title: 'Brücke A1 · Empieza aquí', de: 'Hallo! Ich bin…', level: 'A1',
     summary: 'Saludos, presentarte, números, preguntas personales e idiomas: la base para todo lo demás.',
     goals: ['Saludar y presentarme (Ich heiße…, Ich komme aus…)', 'Contar y decir números y la hora', 'Hacer y responder preguntas personales', 'Conjugar verbos en presente'],
-    topics: ['praesens', 'alltag', 'vocab', 'satzbau'], presentation: 'mission-01',
+    topics: ['praesens', 'alltag', 'vocab', 'satzbau'], presentation: 'mission-01', presentationNote: 'Traducción web de la presentación original «DEUTSCHTRAINER · Mission 01» que nos pasaste.',
     review: { id: 'bruecke-a1', label: 'Brücke A1 (repaso)' }, games: ['jenga', 'jugar'] },
   { id: 'bank', title: 'Auf der Bank', de: 'Ich möchte ein Konto eröffnen.', level: 'A2',
     summary: 'Vocabulario del banco, trato formal con «Sie» y diálogos para situaciones reales.',
@@ -106,13 +108,10 @@ function buildSteps(u: UnitSeed): CourseStep[] {
     steps.push(mk('repaso', 'Revisa tus resultados y vuelve a practicar lo que falló.', { label: 'Repasar errores', href: `/practica${q}` }));
   } else {
     const pres = u.presentation!;
-    steps.push(mk('ver', 'Abre la presentación de clase y recorre los ejemplos.', { label: 'Abrir presentación', href: presentationHref(pres), external: true },
+    steps.push(mk('ver', u.presentationNote ?? 'Abre la presentación de clase y recorre los ejemplos.', { label: 'Abrir presentación', href: presentationHref(pres), external: true },
       u.pdf ? [{ label: 'PDF con soluciones', href: pdfHref(pres), external: true }] : []));
     steps.push(mk('practicar', 'Preguntas sin tiempo de los temas de esta Lektion.', { label: 'Practicar ahora', href: `/practica${q}` }));
-    const [first, ...rest] = u.games;
-    steps.push(mk('jugar', 'Aplica lo aprendido en un juego con tu clase.',
-      { label: GAME_INFO[first].label, href: first === 'boxeo' ? '/boxeo' : `${GAME_INFO[first].href}${q}` },
-      rest.map((g) => ({ label: GAME_INFO[g].label, href: g === 'boxeo' ? '/boxeo' : `${GAME_INFO[g].href}${q}` }))));
+    // Los juegos (BlackCard, Jenga, Boxen) viven en /juegos: la ruta se centra en presentación, práctica y repaso.
     const extra: StepLink[] = [];
     if (u.review) extra.push({ label: u.review.label, href: presentationHref(u.review.id), external: true });
     if (u.workshop) extra.push({ label: 'Taller de escritura', href: '/tema/1/taller' });

@@ -23,7 +23,7 @@ try {
   if(x.pdf){const pdf=await fetch(env.base+x.pdf);assert.match(pdf.headers.get('content-type'),/application\/pdf/);assert.equal((await pdf.text()).slice(0,4),'%PDF');}
  }
  const m=await env.newPage('hub-mobile',390,844,true);await m.go('/tema/1');
- await m.until(`document.querySelectorAll('a[href^="/presentaciones/"][href$=".html"]').length===8`,'catálogo móvil');
+ await m.until(`document.querySelectorAll('a[href^="/presentaciones/"][href$=".html"]').length===10`,'catálogo móvil');
  assert(await m.eval('document.documentElement.scrollWidth<=innerWidth+1'),'desborde horizontal móvil');await m.shot('tema1-mobile');
  await p.go('/jugar');await p.until(`!!document.querySelector('input[aria-label="Código de sala"]')`,'lobby conservado');
  await p.go('/?sala=TEST');await p.until(`!!document.querySelector('input[aria-label="Código de sala"]')`,'invitación conservada');

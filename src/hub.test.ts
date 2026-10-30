@@ -11,7 +11,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('Student learning hub', () => {
   it('makes the Dativ and Akkusativ review game discoverable from the homepage and topic', () => {
-    for (const path of ['/', '/tema/1']) {
+    for (const path of ['/']) {
       const html = renderRoute(path);
       expect(html).toContain('href="/boxeo"');
       expect(html).toContain('Repaso de Dativ y Akkusativ');
@@ -40,6 +40,8 @@ describe('Student learning hub', () => {
     expect(html).toContain('href="/practica?temas=praesens,alltag,vocab,satzbau"');
     expect(html).toContain('Marcar hecho');
     expect(html).toContain('Siguiente');
+    expect(html).not.toContain('BlackCard');
+    expect(html).toContain('Traducción web de la presentación original');
     const teacher = renderRoute('/profesor');
     // /profesor (= /teacher) es Teacher OS: se carga aparte y su HTML inicial no lleva ningún dato (todo exige sesión de profesor).
     expect(teacher).not.toContain('Próximamente: modo profesor protegido');
@@ -48,14 +50,15 @@ describe('Student learning hub', () => {
     expect(teacher).not.toMatch(/type="password"/);
   });
 
-  it('shows Tema 1 as a study path with resources, complete quiz practice and live workshops', () => {
-    const html = renderRoute('/tema/1');
-    expect(html).toContain('Ruta de estudio');
-    expect(html).toContain('Presentaciones');
-    expect(html).toContain('href="/practica?tema=1"');
-    expect(html).toContain('Schreibwerkstatt');
-    expect(html).toContain('Wort-Jenga');
-    expect(html).toContain('requieren una sala');
+  it('shows the materials library as a shelf per topic (/tema/1 and /biblioteca), without games', () => {
+    for (const path of ['/tema/1', '/biblioteca']) {
+      const html = renderRoute(path);
+      expect(html).toContain('Biblioteca');
+      expect(html).toContain('Tema 1');
+      expect(html).toContain('role="tablist"');
+      expect(html).toContain('href="/curso"');
+      expect(html).not.toContain('BlackCard');
+    }
   });
 
   it('keeps room invitations at the root and the game lobby available', () => {
