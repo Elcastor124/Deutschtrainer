@@ -65,8 +65,8 @@ export class TeacherDirectory {
   /** Profesor ligado a TEACHER_PASSWORD (variable de entorno del servidor; nunca en el repositorio). */
   ensurePasswordTeacher(): string {
     this.refresh();
-    const t = this.teachers.find((x) => x.name === 'Profesor (contraseña)' && !x.revokedAt);
-    return t ? t.id : this.issue('Profesor (contraseña)').id;
+    const t = this.teachers.find((x) => x.name === 'Álvaro' && !x.revokedAt);
+    return t ? t.id : this.issue('Álvaro').id;
   }
   revoke(id: string, now = Date.now()): boolean {
     this.load();
