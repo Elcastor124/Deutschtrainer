@@ -62,6 +62,11 @@ export class TeacherDirectory {
     this.save();
     return { id, key: `dtk_${id}.${secret}` };
   }
+  /** Contraseña de Teacher OS desde el entorno (sin espacios; acepta el nombre en minúsculas por si se escribió así en Render). */
+  static envPassword(env: NodeJS.ProcessEnv = process.env): string {
+    const k = Object.keys(env).find((x) => x.trim().toUpperCase() === 'TEACHER_PASSWORD');
+    return (k ? env[k] ?? '' : '').trim();
+  }
   /** Profesor ligado a TEACHER_PASSWORD (variable de entorno del servidor; nunca en el repositorio). */
   ensurePasswordTeacher(): string {
     this.refresh();

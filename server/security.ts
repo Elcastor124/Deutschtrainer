@@ -51,6 +51,8 @@ export function createGuard({ dataDir, env = process.env, now = Date.now }: { da
   const mode = parseMode(env.TEACHER_AUTH);
   const teachers = new TeacherDirectory(dataDir);
   const effective = mode;
+  if (TeacherDirectory.envPassword(env)) { teachers.ensurePasswordTeacher(); console.log('[teacher] TEACHER_PASSWORD activa: el profesor Álvaro entra en /teacher con esa contraseña.'); }
+  else console.log('[teacher] TEACHER_PASSWORD no definida: Teacher OS solo acepta claves dtk_.');
   // FAIL-CLOSED: con `required` y sin ningún profesor registrado NO se crean salas de profesor (en vez de abrirlas a todos).
   // Las salas ya creadas, el modo libre y los alumnos no se ven afectados.
   if (mode === 'required' && teachers.activeCount === 0) console.error('[auth] TEACHER_AUTH=required y no hay profesores registrados: la creación de salas de profesor queda BLOQUEADA hasta registrar uno (npm run teacher -- add <nombre>).');

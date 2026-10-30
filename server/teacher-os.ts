@@ -208,9 +208,9 @@ export function createTeacherOs(d: TeacherOsDeps) {
     const method = req.method ?? 'GET';
     if (method === 'POST' && !sameOriginJson(req)) fail(403, 'Petición no permitida.');
     if (path[0] === 'login' && method === 'POST') {
-      const pw = process.env.TEACHER_PASSWORD ?? '';
+      const pw = TeacherDirectory.envPassword();
       if (pw) teachers.ensurePasswordTeacher();
-      if (teachers.activeCount === 0) fail(503, 'No hay profesores registrados en este servidor. Se crean en privado con «npm run teacher -- add».');
+      if (teachers.activeCount === 0) fail(503, 'Falta la contraseña de profesor en el servidor: en Render → Environment añade TEACHER_PASSWORD y vuelve a desplegar.');
       const input = await body(req);
       if (typeof input.key !== 'string' || !input.key.trim()) fail(400, 'Escribe tu clave de profesor.'); // no cuenta como intento fallido
       const given = (input.key as string).trim();
