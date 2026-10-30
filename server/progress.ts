@@ -40,6 +40,8 @@ export interface ProgressEvent {
   qid?: string; topic?: string; ok?: boolean; points: number; room?: string;
   /** Parte de `points` que procede del bonus diario (transparencia para el profesor). */
   bonus?: number;
+  /** Solo en `kind:'game'` del modo libre: actividad educativa completada (ver ProgressLog.activity). */
+  game?: string; level?: string; total?: number; correct?: number;
 }
 export type ProgressInput = Omit<ProgressEvent, 'at' | 'points' | 'bonus'> & { points?: number };
 
@@ -54,6 +56,16 @@ export type ProgressInput = Omit<ProgressEvent, 'at' | 'points' | 'bonus'> & { p
  *  - Las semanas son ISO (lunes 00:00 → domingo 23:59, hora de Madrid).
  */
 export const POINTS = { correct: 10, attempt: 2, dailyBonus: 5, streakBonus: 10, streakFor: 3, maxAward: 50 } as const;
+/**
+ * MODO LIBRE (solo cuentas `acc_…`; los invitados no puntúan ni se guardan). Los puntos salen SOLO de respuestas validadas por el servidor
+ * y de actividades completadas; el tiempo conectado no puntúa nunca.
+ *  - Tope diario por cuenta: 200 puntos (todas las fuentes). Lo que exceda se registra con 0 puntos (las estadísticas no se pierden).
+ *  - Actividad completada: ≥ 8 preguntas respondidas y ≥ 40 % de acierto (adivinar al azar no basta); A1 +4 · A2 +6 · B1 +10;
+ *    como máximo 3 actividades recompensadas por día. Los ejercicios fáciles pagan menos y cada pregunta puntúa una vez al día.
+ */
+export const FREEPLAY = { dailyCap: 200, minQuestions: 8, minAccuracy: 0.4, rewardedPerDay: 3, levelPoints: { A1: 4, A2: 6, B1: 10 } as Record<string, number> } as const;
+export const isAccountProfile = (id: string) => id.startsWith('acc_');
+const GAMES_OK = ['blackcard', 'jenga', 'boxing'] as const;
 export const RETENTION_DAYS = 180;
 const MAX_EVENTS = 200_000;
 const KINDS: readonly ProgressKind[] = ['answer', 'session', 'game'];
@@ -130,10 +142,74 @@ export class ProgressLog {
     } else {
       const p = Number(input.points);
       ev.points = Number.isFinite(p) ? Math.max(0, Math.min(POINTS.maxAward, Math.round(p))) : 0;
+      if (input.kind === 'game') {
+        const int = (v: unknown) => (Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 500 ? (v as number) : undefined);
+        if (typeof input.game === 'string' && (GAMES_OK as readonly string[]).includes(input.game)) ev.game = input.game;
+        if (typeof input.level === 'string' && input.level in FREEPLAY.levelPoints) ev.level = input.level;
+        const t = int(input.total), c = int(input.correct);
+        if (t !== undefined && c !== undefined && c <= t) { ev.total = t; ev.correct = c; }
+      }
+    }
+    if (isAccountProfile(ev.profile) && ev.points > 0) {
+      ev.points = Math.min(ev.points, Math.max(0, FREEPLAY.dailyCap - this.dayPoints(ev.profile, madridDay(at))));
+      if (ev.bonus !== undefined && ev.bonus > ev.points) ev.bonus = ev.points;
     }
     this.events.push(ev);
     this.saveSoon();
     return ev;
+  }
+
+  private dayPoints(profile: string, day: string): number {
+    let sum = 0;
+    for (const e of this.events) if (e.profile === profile && madridDay(e.at) === day) sum += e.points;
+    return sum;
+  }
+
+  /**
+   * Registra una actividad educativa COMPLETADA del modo libre y calcula sus puntos en el servidor (ver FREEPLAY).
+   * Se guarda siempre (historial), pero solo puntúa si cumple las condiciones y no se ha superado el límite diario.
+   */
+  activity(profile: string, a: { game: string; level?: string; total: number; correct: number; room?: string }): ProgressEvent | null {
+    const day = madridDay(this.now());
+    const rewardedToday = this.events.filter((e) => e.profile === profile && e.kind === 'game' && e.game && e.points > 0 && madridDay(e.at) === day).length;
+    const valid = a.total >= FREEPLAY.minQuestions && a.correct / Math.max(1, a.total) >= FREEPLAY.minAccuracy;
+    const points = valid && rewardedToday < FREEPLAY.rewardedPerDay ? FREEPLAY.levelPoints[a.level ?? ''] ?? 0 : 0;
+    return this.record({ profile, kind: 'game', source: a.game === 'boxing' ? 'boxing' : a.game === 'jenga' ? 'jenga' : 'practice', points, room: a.room, game: a.game, level: a.level, total: a.total, correct: a.correct });
+  }
+
+  /** Para el resumen del alumno: últimas actividades completadas. */
+  recentActivities(profile: string, n = 10) {
+    return this.events.filter((e) => e.profile === profile && e.kind === 'game' && e.game && e.total !== undefined).slice(-n).reverse()
+      .map((e) => ({ at: e.at, game: e.game!, level: e.level ?? null, correct: e.correct ?? 0, total: e.total ?? 0 }));
+  }
+
+  /** Precisión por semana ISO (últimas n), solo respuestas reales. */
+  accuracyByWeek(profile: string, n = 8): { week: string; attempts: number; accuracy: number | null }[] {
+    const weeks = this.weeks(n);
+    const acc = new Map(weeks.map((w) => [w, { attempts: 0, correct: 0 }]));
+    for (const e of this.events) {
+      if (e.profile !== profile || e.kind !== 'answer' || typeof e.ok !== 'boolean') continue;
+      const a = acc.get(isoWeek(e.at)); if (a) { a.attempts++; if (e.ok) a.correct++; }
+    }
+    return weeks.map((week) => { const a = acc.get(week)!; return { week, attempts: a.attempts, accuracy: a.attempts ? Math.round((a.correct / a.attempts) * 100) / 100 : null }; });
+  }
+
+  /** Preguntas que más falla (≥ 2 fallos), de más a menos. */
+  frequentErrors(profile: string, max = 5): { qid: string; topic: string; wrong: number; attempts: number }[] {
+    const m = new Map<string, { qid: string; topic: string; wrong: number; attempts: number }>();
+    for (const e of this.events) {
+      if (e.profile !== profile || e.kind !== 'answer' || !e.qid || typeof e.ok !== 'boolean') continue;
+      const x = m.get(e.qid) ?? { qid: e.qid, topic: e.topic ?? '', wrong: 0, attempts: 0 };
+      x.attempts++; if (!e.ok) x.wrong++;
+      m.set(e.qid, x);
+    }
+    return [...m.values()].filter((x) => x.wrong >= 2).sort((a, b) => b.wrong - a.wrong || b.attempts - a.attempts).slice(0, max);
+  }
+
+  /** Borra todo el historial de un perfil (baja de la cuenta). */
+  removeProfile(profile: string) {
+    this.events = this.events.filter((e) => e.profile !== profile);
+    this.saveSoon();
   }
 
   /** Puntos para juegos/sesiones (boxeo, Road…): 0–50, otorgados por el servidor, nunca por el cliente. */
@@ -218,9 +294,9 @@ export type ProfileLookup = (id: string) => { name?: string; code?: string } | u
 const displayName = (lookup: ProfileLookup, id: string) => (lookup(id)?.name || '').trim().slice(0, 16) || 'Alumno';
 
 /** Totales de la semana por perfil, de mayor a menor, con ranking de competición (empates comparten puesto). */
-function standings(log: ProgressLog, week: string): { profile: string; points: number; rank: number }[] {
+export function standings(log: ProgressLog, week: string, include: (profile: string) => boolean = () => true): { profile: string; points: number; rank: number }[] {
   const totals = new Map<string, number>();
-  for (const e of log.events) if (isoWeek(e.at) === week) totals.set(e.profile, (totals.get(e.profile) ?? 0) + e.points);
+  for (const e of log.events) if (isoWeek(e.at) === week && include(e.profile)) totals.set(e.profile, (totals.get(e.profile) ?? 0) + e.points);
   const rows = [...totals].filter(([, p]) => p > 0).map(([profile, points]) => ({ profile, points, rank: 0 })).sort((a, b) => b.points - a.points);
   rows.forEach((r, i) => { r.rank = i > 0 && rows[i - 1].points === r.points ? rows[i - 1].rank : i + 1; });
   return rows;
@@ -263,13 +339,14 @@ export function createProgressHandler({ dataDir = defaultDir(), now = Date.now, 
     if (route !== 'me' && route !== 'leaderboard') { json(res, 404, { error: 'Ruta desconocida.' }); return true; }
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.setHeader('Allow', 'GET'); json(res, 405, { error: 'Método no permitido.' }); return true; }
     const week = isoWeek(progress.now());
-    const table = standings(progress, week);
+    // Las cuentas del modo libre NO aparecen aquí (ni por nombre ni por puntos): tienen su propio ranking opcional.
+    const table = standings(progress, week, (p) => !isAccountProfile(p) && !p.startsWith('guest_'));
     if (route === 'leaderboard') {
       json(res, 200, { week, entries: table.slice(0, 10).map(({ profile, points, rank }): LeaderboardEntry => ({ rank, name: displayName(profiles, profile), points })) });
       return true;
     }
     const id = url.searchParams.get('profile') ?? '';
-    if (!PROFILE_RE.test(id)) { json(res, 400, { error: 'Perfil no válido.' }); return true; }
+    if (!PROFILE_RE.test(id) || isAccountProfile(id) || id.startsWith('guest_')) { json(res, 400, { error: 'Perfil no válido.' }); return true; }
     const s = progress.summary(id);
     const who = profiles(id);
     const known = !!who || progress.events.some((e) => e.profile === id);

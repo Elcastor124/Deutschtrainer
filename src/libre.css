@@ -1,0 +1,22 @@
+/* Modo libre: solo design tokens (src/design/tokens.css). */
+.libre { display: grid; gap: var(--dt-space-9); align-content: start; max-width: var(--dt-max); margin: 0 auto; padding: 8vh var(--dt-pad) 10vh; }
+.libre h1 { font-family: var(--dt-display); font-size: var(--dt-t-h1); margin: 0; letter-spacing: -0.02em; }
+.libre h2 { font-family: var(--dt-display); font-size: var(--dt-t-h3); margin: 0 0 var(--dt-space-5); }
+.libre-lead { color: var(--dt-paper-2); font-size: var(--dt-t-body); max-width: 62ch; margin: 0; }
+.libre-card { background: var(--dt-ink-2); border: 1px solid var(--dt-hair); border-radius: var(--dt-r-md); padding: var(--dt-space-9); box-shadow: var(--dt-shadow-1); display: grid; gap: var(--dt-space-7); }
+.libre-games { display: grid; gap: var(--dt-space-5); grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.libre-game { text-align: left; background: var(--dt-ink-1); border: 1px solid var(--dt-hair-2); border-radius: var(--dt-r-md); padding: var(--dt-space-7); display: grid; gap: var(--dt-space-3); color: var(--dt-paper); transition: border-color var(--dt-fast) var(--dt-ease), transform var(--dt-fast) var(--dt-ease); }
+.libre-game[aria-checked='true'] { border-color: var(--dt-red); box-shadow: var(--dt-shadow-red); }
+.libre-game:disabled { opacity: 0.55; cursor: not-allowed; }
+.libre-game b { font-family: var(--dt-display); font-size: var(--dt-t-h3); }
+.libre-game small, .libre-note { color: var(--dt-muted); font-size: var(--dt-t-small); }
+.libre-row { display: flex; flex-wrap: wrap; gap: var(--dt-space-3); align-items: center; }
+.libre-tabs { display: flex; gap: var(--dt-space-3); flex-wrap: wrap; }
+.libre-stats { display: grid; gap: var(--dt-space-5); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.libre-stat { background: var(--dt-ink-1); border-radius: var(--dt-r-sm); padding: var(--dt-space-5); display: grid; gap: var(--dt-space-1); }
+.libre-stat b { font-family: var(--dt-dot); font-size: 1.8rem; color: var(--dt-gold); }
+.libre-list { margin: 0; padding-left: 1.1em; display: grid; gap: var(--dt-space-2); }
+.libre-err { color: var(--dt-red); margin: 0; }
+.libre-bar { display: grid; grid-template-columns: 7ch 1fr 5ch; gap: var(--dt-space-3); align-items: center; font-family: var(--dt-mono); font-size: var(--dt-t-small); }
+.libre-bar i { display: block; height: 8px; border-radius: var(--dt-r-pill); background: var(--dt-red); }
+@media (prefers-reduced-motion: reduce) { .libre-game { transition: none; } }

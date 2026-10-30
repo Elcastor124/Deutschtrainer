@@ -156,7 +156,7 @@ export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Ne
           {v.phase === 'final' && practice && onChangeTopics && (
             <div className="row practice-more"><button className="btn" onClick={onChangeTopics}>Cambiar temas o número de preguntas</button></div>
           )}
-          {v.phase === 'task' && <TaskPlay view={v} net={net} offset={st.offset} />}
+          {v.phase === 'task' && <TaskPlay view={v} net={net} offset={st.offset} onAgain={onNewPractice} />}
 
           {practice && v.q?.topic === 'lesen' && (
             <details className="panel reading-drawer" open key={v.reading}>

@@ -1,0 +1,98 @@
+# Modo libre (práctica sin profesor)
+
+Dos modos independientes sobre el mismo servidor:
+
+| | **Modo profesor** (sin cambios) | **Modo libre** (nuevo) |
+|---|---|---|
+| Entrada | `/jugar`, `/jenga`, `/boxeo` (profesor), `/road-to-b1`, `/t/…`, `/p/…` | **`/libre`** |
+| Quién crea la partida | Profesor (`TEACHER_AUTH`) | Cualquier alumno, con o sin cuenta |
+| Quién la controla | Profesor | Nadie: el servidor (plazos, sparring, avance automático) |
+| Identidad | token de sala / clave de profesor `dtk_…` | sesión de alumno `dts_…` (opcional) o invitado |
+| Endpoints | `/ws` (profesor/alumno), `/api/boxing/*`, `/api/road/*` | `/ws` rol `practice` con `free:true`, **`/api/play/boxing/*`**, `/api/account/*`, `/api/play/catalog|leaderboard` |
+
+Una sala del profesor y una del modo libre **nunca se mezclan**: el código de una no abre la otra por la API contraria (probado en `tests/freeplay-boxing.test.ts`).
+
+## Qué puede hacer un alumno (flujo `/libre`)
+1. **Cuenta opcional** (alias + contraseña) o **invitado**. Sin cuenta todo funciona pero *no se guarda nada*.
+2. Elegir **juego**: BlackCard, Wort-Jenga, Boxeo. *Deutsch Deck está en el catálogo como «Próximamente»: no existe todavía en el repositorio.*
+3. Elegir **nivel**: A1, A2, B1 Training.
+4. Elegir **temas** (sin marcar = todos; la interfaz muestra cuántas preguntas hay por tema y nivel).
+5. Jugar **en solitario** o, solo en Boxeo, en **sala privada por código** con un amigo.
+6. Corrección y explicación en cada respuesta; con cuenta, el servidor guarda resultados.
+
+### Niveles: qué significan de verdad
+El banco **no tiene etiquetas CEFR**. El nivel es una *banda de dificultad* del banco existente (`shared/play.ts → LEVEL_DIFFS`):
+**A1** = fácil · **A2** = fácil + media · **B1 Training** = media + difícil + especial («Prüfungsfragen», con justificación en el banco). El Boxeo usa su propio banco de casos (145 preguntas, sin niveles): **solo A2**. Si una combinación nivel+temas tiene menos de 5 preguntas se avisa en vez de empezar una sesión vacía.
+
+## Adaptación de cada juego sin profesor
+| Juego | Solo | Privado | Cómo funciona sin profesor |
+|---|---|---|---|
+| **BlackCard** | ✅ | ❌ | Reutiliza el motor de práctica (`Room` en modo `practice`): sesiones de 10/15/25 preguntas, repaso espaciado de fallos, corrección y explicación. Los objetos y la BlackCard son mecánicas de clase y **no** se adaptan: en solitario se juega el núcleo educativo. |
+| **Wort-Jenga** | ✅ | ❌ | Mismo `Room` + la torre existente (`tasks.ts`) con un jugador: aciertas → quitas 1 pieza; fallas → 2. Sin preguntas orales (no hay quien las juzgue) y sin respuestas «a juzgar». La actividad cuenta como completada a las 8 preguntas o al caer la torre. |
+| **Boxeo** | ✅ sparring | ✅ 2 jugadores | Mismo motor de combate (`boxing.ts`). El profesor se sustituye por **plazos del servidor** y avance automático. |
+| **Deutsch Deck** | — | — | No existe. |
+
+### Reglas del sparring (públicas, sin trampas)
+No ve la respuesta ni el movimiento del alumno. Acierta cada pregunta con **60 %** (`FREE_BOXING.botAccuracy`, fijo: lo importante es que el alumno practique, no vencer a una IA). Movimiento si acertó, por orden: vida < 35 y energía ≥ 1 → Defensa · energía ≥ 3 → Crochet (50 %) o Directo · energía 2 → Directo · energía 1 → Jab (70 %) o Esquiva · energía 0 → Defensa. Implementado y probado en `server/boxing-free.ts`.
+
+### Sala privada (Boxeo)
+El anfitrión crea la sala y comparte el **código de 4 caracteres**; un único amigo se une; **cuando los dos pulsan «Estoy listo» empieza sola**. Sin emparejamiento público, sin chat, sin nombres libres (cuenta → alias; invitado → nombre recortado y sin marcado). La misma cuenta no puede ocupar las dos esquinas. Los plazos del servidor (pregunta 40 s, movimiento 20 s, resultado 12 s) evitan que un rival ausente bloquee la partida.
+
+## Arquitectura
+```
+shared/play.ts           contrato: juegos, niveles, bandas, temas del boxeo, tipos de resumen/ranking
+server/accounts.ts       cuentas de alumno (scrypt, sesiones dts_, alias validado/moderable)  ← accounts.json 0600
+server/play-api.ts       HTTP: /api/account/*, /api/play/catalog, /api/play/leaderboard  (+ identify(req))
+server/boxing-free.ts    reglas puras del sparring y plazos
+server/boxing.ts         motor de combate + rutas /api/play/boxing/* (dispatchFree) — mismas reglas que la clase
+server/practice-session.ts  hello `practice` con free:true → cuenta o invitado, nivel, juego (blackcard|jenga)
+server/room.ts / tasks.ts   nivel (diffs) en la selección; startSoloJenga; reportActivity (una vez)
+server/progress.ts       puntos y estadísticas por cuenta: activity(), tope diario, errores frecuentes, precisión semanal
+server/security.ts       Guard: admitFree (solo/privada), límites de registro y acceso
+src/views/Libre.tsx      hub · src/views/FreeGame.tsx  partida solitaria · src/views/Boxing.tsx  listo/siguiente
+```
+**Reutilización:** ninguna lógica de sesión se duplica. BlackCard y Jenga viajan por el WebSocket y la pantalla de alumno ya existentes (`PlayScreen`); el boxeo reutiliza `resolveExchange`/`action`. Los únicos añadidos en motores son: filtro de dificultad en la selección, `startSoloJenga`, el hook `onActivity` y, en boxeo, la fase automática (`settle`) y el sparring.
+
+## Identidad y roles (separadas)
+| | Profesor | Alumno |
+|---|---|---|
+| Credencial | `dtk_<id>.<secreto>` (`npm run teacher`) | `dts_<256 bits>` (sesión tras login) |
+| Cabecera / campo | `X-Teacher-Key` / `hello.teacherKey` | `X-Student-Session` / `hello.session` |
+| Almacén | `teachers.json` (hash SHA-256 salado) | `accounts.json` (scrypt por cuenta; sesión solo como hash) |
+| Alcance | crear/controlar salas de clase | partidas libres propias y su progreso |
+Una no vale como la otra (probado en ambos sentidos). Con `TEACHER_AUTH=required` el comportamiento es **fail-closed**: sin ningún profesor registrado no se puede crear ninguna sala de profesor (503) y el modo libre sigue funcionando.
+
+## Progreso educativo (por cuenta)
+`GET /api/account/progress` (solo el propio alumno): actividades completadas (juego, nivel, aciertos/total), precisión por tema, **errores frecuentes** (preguntas con ≥ 2 fallos), **evolución semanal de precisión**, racha, puesto (si está en el ranking) y **recomendaciones** (temas < 85 % con ≥ 2 intentos, repaso de errores, sugerencia de subir de nivel con 3 actividades ≥ 85 %).
+**Invitados:** perfil `guest_…` transitorio: no se guarda en `state.json` ni en `progress.json`, no puntúa y no tiene código de recuperación (probado leyendo los ficheros tras cerrar el servidor).
+
+### Qué cuenta como aprendizaje (y qué no)
+- Puntos solo por **respuestas validadas por el servidor** (+10 acierto / +2 intento, una vez por pregunta y día) y por **actividades completadas**.
+- **El tiempo no puntúa**: no hay latido, ni minutos conectados, ni «tiempo en pantalla». Mantener una pestaña abierta no suma nada (probado).
+- Actividad completada: ≥ 8 preguntas respondidas y ≥ 40 % de acierto (adivinar al azar no basta). A1 +4 · A2 +6 · B1 +10; máximo **3 actividades recompensadas al día**.
+- **Tope diario 200 puntos por cuenta**; lo que excede se guarda con 0 puntos (las estadísticas no se pierden). Los ejercicios fáciles pagan menos y no se repiten el mismo día.
+- Medida aproximada: no se mide comprensión real ni se distingue aprender de memorizar.
+
+## Ranking semanal (opcional)
+`GET /api/play/leaderboard` → `{ rank, alias, points }` de las cuentas que **lo activaron** (desactivado por defecto) y con **alias aprobado**. Nunca nombres reales, ids, horarios de conexión ni estadísticas. El alumno lo activa/desactiva cuando quiera. Las cuentas **no aparecen** en el ranking antiguo `/api/progress/leaderboard` y `/api/progress/me` rechaza ids `acc_`/`guest_`. Moderación: `AccountStore.setAliasStatus(alias,'blocked')` (el alias desaparece del ranking). El filtro automático de alias es mínimo y no exhaustivo; **no puede garantizar que un alias no sea un nombre real**: por eso el ranking es opcional y las instrucciones lo advierten.
+
+## Límites y expiración
+| Qué | Límite | Variable |
+|---|---|---|
+| Partidas libres solo / privadas por IP y hora | 60 / 20 | `FREE_SOLO_PER_HOUR`, `FREE_PRIVATE_PER_HOUR` |
+| Partidas libres por cuenta y hora | 60 | `FREE_PER_ACCOUNT_HOUR` |
+| Tope global de partidas libres (boxeo) | 1 500 | `MAX_FREE_ROOMS` |
+| Prácticas/solitarios WebSocket por IP y hora | 300 (límite de «práctica») | `PRACTICE_OPEN_PER_HOUR` |
+| Registros por IP y hora | 8 | `REGISTER_PER_IP_HOUR` |
+| Accesos fallidos por IP / por alias (15 min) | 10 / 6 | `LOGIN_FAILS_PER_IP`, `LOGIN_FAILS_PER_ALIAS` |
+| Boxeo libre: sin actividad / terminado | cierre a las 2 h / 10 min | `FREE_BOXING` |
+| Práctica/solitario terminado / en curso | cierre a 1 h / 3 días | `room-ttl.ts` |
+| Sesión de alumno | 30 días, máx. 5 a la vez | `accounts.ts` |
+Una sala con alguien conectado (WebSocket) nunca se descarta; en boxeo la actividad la marca cualquier petición autenticada.
+
+## Qué NO está hecho (honesto)
+- **Salas privadas de BlackCard y Wort-Jenga**: no implementadas. Requieren un anfitrión con un subconjunto *restringido* de controles de `Room` (sin ver soluciones) y avance automático en el motor de clase; es un cambio en `room.ts`/`tasks.ts` de riesgo alto que merece su propio PR. El contrato está en `docs/GAME_CONTRACTS.md` (modo `private`, plazos del servidor, sin chat).
+- **Deutsch Deck**: el juego no existe.
+- **Recuperación de contraseña**: no hay correo; la única vía es darse de baja y crear otra cuenta.
+- **Progreso en Boxeo por pregunta**: el banco del boxeo no entra en la adaptación de repaso (`Profile.stats`), solo en estadísticas por tema/errores.
+- El **Jenga solitario** se probó en servidor real y que la torre se renderiza en el navegador; la caída de la torre y «Jugar otra vez» no se probaron en navegador.

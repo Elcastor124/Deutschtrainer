@@ -1,6 +1,8 @@
 // Endurecimiento fase 2 contra servidores reales (proceso Node + WebSocket + HTTP):
 // límites de creación, bloqueo de códigos de alumno, credenciales de profesor, recuperación de sesión y cerradura de instancia.
 import { spawn, type ChildProcess } from 'node:child_process';
+import { createServer } from 'node:net';
+import type { AddressInfo } from 'node:net';
 import { mkdtempSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -10,6 +12,8 @@ import { TeacherDirectory } from '../server/teacher-auth.ts';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Puerto libre asignado por el SO (los ficheros de test corren en paralelo: los rangos aleatorios chocaban). */
+const freePort = () => new Promise<number>((res, rej) => { const s = createServer(); s.once('error', rej); s.listen(0, '127.0.0.1', () => { const { port } = s.address() as AddressInfo; s.close(() => res(port)); }); });
 type Msg = Record<string, any>;
 interface Srv { port: number; dir: string; proc: ChildProcess; stderr: () => string; stop: () => Promise<void>; url: (p: string) => string }
 const running: Srv[] = [], dirs: string[] = [], socks: WebSocket[] = [];
@@ -18,7 +22,7 @@ afterEach(async () => { for (const w of socks.splice(0)) w.terminate(); for (con
 async function start(env: Record<string, string> = {}, dir?: string, opts: { expectExit?: boolean } = {}): Promise<Srv> {
   const d = dir ?? mkdtempSync(join(tmpdir(), 'bc-hard-'));
   if (!dir) dirs.push(d);
-  const port = 4900 + Math.floor(Math.random() * 900);
+  const port = await freePort();
   let err = '';
   const proc = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, env: { ...process.env, PORT: String(port), DATA_DIR: d, ...env }, stdio: ['ignore', 'ignore', 'pipe'] });
   proc.stderr?.on('data', (x) => { err += String(x); });

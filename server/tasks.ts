@@ -31,8 +31,14 @@ export interface SceneTask {
   goals: Record<string, boolean[]>;
   bonus: Record<string, number>;
 }
+/** Wort-Jenga en solitario: con 8 preguntas respondidas la actividad cuenta como completada (si la torre cae antes, también, al caer). */
+const SOLO_JENGA_ACTIVITY = 8;
+
 export interface JengaTask {
   kind: 'jenga';
+  /** Preguntas del banco respondidas y acertadas en esta torre (modo libre). */
+  answered?: number;
+  right?: number;
   stage: 'answer' | 'judge' | 'pull' | 'fallen';
   levels: number[][];
   order: string[];
@@ -216,7 +222,8 @@ function askJenga(room: Room, t: JengaTask) {
   t.speak = null;
   t.stage = 'answer';
   const speakLeft = SPEAK_QUESTIONS.map((_, i) => i).filter((i) => !t.speakUsed.includes(i));
-  const useSpeak = speakLeft.length > 0 && room.d.rand() < 0.3;
+  // Sin profesor (modo libre) no hay quien juzgue una respuesta oral: solo preguntas del banco.
+  const useSpeak = room.s.mode !== 'practice' && speakLeft.length > 0 && room.d.rand() < 0.3;
   const id = useSpeak ? null : jengaQuestion(room.d.bank, new Set(room.s.used), room.d.rand, room.selCtx());
   const q = id ? room.d.bank.get(id) : undefined;
   if (q) {
@@ -245,8 +252,11 @@ function resolveJenga(room: Room, t: JengaTask, ok: boolean, given: string) {
   } else if (p) {
     room.fx('info', `${p.name} ${given.startsWith('—') ? 'no responde' : 'falla'}: tiene que quitar 2 piezas`, { by: pid });
   }
+  t.answered = (t.answered ?? 0) + 1;
+  if (ok) t.right = (t.right ?? 0) + 1;
   t.pulls = ok ? 1 : 2;
   t.pending = null;
+  if (t.answered >= SOLO_JENGA_ACTIVITY) room.reportActivity('jenga', t.answered, t.right ?? 0);
   t.stage = 'pull';
   room.s.timer = null;
 }
@@ -258,7 +268,7 @@ export function jengaAnswer(room: Room, pid: string, qid: string, a: Answer): Re
   if (!t.q || t.q.id !== qid) return fail('Esa pregunta ya no está activa.');
   const q = room.d.bank.get(t.q.id);
   if (!q) return fail('Pregunta desconocida.');
-  const g = grade(q, t.q.inst, a, false);
+  const g = grade(q, t.q.inst, a, room.s.mode === 'practice');
   if (g.status === 'review') {
     t.stage = 'judge';
     t.pending = { given: g.given, expected: solution(q) };
@@ -297,6 +307,7 @@ export function jengaPull(room: Room, pid: string, level: number, slot: number):
 }
 
 function collapse(room: Room, t: JengaTask, pid: string): Result {
+  room.reportActivity('jenga', t.answered ?? 0, t.right ?? 0);
   t.stage = 'fallen';
   t.loser = pid;
   t.pulls = 0;

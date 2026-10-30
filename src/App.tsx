@@ -4,6 +4,8 @@ import { AmbientField } from './brand/AmbientField.tsx';
 import './brand/gamefeel.css';
 const KlausShowcase = lazy(() => import('./klaus/KlausShowcase.tsx'));
 import { Road } from './views/Road.tsx';
+import { Libre } from './views/Libre.tsx';
+import { FreeGame } from './views/FreeGame.tsx';
 import { Boxing } from './views/Boxing.tsx';
 import { Landing } from './views/Landing.tsx';
 import { Course } from './views/Course.tsx';
@@ -35,6 +37,8 @@ export function App() {
   else if (m && m[1] === 't') screen = <Teacher key={m[2]} code={m[2] === 'new' ? 'new' : m[2].toUpperCase()} />;
   else if (m) screen = <Player key={m[2]} code={m[2].toUpperCase()} />;
   else if (/^\/road-to-b1(?:\/level-1)?\/?$/.test(path)) screen = <Road />;
+  else if (/^\/libre\/?$/.test(path)) screen = <Libre />;
+  else if (/^\/libre\/jugar\/?$/.test(path)) screen = <FreeGame key={search} />;
   else if (path === '/preview/klaus') screen = <Suspense fallback={<p className="home">Cargando a Klaus…</p>}><KlausShowcase /></Suspense>;
   else if (/^\/curso\/?$/.test(path)) screen = <Course />;
   else if (/^\/profesor\/?$/.test(path)) screen = <TeacherSoon />;
