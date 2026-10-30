@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mission 01 · Deutschtrainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@600;900&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #050505; --line: #3a3a3a; --red: #e00000; --w: #f2f2f2; --mut: #9a9a9a; --dot: 'Doto', ui-monospace, monospace; --sans: 'Space Grotesk', system-ui, sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--w); font-family: var(--sans); overflow: hidden; }
+.deck { position: relative; height: 100dvh; width: 100vw; }
+.slide { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 6vh 6vw; opacity: 0; pointer-events: none; transform: translateY(14px); transition: opacity .45s ease, transform .45s ease; }
+.slide.on { opacity: 1; pointer-events: auto; transform: none; }
+.dot { font-family: var(--dot); font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.red { color: var(--red); }
+.mut { color: var(--mut); }
+.eyebrow { font-family: var(--dot); font-weight: 600; font-size: clamp(.8rem, .6rem + .6vw, 1.15rem); letter-spacing: .14em; color: var(--mut); text-transform: uppercase; }
+.pill { display: inline-block; padding: .35em .9em; border-radius: 999px; background: #1e1e1e; }
+.pill.out { background: none; border: 2px solid var(--w); color: var(--w); }
+.rule { height: 4px; border-radius: 4px; background: #6b6b6b; margin: 3.5vh 0; }
+.center { text-align: center; align-items: center; }
+h1.big { font-size: clamp(2.6rem, 1rem + 7.4vw, 9rem); line-height: 1.02; }
+h2.big { font-size: clamp(2rem, 1rem + 4.6vw, 6rem); line-height: 1.08; }
+h2.mid { font-size: clamp(1.6rem, .8rem + 3vw, 4rem); line-height: 1.1; }
+.sub { font-size: clamp(1.4rem, .8rem + 2.6vw, 3.6rem); margin-top: 2vh; }
+.frame { border-top: 1px solid #2a2a2a; border-bottom: 1px solid #2a2a2a; padding: 6vh 0; width: 100%; position: relative; }
+.frame::before, .frame::after { content: ''; position: absolute; width: 14px; height: 14px; background: #2b2b2b; transform: rotate(45deg); top: -7px; }
+.frame::before { left: 0; } .frame::after { right: 0; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.6vw; width: 100%; }
+.card { border: 3px solid var(--line); border-radius: 26px; padding: 2.4vh 1.6vw; font-family: var(--dot); font-weight: 600; font-size: clamp(1rem, .6rem + 1.3vw, 2rem); min-height: 9vh; display: flex; flex-direction: column; justify-content: center; gap: .4em; cursor: pointer; transition: border-color .2s, transform .2s; user-select: none; }
+.card:hover { border-color: #777; transform: translateY(-2px); }
+.card .es { color: var(--red); font-size: .72em; opacity: 0; max-height: 0; transition: opacity .25s, max-height .25s; }
+.card.open .es { opacity: 1; max-height: 3em; }
+.card.c { align-items: center; text-align: center; }
+.card .w { color: var(--red); font-size: 1.15em; }
+.tri { display: grid; grid-template-columns: repeat(3, 1fr); border: 3px solid var(--line); border-radius: 34px; overflow: hidden; width: 100%; }
+.tri > div { padding: 4vh 1vw; text-align: center; border-left: 4px solid var(--line); font-family: var(--dot); font-weight: 600; font-size: clamp(1rem, .6rem + 1.6vw, 2.4rem); display: grid; gap: 2.4vh; }
+.tri > div:first-child { border-left: 0; }
+.tri.solid > div { background: #262626; }
+.frag { opacity: 0; transform: translateY(10px); transition: opacity .35s, transform .35s; }
+.frag.show { opacity: 1; transform: none; }
+table { width: 100%; border-collapse: collapse; font-family: var(--dot); font-weight: 600; font-size: clamp(.8rem, .45rem + 1vw, 1.5rem); }
+th, td { padding: 1.3vh 1vw; text-align: left; border: 1px solid #2a2a2a; }
+thead th { background: #1c1c1c; }
+.zebra tbody tr:nth-child(even) { background: #f2f2f2; color: #111; }
+.zebra td:first-child { color: var(--red); }
+.qa thead th { background: var(--red); color: #fff; }
+.qa td { padding: .9vh 1vw; text-transform: uppercase; }
+.qa tbody tr { cursor: pointer; }
+.qa td.ans { color: var(--mut); }
+.qa tr.hide td.ans { color: transparent; text-shadow: 0 0 12px #888; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 3vw; width: 100%; }
+.two h3 { font-size: clamp(1.4rem, .8rem + 2.2vw, 3.2rem); text-align: center; }
+.two p.lead { text-align: center; font-family: var(--dot); font-weight: 600; font-size: clamp(.8rem, .5rem + .9vw, 1.3rem); margin: 2vh 0 3vh; color: #ccc; }
+.ex { border: 3px solid var(--line); border-left: 18px solid #f2f2f2; border-radius: 26px; padding: 2.2vh 2vw; margin-bottom: 2vh; font-family: var(--dot); font-weight: 600; font-size: clamp(.9rem, .5rem + 1.1vw, 1.7rem); }
+.ex b { color: var(--red); }
+.hud { position: fixed; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 14px; padding: 10px 18px; font-family: var(--dot); font-weight: 600; color: var(--mut); font-size: .9rem; z-index: 5; }
+.hud button { background: #151515; color: var(--w); border: 1px solid #333; border-radius: 10px; padding: 6px 12px; font: inherit; cursor: pointer; }
+.hud button:hover { border-color: #777; }
+.bar { flex: 1; height: 3px; background: #1d1d1d; border-radius: 3px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--red); transition: width .35s; }
+.hint { position: fixed; top: 12px; right: 18px; font-size: .8rem; color: #555; font-family: var(--dot); }
+@media (max-width: 760px) { .grid3, .tri { grid-template-columns: 1fr; } .two { grid-template-columns: 1fr; } .tri > div { border-left: 0; border-top: 3px solid var(--line); } .tri > div:first-child { border-top: 0; } .slide { overflow-y: auto; justify-content: flex-start; padding-bottom: 70px; } }
+@media (prefers-reduced-motion: reduce) { .slide, .frag, .card .es { transition: none; } }
+</style>
+</head>
+<body>
+<p class="hint">← → / espacio · F pantalla completa · clic en las tarjetas</p>
+<main class="deck" id="deck">
+
+<section class="slide on center">
+  <div class="frame center">
+    <h1 class="big dot red">Deutschtrainer</h1>
+    <p class="eyebrow" style="margin-top:6vh">Álvaro Castro</p>
+  </div>
+</section>
+
+<section class="slide center">
+  <p class="eyebrow">Mission 01</p>
+  <div class="rule" style="width:100%"></div>
+  <h1 class="big dot red">Mantén una conversación</h1>
+  <div class="rule" style="width:100%"></div>
+  <p class="sub dot">60 segundos</p>
+</section>
+
+<section class="slide">
+  <p class="eyebrow">Misión 01 · Vocabulario</p>
+  <div class="rule"></div>
+  <h2 class="mid dot red" style="text-align:center">Preguntas básicas</h2>
+  <div class="rule"></div>
+  <div class="grid3" data-cards>
+    <div class="card">Wie heißt du?<span class="es">¿Cómo te llamas?</span></div>
+    <div class="card">Woher kommst du?<span class="es">¿De dónde eres?</span></div>
+    <div class="card">Wo lebst du?<span class="es">¿Dónde vives?</span></div>
+    <div class="card">Was machst du?<span class="es">¿A qué te dedicas?</span></div>
+    <div class="card">Wie geht's dir?<span class="es">¿Cómo estás?</span></div>
+    <div class="card">Wo arbeitest du?<span class="es">¿Dónde trabajas?</span></div>
+    <div class="card">Was studierst du?<span class="es">¿Qué estudias?</span></div>
+    <div class="card">Wie alt bist du?<span class="es">¿Cuántos años tienes?</span></div>
+    <div class="card">Wie heißt deine Mutter?<span class="es">¿Cómo se llama tu madre?</span></div>
+    <div class="card">Wo wohnst du?<span class="es">¿Dónde vives?</span></div>
+    <div class="card">Magst du Deutsch?<span class="es">¿Te gusta el alemán?</span></div>
+    <div class="card">Hast du Geschwister?<span class="es">¿Tienes hermanos?</span></div>
+  </div>
+</section>
+
+<section class="slide center">
+  <h1 class="big dot red">Stop memorizing</h1>
+  <p class="mut" style="letter-spacing:.6em;margin:6vh 0">··············</p>
+  <p class="sub dot">Find the pattern</p>
+  <p class="mut" style="letter-spacing:.6em;margin-top:6vh">··············</p>
+</section>
+
+<section class="slide center">
+  <p class="eyebrow">01 // Question engine</p>
+  <h2 class="big dot red" style="margin:4vh 0">Woher kommst du?</h2>
+  <div class="rule" style="width:100%"></div>
+  <div class="tri">
+    <div class="frag">de dónde<span class="red">woher</span></div>
+    <div class="frag">vienes<span class="red">kommst</span></div>
+    <div class="frag">tú<span class="red">du</span></div>
+  </div>
+</section>
+
+<section class="slide center">
+  <p><span class="pill out eyebrow">Pattern found</span></p>
+  <h2 class="big dot red" style="margin:3vh 0">W-Wort + Verb + Person</h2>
+  <div class="rule" style="width:100%"></div>
+  <div class="tri">
+    <div><span class="mut">W-Wort</span>woher</div>
+    <div><span class="mut">Verb</span>kommst</div>
+    <div><span class="mut">Person</span>du</div>
+  </div>
+</section>
+
+<section class="slide">
+  <p><span class="pill eyebrow">02 // W-Wörter</span></p>
+  <h2 class="mid dot" style="margin:2vh 0 5vh"><span class="red">W-Wörter</span> — interrogativos</h2>
+  <div class="grid3" data-cards>
+    <div class="card c"><span class="w">Wie?</span><span class="es">¿Cómo?</span></div>
+    <div class="card c"><span class="w">Wo?</span><span class="es">¿Dónde?</span></div>
+    <div class="card c"><span class="w">Woher?</span><span class="es">¿De dónde?</span></div>
+    <div class="card c"><span class="w">Was?</span><span class="es">¿Qué?</span></div>
+    <div class="card c"><span class="w">Warum?</span><span class="es">¿Por qué?</span></div>
+    <div class="card c"><span class="w">Wann?</span><span class="es">¿Cuándo?</span></div>
+    <div class="card c" style="grid-column:1/-1"><span class="w">Wer?</span><span class="es">¿Quién?</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <p class="eyebrow">03 // Answer engine</p>
+  <h2 class="big dot red" style="margin:4vh 0;text-align:center">Ich komme aus Spanien</h2>
+  <div class="rule"></div>
+  <table>
+    <tr><td class="frag">yo<br><br><span class="red">ich</span></td><td class="frag">vengo<br><br><span class="red">komme</span></td><td class="frag">de España<br><br><span class="red">aus Spanien</span></td></tr>
+  </table>
+</section>
+
+<section class="slide center">
+  <p style="align-self:flex-start"><span class="pill out eyebrow">Pattern found</span></p>
+  <h2 class="big dot red" style="margin:3vh 0">Ich + Verb + Info</h2>
+  <div class="rule" style="width:100%"></div>
+  <div class="tri solid"><div>ich</div><div>komme</div><div>aus Spanien</div></div>
+</section>
+
+<section class="slide">
+  <p><span class="pill eyebrow">04 // Referencia reutilizable</span></p>
+  <h2 class="mid dot red" style="margin:2vh 0 4vh">Verbos + pronombres</h2>
+  <table class="zebra">
+    <thead><tr><th>Verbo</th><th>ich</th><th>du</th><th>Significado</th></tr></thead>
+    <tbody>
+      <tr><td>sein</td><td>bin</td><td>bist</td><td>ser / estar</td></tr>
+      <tr><td>haben</td><td>habe</td><td>hast</td><td>tener</td></tr>
+      <tr><td>heißen</td><td>heiße</td><td>heißt</td><td>llamarse</td></tr>
+      <tr><td>kommen</td><td>komme</td><td>kommst</td><td>venir</td></tr>
+      <tr><td>leben</td><td>lebe</td><td>lebst</td><td>vivir</td></tr>
+      <tr><td>arbeiten</td><td>arbeite</td><td>arbeitest</td><td>trabajar</td></tr>
+      <tr><td>machen</td><td>mache</td><td>machst</td><td>hacer</td></tr>
+      <tr><td>gehen</td><td>gehe</td><td>gehst</td><td>ir</td></tr>
+      <tr><td>fahren</td><td>fahre</td><td>fährst</td><td>conducir / viajar</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="slide">
+  <p><span class="pill eyebrow">05 // Question → Answer</span></p>
+  <h2 class="mid dot" style="margin:1.5vh 0 2.5vh"><span class="red">Pregunta</span> <span class="mut">↔</span> <span class="red">Respuesta</span></h2>
+  <table class="qa">
+    <thead><tr><th>Frage // pregunta</th><th>Antwort // respuesta <span style="font-weight:400;text-transform:none">(clic para ver)</span></th></tr></thead>
+    <tbody>
+      <tr class="hide"><td>Wie heißt du?</td><td class="ans">Ich heiße …</td></tr>
+      <tr class="hide"><td>Woher kommst du?</td><td class="ans">Ich komme aus …</td></tr>
+      <tr class="hide"><td>Wo lebst du?</td><td class="ans">Ich lebe in …</td></tr>
+      <tr class="hide"><td>Wo wohnst du?</td><td class="ans">Ich wohne in …</td></tr>
+      <tr class="hide"><td>Was machst du?</td><td class="ans">Ich mache / arbeite …</td></tr>
+      <tr class="hide"><td>Wo arbeitest du?</td><td class="ans">Ich arbeite bei …</td></tr>
+      <tr class="hide"><td>Arbeitest du?</td><td class="ans">Ja, ich arbeite als …</td></tr>
+      <tr class="hide"><td>Wie geht's dir?</td><td class="ans">Mir geht's gut / schlecht</td></tr>
+      <tr class="hide"><td>Wie alt bist du?</td><td class="ans">Ich bin … Jahre alt</td></tr>
+      <tr class="hide"><td>Was studierst du?</td><td class="ans">Ich studiere …</td></tr>
+      <tr class="hide"><td>Wie heißt deine Mutter?</td><td class="ans">Meine Mutter heißt …</td></tr>
+      <tr class="hide"><td>Magst du Deutsch?</td><td class="ans">Ja, ich mag Deutsch / Nein</td></tr>
+      <tr class="hide"><td>Hast du Geschwister?</td><td class="ans">Ja, ich habe … / Nein</td></tr>
+      <tr class="hide"><td>Was ist dein Hobby?</td><td class="ans">Mein Hobby ist …</td></tr>
+      <tr class="hide"><td>Sprichst du Englisch?</td><td class="ans">Ja, ich spreche Englisch</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="slide">
+  <p><span class="pill eyebrow">06 // Conectores</span></p>
+  <h2 class="mid dot red" style="text-align:center;margin:1vh 0">Conectores // und &amp; aber</h2>
+  <div class="rule"></div>
+  <div class="two">
+    <div>
+      <h3 class="dot">und <span class="red">(y)</span></h3>
+      <p class="lead">Conecta dos ideas positivas o relacionadas.</p>
+      <div class="ex frag">Ich komme aus Spanien <b>UND</b> ich lebe in Zürich.</div>
+      <div class="ex frag">Ich heiße Álvaro <b>UND</b> ich bin 16 Jahre alt.</div>
+      <div class="ex frag">Ich spreche Deutsch <b>UND</b> ich lerne Spanisch.</div>
+    </div>
+    <div>
+      <h3 class="dot">aber <span class="red">(pero)</span></h3>
+      <p class="lead">Conecta dos ideas que contrastan.</p>
+      <div class="ex frag">Ich arbeite in Zürich <b>ABER</b> ich komme aus Spanien.</div>
+      <div class="ex frag">Ich bin müde <b>ABER</b> ich muss arbeiten.</div>
+      <div class="ex frag">Ich mag Kaffee <b>ABER</b> keinen Tee.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide center">
+  <p class="eyebrow">Mission 01 · tu turno</p>
+  <div class="rule" style="width:100%"></div>
+  <h2 class="big dot red">60 Sekunden. Los!</h2>
+  <div class="rule" style="width:100%"></div>
+  <p class="sub dot" id="timer" style="cursor:pointer">▶ 60</p>
+  <p class="mut" style="margin-top:2vh">Pregunta y responde en pareja sin parar. Clic en el reloj para empezar.</p>
+</section>
+
+</main>
+<nav class="hud" aria-label="Navegación">
+  <button id="prev" aria-label="Anterior">←</button>
+  <span id="count">1 / 1</span>
+  <div class="bar"><i id="bar"></i></div>
+  <button id="next" aria-label="Siguiente">→</button>
+  <button id="full" aria-label="Pantalla completa">⛶</button>
+</nav>
+<script>
+(() => {
+  const slides = [...document.querySelectorAll('.slide')];
+  let i = 0;
+  const frags = (s) => [...s.querySelectorAll('.frag')];
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('on', k === i));
+    document.getElementById('count').textContent = `${i + 1} / ${slides.length}`;
+    document.getElementById('bar').style.width = `${((i + 1) / slides.length) * 100}%`;
+    history.replaceState(null, '', `#${i + 1}`);
+  }
+  function next() {
+    const hidden = frags(slides[i]).find((f) => !f.classList.contains('show'));
+    if (hidden) { hidden.classList.add('show'); return; }
+    if (i < slides.length - 1) show(i + 1);
+  }
+  function prev() { if (i > 0) { show(i - 1); frags(slides[i]).forEach((f) => f.classList.add('show')); } }
+  document.getElementById('next').onclick = next;
+  document.getElementById('prev').onclick = prev;
+  const full = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
+  document.getElementById('full').onclick = full;
+  addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
+    else if (e.key === 'f' || e.key === 'F') full();
+    else if (e.key === 'Home') show(0); else if (e.key === 'End') show(slides.length - 1);
+  });
+  let x0 = null;
+  addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+  addEventListener('touchend', (e) => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 50) (dx < 0 ? next : prev)(); x0 = null; });
+  document.querySelectorAll('[data-cards] .card').forEach((c) => c.addEventListener('click', () => c.classList.toggle('open')));
+  document.querySelectorAll('.qa tbody tr').forEach((r) => r.addEventListener('click', () => r.classList.toggle('hide')));
+  let t = null;
+  const timer = document.getElementById('timer');
+  timer.onclick = () => {
+    if (t) { clearInterval(t); t = null; timer.textContent = '▶ 60'; return; }
+    let s = 60; timer.textContent = s;
+    t = setInterval(() => { s--; timer.textContent = s > 0 ? s : 'Zeit!'; if (s <= 0) { clearInterval(t); t = null; } }, 1000);
+  };
+  show(Math.max(0, (parseInt(location.hash.slice(1), 10) || 1) - 1));
+})();
+</script>
+</body>
+</html>

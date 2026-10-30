@@ -123,7 +123,7 @@ export function Practice() {
         </form>
         <div className="setup-links"><a className="btn ghost sm" href="/tema/1" onClick={followLearningLink}>Materiales de Tema 1</a><a className="btn ghost sm" href="/tema/1/taller" onClick={followLearningLink}>Escritura y escenas</a></div>
       </div>
-      <aside className="setup-side"><KlausCompanion /></aside>
+      <aside className="setup-side"><KlausCompanion /><a className="btn ghost sm" href="/klaus" onClick={followLearningLink}>🐾 Cambiar de Klaus</a></aside>
     </div>
   );
 }

@@ -168,6 +168,7 @@ function AccountHome({ account, onChange }: { account: AccountPub; onChange: (a:
       {ach && <div id="logros"><BadgeGrid list={ach} /></div>}
       {p && <ProgressDetails p={p} />}
       <section className="libre-card" aria-label="Ajustes">
+        <p className="libre-note"><a className="btn" href="/klaus">🐾 Tus Klaus y lootboxes</a></p>
         <h2>Ajustes</h2>
         <label className="acc-switch">
           <input type="checkbox" role="switch" checked={account.rankingOptIn} onChange={(e) => void toggleRanking(e.target.checked)} />

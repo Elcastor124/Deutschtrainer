@@ -2,6 +2,8 @@
 //   POST /api/account/register | login | logout | settings | delete      GET /api/account/me | progress
 //   GET  /api/play/catalog                                               GET /api/play/leaderboard
 // Identidad del alumno: cabecera `X-Student-Session: dts_…`. NO sirve ninguna credencial de profesor aquí, ni al revés.
+import { randomInt } from 'node:crypto';
+import { KLAUS_DEFAULT, rollSkin } from '../shared/klaus-skins.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { GAMES, LEVELS, LEVEL_DIFFS, LEVEL_LABEL, BOXING_TOPICS, type ProgressSummary, type RankingEntry, type RankingView } from '../shared/play.ts';
 import { TOPICS } from '../shared/rules.ts';
@@ -153,6 +155,32 @@ export function createPlayApi({ accounts, guard, log, bank, now = Date.now, stud
       if (t) accounts.logout(t);
       clearCookie(res, req, STUDENT_COOKIE);
       return json(res, 200, { ok: true });
+    }
+    if (route.startsWith('/api/account/klaus')) {
+      const a = need(req); const l = log(); const rankable = accounts.rankable();
+      const k = (a.klaus ??= { owned: [], equipped: KLAUS_DEFAULT, boxes: 0, won: [] });
+      // Cada semana cerrada en la que la cuenta quedó 1.ª del ranking da una lootbox (una sola vez por semana).
+      if (a.rankingOptIn && a.aliasStatus === 'approved') {
+        for (const p of weeklyPlaces(l.events, a.id, (x) => rankable.has(x), l.now())) {
+          if (p.rank === 1 && !k.won.includes(p.week)) { k.won.push(p.week); k.boxes++; accounts.persist(); }
+        }
+      }
+      const view = () => ({ owned: [KLAUS_DEFAULT, ...k.owned], equipped: k.equipped, boxes: k.boxes });
+      if (route === '/api/account/klaus') { only('GET'); return json(res, 200, view()); }
+      if (route === '/api/account/klaus/open') {
+        only('POST');
+        if (k.boxes < 1) fail(400, 'No tienes lootboxes. Gana el ranking semanal para conseguir una.');
+        const skin = rollSkin(k.owned, randomInt(1_000_000) / 1_000_000);
+        k.boxes--; if (skin) k.owned.push(skin.id); accounts.persist();
+        return json(res, 200, { ...view(), skin: skin?.id ?? null });
+      }
+      if (route === '/api/account/klaus/equip') {
+        only('POST');
+        const input = await body(req); const id = String(input.skin ?? '');
+        if (id !== KLAUS_DEFAULT && !k.owned.includes(id)) fail(400, 'Esa skin no es tuya todavía.');
+        k.equipped = id; accounts.persist();
+        return json(res, 200, view());
+      }
     }
     if (route === '/api/account/achievements') {
       only('GET');
