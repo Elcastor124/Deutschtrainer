@@ -222,6 +222,17 @@ describe('ranking semanal opcional con alias autorizado', () => {
     expect((await get('', ana.token)).me).toEqual({ alias: 'Ana_Lee', points: 30, rank: 1, optedIn: true });
     expect((await get('', hid.token)).me).toEqual({ alias: 'Oculto_1', points: 50, rank: null, optedIn: false }); // sus puntos solo los ve él
   });
+  it('logros: solo con sesión y solo los propios, calculados de sus eventos', async () => {
+    const s = await api();
+    const a = await s.reg('Ana_Lee'), b = await s.reg('Ben_Box');
+    const aid = [...(s.accounts as any).accounts].find((x: any) => x.alias === 'Ana_Lee').id;
+    rec(s.log, aid, 3);
+    expect((await s.call('/api/account/achievements')).status).toBe(401);
+    const mine = (await s.call('/api/account/achievements', undefined, a.token)).body.achievements;
+    const theirs = (await s.call('/api/account/achievements', undefined, b.token)).body.achievements;
+    expect(mine.find((x: any) => x.id === 'first-answer')).toMatchObject({ unlocked: true });
+    expect(theirs.every((x: any) => !x.unlocked)).toBe(true);
+  });
   it('el catálogo es público e informa de niveles, temas y de que Deutsch Deck aún no existe', async () => {
     const s = await api();
     const c = (await s.call('/api/play/catalog')).body;

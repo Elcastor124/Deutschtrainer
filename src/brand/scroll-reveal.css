@@ -1,0 +1,7 @@
+/* Aparición al desplazarse. Solo con html.sr-on (efectos activos y IntersectionObserver): sin JS, todo es visible. */
+html.sr-on [data-sr] { transition: opacity 720ms var(--dt-ease) calc(var(--sr-i, 0) * 70ms), transform 820ms var(--dt-ease) calc(var(--sr-i, 0) * 70ms), filter 720ms var(--dt-ease) calc(var(--sr-i, 0) * 70ms); }
+html.sr-on [data-sr]:not(.sr-in) { opacity: 0; transform: translateY(30px) scale(0.985); filter: blur(4px); }
+.sr-progress { position: fixed; top: 0; left: 0; right: 0; z-index: 60; height: 3px; transform: scaleX(0); transform-origin: 0 50%; opacity: 0; pointer-events: none;
+  background: linear-gradient(90deg, var(--dt-red), var(--dt-gold)); box-shadow: 0 0 12px var(--dt-red-glow); transition: opacity 300ms; }
+html[data-dt-effects='off'] [data-sr] { opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) { html.sr-on [data-sr] { opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important; } .sr-progress { display: none; } }

@@ -1,0 +1,56 @@
+/* Logros e insignias: solo design tokens. Bronce/plata/oro = --bronze/--silver/--gold. */
+.bdg-medal { --tier: var(--gold); display: block; overflow: visible; }
+.bdg-medal.tier-silver { --tier: var(--silver); }
+.bdg-medal.tier-bronze { --tier: var(--bronze); }
+.bdg-rim { fill: color-mix(in srgb, var(--tier) 35%, var(--dt-ink-0)); stroke: var(--tier); stroke-width: 1.5; }
+.bdg-face { fill: color-mix(in srgb, var(--tier) 80%, var(--dt-black)); }
+.bdg-icon { fill: none; stroke: var(--dt-black); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transform: scale(1); }
+.bdg-medal.locked .bdg-rim { fill: var(--dt-ink-2); stroke: var(--dt-hair-2); }
+.bdg-medal.locked .bdg-face { fill: var(--dt-ink-3); }
+.bdg-medal.locked .bdg-icon { stroke: var(--dt-muted); opacity: 0.45; }
+.bdg-lock { fill: var(--dt-ink-1); stroke: var(--dt-muted); stroke-width: 1.4; stroke-linejoin: round; }
+.bdg-wrap { scroll-margin-top: 90px; }
+.bdg-head { display: flex; align-items: center; gap: var(--dt-space-5); flex-wrap: wrap; }
+.bdg-head h2 { margin: 0; }
+.bdg-count { font-family: var(--dt-mono); color: var(--dt-muted); }
+.bdg-count b { color: var(--dt-gold); font-size: 1.4rem; margin-right: 2px; }
+.bdg-total { flex: 1; min-width: 120px; height: 6px; border-radius: var(--dt-r-pill); background: var(--dt-ink-0); overflow: hidden; }
+.bdg-total i { display: block; height: 100%; background: linear-gradient(90deg, var(--bronze), var(--silver), var(--gold)); }
+.bdg-group h3 { margin: var(--dt-space-5) 0 var(--dt-space-3); font-family: var(--dt-mono); font-size: var(--dt-t-small); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dt-muted); }
+.bdg-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--dt-space-5); grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.bdg { display: grid; justify-items: center; text-align: center; gap: var(--dt-space-2); padding: var(--dt-space-7) var(--dt-space-5); border-radius: var(--dt-r-md); background: var(--dt-ink-1); border: 1px solid var(--dt-hair); transition: transform var(--dt-fast) var(--dt-ease), border-color var(--dt-fast); }
+.bdg.is-on { border-color: color-mix(in srgb, var(--gold) 30%, var(--dt-hair)); }
+.bdg.is-on:hover { transform: translateY(-3px); }
+.bdg.is-on:hover .bdg-medal { animation: bdg-wiggle 600ms var(--dt-spring); }
+.bdg b { font-family: var(--dt-display); }
+.bdg > span { color: var(--dt-paper-2); font-size: var(--dt-t-small); line-height: 1.35; }
+.bdg:not(.is-on) b { color: var(--dt-paper-2); }
+.bdg small { color: var(--dt-gold); font-family: var(--dt-mono); font-size: 0.7rem; }
+.bdg-prog { position: relative; width: 100%; height: 16px; border-radius: var(--dt-r-pill); background: var(--dt-ink-0); overflow: hidden; margin-top: var(--dt-space-1); }
+.bdg-prog i { position: absolute; inset: 0 auto 0 0; background: color-mix(in srgb, var(--dt-red) 55%, transparent); }
+.bdg-prog em { position: relative; font-style: normal; font-family: var(--dt-mono); font-size: 0.68rem; line-height: 16px; color: var(--dt-paper); }
+
+/* Aviso al desbloquear: el medallón gira y aterriza, un brillo lo cruza; la tarjeta entra y se va sola */
+.bdg-toast { --tier: var(--gold); position: fixed; z-index: 2147482000; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); width: min(420px, calc(100vw - 32px));
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--dt-space-5); padding: var(--dt-space-7); border-radius: var(--dt-r-lg);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--tier) 16%, var(--dt-ink-2)), var(--dt-ink-2) 60%); border: 1px solid color-mix(in srgb, var(--tier) 55%, transparent);
+  box-shadow: var(--dt-shadow-2), 0 0 60px -20px var(--tier); animation: bdg-toast-in 620ms var(--dt-spring) both, bdg-toast-out 420ms var(--dt-ease-in) 6000ms both; }
+.bdg-toast.tier-silver { --tier: var(--silver); }
+.bdg-toast.tier-bronze { --tier: var(--bronze); }
+.bdg-toast-medal { position: relative; perspective: 400px; }
+.bdg-toast-medal .bdg-medal { animation: bdg-flip 1100ms var(--dt-spring) 150ms both; filter: drop-shadow(0 8px 18px color-mix(in srgb, var(--tier) 60%, transparent)); }
+.bdg-shine { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; pointer-events: none; }
+.bdg-shine::after { content: ''; position: absolute; top: -20%; bottom: -20%; width: 40%; left: -60%; transform: skewX(-20deg); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent); animation: bdg-shine 900ms var(--dt-ease) 1100ms both; }
+.bdg-toast-text { display: grid; gap: 2px; min-width: 0; }
+.bdg-toast-text small { font-family: var(--dt-mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--tier); }
+.bdg-toast-text b { font-family: var(--dt-display); font-size: 1.25rem; }
+.bdg-toast-text span { color: var(--dt-paper-2); font-size: var(--dt-t-small); }
+.bdg-toast .btn { grid-column: 2 / 4; justify-self: start; margin: 0; }
+.bdg-close { position: absolute; top: 6px; right: 10px; border: 0; background: none; color: var(--dt-muted); font-size: 1.3rem; cursor: pointer; }
+.bdg-more { position: absolute; top: -10px; left: -10px; min-width: 26px; height: 26px; border-radius: var(--dt-r-pill); display: grid; place-items: center; background: var(--dt-red); color: var(--dt-black); font-weight: 700; font-size: 0.8rem; }
+@keyframes bdg-toast-in { from { opacity: 0; transform: translateY(40px) scale(0.9); } to { opacity: 1; transform: none; } }
+@keyframes bdg-toast-out { to { opacity: 0; transform: translateY(24px) scale(0.96); } }
+@keyframes bdg-flip { from { transform: rotateY(-540deg) scale(0.3); opacity: 0; } 60% { opacity: 1; } to { transform: rotateY(0) scale(1); } }
+@keyframes bdg-shine { to { left: 130%; } }
+@keyframes bdg-wiggle { 30% { transform: rotate(-10deg) scale(1.08); } 60% { transform: rotate(8deg); } }
+@media (prefers-reduced-motion: reduce) { .bdg-toast, .bdg-toast *, .bdg, .bdg * { animation: none !important; transition: none !important; } .bdg-toast { animation: none; } }

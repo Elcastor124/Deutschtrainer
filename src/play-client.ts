@@ -1,5 +1,5 @@
 // Cliente del modo libre: cuentas de alumno, catálogo, progreso propio y ranking. La sesión va en `X-Student-Session`.
-import type { AccountPub, GameInfo, Level, ProgressSummary, RankingEntry, RankingView, SessionWelcome } from '../shared/play.ts';
+import type { AccountPub, AchievementState, GameInfo, Level, ProgressSummary, RankingEntry, RankingView, SessionWelcome } from '../shared/play.ts';
 import { setStudentSession, store, studentSession } from './util.ts';
 
 export interface Catalog {
@@ -28,6 +28,7 @@ export async function playRequest<T>(path: string, body?: unknown, signal?: Abor
 
 export const getCatalog = () => playRequest<Catalog>('/api/play/catalog');
 export const getLeaderboard = () => playRequest<{ week: string; entries: RankingEntry[] }>('/api/play/leaderboard');
+export const getAchievements = () => playRequest<{ achievements: AchievementState[] }>('/api/account/achievements');
 export const getRanking = (which: 'current' | 'previous' = 'current', limit = 50, signal?: AbortSignal) => playRequest<RankingView>(`/api/play/leaderboard?week=${which}&limit=${limit}`, undefined, signal);
 export const getMe = () => playRequest<{ account: AccountPub }>('/api/account/me');
 export const getProgress = () => playRequest<ProgressSummary>('/api/account/progress');

@@ -8,6 +8,8 @@ import { Libre } from './views/Libre.tsx';
 import { FreeGame } from './views/FreeGame.tsx';
 import { Account } from './views/Account.tsx';
 import { Ranking } from './views/Ranking.tsx';
+import { ScrollReveal } from './brand/ScrollReveal.tsx';
+import { AchievementWatcher } from './components/Badges.tsx';
 import { Boxing } from './views/Boxing.tsx';
 import { Landing } from './views/Landing.tsx';
 import { Course } from './views/Course.tsx';
@@ -52,5 +54,5 @@ export function App() {
   else if (/^\/jenga\/?$/.test(path)) screen = <GameSetup mode="jenga" />;
   else if (/^\/jugar\/?$/.test(path) || invited) screen = <GameSetup mode="blackcard" />;
   else screen = <Landing />;
-  return <><AmbientField path={path} search={search} /><Intro path={path} search={search} /><LearningNav path={invited ? '/jugar' : path} /><PageTransition path={path}>{screen}</PageTransition></>;
+  return <><AmbientField path={path} search={search} /><Intro path={path} search={search} /><LearningNav path={invited ? '/jugar' : path} /><PageTransition path={path}>{screen}</PageTransition><ScrollReveal path={path} /><AchievementWatcher path={path} /></>;
 }
