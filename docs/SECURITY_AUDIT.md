@@ -180,3 +180,13 @@ Diseño y límites funcionales en `docs/FREE_PLAY.md`. Aquí, solo lo relevante 
 | `POST /api/account/password` | Exige la contraseña actual (con el mismo límite de intentos que el acceso), valida la nueva y **cierra las demás sesiones** | `freeplay-accounts` |
 
 Riesgo residual nuevo: un anfitrión ve los nombres de quienes entran (alias o nombre de invitado recortado) y puede expulsarlos en el vestíbulo; no hay chat ni mensajes libres. Un código de 4 caracteres compartido fuera del grupo permite entrar hasta que empieza la partida (mitigado por la expulsión y el límite de intentos con códigos inexistentes).
+
+---
+
+# Fase 5 — práctica por cuenta y pestaña de ranking
+
+| Cambio | Garantía | Prueba |
+|---|---|---|
+| `/practica` con cuenta (`free:true` + sesión) | Los puntos van a la cuenta y los calcula el servidor con las reglas y el tope diario de siempre | `freeplay-server` («/practica va por la cuenta») |
+| Fusión del historial del dispositivo | Solo estadísticas de repaso; **nunca puntos**: reclamar el id de otro dispositivo solo cambiaría tu propia cola de repaso. Ids reservados (`acc_`, `guest_`) ignorados | `freeplay-server` (puntos del dispositivo sin cambios) |
+| `GET /api/play/leaderboard?week&limit` | Solo semana actual o anterior; límite 1–50; solo alias que activaron el ranking; `me` solo con sesión y solo con tus propios puntos (quien no lo activó ve sus puntos, nadie más) | `freeplay-accounts` |

@@ -47,12 +47,26 @@ function resumeProfile(id: string): Profile {
   if (id.startsWith('guest_')) return { id, code: '', name: 'Invitado', stats: {}, createdAt: Date.now() };
   return store.data.profiles[id] ?? ensureProfile(id, '');
 }
+/**
+ * Práctica con cuenta: el historial de repaso de ESTE dispositivo (lo fallado en clase o en prácticas sin cuenta) se suma a la cuenta,
+ * para que «repasar lo que he fallado» no se pierda al pasar a la cuenta. Solo estadísticas de repaso, NUNCA puntos ni ranking:
+ * los puntos del perfil de dispositivo siguen en él. Por pregunta gana el dato más reciente. Idempotente.
+ */
+function mergeDeviceStats(prof: Profile, device: unknown) {
+  if (typeof device !== 'string' || !/^[\w-]{8,64}$/.test(device) || RESERVED_ID.test(device)) return;
+  const src = store.data.profiles[device]?.stats;
+  if (!src) return;
+  for (const [qid, st] of Object.entries(src)) if (!prof.stats[qid] || prof.stats[qid].at < st.at) prof.stats[qid] = { ...st };
+  store.saveSoon();
+}
 /** Modo libre: sesión de alumno válida → su perfil de cuenta; sin sesión → invitado (nada se guarda, nada puntúa); sesión inválida → error. */
-function freeProfile(m: { session?: unknown }, name: string): Profile | { error: string } {
+function freeProfile(m: { session?: unknown; profile?: unknown }, name: string): Profile | { error: string } {
   if (m.session !== undefined && m.session !== null && m.session !== '') {
     const acc = accounts.verify(m.session);
     if (!acc) return { error: 'Tu sesión ha caducado: vuelve a iniciar sesión o juega como invitado.' };
-    return (store.data.profiles[acc.id] ??= { id: acc.id, code: '', name: acc.alias, stats: {}, createdAt: Date.now() });
+    const prof = (store.data.profiles[acc.id] ??= { id: acc.id, code: '', name: acc.alias, stats: {}, createdAt: Date.now() });
+    mergeDeviceStats(prof, m.profile);
+    return prof;
   }
   return { id: `guest_${randomUUID().replaceAll('-', '')}`, code: '', name: name || 'Invitado', stats: {}, createdAt: Date.now() };
 }

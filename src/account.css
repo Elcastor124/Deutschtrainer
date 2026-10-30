@@ -51,3 +51,6 @@
 .acc-strip > div { flex: 1; min-width: 220px; display: grid; gap: var(--dt-space-1); }
 .acc-avatar.small { width: 48px; height: 48px; font-size: 1.3rem; box-shadow: none; }
 .acc-avatar.guest { background: var(--dt-ink-3); color: var(--dt-muted); }
+.practice-account { width: 100%; max-width: 640px; }
+.practice-account a:not(.btn) { color: var(--dt-paper); text-decoration: underline; text-decoration-color: var(--dt-red); text-underline-offset: 3px; }
+.practice-account a:not(.btn):hover { color: var(--dt-gold); }

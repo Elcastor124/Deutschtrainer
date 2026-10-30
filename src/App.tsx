@@ -7,6 +7,7 @@ import { Road } from './views/Road.tsx';
 import { Libre } from './views/Libre.tsx';
 import { FreeGame } from './views/FreeGame.tsx';
 import { Account } from './views/Account.tsx';
+import { Ranking } from './views/Ranking.tsx';
 import { Boxing } from './views/Boxing.tsx';
 import { Landing } from './views/Landing.tsx';
 import { Course } from './views/Course.tsx';
@@ -40,6 +41,7 @@ export function App() {
   else if (/^\/road-to-b1(?:\/level-1)?\/?$/.test(path)) screen = <Road />;
   else if (/^\/libre\/?$/.test(path)) screen = <Libre />;
   else if (/^\/cuenta\/?$/.test(path)) screen = <Account />;
+  else if (/^\/ranking\/?$/.test(path)) screen = <Ranking />;
   else if (/^\/libre\/jugar\/?$/.test(path)) screen = <FreeGame key={search} />;
   else if (path === '/preview/klaus') screen = <Suspense fallback={<p className="home">Cargando a Klaus…</p>}><KlausShowcase /></Suspense>;
   else if (/^\/curso\/?$/.test(path)) screen = <Course />;

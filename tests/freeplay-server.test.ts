@@ -218,3 +218,51 @@ describe('roles y compatibilidad con las clases tradicionales', () => {
     expect(w.profileCode).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);            // sigue habiendo código de dispositivo
   });
 });
+
+describe('/practica va por la cuenta y cuenta para el ranking semanal', () => {
+  it('suma al ranking de la cuenta, recupera lo fallado en este dispositivo y no traspasa puntos del dispositivo', async () => {
+    const s = await start();
+    const device = 'device-ana-000001';
+    // 1) Antes, sin cuenta en este dispositivo: falla 3 preguntas.
+    const old = await conn(s, { t: 'hello', role: 'practice', name: 'Ana', profile: device, topics: ['akkusativ'], size: 10 });
+    await old.until((m) => m.t === 'welcome');
+    const failed: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const st = await old.stateWhere((x) => x.phase === 'question' && !failed.includes(x.q.id));
+      failed.push(st.q.id);
+      const b = bank.get(st.q.id)!;
+      await old.call({ t: 'answer', qid: st.q.id, a: b.type === 'mc' ? { choice: st.q.options.findIndex((o: string) => o !== b.options[b.answer]) } : {} });
+      await old.stateWhere((x) => x.phase === 'reveal');
+      await old.call({ t: 'pnext' });
+    }
+    old.ws.terminate();
+    const devicePoints = (await http(s, `/api/progress/me?profile=${device}`)).body.weekPoints;
+    expect(devicePoints).toBeGreaterThan(0);
+    // 2) Con cuenta, exactamente como lo abre /practica: free + session + profile (este dispositivo) + «repasar lo fallado».
+    const acc = await register(s, 'Ana_Lee', { rankingOptIn: true });
+    const c = await conn(s, { t: 'hello', role: 'practice', free: true, session: acc.token, profile: device, topics: ['akkusativ'], size: 10, focus: true });
+    expect((await c.until((m) => m.t === 'welcome')).profile).toMatch(/^acc_/);
+    const seen: string[] = [];
+    for (let i = 0; i < 40; i++) {
+      const st = await c.stateWhere((x) => x.phase === 'final' || (x.phase === 'question' && x.qNo === i + 1));
+      if (st.phase === 'final') break;
+      seen.push(st.q.id);
+      await c.call({ t: 'answer', qid: st.q.id, a: bank.get(st.q.id)!.type === 'mc' ? rightMc(st.q) : {} });
+      await c.stateWhere((x) => x.phase === 'reveal' && x.qNo === i + 1);
+      await c.call({ t: 'pnext' });
+    }
+    const fin = await c.stateWhere((x) => x.phase === 'final');
+    expect(seen.filter((q) => failed.includes(q)).length).toBeGreaterThan(0);   // lo fallado sin cuenta vuelve en el repaso
+    const lb = (await http(s, '/api/play/leaderboard', undefined, acc.token)).body;
+    expect(lb.entries).toEqual([expect.objectContaining({ rank: 1, alias: 'Ana_Lee' })]);
+    expect(lb.me).toMatchObject({ alias: 'Ana_Lee', rank: 1, optedIn: true });
+    expect(lb.entries[0].points).toBeGreaterThanOrEqual(10 * 10);              // ≥ 10 aciertos (+ bonus y actividad)
+    const p = (await http(s, '/api/account/progress', undefined, acc.token)).body;
+    expect(p.activities[0]).toMatchObject({ game: 'blackcard', level: null, total: fin.practice.done });
+    expect(fin.practice.done).toBeGreaterThanOrEqual(10);
+    expect(p.history.at(-1).points).toBe(p.weekPoints);
+    // los puntos del dispositivo no se mueven a la cuenta (ni se duplican)
+    expect((await http(s, `/api/progress/me?profile=${device}`)).body.weekPoints).toBe(devicePoints);
+    expect(lb.entries[0].points).toBe(p.weekPoints);
+  }, 40_000);
+});

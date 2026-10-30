@@ -107,8 +107,26 @@ Crear una cuenta pide **solo alias y contraseña**. La pantalla:
 
 Con sesión, la misma página muestra el progreso (puntos, racha, actividades, precisión por tema y semanal, lo que más fallas y recomendaciones) y los ajustes: ranking, **cambiar contraseña** (cierra las demás sesiones), cerrar sesión y eliminar la cuenta con confirmación. La navegación muestra el alias (o «Entrar») en todas las páginas, y el modo libre indica si juegas con cuenta o como invitado.
 
+## La práctica (`/practica`) va por la cuenta
+- Con sesión, `/practica` abre la práctica **con la cuenta** (`hello { role:'practice', free:true, session, profile: <este dispositivo> }`): cada respuesta suma a los puntos semanales de la cuenta y, si el alumno lo activó, al ranking. Reanudar tras recargar conserva la cuenta.
+- Sin sesión, lo primero que se ve es el acceso (crear cuenta o entrar). Se puede practicar sin cuenta como siempre (perfil del dispositivo), pero se avisa de que **no cuenta para el ranking**.
+- **Nada se pierde al pasar a la cuenta:** el historial de repaso del dispositivo (lo fallado en clase o en prácticas anteriores) se suma a la cuenta cada vez que se practica con ella; gana el dato más reciente por pregunta. Solo estadísticas de repaso: **los puntos del dispositivo no se traspasan** (no se puede inflar el ranking reclamando otro dispositivo).
+- Una práctica completa (≥ 8 preguntas, ≥ 40 %) cuenta como actividad de nivel A2 (mezcla todas las dificultades).
+- La portada (widget de puntos) muestra los puntos y el podio de la cuenta cuando hay sesión.
+
+## Ranking semanal (`/ranking`)
+Pestaña propia en la navegación. Solo cuentas que activaron el ranking, solo `{rank, alias, points}`.
+- **Podio** del 1.º al 3.º con animación de entrada: suben los bloques (3.º → 2.º → 1.º), caen los avatares, cuentan los puntos, aparece la corona, un foco y confeti para el 1.º. **Animación de salida** al cambiar de semana: el podio se hunde y la lista se desvanece antes de entrar la otra.
+- **Esta semana / Semana pasada**, fechas de la semana y **cuenta atrás** hasta el reinicio (lunes 00:00, hora de Madrid, con horario de verano).
+- Puestos 4.º–50.º con barra proporcional al líder; tu fila resaltada.
+- Tarjeta personal: «Vas N.º de M» si estás en el ranking; tus puntos y un botón «Aparecer en el ranking» si tienes cuenta pero no lo activaste; invitación a entrar si no tienes cuenta.
+- «Cómo se suman puntos» con las reglas reales (`FREEPLAY_RULES`, que reflejan `server/progress.ts`).
+- Accesibilidad: con «reducir movimiento» no hay animaciones (todo aparece al instante); con los efectos apagados no hay confeti ni foco.
+- API: `GET /api/play/leaderboard?week=current|previous&limit=1..50` → `RankingView` (`week`, `range`, `resetsAt`, `players`, `entries` y, solo con sesión, `me` con **tus** puntos y puesto).
+
 ## Qué NO está hecho (honesto)
 - **Deutsch Deck**: el juego no existe.
+- El ranking es **opcional y desactivado por defecto** (decisión de privacidad): hasta que cada alumno lo active, no aparece. La página lo pide con un botón.
 - **Recuperación de contraseña**: no hay correo; la única vía es darse de baja y crear otra cuenta.
 - **Progreso en Boxeo por pregunta**: el banco del boxeo no entra en la adaptación de repaso (`Profile.stats`), solo en estadísticas por tema/errores.
 - El **Jenga solitario** se probó en servidor real y que la torre se renderiza en el navegador; la caída de la torre y «Jugar otra vez» no se probaron en navegador. El **Jenga privado** se probó en el motor y contra el servidor; en el navegador solo se recorrió la sala privada de BlackCard.

@@ -196,6 +196,32 @@ describe('ranking semanal opcional con alias autorizado', () => {
     expect((await s.call('/api/account/login', { alias: 'Ana_Lee', password: PW })).status).toBe(401);
     expect((await s.call('/api/account/login', { alias: 'Ana_Lee', password: 'otra-clave-larga-1' })).status).toBe(200);
   });
+  it('ranking por semanas: esta y la pasada, límite, «yo» con sesión, y nunca datos de quien no lo activó', async () => {
+    let t = Date.parse('2026-10-30T12:00:00Z');
+    const dir = tmp(); const guard = createGuard({ dataDir: dir, env: {} as NodeJS.ProcessEnv });
+    const accounts = new AccountStore(dir); const log = new ProgressLog({ now: () => t });
+    const handler = createPlayApi({ accounts, guard, log: () => log, bank: loadBank() });
+    const server = createServer((req, res) => { if (!handler(req, res)) { res.writeHead(404); res.end(); } }); servers.push(server);
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+    const base = `http://127.0.0.1:${(server.address() as any).port}`;
+    const get = async (q: string, token?: string) => (await fetch(`${base}/api/play/leaderboard${q}`, { headers: token ? { 'X-Student-Session': token } : {} })).json() as Promise<any>;
+    const reg = async (alias: string, opt: boolean) => { const r = await accounts.register(alias, PW, opt); if (!r.ok) throw new Error(); return r; };
+    const ana = await reg('Ana_Lee', true), ben = await reg('Ben_Box', true), hid = await reg('Oculto_1', false);
+    const pts = (id: string, n: number) => log.record({ profile: id, kind: 'game', source: 'practice', points: n });
+    t -= 7 * 86_400_000; pts(ben.account.id, 40); t += 7 * 86_400_000;   // semana pasada: Ben
+    pts(ana.account.id, 30); pts(ben.account.id, 20); pts(hid.account.id, 50);  // esta semana
+    const cur = await get('?week=current');
+    expect(cur).toMatchObject({ which: 'current', week: '2026-W44', range: { from: '2026-10-26', to: '2026-11-01' }, players: 2, resetsAt: Date.parse('2026-11-01T23:00:00Z') });
+    expect(cur.entries).toEqual([{ rank: 1, alias: 'Ana_Lee', points: 30 }, { rank: 2, alias: 'Ben_Box', points: 20 }]);
+    expect(cur.me).toBeUndefined();
+    expect(JSON.stringify(cur)).not.toMatch(/Oculto|acc_/);
+    const prev = await get('?week=previous');
+    expect(prev).toMatchObject({ which: 'previous', week: '2026-W43', players: 1, entries: [{ rank: 1, alias: 'Ben_Box', points: 40 }] });
+    expect((await get('?limit=1')).entries).toHaveLength(1);
+    expect((await get('?limit=9999')).entries.length).toBeLessThanOrEqual(50);
+    expect((await get('', ana.token)).me).toEqual({ alias: 'Ana_Lee', points: 30, rank: 1, optedIn: true });
+    expect((await get('', hid.token)).me).toEqual({ alias: 'Oculto_1', points: 50, rank: null, optedIn: false }); // sus puntos solo los ve él
+  });
   it('el catálogo es público e informa de niveles, temas y de que Deutsch Deck aún no existe', async () => {
     const s = await api();
     const c = (await s.call('/api/play/catalog')).body;
