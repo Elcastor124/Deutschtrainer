@@ -9,6 +9,7 @@ import { lesenMoreQuestions } from './lesen2.ts';
 import { nebenQuestions } from './neben.ts';
 import { satzbauQuestions } from './satzbau.ts';
 import { vocabQuestions } from './vocabq.ts';
+import { generatedQuestions } from './generated.ts';
 
 let cache: Map<string, Question> | null = null;
 
@@ -17,7 +18,7 @@ export function loadBank(): Map<string, Question> {
   if (cache) return cache;
   const all = [
     ...lesenQuestions(), ...lesenMoreQuestions(), ...vocabQuestions(), ...alltagQuestions(), ...grammarQuestions(),
-    ...nebenQuestions(), ...satzbauQuestions(), ...bossQuestions(), ...a1GrammarQuestions(), ...expertQuestions(),
+    ...nebenQuestions(), ...satzbauQuestions(), ...bossQuestions(), ...a1GrammarQuestions(), ...expertQuestions(), ...generatedQuestions(),
   ];
   const map = new Map<string, Question>();
   for (const q of all) {

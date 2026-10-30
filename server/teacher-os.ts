@@ -2,6 +2,7 @@
 // Autorización en el servidor: toda ruta (salvo login) exige una sesión de profesor válida (cookie HttpOnly `dt_t`, emitida
 // tras verificar una clave provisionada en privado con `npm run teacher`). Una sesión de alumno NUNCA vale aquí.
 // FAIL-CLOSED: sin profesores registrados no hay forma de entrar (503), sea cual sea TEACHER_AUTH.
+import { createHash, timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -197,15 +198,28 @@ export function createTeacherOs(d: TeacherOsDeps) {
     return { items, units: [...new Set(pres.map((p) => p.unit).filter((u) => u !== undefined))] };
   }
 
+  function safeEqual(a: string, b: string) {
+    const x = createHash('sha256').update(a).digest(), y = createHash('sha256').update(b).digest();
+    return timingSafeEqual(x, y);
+  }
+
   async function dispatch(req: IncomingMessage, res: ServerResponse, url: URL) {
     const path = url.pathname.slice('/api/teacher/'.length).split('/').filter(Boolean);
     const method = req.method ?? 'GET';
     if (method === 'POST' && !sameOriginJson(req)) fail(403, 'Petición no permitida.');
     if (path[0] === 'login' && method === 'POST') {
+      const pw = process.env.TEACHER_PASSWORD ?? '';
+      if (pw) teachers.ensurePasswordTeacher();
       if (teachers.activeCount === 0) fail(503, 'No hay profesores registrados en este servidor. Se crean en privado con «npm run teacher -- add».');
       const input = await body(req);
       if (typeof input.key !== 'string' || !input.key.trim()) fail(400, 'Escribe tu clave de profesor.'); // no cuenta como intento fallido
-      const t = d.guard.teacherFor((input.key as string).trim(), d.guard.ip(req));
+      const given = (input.key as string).trim();
+      if (pw && !given.startsWith('dtk_') && safeEqual(given, pw)) {
+        const id = teachers.ensurePasswordTeacher();
+        setCookie(res, req, TEACHER_COOKIE, teachers.startSession(id), TeacherDirectory.SESSION_SECONDS);
+        return json(res, 200, { name: teachers.nameOf(id) });
+      }
+      const t = d.guard.teacherFor(given, d.guard.ip(req)); // contraseña errónea también cuenta como intento fallido
       if (!t.ok) return fail(401, t.error);
       setCookie(res, req, TEACHER_COOKIE, teachers.startSession(t.id), TeacherDirectory.SESSION_SECONDS);
       return json(res, 200, { name: teachers.nameOf(t.id) });

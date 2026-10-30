@@ -77,7 +77,7 @@ function Login({ onIn, closed }: { onIn: () => void; closed: boolean }) {
         <p className="libre-lead">El panel de tu academia. Solo para profesores con una clave emitida en el servidor.</p>
         {closed ? <p className="libre-err" role="alert">Este servidor aún no tiene profesores registrados. Por seguridad, Teacher OS está cerrado hasta que el administrador cree uno en privado con <code>npm run teacher -- add "Nombre"</code>.</p> : (
           <form onSubmit={submit} className="auth-form">
-            <label className="acc-field"><span>Clave de profesor</span><input className="field" type="password" value={key} onChange={(e) => setKey(e.target.value)} autoComplete="current-password" required autoFocus placeholder="dtk_…" spellCheck={false} /></label>
+            <label className="acc-field"><span>Contraseña o clave de profesor</span><input className="field" type="password" value={key} onChange={(e) => setKey(e.target.value)} autoComplete="current-password" required autoFocus spellCheck={false} /></label>
             {error && <p className="libre-err" role="alert">{error}</p>}
             <button className="btn primary lg" disabled={busy || !key.trim()}>{busy ? 'Comprobando…' : 'Entrar en Teacher OS'}</button>
             <p className="libre-note">La clave no se guarda en este navegador: el servidor abre una sesión segura de 12 horas.</p>

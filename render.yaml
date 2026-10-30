@@ -13,6 +13,8 @@ services:
         value: "1"
       - key: TEACHER_AUTH      # optional | required | off. Pasar a «required» solo tras validar la migración
         value: optional
+      - key: TEACHER_PASSWORD  # contraseña de Teacher OS: se pone en el panel de Render, nunca aquí
+        sync: false
       - key: NODE_VERSION
         value: 22.19.0
       - key: DATA_DIR
