@@ -78,7 +78,13 @@ function BoxingLanding({ onEnter }: { onEnter: (welcome: BoxingWelcome) => void 
     const abort = controller.current = new AbortController();
     const timeout = setTimeout(() => abort.abort(), 10000);
     try {
-      const welcome = await boxingRequest<BoxingWelcome>(kind, kind === 'create' ? {} : { code: code.trim().toUpperCase(), name: name.trim() }, undefined, abort.signal);
+      const payload = kind === 'create' ? {} : { code: code.trim().toUpperCase(), name: name.trim() };
+      let welcome: BoxingWelcome;
+      try { welcome = await boxingRequest<BoxingWelcome>(kind, payload, undefined, abort.signal); } catch (cause) {
+        // Un código que no es de una sala de profesor puede ser de una partida privada del modo libre (API de jugador).
+        if (kind !== 'join' || !(cause instanceof Error) || cause.message !== 'No existe esa sala.') throw cause;
+        welcome = await boxingRequest<BoxingWelcome>('join', payload, undefined, abort.signal, true);
+      }
       if (abort.signal.aborted) return;
       if (typeof welcome.token !== 'string' || !welcome.code || !['teacher', 'player'].includes(welcome.role)) throw new Error('La sesión no se ha confirmado. Reintenta.');
       if (kind === 'join') store.set('dt:boxing:name', name.trim());
@@ -113,11 +119,11 @@ function BoxingRoom({ session, sound, onExit }: { session: BoxingWelcome; sound:
   useEffect(() => { client.start(); return () => client.close(); }, [client]);
   const view = state.view;
   return <>
-    <div className="bx-match-heading"><div><p className="bx-eyebrow">{session.role === 'teacher' ? 'MODO PROYECTOR / PROFESOR' : 'TU ESQUINA / ALUMNO'}</p><h1>{view?.phase === 'finished' ? 'Fin del combate.' : view?.phase === 'lobby' ? 'El ring os espera.' : 'Piensa. Elige. Boxen.'}</h1></div><div className={`bx-connection ${state.connection}`} role="status"><i />{state.connection === 'online' ? 'En directo' : state.connection === 'offline' ? 'Reconectando' : 'Conectando…'}<b data-box-room="">{session.code}</b></div></div>
+    <div className="bx-match-heading"><div><p className="bx-eyebrow">{session.role === 'teacher' ? 'MODO PROYECTOR / PROFESOR' : session.free ? 'MODO LIBRE / SIN PROFESOR' : 'TU ESQUINA / ALUMNO'}</p><h1>{view?.phase === 'finished' ? 'Fin del combate.' : view?.phase === 'lobby' ? 'El ring os espera.' : 'Piensa. Elige. Boxen.'}</h1></div><div className={`bx-connection ${state.connection}`} role="status"><i />{state.connection === 'online' ? 'En directo' : state.connection === 'offline' ? 'Reconectando' : 'Conectando…'}<b data-box-room="">{session.code}</b></div></div>
     {state.error && <div className="bx-error" role="alert"><span>{state.error} Tu sesión se conserva.</span><button className="bx-text-button" disabled={state.busy} onClick={() => { void client.refresh(); }}>Reintentar conexión</button></div>}
     {view ? <>
-      {view.role === 'teacher' && <RoomShare code={view.code} compact={view.phase !== 'lobby'} />}
-      <BoxingArena view={view} busy={state.busy || state.connection !== 'online'} sound={sound} onAction={(action) => { void client.action(action); }} />
+      {(view.role === 'teacher' || (view.free?.mode === 'private' && view.phase === 'lobby')) && <RoomShare code={view.code} compact={view.phase !== 'lobby'} />}
+      <BoxingArena view={view} busy={state.busy || state.connection !== 'online'} sound={sound} onAction={(action) => { void client.action(action); }} onLeave={onExit} />
     </> : <div className="bx-loading"><div className="bx-loading-ring" aria-hidden="true" /><h2>Preparando tu esquina…</h2><p>Conectando con la sala {session.code}. No cierres el servidor del profesor.</p><button className="bx-button bx-secondary" onClick={() => { void client.refresh(); }}>Reintentar</button><button className="bx-text-button" onClick={onExit}>Volver a la entrada</button></div>}
     <footer className="bx-footer"><span>WISSEN SCHLÄGT TEMPO</span><span>El conocimiento desbloquea acciones. La energía decide cuáles.</span></footer>
   </>;
@@ -151,7 +157,7 @@ function RoomShare({ code, compact }: { code: string; compact: boolean }) {
   return <section className={`bx-share${compact ? ' compact' : ''}`} aria-label="Invitar a la sala"><div className="bx-share-code"><span>CÓDIGO</span><b>{code}</b></div><div className="bx-share-link"><b>Dos esquinas. Un mismo ring.</b>{url ? <span className="bx-url">{url}</span> : <span>{networkError ? 'No se ha detectado la IP local. Abre esta web desde la dirección de red del profesor.' : 'Buscando la dirección de tu red…'}</span>}<small>{local ? 'Misma wifi o red local. ' : ''}El servidor del profesor debe seguir encendido.</small></div><button className="bx-button bx-secondary" disabled={!url} onClick={() => { void copy(); }}>{copied ? 'Enlace copiado ✓' : 'Copiar enlace'}</button></section>;
 }
 
-export function BoxingArena({ view, busy, sound, onAction }: { view: BoxingView; busy: boolean; sound: boolean; onAction: ActionHandler }) {
+export function BoxingArena({ view, busy, sound, onAction, onLeave }: { view: BoxingView; busy: boolean; sound: boolean; onAction: ActionHandler; onLeave?: () => void }) {
   const resultVisible = view.phase === 'result' || view.phase === 'finished';
   const me = view.fighters.find((fighter) => fighter.id === view.me);
   const canPlay = !busy && !view.paused;
@@ -169,6 +175,7 @@ export function BoxingArena({ view, busy, sound, onAction }: { view: BoxingView;
         {view.phase === 'lobby' ? <>
           <p className="bx-eyebrow">ANTES DE LA CAMPANA</p><h2>{view.role === 'teacher' ? 'Reúne a tus púgiles.' : 'Ya estás en el ring.'}</h2><p className="bx-panel-copy">{view.role === 'teacher' ? 'Comparte el enlace. Cuando haya dos alumnos conectados, empieza el combate.' : 'Esperamos a los dos alumnos y a que el profesor dé la salida. No hay prisa.'}</p>
           <Roster fighters={view.fighters} />
+          {view.free?.mode === 'private' && <FreeLobby view={view} busy={busy} onAction={onAction} />}
           <div className="bx-how"><b>La cabeza antes que los guantes.</b><p>Acierta para desbloquear jab, directo, crochet, defensa o esquiva. Si fallas, recuperas energía para el siguiente asalto.</p></div>
         </> : resultVisible ? <ResultPanel view={view} /> : <>
           <div className="bx-question-meta"><span className="bx-eyebrow">{view.question?.topic ?? 'DEUTSCH A1—A2'}</span><span>{answered}/2 respuestas</span></div>
@@ -184,10 +191,22 @@ export function BoxingArena({ view, busy, sound, onAction }: { view: BoxingView;
           <Roster fighters={view.fighters} compact phase={view.phase} />
         </>}
         {view.role === 'teacher' && <TeacherControls view={view} busy={busy} onAction={onAction} />}
-        {view.role === 'player' && resultVisible && <p className="bx-turn-status" role="status">{view.phase === 'finished' ? 'El profesor puede iniciar una revancha.' : 'El profesor dará paso al siguiente asalto.'}</p>}
+        {view.role === 'player' && resultVisible && (view.free
+          ? <div className="bx-teacher-controls">{view.phase === 'result' ? <><button className="bx-button bx-primary" disabled={busy} data-box-control="next" onClick={() => onAction({ type: 'next' })}>Siguiente asalto<span aria-hidden="true">→</span></button><p className="bx-turn-status" role="status">Si nadie pulsa, el siguiente asalto empieza solo.</p></> : <><p className="bx-turn-status" role="status">Combate terminado. {view.free.mode === 'solo' ? 'Tus respuestas y explicaciones quedan arriba.' : 'Para una revancha, crea otra sala.'}</p>{onLeave && <button className="bx-button bx-primary" onClick={onLeave}>Salir</button>}</>}</div>
+          : <p className="bx-turn-status" role="status">{view.phase === 'finished' ? 'El profesor puede iniciar una revancha.' : 'El profesor dará paso al siguiente asalto.'}</p>)}
       </section>
     </div>
   </>;
+}
+
+/** Partida privada sin profesor: cada jugador pulsa «Estoy listo»; cuando lo están los dos, empieza sola. */
+function FreeLobby({ view, busy, onAction }: { view: BoxingView; busy: boolean; onAction: ActionHandler }) {
+  const mine = !!view.me && !!view.free?.ready.includes(view.me);
+  const two = view.fighters.length === 2;
+  return <div className="bx-teacher-controls" data-box-free-lobby="">
+    <p className="bx-turn-status" role="status">{two ? 'Cuando los dos estéis listos, empieza el combate. Sin profesor.' : 'Comparte el código con tu amigo y espera a que entre.'}</p>
+    <button className="bx-button bx-primary" disabled={busy || mine || !two} data-box-control="ready" onClick={() => onAction({ type: 'ready' })}>{mine ? 'Listo · esperando al rival' : 'Estoy listo'}<span aria-hidden="true">→</span></button>
+  </div>;
 }
 
 function FighterHud({ fighter, index, mine }: { fighter?: BoxingFighter; index: number; mine: boolean }) {

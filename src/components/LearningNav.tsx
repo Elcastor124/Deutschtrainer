@@ -23,7 +23,7 @@ export function navSection(path: string): NavSection {
   if (path.startsWith('/road-to-b1')) return 'road';
   if (path.startsWith('/curso') || /^\/tema\/1\/?$/.test(path)) return 'course';
   if (path.startsWith('/practi') || path.startsWith('/tema/1/taller')) return 'practice';
-  if (/^\/(jugar|jenga|boxeo|t|p|j)(\/|$)/.test(path)) return 'games';
+  if (/^\/(jugar|jenga|boxeo|libre|t|p|j)(\/|$)/.test(path)) return 'games';
   if (path.startsWith('/profesor')) return 'teacher';
   return 'home';
 }

@@ -12,6 +12,10 @@ export const store = {
   },
 };
 
+/** Sesión de ALUMNO del modo libre (distinta de la clave de profesor). Sin ella se juega como invitado: sin progreso guardado. */
+export const studentSession = (): string | undefined => store.get('dt:student-session') || undefined;
+export const setStudentSession = (token: string | null) => { if (token) store.set('dt:student-session', token); else store.del('dt:student-session'); };
+
 /** Clave de profesor emitida por el servidor (npm run teacher -- add …). Opcional mientras dure la transición (TEACHER_AUTH). */
 export const teacherKey = (): string | undefined => store.get('dt:teacher-key') || undefined;
 

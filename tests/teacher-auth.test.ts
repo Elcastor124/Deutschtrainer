@@ -85,12 +85,22 @@ describe('Guard: creación de salas y credenciales', () => {
     }
     expect(guard.admitCreate('practice', '1.1.1.1', 0)).toEqual({ ok: true });
   });
-  it('required SIN profesores registrados no deja a nadie fuera: cae a optional y lo avisa', () => {
+  it('required SIN profesores registrados es FAIL-CLOSED: no se crean salas de profesor, pero la práctica sigue', () => {
     const err = vi.spyOn(console, 'error').mockImplementation(() => {});
     const guard = g({ TEACHER_AUTH: 'required' });
-    expect(guard.mode).toBe('optional');
-    expect(guard.admitCreate('class', '1.1.1.1', 0)).toEqual({ ok: true });
+    expect(guard.mode).toBe('required');
+    for (const kind of ['class', 'road', 'boxing'] as const) {
+      expect(guard.admitCreate(kind, '1.1.1.1', 0)).toMatchObject({ ok: false, status: 503 });
+      expect(guard.admitCreate(kind, '1.1.1.1', 0, 'dtk_cualquiera')).toMatchObject({ ok: false, status: 503 });
+    }
+    expect(guard.admitCreate('practice', '1.1.1.1', 0)).toEqual({ ok: true });
     expect(err).toHaveBeenCalled();
+  });
+  it('un teachers.json ilegible con required también cierra (no abre)', () => {
+    const dir = tmp();
+    writeFileSync(join(dir, 'teachers.json'), '{roto');
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(g({ TEACHER_AUTH: 'required' }, dir).admitCreate('class', '1.1.1.1', 0)).toMatchObject({ ok: false, status: 503 });
   });
   it('off ignora las claves (rollback inmediato de la migración)', () => {
     const guard = g({ TEACHER_AUTH: 'off' });

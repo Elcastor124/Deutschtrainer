@@ -22,10 +22,14 @@ export interface BoxingView {
   ownAnswer?: number; ownCorrect?: boolean; ownMove?: BoxingMove;
   result?: BoxingResolution; winner?: string | 'draw';
   joinUrl?: string;
+  /** Modo libre (sin profesor). `deadline`: instante (ms) en que el servidor decide por quien no actúe. */
+  free?: { mode: 'solo' | 'private'; ready: string[]; deadline: number | null };
 }
-export interface BoxingWelcome { code: string; token: string; role: 'teacher' | 'player'; pid?: string; }
+export interface BoxingWelcome { code: string; token: string; role: 'teacher' | 'player'; pid?: string; /** Partida del modo libre: usa /api/play/boxing/*. */ free?: boolean }
 export type BoxingAction =
  | { type: 'start' | 'next' | 'pause' | 'resume' | 'reveal' | 'restart' }
+ /** Solo modo libre (partida privada): «estoy listo». Cuando los dos lo están, empieza sin profesor. */
+ | { type: 'ready' }
  | { type: 'answer'; questionId: string; answer: number }
  | { type: 'move'; questionId: string; move: BoxingMove };
 export const BOXING_MOVES: {id:BoxingMove;name:string;description:string;cost:number}[] = [

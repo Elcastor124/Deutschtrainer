@@ -42,12 +42,12 @@ function WordChips({ words, used }: { words: VocabWord[]; used: string[] }) {
 }
 
 // ───────────── Alumno ─────────────
-export function TaskPlay({ view, net, offset }: { view: RoomView; net: Net; offset: number }) {
+export function TaskPlay({ view, net, offset, onAgain }: { view: RoomView; net: Net; offset: number; onAgain?: () => void }) {
   const t = view.task;
   if (!t) return null;
   return (
     <section className={`task task-${t.kind}`}>
-      {t.kind === 'jenga' ? <JengaPlay view={view} t={t} net={net} offset={offset} />
+      {t.kind === 'jenga' ? <JengaPlay view={view} t={t} net={net} offset={offset} onAgain={onAgain} />
         : t.kind === 'szene' ? <ScenePlay view={view} t={t} offset={offset} />
         : <WritePlay view={view} t={t} net={net} offset={offset} />}
     </section>
@@ -222,7 +222,7 @@ function ScenePlay({ view, t, offset }: { view: RoomView; t: TaskSceneView; offs
   );
 }
 
-function JengaPlay({ view, t, net, offset }: { view: RoomView; t: TaskJengaView; net: Net; offset: number }) {
+function JengaPlay({ view, t, net, offset, onAgain }: { view: RoomView; t: TaskJengaView; net: Net; offset: number; onAgain?: () => void }) {
   const me = view.me!.id;
   const myTurn = t.turn === me;
   const [err, setErr] = useState<string | null>(null);
@@ -266,6 +266,7 @@ function JengaPlay({ view, t, net, offset }: { view: RoomView; t: TaskJengaView;
           </div>
         )}
         {err && <p className="err-msg" role="alert">{err}</p>}
+        {t.stage === 'fallen' && view.mode === 'practice' && onAgain && <button className="btn primary lg" onClick={onAgain}>Jugar otra vez</button>}
       </div>
       <Tower levels={t.levels} canPull={myTurn && t.stage === 'pull' && !busy} onPull={pull} fallen={t.stage === 'fallen'} risk={t.risk} lastPull={t.lastPull} />
     </div>
@@ -280,7 +281,9 @@ function JengaStatus({ view, t, me }: { view: RoomView; t: TaskJengaView; me?: s
         <span className="label">Partida {t.games}</span>
         <b>{t.stage === 'fallen' ? '¡La torre se ha caído!' : turnName}</b>
         {t.stage === 'pull' && <span className="pulls">{t.turn === me ? 'Quita' : 'Tiene que quitar'} <b>{t.pulls}</b> {t.pulls === 1 ? 'pieza' : 'piezas'}{t.turn === me ? ': toca una pieza de la torre' : ''}</span>}
-        {t.stage === 'fallen' && <span className="pulls red">Pierde {nameOf(view, t.loser)} · los demás ganan ★★★</span>}
+        {t.stage === 'fallen' && (view.mode === 'practice'
+          ? <span className="pulls red">Fin de la partida. Cada pregunta, con su corrección, queda en tu historial si tienes cuenta.</span>
+          : <span className="pulls red">Pierde {nameOf(view, t.loser)} · los demás ganan ★★★</span>)}
         {t.stage === 'judge' && <span className="pulls">El profesor está revisando la respuesta…</span>}
       </div>
       {t.last && t.stage !== 'answer' && (

@@ -6,6 +6,7 @@ Monolito TypeScript sin base de datos: **cliente React 19 + Vite** (`src/`), **s
 server/            Servidor (HTTP estático + WebSocket + APIs REST de juegos)
   index.ts         Arranque, WS de BlackCard/Jenga/práctica, montaje de manejadores HTTP, estáticos
   static.ts        Resolución segura de rutas estáticas + cabeceras
+  accounts.ts play-api.ts boxing-free.ts   Modo libre: cuentas de alumno, API de jugador, sparring (ver docs/FREE_PLAY.md)
   security.ts limits.ts   Guard: límites de creación/intentos, IP real (TRUST_PROXY), modo TEACHER_AUTH
   teacher-auth.ts  Claves de profesor respaldadas por el servidor (hash salado) · scripts/teacher-admin.mjs
   room-ttl.ts instance-lock.ts   Caducidad de salas por inactividad · una instancia por DATA_DIR
@@ -37,7 +38,7 @@ docs/              Notas por módulo (progress, road-to-b1, klaus, rediseño…)
 ```
 
 ## Rutas del cliente (`src/App.tsx`)
-`/` Landing · `/curso` · `/tema/1` · `/tema/1/taller` · `/practica` · `/jugar` y `/jenga` (GameSetup) · `/t/CÓDIGO` (profesor) · `/p/CÓDIGO` (alumno) · `/boxeo` · `/road-to-b1` · `/profesor` (próximamente) · `/preview/klaus`.
+`/` Landing · `/libre` (modo libre) · `/libre/jugar` · `/curso` · `/tema/1` · `/tema/1/taller` · `/practica` · `/jugar` y `/jenga` (GameSetup) · `/t/CÓDIGO` (profesor) · `/p/CÓDIGO` (alumno) · `/boxeo` · `/road-to-b1` · `/profesor` (próximamente) · `/preview/klaus`.
 
 ## Sesiones multijugador (tres transportes distintos)
 | Juego | Transporte | Estado | Auth |

@@ -15,7 +15,9 @@ import { openPractice } from './practice-session.ts';
 import { Store, type Profile } from './store.ts';
 import { createBoxingHandler } from './boxing.ts';
 import { createRoadHandler } from './road.ts';
-import { createProgressHandler, recordEvent } from './progress.ts';
+import { createProgressHandler, isAccountProfile, recordEvent } from './progress.ts';
+import { AccountStore } from './accounts.ts';
+import { createPlayApi, identify } from './play-api.ts';
 import { resolveStatic, SECURITY_HEADERS } from './static.ts';
 import { createGuard } from './security.ts';
 import { acquireInstanceLock } from './instance-lock.ts';
@@ -30,15 +32,32 @@ const DATA_DIR = process.env.DATA_DIR || join(ROOT, 'data');
 const instanceLock = await acquireInstanceLock(DATA_DIR, { waitMs: Number(process.env.INSTANCE_LOCK_WAIT_MS ?? 35_000) }).catch((e: Error) => { console.error(`[lock] ${e.message}`); process.exit(1); });
 const guard = createGuard({ dataDir: DATA_DIR });
 const store = new Store<RoomState>(DATA_DIR);
+const accounts = new AccountStore(DATA_DIR);
 const bank = loadBank();
 const ROOM_TTL = CLASS_ROOM_TTL_MS;
 
 // ───────────── perfiles (historial para el modo práctica) ─────────────
 /** Códigos de alumno nuevos: 8 caracteres (≈2⁴⁰). Los de 6 (≈2³⁰) ya emitidos siguen valiendo. */
 const PROFILE_CODE_LEN = 8;
+/** Perfil de una sala reanudada con su token (de confianza): cuenta (persistente) o invitado (transitorio, vacío). */
+function resumeProfile(id: string): Profile {
+  if (id.startsWith('guest_')) return { id, code: '', name: 'Invitado', stats: {}, createdAt: Date.now() };
+  return store.data.profiles[id] ?? ensureProfile(id, '');
+}
+/** Modo libre: sesión de alumno válida → su perfil de cuenta; sin sesión → invitado (nada se guarda, nada puntúa); sesión inválida → error. */
+function freeProfile(m: { session?: unknown }, name: string): Profile | { error: string } {
+  if (m.session !== undefined && m.session !== null && m.session !== '') {
+    const acc = accounts.verify(m.session);
+    if (!acc) return { error: 'Tu sesión ha caducado: vuelve a iniciar sesión o juega como invitado.' };
+    return (store.data.profiles[acc.id] ??= { id: acc.id, code: '', name: acc.alias, stats: {}, createdAt: Date.now() });
+  }
+  return { id: `guest_${randomUUID().replaceAll('-', '')}`, code: '', name: name || 'Invitado', stats: {}, createdAt: Date.now() };
+}
 function profileCodeFor(id: string) { return store.data.profiles[id]?.code ?? ''; }
+/** Ids reservados del modo libre: un cliente NO puede adoptar el perfil de una cuenta ni de un invitado diciendo su id. */
+const RESERVED_ID = /^(acc|guest)_/;
 function ensureProfile(id: string | undefined, name: string): Profile {
-  const key = id && /^[\w-]{8,64}$/.test(id) ? id : randomUUID();
+  const key = id && /^[\w-]{8,64}$/.test(id) && !RESERVED_ID.test(id) ? id : randomUUID();
   let p = store.data.profiles[key];
   if (!p) {
     let code = newCode(PROFILE_CODE_LEN);
@@ -68,7 +87,11 @@ function seenBy(profiles: string[]): Map<string, number> {
   return out;
 }
 
-const deps: Deps = { bank, now: () => Date.now(), rand: Math.random, onResult: recordResult, profileCode: profileCodeFor, seen: seenBy };
+const deps: Deps = {
+  bank, now: () => Date.now(), rand: Math.random, onResult: recordResult, profileCode: profileCodeFor, seen: seenBy,
+  // Solo las cuentas puntúan; el servidor valida y limita (ProgressLog.activity). Invitados: nada.
+  onActivity: (profile, a) => { if (isAccountProfile(profile)) progressHandler.log.activity(profile, a); },
+};
 
 // ───────────── salas ─────────────
 const rooms = new Map<string, Room>();
@@ -194,7 +217,7 @@ function hello(c: Client, m: Extract<ClientMsg, { t: 'hello' }>) {
           if (!p) guard.codeFailed(c.ip);
           return p;
         },
-        ensureProfile,
+        ensureProfile, resumeProfile, freeProfile,
       }, m);
     } catch (e) {
       if (e instanceof LimitError) return send(c.ws, { t: 'err', msg: e.message, fatal: true });
@@ -262,8 +285,16 @@ const MIME: Record<string, string> = {
 };
 
 const progressHandler = createProgressHandler({dataDir: DATA_DIR, profiles: id => store.data.profiles[id]});
+const playApi = createPlayApi({ accounts, guard, log: () => progressHandler.log, bank });
+playApi.setOnRemoved((id) => { delete store.data.profiles[id]; store.saveSoon(); });
 const roadHandler = createRoadHandler({ dataDir: DATA_DIR, guard });
-const boxingHandler = createBoxingHandler({ dataDir: DATA_DIR, guard });
+const boxingHandler = createBoxingHandler({
+  dataDir: DATA_DIR, guard, identify: (req) => identify(accounts, req),
+  progress: {
+    answer: (x) => { if (isAccountProfile(x.profile)) recordEvent({ profile: x.profile, kind: 'answer', source: 'boxing', qid: x.qid, topic: x.topic, ok: x.ok, room: x.room }); },
+    activity: (profile, a) => { if (isAccountProfile(profile)) progressHandler.log.activity(profile, a); },
+  },
+});
 const server = createServer((req, res) => {
   // Un fallo en una petición HTTP nunca debe tumbar el proceso (y con él todas las salas en curso).
   try { serve(req, res); } catch (e) {
@@ -279,6 +310,7 @@ function serve(req: IncomingMessage, res: ServerResponse) {
     res.writeHead(429, { 'content-type': 'application/json; charset=utf-8', 'retry-after': '60' });
     return void res.end(JSON.stringify({ error: 'Demasiadas peticiones. Espera un minuto.' }));
   }
+  if (playApi(req, res)) return;
   if (progressHandler(req, res)) return;
   if (roadHandler(req, res)) return;
   if (boxingHandler(req, res)) return;

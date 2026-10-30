@@ -285,7 +285,9 @@ export type GameStart = 'blackcard' | 'jenga';
 export type ClientMsg =
   | { t: 'hello'; role: 'teacher'; create?: boolean; room?: string; token?: string; teacherKey?: string; topics?: Topic[]; start?: GameStart }
   | { t: 'hello'; role: 'player'; room: string; token?: string; name?: string; profile?: string }
-  | { t: 'hello'; role: 'practice'; room?: string; token?: string; profile?: string; profileCode?: string; name?: string; topics?: Topic[]; focus?: boolean; size?: number }
+  | { t: 'hello'; role: 'practice'; room?: string; token?: string; profile?: string; profileCode?: string; name?: string; topics?: Topic[]; focus?: boolean; size?: number;
+      /** Modo libre (docs/FREE_PLAY.md): sin `free` es la práctica de siempre. `session` = sesión de alumno (opcional: sin ella, invitado). */
+      free?: boolean; session?: string; game?: 'blackcard' | 'jenga'; level?: 'A1' | 'A2' | 'B1' }
   | { t: 'answer'; id: number; qid: string; a: Answer }
   | { t: 'item'; id: number; item: ItemId; target?: string }
   | { t: 'wild'; id: number; topic: Topic }

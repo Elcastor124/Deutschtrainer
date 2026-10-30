@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SlidingLimiter, TokenBucket, clientIp, envInt } from '../server/limits.ts';
-import { roomsToExpire, staleRooms, CLASS_ROOM_TTL_MS, PRACTICE_ROOM_TTL_MS } from '../server/room-ttl.ts';
+import { roomsToExpire, staleRooms, CLASS_ROOM_TTL_MS, FINISHED_PRACTICE_TTL_MS, PRACTICE_ROOM_TTL_MS } from '../server/room-ttl.ts';
 
 describe('SlidingLimiter', () => {
   it('permite hasta max dentro de la ventana, bloquea y se libera al pasar el tiempo', () => {
@@ -77,5 +77,11 @@ describe('expiración de salas (pura)', () => {
     expect(staleRooms(rooms, (c) => c === 'BBBB', at).sort()).toEqual(['AAAA', 'PCCC']);
     // una práctica caduca antes que una sala de clase
     expect(staleRooms([['P1', { mode: 'practice', updatedAt: 0 }], ['C1', { mode: 'class', updatedAt: 0 }]], () => false, PRACTICE_ROOM_TTL_MS + 1)).toEqual(['P1']);
+  });
+  it('una práctica/solitario ya terminada se cierra a la hora; la que está en curso conserva sus 3 días', () => {
+    const rooms: [string, { mode: 'class' | 'practice'; updatedAt: number; phase?: string }][] = [['PFIN', { mode: 'practice', updatedAt: 0, phase: 'final' }], ['PACT', { mode: 'practice', updatedAt: 0, phase: 'question' }]];
+    expect(staleRooms(rooms, () => false, FINISHED_PRACTICE_TTL_MS + 1)).toEqual(['PFIN']);
+    expect(staleRooms(rooms, () => true, FINISHED_PRACTICE_TTL_MS + 1)).toEqual([]);          // con alguien conectado, nunca
+    expect(staleRooms(rooms, () => false, PRACTICE_ROOM_TTL_MS + 1).sort()).toEqual(['PACT', 'PFIN']);
   });
 });

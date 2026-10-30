@@ -84,7 +84,7 @@ Modos (`TEACHER_AUTH`):
 | Modo | Crear sala sin clave | Crear con clave | Notas |
 |---|---|---|---|
 | `optional` (**por defecto**) | permitido (se cuenta como *legacy* en `/api/health → teacherAuth.legacyRoomCreates`) | la sala queda ligada al profesor (`owner`) | clave inválida → 401 (no se degrada en silencio) |
-| `required` | **401** | permitido | sin profesores registrados cae a `optional` y lo registra: nunca deja a todos fuera |
+| `required` | **401** | permitido | **fail-closed (fase 3):** sin ningún profesor registrado, o con `teachers.json` ilegible, **503** y nadie crea salas de profesor hasta registrar uno (antes caía a `optional`) |
 | `off` | permitido | clave ignorada | **rollback inmediato** |
 
 No cambia nunca: alumnos (no necesitan credencial), práctica, y la entrada a salas ya creadas con el token de sala. Con credencial, el profesor además **recupera su sala sin el token** (otro ordenador, `localStorage` borrado); otro profesor, un alumno o una clave falsa no pueden (probado). Intentos fallidos: 10 / 15 min por IP.
@@ -121,3 +121,46 @@ Haiku trabaja en GitHub Actions y en los `JSON.parse` de arranque. **No se tocó
 - Límites por IP: tras un NAT/proxy mal configurado todos los clientes comparten cupo (se falla hacia lo estricto; ajustar `TRUST_PROXY`). Los límites viven en memoria y se reinician con el proceso.
 - Un atacante con muchas IP puede crear hasta el tope de salas (300) y bloquear temporalmente la creación a los demás hasta que caduquen (24 h Road/Boxeo; BlackCard 14 días sin clientes). `TEACHER_AUTH=required` lo elimina para quien no tenga clave.
 - Sin CSP y las presentaciones llevan soluciones en el HTML (S13).
+
+---
+
+# Fase 3 — modo libre (práctica sin profesor)
+
+Diseño y límites funcionales en `docs/FREE_PLAY.md`. Aquí, solo lo relevante para seguridad. Cada afirmación va con su prueba.
+
+## Superficie nueva
+| Endpoint | Quién | Qué puede hacer |
+|---|---|---|
+| WS `hello {role:'practice', free:true}` | alumno o invitado | Crear *su* práctica/solitario (BlackCard, Jenga). Rol `practice`: **no** puede enviar `ctl`. |
+| `POST /api/play/boxing/solo\|create\|join`, `GET state`, `POST action` | alumno o invitado | Partidas de boxeo libres. Solo con token de luchador de *esa* sala. |
+| `/api/account/register\|login\|logout\|me\|settings\|progress\|delete` | alumno | Su cuenta y su progreso. |
+| `GET /api/play/catalog`, `/api/play/leaderboard` | público | Catálogo; ranking solo de alias que lo activaron. |
+
+## Garantías comprobadas
+| Garantía | Prueba |
+|---|---|
+| Un alumno no puede usar el modo libre para obtener permisos de profesor: ninguna acción de profesor (pausar, reanudar, revelar, reiniciar, empezar, `ctl` de puntos/objetos/bloques) vale en una partida libre | `freeplay-boxing` (403 ×5), `freeplay-server` (`ctl` rechazado, puntuación intacta) |
+| Las APIs de profesor y de jugador están aisladas: el código/token de una sala de un tipo no abre la del otro | `freeplay-boxing` «las APIs están aisladas» |
+| Identidades separadas en ambos sentidos: una sesión `dts_` no es clave de profesor (HTTP y WS) y una clave `dtk_` no es sesión de alumno | `freeplay-accounts`, `freeplay-boxing`, `freeplay-server` |
+| `TEACHER_AUTH=required` es **fail-closed** (503 sin profesores registrados; `teachers.json` ilegible también cierra) y no afecta al modo libre ni a las clases en curso | `teacher-auth`, `freeplay-boxing`, `freeplay-server`, navegador |
+| Los puntos los calcula el servidor: el cliente no envía puntos ni resultados; tope diario 200 por cuenta, ≥ 8 preguntas y ≥ 40 % para una actividad, 3 actividades recompensadas/día; el tiempo conectado no puntúa | `freeplay-progress` |
+| Invitados: nada se persiste (ni perfil, ni eventos, ni puntos) | `freeplay-server` (lee `state.json`/`progress.json` tras cerrar) |
+| Un cliente no puede adoptar el perfil de una cuenta ni de un invitado diciendo su id (`acc_`/`guest_` reservados) y las APIs antiguas de progreso lo rechazan | `freeplay-server`, `freeplay-progress` |
+| Contraseñas con scrypt y sal por cuenta; sesiones y contraseñas nunca en claro en disco (`accounts.json` 0600); mismo mensaje para alias inexistente y contraseña errónea | `freeplay-accounts` |
+| Fuerza bruta: bloqueo por cuenta (6/15 min) y por IP (10/15 min); registro limitado por IP | `freeplay-accounts` |
+| Creación de partidas libres limitada por IP, por cuenta y global, sin consumir el cupo de salas de profesor | `freeplay-boxing` |
+| Partidas abandonadas se cierran (boxeo libre 2 h / 10 min tras terminar; práctica terminada 1 h; una sala con alguien conectado nunca) | `freeplay-boxing`, `limits` |
+| Reconexión: estado recuperable con el token, también tras reiniciar el servidor, sin duplicar puntos | `freeplay-boxing`, `freeplay-server` |
+| El ranking es opcional (desactivado por defecto), solo alias aprobados y solo `{rank, alias, points}`; las cuentas no salen en el ranking antiguo | `freeplay-accounts`, `freeplay-progress` |
+| Clases tradicionales sin cambios (profesor crea sala, alumno entra, `/practica` antiguo con código de dispositivo) | `freeplay-server`, los tests previos, `e2e`, `road-e2e`, `boxing-e2e` |
+
+## Hallazgos nuevos y riesgos residuales (abiertos)
+| # | Sev. | Detalle |
+|---|---|---|
+| S14 | Media | **Sin recuperación de contraseña** (no hay correo ni servicio externo). Quien la pierda pierde la cuenta. Decisión de producto pendiente. |
+| S15 | Media | **scrypt es CPU**: muchos *logins correctos* o registros simultáneos pueden saturar el hilo de trabajo; los fallos están limitados por IP/alias y los registros por IP, pero no hay límite global de scrypt concurrente. |
+| S16 | Media | **Alias**: el filtro es mínimo y no puede impedir que alguien use un nombre real. Mitigación: ranking opcional, instrucciones, bloqueo manual (`setAliasStatus`). No hay interfaz de moderación (solo método de servidor). |
+| S17 | Baja | Los límites por IP siguen siendo por proceso y dependen de `TRUST_PROXY` correcto (ver fase 2). Los invitados de WebSocket (BlackCard/Jenga solitario) comparten el cupo de «prácticas» por IP, no el de partidas libres por cuenta. |
+| S18 | Baja | Un anfitrión de sala privada ve el nombre de su rival (alias o nombre de invitado recortado). Es el comportamiento esperado de una partida con código; no hay chat ni mensajes libres. |
+| S19 | Info | `S12` (profesor) sigue abierto hasta activar `TEACHER_AUTH=required` en producción con profesores registrados. |
+| S20 | Info | No se implementaron salas privadas de BlackCard/Wort-Jenga ni Deutsch Deck (ver `FREE_PLAY.md`): no hay superficie de ataque asociada todavía. |

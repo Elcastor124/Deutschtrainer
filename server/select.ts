@@ -3,7 +3,7 @@ import type { BlockId, Difficulty, Question, QuizBlock, Topic } from '../shared/
 
 type Mix = Partial<Record<Difficulty, number>>;
 /** Contexto de la sesión: texto de lectura elegido y preguntas que ya vieron estos alumnos en otras partidas. */
-export interface SelCtx { reading?: string; seen?: Map<string, number>; /** Temas elegidos por el profesor (vacío = todos). */ topics?: Topic[] }
+export interface SelCtx { reading?: string; seen?: Map<string, number>; /** Temas elegidos por el profesor (vacío = todos). */ topics?: Topic[]; /** Banda de dificultad del nivel elegido en el modo libre (vacío = todas). */ diffs?: readonly Difficulty[] }
 /** filter: regla normal del bloque · relax: misma forma de ejercicio pero de cualquier tema (para el juego por temas). */
 interface Rule { filter: (q: Question, c: SelCtx) => boolean; relax?: (q: Question) => boolean; mix: Mix; prefer?: { reading: true; n: number }; unlock?: boolean }
 
@@ -167,8 +167,8 @@ function weighted<T>(list: T[], w: (x: T) => number, rand: () => number): T[] {
  * - Como mucho ~40 % de repaso de errores; el resto, preguntas nuevas (o vistas hace más tiempo).
  * - «focus» (solo lo que he fallado): ~70 % errores, rotando (primero los que hace más que no salen), y se completa con nuevas.
  */
-export function practiceQueue(stats: Record<string, Stat>, topics: Topic[], focus: boolean, bank: Map<string, Question>, rand: () => number, n = 15, now = Date.now()): string[] {
-  const cand = [...bank.values()].filter((q) => (topics.length ? topics.includes(q.topic) : true));
+export function practiceQueue(stats: Record<string, Stat>, topics: Topic[], focus: boolean, bank: Map<string, Question>, rand: () => number, n = 15, now = Date.now(), diffs?: readonly Difficulty[]): string[] {
+  const cand = [...bank.values()].filter((q) => (topics.length ? topics.includes(q.topic) : true) && (!diffs?.length || diffs.includes(q.diff)));
   const size = Math.max(1, Math.min(n, cand.length));
   // Lo visto más recientemente (≈ las últimas sesiones), según la hora de la última respuesta.
   const seen = Object.entries(stats).filter(([id]) => bank.has(id)).sort((a, b) => b[1].at - a[1].at);
@@ -211,7 +211,7 @@ export function practiceQueue(stats: Record<string, Stat>, topics: Topic[], focu
 
 /** Pregunta para el Wort-Jenga: rápida (elegir, escribir o rellenar), fácil o media, sin repetir. */
 export function jengaQuestion(bank: Map<string, Question>, used: Set<string>, rand: () => number, ctx: SelCtx = {}): string | null {
-  const base = (q: Question) => q.topic !== 'lesen' && !used.has(q.id) && !q.tags?.includes('tf');
+  const base = (q: Question) => q.topic !== 'lesen' && !used.has(q.id) && !q.tags?.includes('tf') && (!ctx.diffs?.length || ctx.diffs.includes(q.diff));
   const quick = (q: Question) => ['mc', 'write', 'gap'].includes(q.type) && (q.diff === 'easy' || q.diff === 'medium');
   const topics = ctx.topics?.length ? ctx.topics : null;
   // Por temas: rápidas del tema → cualquier otra del tema (ordenar, construir…) → rápidas de cualquier tema.

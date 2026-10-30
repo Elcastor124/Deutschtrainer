@@ -1,5 +1,5 @@
 import type { BoxingAction, BoxingView, BoxingWelcome } from '../shared/boxing.ts';
-import { teacherKey } from './util.ts';
+import { studentSession, teacherKey } from './util.ts';
 
 type SessionStore = Pick<Storage, 'getItem' | 'setItem'>;
 const slot = (code: string, role: BoxingWelcome['role']) => `dt:boxing:${role}:${code}`;
@@ -24,10 +24,12 @@ export function readBoxingSession(code?: string, role?: BoxingWelcome['role'], s
   return null;
 }
 
-export async function boxingRequest<T>(path: string, body?: unknown, token?: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(`/api/boxing/${path}`, {
+/** `free`: partida del modo libre (API de jugador /api/play/boxing/*, con la sesión de alumno si la hay). */
+export async function boxingRequest<T>(path: string, body?: unknown, token?: string, signal?: AbortSignal, free = false): Promise<T> {
+  const student = free ? studentSession() : undefined;
+  const response = await fetch(`/api/${free ? 'play/boxing' : 'boxing'}/${path}`, {
     method: body === undefined ? 'GET' : 'POST', cache: 'no-store', signal,
-    headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(path === 'create' && teacherKey() ? { 'X-Teacher-Key': teacherKey()! } : {}) },
+    headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(student ? { 'X-Student-Session': student } : {}), ...(!free && path === 'create' && teacherKey() ? { 'X-Teacher-Key': teacherKey()! } : {}) },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   let data;
@@ -76,7 +78,7 @@ export class BoxingClient {
     const controller = this.controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     try {
-      const view = await boxingRequest<BoxingView>(`state?code=${encodeURIComponent(this.session.code)}`, undefined, this.session.token, controller.signal);
+      const view = await boxingRequest<BoxingView>(`state?code=${encodeURIComponent(this.session.code)}`, undefined, this.session.token, controller.signal, !!this.session.free);
       if (!this.closed && generation === this.generation) this.set({ view, connection: 'online', error: null });
     } catch (error) {
       if (!this.closed && generation === this.generation) this.set({ connection: 'offline', error: error instanceof Error && error.name !== 'AbortError' ? error.message : 'La conexión tarda demasiado. Reintentando…' });
@@ -94,7 +96,7 @@ export class BoxingClient {
     this.set({ busy: true, error: null });
     let ok = false;
     try {
-      await boxingRequest('action', { code: this.session.code, action }, this.session.token, controller.signal);
+      await boxingRequest('action', { code: this.session.code, action }, this.session.token, controller.signal, !!this.session.free);
       ok = true;
       if (!this.closed && generation === this.generation) this.set({ connection: 'online' });
     } catch (error) {

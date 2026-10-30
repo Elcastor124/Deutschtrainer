@@ -31,6 +31,10 @@ npm run build
 
 `catalogo.json` documenta los títulos, rutas y huellas SHA-256 de los HTML publicados. No contiene puntuaciones, alumnos ni datos de las salas.
 
+## Modo libre (sin profesor)
+
+`/libre`: el alumno elige juego (BlackCard, Wort-Jenga, Boxeo), nivel (A1, A2, B1 Training) y temas, y juega **sin que el profesor cree ninguna sala** — en solitario (el boxeo, contra un sparring del sistema) o, en Boxeo, en una sala privada por código con un amigo. Con cuenta opcional se guarda el progreso (resultados, errores frecuentes, evolución, recomendaciones); como invitado se practica sin guardar nada. Ranking semanal opcional, solo con alias. Las clases tradicionales no cambian. [Diseño, límites y lo que falta](docs/FREE_PLAY.md).
+
 ## Road to B1 — Level 1
 
 `/road-to-b1` integra **Die erste Prüfung**, una sesión guiada de 105 minutos con 30 preguntas de lectura, dictado con revisión del profesor y diez preguntas sobre cinco audios alemanes pregenerados. Profesor, alumno y proyector usan credenciales distintas; el servidor decide cuándo autoriza soluciones y resultados. No es un examen oficial Goethe. [Guía de clase, arquitectura y límites](docs/road-to-b1.md).

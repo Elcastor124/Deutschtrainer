@@ -2,11 +2,12 @@
 // Es una clase pura (reloj y azar inyectados) para poder probarla sin red.
 import { randomBytes } from 'node:crypto';
 import { READINGS } from '../shared/reading.ts';
+import { LEVEL_DIFFS, type Level } from '../shared/play.ts';
 import {
   BC_BONUS, BOSS_CHEST_EVERY, CHESTS, COMMON_ITEMS, DIFF_LABEL, GOLD_ITEMS, ITEMS, MAX_INV, PLAN, POINTS, STREAK_REWARD, THIEF_MAX, TOPICS, blockDef, checkUse, type UseCtx,
 } from '../shared/rules.ts';
 import type {
-  Answer, BlockId, ChestTier, ErrorEntry, FinalView, Fx, GameStart, ItemId, Phase, PlayerResult, Question, RevealView, RoomView, Status, TaskKind, Topic,
+  Answer, BlockId, ChestTier, Difficulty, ErrorEntry, FinalView, Fx, GameStart, ItemId, Phase, PlayerResult, Question, RevealView, RoomView, Status, TaskKind, Topic,
 } from '../shared/types.ts';
 import { grade, makeInstance, publicView, solution, type Instance } from './grade.ts';
 import { buildQueue, drawTopic, practiceQueue, wildTopics, type SelCtx, type Stat } from './select.ts';
@@ -80,7 +81,12 @@ export interface RoomState {
   players: Player[];
   log: Fx[];
   fxSeq: number;
-  practice?: { topics: Topic[]; requeued: string[]; done: number; correct: number; focus?: boolean; size?: number };
+  practice?: { topics: Topic[]; requeued: string[]; done: number; correct: number; focus?: boolean; size?: number; level?: Level };
+  /** Modo libre: nivel elegido y su banda de dificultad (solo salas de práctica/solitario). */
+  level?: Level;
+  diffs?: Difficulty[];
+  /** Modo libre: la actividad ya se comunicó (una sola vez por sala). */
+  activityReported?: boolean;
   /** Temas elegidos por el profesor para el juego de clase y el Wort-Jenga (vacío = todos). */
   topics?: Topic[];
   /** Con qué empieza la sala: el plan BlackCard o directamente el Wort-Jenga. */
@@ -95,6 +101,8 @@ export interface Deps {
   profileCode?: (profile: string) => string;
   /** Preguntas que ya vieron estos perfiles en otras partidas (id → última vez). */
   seen?: (profiles: string[]) => Map<string, number>;
+  /** Modo libre: una actividad educativa se ha COMPLETADA (el servidor decide cuándo; el cliente no lo comunica). */
+  onActivity?: (profile: string, a: { game: 'blackcard' | 'jenga'; level?: Level; topics: string[]; total: number; correct: number; room: string }) => void;
 }
 
 export type Result = { ok: true; retry?: boolean } | { ok: false; error: string };
@@ -187,7 +195,7 @@ export class Room {
 
   /** Historial de estos alumnos en otras partidas: se prefieren preguntas nuevas para ellos. */
   selCtx(): SelCtx {
-    return { reading: this.s.reading, seen: this.d.seen?.(this.s.players.map((p) => p.profile)), ...(this.s.topics?.length ? { topics: this.s.topics } : {}) };
+    return { reading: this.s.reading, seen: this.d.seen?.(this.s.players.map((p) => p.profile)), ...(this.s.topics?.length ? { topics: this.s.topics } : {}), ...(this.s.diffs?.length ? { diffs: this.s.diffs } : {}) };
   }
 
   /** Juego por temas / arranque directo (solo en la sala del profesor, antes de empezar). */
@@ -814,9 +822,10 @@ export class Room {
   }
 
   // ───────────── práctica ─────────────
-  startPractice(p: Player, topics: Topic[], focus: boolean, stats: Record<string, Stat>, size = 15): Result {
-    this.s.practice = { topics, requeued: [], done: 0, correct: 0, focus, size };
-    this.s.queue = practiceQueue(stats, topics, focus, this.d.bank, this.d.rand, size, this.now);
+  startPractice(p: Player, topics: Topic[], focus: boolean, stats: Record<string, Stat>, size = 15, level?: Level): Result {
+    this.s.practice = { topics, requeued: [], done: 0, correct: 0, focus, size, ...(level ? { level } : {}) };
+    if (level) { this.s.level = level; this.s.diffs = [...LEVEL_DIFFS[level]]; }
+    this.s.queue = practiceQueue(stats, topics, focus, this.d.bank, this.d.rand, size, this.now, this.s.diffs);
     this.s.qTotal = this.s.queue.length;
     this.s.startedAt = this.now;
     if (!this.s.players.includes(p)) this.s.players.push(p);
@@ -831,7 +840,26 @@ export class Room {
     return this.presentNext(id, !!this.s.practice?.requeued.includes(id) && this.s.used.includes(id));
   }
 
+  /** Wort-Jenga en solitario (modo libre): una torre para un jugador. Sin profesor: no hay preguntas orales ni jueces. */
+  startSoloJenga(p: Player, topics: Topic[], level?: Level): Result {
+    if (!this.practice) return fail('Solo en el modo libre.');
+    this.s.topics = topics;
+    if (level) { this.s.level = level; this.s.diffs = [...LEVEL_DIFFS[level]]; }
+    if (!this.s.players.includes(p)) this.s.players.push(p);
+    Object.assign(this.s, { block: 'jenga' as BlockId, blockStartedAt: this.now, startedAt: this.now });
+    return startTask(this, 'jenga');
+  }
+
+  /** Comunica (una vez) que la actividad se ha completado. `total`/`correct` los cuenta el servidor. */
+  reportActivity(game: 'blackcard' | 'jenga', total: number, correct: number) {
+    if (this.s.activityReported || !this.practice) return;
+    this.s.activityReported = true;
+    const p = this.s.players[0];
+    if (p) this.d.onActivity?.(p.profile, { game, level: this.s.level, topics: this.s.topics?.length ? this.s.topics : this.s.practice?.topics ?? [], total, correct, room: this.s.code });
+  }
+
   private finishPractice(): Result {
+    if (this.s.practice) this.reportActivity('blackcard', this.s.practice.done, this.s.practice.correct);
     Object.assign(this.s, { phase: 'final' as Phase, q: null, timer: null });
     this.touch();
     return OK;

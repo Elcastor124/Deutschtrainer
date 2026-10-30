@@ -51,6 +51,7 @@ export function GameSetup({ mode }: { mode: 'blackcard' | 'jenga' }) {
     <div className="home game-setup" data-mode={mode}>
       <h1 className="home-title">{c.title}<b>// {c.sub}</b></h1>
       <p className="home-sub">{c.lead}</p>
+      <p className="home-sub small">¿Quieres jugar sin profesor? <a href="/libre" onClick={(e) => { e.preventDefault(); navigate('/libre'); }}>Modo libre: en solitario o con un amigo por código</a>.</p>
       <div className="home-grid">
         <section className="panel home-card" aria-labelledby="gs-teacher">
           <h2 id="gs-teacher"><span className="idx">01</span>Profesor</h2>
