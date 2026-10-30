@@ -60,8 +60,8 @@ export function Practice() {
     ...(s.opts ? { topics: s.opts.topics, focus: s.opts.focus, size: s.opts.size } : {}),
     ...(s.account ? asAccount() : {}),
   });
-  // Recarga a mitad de práctica: se retoma sola (sin pasar por el formulario).
-  useEffect(() => { if (saved) resume(saved); }, []);
+  // Recarga a mitad de práctica: se ofrece «Continuar», pero primero se ve el selector de temas.
+
 
   if (hello) {
     const again = () => setHello({ t: 'hello', role: 'practice', profile: profileId(), name: store.get('bc:name') ?? hello.name, topics: hello.topics, focus: hello.focus, size: hello.size, ...(hello.free ? asAccount() : {}) });
@@ -84,6 +84,43 @@ export function Practice() {
       <h1 className="home-title" style={{ fontSize: 'clamp(2.2rem, 1.4rem + 4vw, 4.6rem)' }}>Tema 1<b>// práctica</b></h1>
       <p className="home-sub">Todo el banco de preguntas preparado, en sesiones sin tiempo. Cada práctica trae preguntas nuevas y mezcla un repaso de lo que fallaste en otras sesiones. Si fallas una, vuelve a salir unas preguntas después.</p>
       <p className="home-sub small">Necesitas conexión con el servidor. Los talleres de escritura y ensayo de escenas tienen su propio espacio de práctica.</p>
+      {saved && (
+        <div className="panel row" style={{ width: '100%' }}>
+          <span>Tienes una práctica a medias.</span><span className="spacer" />
+          <button type="button" className="btn primary" onClick={() => resume(saved)}>Continuar</button>
+          <button type="button" className="btn ghost" onClick={() => { store.del(KEY); location.reload(); }}>Empezar otra</button>
+        </div>
+      )}
+      <form className="panel stack" style={{ width: '100%' }} onSubmit={start}>
+        <div className="stack" style={{ gap: 6 }}>
+          <h2 className="practice-pick-title">1. Elige qué quieres practicar <span className="dim small">(sin marcar = todos los temas)</span></h2>
+          <div className="chips">
+            {(Object.keys(TOPICS) as Topic[]).map((t) => (
+              <button key={t} type="button" className={`btn sm${topics.includes(t) ? ' on' : ''}`} aria-pressed={topics.includes(t)} onClick={() => toggle(t)}>{TOPICS[t].de}</button>
+            ))}
+          </div>
+        </div>
+        {!account && <label className="stack" style={{ gap: 6 }}>Tu nombre <span className="dim small">(sin cuenta: no cuenta para el ranking)</span>
+          <input className="field" value={name} maxLength={16} onChange={(e) => setName(e.target.value)} />
+        </label>}
+        <div className="stack" style={{ gap: 6 }} role="radiogroup" aria-label="Preguntas por sesión">
+          <span>Preguntas por sesión</span>
+          <div className="chips">
+            {PRACTICE_SIZES.map((n) => (
+              <button key={n} type="button" role="radio" aria-checked={size === n} className={`btn sm${size === n ? ' on' : ''}`} onClick={() => setSize(n)}>{n}</button>
+            ))}
+          </div>
+        </div>
+        <label className="row"><input type="checkbox" checked={focus} onChange={(e) => setFocus(e.target.checked)} /> Repasar sobre todo lo que he fallado (se completa con preguntas nuevas)</label>
+        {!account && <label className="stack" style={{ gap: 6 }}>
+          <span>¿Otro ordenador? Código de alumno <span className="dim">(aparece al final de la clase{myCode ? `; el tuyo: ${myCode}` : ''})</span></span>
+          <input className="field dot" style={{ letterSpacing: '0.15em' }} value={pcode} maxLength={8} onChange={(e) => setPcode(e.target.value.toUpperCase())} placeholder="opcional" />
+        </label>}
+        <div className="row">
+          <button className="btn primary lg" disabled={!account && !name.trim() && !pcode.trim()}>Empezar práctica</button>
+          <button type="button" className="btn ghost" onClick={() => navigate('/')}>Volver</button>
+        </div>
+      </form>
       <section className="practice-account" aria-label="Tu cuenta">
       {account ? (
         <div className="libre-card acc-strip" data-practice-account="">
@@ -103,43 +140,6 @@ export function Practice() {
       </section>
       <KlausCompanion />
       <div className="row"><a className="btn" href="/tema/1" onClick={followLearningLink}>Ver materiales de Tema 1</a><a className="btn" href="/tema/1/taller" onClick={followLearningLink}>Practicar escritura y escenas</a></div>
-      {saved && (
-        <div className="panel row" style={{ width: '100%' }}>
-          <span>Tienes una práctica a medias: retomándola…</span><span className="spacer" />
-          <button type="button" className="btn primary" onClick={() => resume(saved)}>Continuar</button>
-          <button type="button" className="btn ghost" onClick={() => { store.del(KEY); location.reload(); }}>Empezar otra</button>
-        </div>
-      )}
-      <form className="panel stack" style={{ width: '100%' }} onSubmit={start}>
-        {!account && <label className="stack" style={{ gap: 6 }}>Tu nombre <span className="dim small">(sin cuenta: no cuenta para el ranking)</span>
-          <input className="field" value={name} maxLength={16} onChange={(e) => setName(e.target.value)} />
-        </label>}
-        <div className="stack" style={{ gap: 6 }}>
-          <span>Temas <span className="dim">(sin marcar = todos)</span></span>
-          <div className="chips">
-            {(Object.keys(TOPICS) as Topic[]).map((t) => (
-              <button key={t} type="button" className={`btn sm${topics.includes(t) ? ' on' : ''}`} aria-pressed={topics.includes(t)} onClick={() => toggle(t)}>{TOPICS[t].de}</button>
-            ))}
-          </div>
-        </div>
-        <div className="stack" style={{ gap: 6 }} role="radiogroup" aria-label="Preguntas por sesión">
-          <span>Preguntas por sesión</span>
-          <div className="chips">
-            {PRACTICE_SIZES.map((n) => (
-              <button key={n} type="button" role="radio" aria-checked={size === n} className={`btn sm${size === n ? ' on' : ''}`} onClick={() => setSize(n)}>{n}</button>
-            ))}
-          </div>
-        </div>
-        <label className="row"><input type="checkbox" checked={focus} onChange={(e) => setFocus(e.target.checked)} /> Repasar sobre todo lo que he fallado (se completa con preguntas nuevas)</label>
-        {!account && <label className="stack" style={{ gap: 6 }}>
-          <span>¿Otro ordenador? Código de alumno <span className="dim">(aparece al final de la clase{myCode ? `; el tuyo: ${myCode}` : ''})</span></span>
-          <input className="field dot" style={{ letterSpacing: '0.15em' }} value={pcode} maxLength={8} onChange={(e) => setPcode(e.target.value.toUpperCase())} placeholder="opcional" />
-        </label>}
-        <div className="row">
-          <button className="btn primary lg" disabled={!account && !name.trim() && !pcode.trim()}>Empezar práctica</button>
-          <button type="button" className="btn ghost" onClick={() => navigate('/')}>Volver</button>
-        </div>
-      </form>
     </div>
   );
 }

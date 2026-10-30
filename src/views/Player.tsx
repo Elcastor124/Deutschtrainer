@@ -173,6 +173,9 @@ export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Ne
             </details>
           )}
 
+          {practice && feel && feel.kind !== 'support' && feel.streak >= 3 && (
+              <div className="streak-fire" key={feel.id} aria-hidden="true"><span>🔥</span><span>🔥</span><span>🔥</span><b>¡Racha ×{feel.streak}!</b></div>
+            )}
           {(v.phase === 'question' || v.phase === 'review' || v.phase === 'reveal') && v.q && (
             <section className={`panel qpanel screen${v.phase === 'reveal' ? ' is-reveal' : ''}`} key={v.q.id} data-practice-feedback={practice && feel ? feel.kind : undefined} data-practice-feedback-id={practice ? feel?.id : undefined}>
               <QuestionHead q={v.q} no={v.qNo} total={v.qTotal} />

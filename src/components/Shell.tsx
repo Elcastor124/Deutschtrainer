@@ -23,7 +23,7 @@ export function Shell({ st, me, teacher, onBlock, onKey, hudExtra, children }: {
   const [lite, setLite] = useSetting('bc:lite', prefersReducedMotion());
   const effects = useEffectsEnabled();
   const effectiveLite = lite || !effects;
-  const [snd, setSnd] = useSetting(teacher ? 'bc:sound-t' : 'bc:sound', !!teacher);
+  const [snd, setSnd] = useSetting(teacher ? 'bc:sound-t' : 'bc:sound', true);
   const [ov, setOv] = useState<'dict' | 'score' | 'help' | null>(null);
   const keyRef = useRef(onKey);
   keyRef.current = onKey;
