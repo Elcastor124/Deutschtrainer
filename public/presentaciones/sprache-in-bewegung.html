@@ -6,9 +6,12 @@
 <title>Deutsch Trainer // Sprache in Bewegung</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="/design-tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@400;700;900&family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#080808;--panel:#101010;--bg2:#171717;--w:#F2F1EE;--g:#858585;--g2:#454545;--r:#FF3832;--r2:#A8201C;--ok:#67D6A0;
---dot:'Doto','JetBrains Mono',monospace;--sans:'Space Grotesk',system-ui,sans-serif;--mono:'JetBrains Mono',Consolas,monospace;
+:root{--bg:var(--dt-ink-0);--panel:var(--dt-ink-1);--bg2:var(--dt-ink-2);--w:var(--dt-paper);--g:var(--dt-muted);--g2:var(--dt-hair-2);--r:var(--dt-red);--r2:var(--dt-red-deep);--ok:var(--dt-ok);
+--dot:var(--dt-dot);--sans:var(--dt-display);--mono:var(--dt-mono);
 font-size:min(100vw/120,100vh/67.5)}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--w);font-family:var(--sans);overflow:hidden}
@@ -147,6 +150,7 @@ table.t th{font-family:var(--mono);font-size:.9rem;color:var(--g);letter-spacing
 .help{background:var(--panel);border:1px solid #2a2a2a;padding:2rem 3rem;border-radius:.6rem;font-size:1.4rem;columns:2;column-gap:4rem;width:72rem}
 .help div{padding:.35rem 0}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.fresh .dm .c{opacity:1}}
+html,body{overflow-x:hidden}
 </style>
 </head>
 <body>

@@ -12,7 +12,7 @@
     ],
     "level": "A1",
     "source": "DEUTSCHTRAINER.pptx",
-    "sha256": "946ccefb4c62fb2792ae8ae2e669704fc25ca00cd6d5cfedb2679ca862445089"
+    "sha256": "d8088dffad000e8dcdabcd70d3627d2274c19bb29dc02728abfcef1db63c6fde"
   },
   {
     "id": "bruecke-a1",
@@ -27,7 +27,7 @@
     ],
     "level": "A1",
     "source": "index.html",
-    "sha256": "cd3ab02935a555dc18a8823220adef73e3d31977018ad748b7335501ff9aa02f"
+    "sha256": "099424fa3e55cb45de89ccbf4f4d51de30b89659f99c0d7c4cc021bc2b5f9785"
   },
   {
     "id": "bank",
@@ -41,7 +41,7 @@
     ],
     "level": "A2",
     "source": "bank.html",
-    "sha256": "32d5237d4e531e7a6831fc94c85b5b15aeb7bfeac45eee9aa620d23ec0d9bc7a",
+    "sha256": "0759a9d9451257906c8f5c4f99fef2233f05b497ed162766d6d0a3a37418f51f",
     "pdf": "/presentaciones/bank.pdf"
   },
   {
@@ -56,7 +56,7 @@
     ],
     "level": "A1–A2",
     "source": "nebensatz-perfekt.html",
-    "sha256": "c8e4f4c401512e01650029f03fd7b746789ca24f1aa8d945d5accc2eedbd3d34",
+    "sha256": "951a53305723d0a2403a8c4601874a689f16bfe7c1da00cb0026f0f93c167e94",
     "pdf": "/presentaciones/nebensaetze-perfekt.pdf"
   },
   {
@@ -72,7 +72,7 @@
     ],
     "level": "A1",
     "source": "zusammenfassung-thema-1.html",
-    "sha256": "f40de3dda81e4df564d9633a79e7a8afd1eb1eef9cf37d1f6d8cc6b8cc974fb9"
+    "sha256": "489a9ed4fff6418432a3bf7a85f0409f3878322bbab257a7d0886c8c3bb968b2"
   },
   {
     "id": "krankenhaus",
@@ -87,7 +87,7 @@
     ],
     "level": "A1–A2",
     "source": "krankenhaus.html",
-    "sha256": "2ce4dd936a9b8e943248bf5035a9855a3b299b6a38c3a95f905766ad1a3f225d",
+    "sha256": "7112eb713c37681c0a3ff3ca82c9a160ff26af72a515e94ba382b92978358835",
     "pdf": "/presentaciones/krankenhaus.pdf"
   },
   {
@@ -105,7 +105,7 @@
     ],
     "level": "A1–A2",
     "source": "IM_KRANKENHAUS_3D_DATIV_REMASTER.html",
-    "sha256": "ba67042d80a38e4a8065ba7bdbfe7b1efa5577a6c7bbb6f94706dce97c723833"
+    "sha256": "3b15febb007aaa536e63bd9d1b7cf3f9fcdf794d3b2ddf278f178415ecac9c4b"
   },
   {
     "id": "unterwegs",
@@ -120,7 +120,7 @@
     ],
     "level": "A1–A2",
     "source": "dativ.html",
-    "sha256": "6baceefdfcfd0d31c2095b73b72df6174bc42f0c43a7d764fd5213d63d44f2a4",
+    "sha256": "ff950f1a7b34c8a7af43d835fb55599bd7ea385faf70f97cb4ed10f9a831c76f",
     "pdf": "/presentaciones/unterwegs.pdf"
   },
   {
@@ -136,7 +136,7 @@
     ],
     "level": "A1–A2",
     "source": "akkusativ.html",
-    "sha256": "d5c923cb7d447a98d0da8991c941d276af687a9c37553909559096727f1bb557",
+    "sha256": "f49a236f55a2e67735569a490f8f4bdf1deefb971a35403e77228e1aa4fcb940",
     "pdf": "/presentaciones/akkusativ.pdf"
   },
   {
@@ -153,6 +153,6 @@
     ],
     "level": "A1–A2",
     "source": "deutsch-trainer-120.html",
-    "sha256": "7efb631d599646fc61c28f934d4a10ccab8ca2837cede72d067ddfc7556a2543"
+    "sha256": "f5612efa16684547fedac306680d719e16f171ecb4ebab9a11fce2323e3a8d64"
   }
 ]

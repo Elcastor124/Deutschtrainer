@@ -4,15 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Warum? · weil, obwohl, deshalb & Perfekt</title>
+<link rel="stylesheet" href="/design-tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#0f1729; --paper:#fdfbf7; --gold:#f5b942; --deep:#0b3a5c; --sea:#0e7490;
-  --rose:#e11d48; --mint:#10b981; --lav:#7c3aed; --dim:#64748b; --line:#e2e8f0;
-  --weil:#0ea5e9; --obwohl:#f97316; --deshalb:#a855f7; --verb:#e11d48;
+  --ink:var(--dt-paper); --paper:var(--dt-ink-1); --gold:var(--dt-gold); --deep:#0b3a5c; --sea:#0e7490;
+  --rose:var(--dt-red); --mint:#10b981; --lav:#7c3aed; --dim:var(--dt-muted); --line:var(--dt-hair-2);
+  --weil:#0ea5e9; --obwohl:#f97316; --deshalb:#a855f7; --verb:var(--dt-red);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
-body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--ink)}
+body{font-family:var(--dt-display);background:var(--paper);color:var(--ink)}
 #deck{position:absolute;inset:0}
 section.slide{position:absolute;inset:0;padding:4.5vh 6vw 8vh;opacity:0;pointer-events:none;
   display:flex;flex-direction:column;justify-content:center;overflow-y:auto;
@@ -21,15 +24,15 @@ section.slide.on{opacity:1;pointer-events:auto;transform:none}
 section.slide.prev{transform:translateX(-40px) scale(.985)}
 section.slide::-webkit-scrollbar{width:6px}section.slide::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:9px}
 /* fondos */
-.bg-cream{background:linear-gradient(135deg,#fdfbf7,#fff6e6)}
-.bg-deep{background:linear-gradient(140deg,#0b3a5c,#0f1729);color:#fff}
-.bg-sky{background:linear-gradient(140deg,#0284c7,#0c4a6e);color:#fff}
-.bg-orange{background:linear-gradient(140deg,#f97316,#9a3412);color:#fff}
-.bg-lav{background:linear-gradient(140deg,#7c3aed,#3b0764);color:#fff}
-.bg-rose{background:linear-gradient(140deg,#e11d48,#881337);color:#fff}
-.bg-mint{background:linear-gradient(140deg,#10b981,#065f46);color:#fff}
-.bg-ink{background:linear-gradient(140deg,#1e293b,#0f1729);color:#fff}
-.bg-gold{background:linear-gradient(140deg,#fbbf24,#d97706);color:#3d2500}
+.bg-cream{background:radial-gradient(900px 600px at 80% 0%,color-mix(in srgb,var(--dt-red) 9%,transparent),transparent 70%),var(--dt-ink-1)}
+.bg-deep{background:linear-gradient(140deg,color-mix(in srgb,var(--dt-ink-3) 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-sky{background:linear-gradient(140deg,color-mix(in srgb,#0284c7 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-orange{background:linear-gradient(140deg,color-mix(in srgb,#f97316 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-lav{background:linear-gradient(140deg,color-mix(in srgb,#7c3aed 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-rose{background:linear-gradient(140deg,color-mix(in srgb,var(--dt-red) 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-mint{background:linear-gradient(140deg,color-mix(in srgb,#10b981 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-ink{background:linear-gradient(140deg,color-mix(in srgb,var(--dt-ink-2) 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-gold{background:linear-gradient(140deg,color-mix(in srgb,#fbbf24 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
 /* tipografía */
 .eyebrow{font-size:clamp(11px,1.1vw,15px);letter-spacing:.4em;text-transform:uppercase;font-weight:800;opacity:.62;margin-bottom:1.6vh}
 h1{font-size:clamp(48px,9vw,140px);line-height:.88;letter-spacing:-.045em;font-weight:900}
@@ -51,7 +54,7 @@ h3{font-size:clamp(18px,2vw,30px);font-weight:800;letter-spacing:-.02em}
 /* frases con fichas */
 .sent{display:flex;flex-wrap:wrap;gap:.55vw;align-items:center;font-size:clamp(20px,2.9vw,44px);font-weight:800;letter-spacing:-.02em}
 .tok{background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.25);border-radius:14px;padding:.5vh .9vw}
-.bg-cream .tok{background:#fff;border-color:var(--line)}
+.bg-cream .tok{background:var(--dt-ink-2);border-color:var(--line)}
 .tok.v{background:var(--gold);border-color:var(--gold);color:#3d2500;box-shadow:0 6px 0 rgba(0,0,0,.15)}
 .tok.w{background:var(--weil);border-color:var(--weil);color:#fff}
 .tok.o{background:var(--obwohl);border-color:var(--obwohl);color:#fff}
@@ -63,7 +66,7 @@ h3{font-size:clamp(18px,2vw,30px);font-weight:800;letter-spacing:-.02em}
 .step{opacity:.07;cursor:pointer;transition:.35s;transform:translateY(8px)}
 .step.show{opacity:1;transform:none;cursor:default}
 /* reveal */
-.rv{background:#fff;border:2px solid var(--line);border-radius:20px;padding:2vh 1.4vw;cursor:pointer;
+.rv{background:var(--dt-ink-2);border:2px solid var(--line);border-radius:20px;padding:2vh 1.4vw;cursor:pointer;
   transition:.25s cubic-bezier(.2,.8,.3,1);box-shadow:0 3px 0 rgba(15,23,41,.05)}
 .rv:hover{transform:translateY(-4px);border-color:var(--deep);box-shadow:0 14px 28px rgba(11,58,92,.14)}
 .rv .front{font-size:clamp(15px,1.65vw,26px);font-weight:800;line-height:1.25}
@@ -80,15 +83,15 @@ h3{font-size:clamp(18px,2vw,30px);font-weight:800;letter-spacing:-.02em}
 .b{border:none;font-family:inherit;font-weight:800;cursor:pointer;border-radius:99px;padding:1.3vh 2vw;
   font-size:clamp(13px,1.35vw,20px);transition:.2s;background:var(--ink);color:#fff}
 .b:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(15,23,41,.25)}
-.b.g{background:var(--gold);color:#3d2500}.b.w{background:#fff;color:var(--ink);border:2px solid var(--line)}
+.b.g{background:var(--gold);color:#3d2500}.b.w{background:var(--dt-ink-2);color:var(--ink);border:2px solid var(--line)}
 .b.o{background:transparent;border:2px solid currentColor;color:inherit}
 .b.sm{padding:.9vh 1.3vw;font-size:clamp(12px,1.15vw,16px)}
 /* juego de elección */
-.q{display:flex;align-items:center;gap:1vw;background:#fff;border:2px solid var(--line);border-radius:18px;
+.q{display:flex;align-items:center;gap:1vw;background:var(--dt-ink-2);border:2px solid var(--line);border-radius:18px;
   padding:1.3vh 1.3vw;font-size:clamp(15px,1.7vw,26px);font-weight:700;transition:.25s}
 .q .txt{flex:1}.q .gap{display:inline-block;min-width:5.5em;border-bottom:3px dashed #94a3b8;text-align:center;font-weight:900}
 .q .opts{display:flex;gap:.5vw}
-.pick{border:2px solid var(--line);background:#fff;border-radius:12px;padding:.7vh 1vw;font-weight:900;
+.pick{border:2px solid var(--line);background:var(--dt-ink-2);border-radius:12px;padding:.7vh 1vw;font-weight:900;
   font-size:clamp(12px,1.25vw,19px);cursor:pointer;font-family:inherit;color:var(--dim);transition:.15s}
 .pick:hover{border-color:var(--deep);color:var(--deep)}
 .q.right{border-color:var(--mint);background:#ecfdf5}
@@ -98,7 +101,7 @@ h3{font-size:clamp(18px,2vw,30px);font-weight:800;letter-spacing:-.02em}
 /* tabla posiciones */
 .pos{width:100%;border-collapse:separate;border-spacing:.5vw .8vh;font-size:clamp(16px,2.1vw,32px);font-weight:800}
 .pos th{font-size:clamp(10px,1vw,14px);letter-spacing:.18em;text-transform:uppercase;opacity:.6;font-weight:900;text-align:left;padding:0 .8vw}
-.pos td{background:rgba(255,255,255,.1);border-radius:12px;padding:1vh .9vw}
+.pos td{background:var(--dt-ink-2);border-radius:12px;padding:1vh .9vw}
 .pos td.p2{background:var(--gold);color:#3d2500}
 .pos td.empty{background:transparent}
 /* tabla resumen */
@@ -110,24 +113,24 @@ h3{font-size:clamp(18px,2vw,30px);font-weight:800;letter-spacing:-.02em}
 .builder .tabs{display:flex;gap:.5vw;flex-wrap:wrap;margin-bottom:1.6vh}
 .builder .tabs .b.on{background:var(--lav);color:#fff;border-color:var(--lav)}
 .tiles{display:flex;gap:.6vw;flex-wrap:wrap;min-height:7vh;align-items:center;margin-top:1.6vh}
-.tile{background:#fff;border:2px solid var(--line);border-radius:12px;padding:1vh 1.1vw;font-size:clamp(14px,1.65vw,26px);
+.tile{background:var(--dt-ink-2);border:2px solid var(--line);border-radius:12px;padding:1vh 1.1vw;font-size:clamp(14px,1.65vw,26px);
   font-weight:800;cursor:pointer;transition:.15s;font-family:inherit;color:var(--ink)}
 .tile:hover{border-color:var(--lav);transform:translateY(-3px)}
 .tile.used{opacity:.2;pointer-events:none}
 .drop{min-height:8.5vh;border:3px dashed #cbd5e1;border-radius:18px;padding:1.2vh 1.2vw;display:flex;gap:.5vw;
-  flex-wrap:wrap;align-items:center;background:#fff;cursor:pointer}
+  flex-wrap:wrap;align-items:center;background:var(--dt-ink-2);cursor:pointer}
 .drop .tile{background:var(--lav);color:#fff;border-color:var(--lav);pointer-events:none}
 .drop.ok{border-color:var(--mint);border-style:solid;background:#ecfdf5}.drop.ok .tile{background:var(--mint);border-color:var(--mint)}
 .drop.no{border-color:var(--rose);animation:shake .4s}
 .bmsg{font-size:clamp(15px,1.7vw,26px);font-weight:900}
 /* hat/ist */
-.arena{background:rgba(255,255,255,.1);border:3px solid rgba(255,255,255,.25);border-radius:28px;padding:3.5vh 3vw;text-align:center}
+.arena{background:var(--dt-ink-2);border:3px solid rgba(255,255,255,.25);border-radius:28px;padding:3.5vh 3vw;text-align:center}
 .arena .inf{font-size:clamp(46px,7.5vw,112px);font-weight:900;letter-spacing:-.04em;line-height:1}
 .arena .tr{font-size:clamp(14px,1.6vw,24px);opacity:.7;font-weight:600;margin-top:.6vh}
 .arena .res{font-size:clamp(22px,3.2vw,50px);font-weight:900;min-height:1.3em;margin-top:1.4vh}
 .big2{font-size:clamp(20px,2.6vw,40px)!important;padding:1.6vh 3.2vw!important}
 /* ausreden */
-.excuse{background:rgba(255,255,255,.1);border:3px solid rgba(255,255,255,.26);border-radius:28px;padding:4vh 3vw;text-align:center;
+.excuse{background:var(--dt-ink-2);border:3px solid rgba(255,255,255,.26);border-radius:28px;padding:4vh 3vw;text-align:center;
   min-height:30vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4vh}
 .excuse .em{font-size:clamp(46px,7vw,100px);line-height:1}
 .excuse .txt{font-size:clamp(22px,3.3vw,52px);font-weight:900;letter-spacing:-.03em}
@@ -139,14 +142,14 @@ h3{font-size:clamp(18px,2vw,30px);font-weight:800;letter-spacing:-.02em}
 .ck .box{width:clamp(24px,2.4vw,38px);height:clamp(24px,2.4vw,38px);border-radius:9px;border:3px solid rgba(255,255,255,.5);
   display:grid;place-items:center;flex:none;color:transparent;font-size:clamp(14px,1.5vw,22px)}
 .ck.on{opacity:1;background:rgba(16,185,129,.25);border-color:var(--mint)}.ck.on .box{background:var(--mint);border-color:var(--mint);color:#fff}
-.bg-cream .ck{background:#fff;border-color:var(--line);color:var(--ink)}
+.bg-cream .ck{background:var(--dt-ink-2);border-color:var(--line);color:var(--ink)}
 .bg-cream .ck .box{border-color:#cbd5e1}
 .bg-cream .ck.on{background:#ecfdf5;border-color:var(--mint)}
 .chip{display:inline-block;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:99px;
   padding:.6vh 1vw;font-size:clamp(12px,1.25vw,18px);font-weight:700;margin:.3vh .2vw}
-.bg-cream .chip{background:#fff;border-color:var(--line)}
-.box2{background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.22);border-radius:20px;padding:2vh 1.6vw}
-.bg-cream .box2{background:#fff;border-color:var(--line)}
+.bg-cream .chip{background:var(--dt-ink-2);border-color:var(--line)}
+.box2{background:var(--dt-ink-2);border:2px solid rgba(255,255,255,.22);border-radius:20px;padding:2vh 1.6vw}
+.bg-cream .box2{background:var(--dt-ink-2);border-color:var(--line)}
 .warnbox{border-left:6px solid var(--gold);background:rgba(245,185,66,.14);border-radius:0 16px 16px 0;padding:1.6vh 1.4vw;
   font-size:clamp(14px,1.6vw,24px);font-weight:700}
 /* HUD */
@@ -168,6 +171,8 @@ h3{font-size:clamp(18px,2vw,30px);font-weight:800;letter-spacing:-.02em}
 #hint{position:fixed;bottom:2.8vh;left:50%;transform:translateX(-50%);font-size:clamp(10px,.9vw,12px);font-weight:800;
   letter-spacing:.12em;opacity:.3;z-index:30;pointer-events:none;text-transform:uppercase;white-space:nowrap}
 @media(max-width:900px){.split,.g3,.g4{grid-template-columns:1fr 1fr}}
+html,body{overflow-x:hidden}
+#deck,main,body>section{overflow-x:clip}
 </style>
 </head>
 <body>
@@ -226,12 +231,12 @@ h3{font-size:clamp(18px,2vw,30px);font-weight:800;letter-spacing:-.02em}
 <!-- 4 OBWOHL -->
 <section class="slide bg-orange dark" data-min="8–12" data-note="Idea clave: weil = lógico, obwohl = sorpresa/contra lo esperado. Misma regla de orden: verbo al final. Que inventen ellos un ejemplo propio antes de pasar.">
   <div class="eyebrow">Teil 2 · Gegensätze</div>
-  <h2><span class="k obwohl" style="background:#fff;color:var(--obwohl)">obwohl</span> = aunque</h2>
+  <h2><span class="k obwohl" style="background:var(--dt-ink-2);color:var(--obwohl)">obwohl</span> = aunque</h2>
   <div class="mt3">
     <div class="sent"><span class="tok">Es</span><span class="tok v">regnet.</span><span class="tok">Ich gehe spazieren.</span><span style="font-size:.8em">🌧️🚶</span></div>
   </div>
   <div class="step arrow">⬇ ¿Lógico? No… ¡sorpresa!</div>
-  <div class="step"><div class="sent"><span class="tok">Ich gehe spazieren,</span><span class="tok" style="background:#fff;color:var(--obwohl)">obwohl</span><span class="tok">es</span><span class="tok v">regnet.</span></div></div>
+  <div class="step"><div class="sent"><span class="tok">Ich gehe spazieren,</span><span class="tok" style="background:var(--dt-ink-2);color:var(--obwohl)">obwohl</span><span class="tok">es</span><span class="tok v">regnet.</span></div></div>
   <div class="step grid g2 mt2">
     <div class="box2"><div class="lbl">weil</div><div class="lead">✔ lógico: Ich esse, weil ich Hunger habe.</div></div>
     <div class="box2"><div class="lbl">obwohl</div><div class="lead">⚡ sorpresa: Ich esse, obwohl ich keinen Hunger habe.</div></div>
@@ -261,7 +266,7 @@ h3{font-size:clamp(18px,2vw,30px);font-weight:800;letter-spacing:-.02em}
 <!-- 6 DESHALB -->
 <section class="slide bg-lav dark" data-min="15–20" data-note="LO MÁS IMPORTANTE DEL DÍA: deshalb NO es Nebensatz. El verbo se queda en posición 2 y el sujeto salta detrás. Muéstralo con la tabla. Deswegen = deshalb (idéntico).">
   <div class="eyebrow">Teil 3 · Folgen</div>
-  <h2><span class="k deshalb" style="background:#fff;color:var(--deshalb)">deshalb</span> = <span class="k deshalb" style="background:#fff;color:var(--deshalb)">deswegen</span> = por eso</h2>
+  <h2><span class="k deshalb" style="background:var(--dt-ink-2);color:var(--deshalb)">deshalb</span> = <span class="k deshalb" style="background:var(--dt-ink-2);color:var(--deshalb)">deswegen</span> = por eso</h2>
   <div class="warnbox mt2">⚠️ ¡Trampa! <b>deshalb</b> NO es Nebensatz → el verbo se queda en la <b>posición 2</b> y el sujeto va <b>detrás</b>.</div>
   <table class="pos mt2">
     <tr><th>Pos. 1</th><th>Pos. 2 · Verb</th><th>…</th></tr>

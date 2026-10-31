@@ -4,17 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Auf der Bank · Deutsch A2</title>
+<link rel="stylesheet" href="/design-tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 @import url('');
 :root{
-  --ink:#0f1729; --ink2:#1e293b; --paper:#fdfbf7;
-  --gold:#f5b942; --deep:#0b3a5c; --sea:#0e7490; --rose:#e11d48;
-  --mint:#10b981; --lav:#7c3aed; --dim:#64748b; --line:#e2e8f0;
+  --ink:var(--dt-paper); --ink2:var(--dt-paper-2); --paper:var(--dt-ink-1);
+  --gold:var(--dt-gold); --deep:var(--dt-red-deep); --sea:var(--dt-ink-3); --rose:var(--dt-red);
+  --mint:var(--dt-ok); --lav:var(--dt-red); --dim:var(--dt-muted); --line:var(--dt-hair-2);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{
-  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+  font-family:var(--dt-display);
   background:var(--paper);color:var(--ink);
 }
 /* ============ shell ============ */
@@ -27,14 +30,14 @@ body{
 .s.prev{transform:translateX(-40px) scale(.985)}
 .s::-webkit-scrollbar{width:6px}.s::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:9px}
 /* fondos por slide */
-.bg-cream{background:linear-gradient(135deg,#fdfbf7 0%,#fff8ec 100%)}
-.bg-deep{background:linear-gradient(140deg,#0b3a5c 0%,#0f1729 100%);color:#fff}
-.bg-sea{background:linear-gradient(140deg,#0e7490 0%,#155e75 100%);color:#fff}
+.bg-cream{background:radial-gradient(900px 600px at 80% 0%,color-mix(in srgb,var(--dt-red) 10%,transparent),transparent 70%),var(--dt-ink-1)}
+.bg-deep{background:linear-gradient(140deg,var(--dt-ink-3) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-sea{background:linear-gradient(140deg,var(--dt-ink-3) 0%,var(--dt-ink-1) 100%);color:var(--dt-paper)}
 .bg-gold{background:linear-gradient(140deg,#fbbf24 0%,#f59e0b 100%);color:#3d2500}
-.bg-rose{background:linear-gradient(140deg,#e11d48 0%,#9f1239 100%);color:#fff}
-.bg-lav{background:linear-gradient(140deg,#7c3aed 0%,#4c1d95 100%);color:#fff}
-.bg-mint{background:linear-gradient(140deg,#10b981 0%,#047857 100%);color:#fff}
-.bg-ink{background:linear-gradient(140deg,#1e293b 0%,#0f1729 100%);color:#fff}
+.bg-rose{background:linear-gradient(140deg,var(--dt-red) 0%,var(--dt-red-deep) 100%);color:var(--dt-paper)}
+.bg-lav{background:linear-gradient(140deg,var(--dt-red-deep) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-mint{background:linear-gradient(140deg,var(--dt-ink-3) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-ink{background:linear-gradient(140deg,var(--dt-ink-2) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
 /* ============ tipografía ============ */
 .eyebrow{font-size:clamp(11px,1.1vw,15px);letter-spacing:.42em;text-transform:uppercase;
   font-weight:800;opacity:.62;margin-bottom:2.2vh}
@@ -80,15 +83,15 @@ h3{font-size:clamp(20px,2.3vw,34px);font-weight:800;letter-spacing:-.02em}
 .cardart .ln{height:12%;background:rgba(255,255,255,.5);border-radius:3px;margin-top:16%}
 .cardart .ln.short{width:52%}
 /* ============ tarjetas reveal ============ */
-.rv{background:#fff;border:2px solid var(--line);border-radius:22px;padding:2.4vh 1.6vw;
+.rv{background:var(--dt-ink-2);border:2px solid var(--line);border-radius:22px;padding:2.4vh 1.6vw;
   cursor:pointer;transition:.28s cubic-bezier(.2,.8,.3,1);position:relative;overflow:hidden;
   box-shadow:0 3px 0 rgba(15,23,41,.05)}
-.rv:hover{transform:translateY(-5px);border-color:var(--deep);box-shadow:0 16px 30px rgba(11,58,92,.14)}
+.rv:hover{transform:translateY(-5px);border-color:var(--dt-gold);box-shadow:0 16px 30px rgba(11,58,92,.14)}
 .rv .front{font-size:clamp(17px,1.85vw,29px);font-weight:800;letter-spacing:-.02em;line-height:1.15}
 .rv .art{font-size:clamp(26px,3vw,46px);line-height:1;margin-bottom:.8vh}
 .rv .back{max-height:0;opacity:0;overflow:hidden;transition:.3s;font-size:clamp(14px,1.45vw,23px);
   color:var(--sea);font-weight:700}
-.rv.open{border-color:var(--mint);background:linear-gradient(160deg,#ecfdf5,#fff)}
+.rv.open{border-color:var(--mint);background:linear-gradient(160deg,#ecfdf5,var(--dt-ink-2))}
 .rv.open .back{max-height:22vh;opacity:1;margin-top:1vh}
 .rv .der{position:absolute;top:10px;right:14px;font-size:11px;font-weight:900;letter-spacing:.18em;opacity:.35}
 /* sobre fondo oscuro */
@@ -97,24 +100,26 @@ h3{font-size:clamp(20px,2.3vw,34px);font-weight:800;letter-spacing:-.02em}
 .dark .rv.open{background:rgba(255,255,255,.2);border-color:var(--gold)}
 .dark .rv .back{color:var(--gold)}
 /* ============ botones ============ */
-.b{border:none;font-family:inherit;font-weight:800;cursor:pointer;border-radius:99px;
-  padding:1.5vh 2.4vw;font-size:clamp(14px,1.45vw,21px);transition:.2s;background:var(--ink);color:#fff}
-.b:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(15,23,41,.25)}
+.b{border:none;font-family:var(--dt-display);font-weight:800;cursor:pointer;border-radius:99px;
+  padding:1.5vh 2.4vw;font-size:clamp(14px,1.45vw,21px);transition:.2s;background:var(--dt-ink-2);color:var(--dt-paper);border:1px solid var(--dt-hair-2)}
+.b:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(0,0,0,.45)}
+.b:focus-visible{outline:2px solid var(--dt-gold);outline-offset:3px}
+.b:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .b.g{background:var(--gold);color:#3d2500}
-.b.w{background:#fff;color:var(--ink)}
+.b.w{background:var(--dt-paper);color:var(--dt-paper)}
 .b.o{background:transparent;border:2px solid currentColor}
 .b.sm{padding:1vh 1.6vw;font-size:clamp(12px,1.2vw,17px)}
 /* ============ du/Sie ============ */
-.sit{background:#fff;border:3px solid var(--line);border-radius:24px;padding:2.6vh 1vw;text-align:center;
+.sit{background:var(--dt-ink-2);border:3px solid var(--line);border-radius:24px;padding:2.6vh 1vw;text-align:center;
   transition:.3s;position:relative}
 .sit .em{font-size:clamp(34px,4.4vw,68px);line-height:1;display:block;margin-bottom:1vh}
 .sit .nm{font-size:clamp(13px,1.35vw,21px);font-weight:800;margin-bottom:1.4vh;letter-spacing:-.01em}
 .sit .opts{display:flex;gap:.6vw;justify-content:center}
-.pick{border:2px solid var(--line);background:#fff;border-radius:12px;padding:.9vh 1.1vw;font-weight:900;
+.pick{border:2px solid var(--line);background:var(--dt-ink-2);border-radius:12px;padding:.9vh 1.1vw;font-weight:900;
   font-size:clamp(12px,1.25vw,19px);cursor:pointer;font-family:inherit;transition:.18s;color:var(--dim)}
-.pick:hover{border-color:var(--deep);color:var(--deep)}
-.sit.right{border-color:var(--mint);background:#ecfdf5}
-.sit.wrong{border-color:var(--rose);background:#fff1f2;animation:shake .4s}
+.pick:hover{border-color:var(--dt-gold);color:var(--dt-gold)}
+.sit.right{border-color:var(--mint);background:color-mix(in srgb,var(--dt-ok) 14%,var(--dt-ink-2))}
+.sit.wrong{border-color:var(--rose);background:color-mix(in srgb,var(--dt-red) 14%,var(--dt-ink-2));animation:shake .4s}
 .pick.hit{background:var(--mint);border-color:var(--mint);color:#fff}
 .pick.miss{background:var(--rose);border-color:var(--rose);color:#fff}
 @keyframes shake{25%{transform:translateX(-9px)}75%{transform:translateX(9px)}}
@@ -129,27 +134,27 @@ h3{font-size:clamp(20px,2.3vw,34px);font-weight:800;letter-spacing:-.02em}
 .exline .k{font-size:clamp(20px,2.3vw,34px)}
 /* ============ builder ============ */
 .tiles{display:flex;gap:.7vw;flex-wrap:wrap;min-height:8vh;align-items:center}
-.tile{background:#fff;border:2px solid var(--line);border-radius:14px;padding:1.2vh 1.3vw;
+.tile{background:var(--dt-ink-2);border:2px solid var(--line);border-radius:14px;padding:1.2vh 1.3vw;
   font-size:clamp(15px,1.75vw,28px);font-weight:800;cursor:pointer;transition:.18s;font-family:inherit;color:var(--ink)}
 .tile:hover{border-color:var(--lav);transform:translateY(-4px)}
 .tile.used{opacity:.22;pointer-events:none;transform:none}
 .drop{min-height:9vh;border:3px dashed #cbd5e1;border-radius:20px;padding:1.4vh 1.4vw;
-  display:flex;gap:.6vw;flex-wrap:wrap;align-items:center;background:#fff}
-.drop.ok{border-color:var(--mint);border-style:solid;background:#ecfdf5}
+  display:flex;gap:.6vw;flex-wrap:wrap;align-items:center;background:var(--dt-ink-2)}
+.drop.ok{border-color:var(--mint);border-style:solid;background:color-mix(in srgb,var(--dt-ok) 14%,var(--dt-ink-2))}
 .drop.no{border-color:var(--rose);animation:shake .4s}
 .drop .tile{background:var(--lav);color:#fff;border-color:var(--lav)}
 .drop.ok .tile{background:var(--mint);border-color:var(--mint)}
 /* ============ diálogo ============ */
 .bub{max-width:74%;padding:1.2vh 1.5vw;border-radius:20px;font-size:clamp(14px,1.45vw,23px);
   font-weight:700;line-height:1.22;position:relative;transition:.3s}
-.bub.emp{background:#fff;border:2px solid var(--line);border-bottom-left-radius:6px;align-self:flex-start}
+.bub.emp{background:var(--dt-ink-2);border:2px solid var(--line);border-bottom-left-radius:6px;align-self:flex-start}
 .bub.cli{background:var(--deep);color:#fff;border-bottom-right-radius:6px;align-self:flex-end;text-align:right}
 .bub .who{font-size:clamp(9px,.85vw,12px);letter-spacing:.2em;text-transform:uppercase;opacity:.55;
   font-weight:900;margin-bottom:.3vh;display:block}
 .bub.hid .txt{filter:blur(9px);opacity:.42;cursor:pointer;user-select:none}
 .dlg{display:flex;flex-direction:column;gap:.9vh;flex:1;justify-content:center}
 /* ============ situación aleatoria ============ */
-.slot-big{background:rgba(255,255,255,.1);border:3px solid rgba(255,255,255,.26);border-radius:30px;
+.slot-big{background:var(--dt-ink-2);border:3px solid rgba(255,255,255,.26);border-radius:30px;
   padding:4vh 3vw;text-align:center;min-height:34vh;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:1.6vh}
 .slot-big .em{font-size:clamp(50px,8.5vw,130px);line-height:1}
@@ -157,7 +162,7 @@ h3{font-size:clamp(20px,2.3vw,34px);font-weight:800;letter-spacing:-.02em}
 .pop{animation:pop .42s cubic-bezier(.2,1.5,.4,1)}
 @keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:none;opacity:1}}
 /* ============ hints ============ */
-.hint{background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.24);border-radius:20px;
+.hint{background:var(--dt-ink-2);border:2px solid rgba(255,255,255,.24);border-radius:20px;
   padding:1.8vh 1.6vw;cursor:pointer;transition:.25s;text-align:center}
 .hint:hover{background:rgba(255,255,255,.2)}
 .hint .lbl{font-weight:900;letter-spacing:.2em;font-size:clamp(11px,1.05vw,15px);opacity:.75}
@@ -192,6 +197,8 @@ h3{font-size:clamp(20px,2.3vw,34px);font-weight:800;letter-spacing:-.02em}
 .d3{animation-delay:.22s;animation-fill-mode:backwards}
 .d4{animation-delay:.3s;animation-fill-mode:backwards}
 @media(max-width:900px){.split,.split.rev{grid-template-columns:1fr}.g5,.g4{grid-template-columns:repeat(2,1fr)}}
+html,body{overflow-x:hidden}
+#deck,main,body>section{overflow-x:clip}
 </style>
 </head>
 <body>
@@ -206,7 +213,7 @@ h3{font-size:clamp(20px,2.3vw,34px);font-weight:800;letter-spacing:-.02em}
       <h1 class="fade d1">AUF DER<br><span style="color:var(--gold)">BANK</span> 🏦</h1>
       <p class="lead fade d2" style="margin-top:1vh">Heute gehen wir zur Bank.</p>
       <div class="rv fade d3" onclick="rv(this)" style="max-width:26vw;margin-top:1.5vh">
-        <div class="front" style="color:var(--deep)">Was kann man in einer Bank machen?</div>
+        <div class="front" style="color:var(--dt-gold)">Was kann man in einer Bank machen?</div>
         <div class="back">Geld abheben · Geld einzahlen · ein Konto eröffnen · eine Karte beantragen…</div>
       </div>
       <div class="tiny fade d4">Primero deja que lo diga él. Luego clic.</div>
@@ -242,11 +249,11 @@ h3{font-size:clamp(20px,2.3vw,34px);font-weight:800;letter-spacing:-.02em}
   <div class="eyebrow fade">Die Brücke · la conexión</div>
   <h2 class="fade d1">FORMELL SPRECHEN</h2>
   <div class="grid g2 fade d2" style="margin:2.5vh 0 3vh">
-    <div style="background:#fff;border-radius:22px;padding:2.6vh 2vw;border-left:8px solid var(--deep)">
+    <div style="background:var(--dt-ink-2);border-radius:22px;padding:2.6vh 2vw;border-left:8px solid var(--deep)">
       <div class="tiny">👔 Vorstellungsgespräch</div>
       <div style="font-size:clamp(19px,2.4vw,38px);font-weight:900;margin-top:.8vh">Wie heißen <span style="color:var(--rose)">SIE</span>?</div>
     </div>
-    <div style="background:#fff;border-radius:22px;padding:2.6vh 2vw;border-left:8px solid var(--gold)">
+    <div style="background:var(--dt-ink-2);border-radius:22px;padding:2.6vh 2vw;border-left:8px solid var(--gold)">
       <div class="tiny">🏦 Bank</div>
       <div style="font-size:clamp(19px,2.4vw,38px);font-weight:900;margin-top:.8vh">Wie kann ich <span style="color:var(--rose)">IHNEN</span> helfen?</div>
     </div>
@@ -306,7 +313,7 @@ h3{font-size:clamp(20px,2.3vw,34px);font-weight:800;letter-spacing:-.02em}
     <div class="rv" onclick="rv(this)"><span class="der">DIE</span><div class="art">✍️</div><div class="front">die Unterschrift</div><div class="back">la firma</div></div>
     <div class="rv" onclick="rv(this)"><span class="der">DAS</span><div class="art">📄</div><div class="front">das Formular</div><div class="back">el formulario</div></div>
     <div class="rv" onclick="rv(this)"><span class="der">DIE</span><div class="art">🏠</div><div class="front">die Adresse</div><div class="back">la dirección</div></div>
-    <div class="rv" onclick="rv(this)" style="background:linear-gradient(150deg,#0b3a5c,#155e75);color:#fff;border-color:var(--deep)">
+    <div class="rv" onclick="rv(this)" style="background:linear-gradient(150deg,#0b3a5c,#155e75);color:#fff;border-color:var(--dt-gold)">
       <div class="art">💡</div><div class="front">Trick</div><div class="back" style="color:var(--gold)">-ung / -e / -schrift → meist DIE</div></div>
   </div>
   <p class="tiny fade d3" style="margin-top:2.5vh">Di la palabra en alemán → él adivina → clic para confirmar</p>

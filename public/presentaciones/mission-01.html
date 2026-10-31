@@ -7,8 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Doto:wght@600;900&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design-tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@400;700;900&family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #050505; --line: #3a3a3a; --red: #e00000; --w: #f2f2f2; --mut: #9a9a9a; --dot: 'Doto', ui-monospace, monospace; --sans: 'Space Grotesk', system-ui, sans-serif; }
+:root { --bg: var(--dt-ink-0); --line: var(--dt-hair-2); --red: var(--dt-red); --w: var(--dt-paper); --mut: var(--dt-muted); --dot: var(--dt-dot); --sans: var(--dt-display); }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; background: var(--bg); color: var(--w); font-family: var(--sans); overflow: hidden; }
 .deck { position: relative; height: 100dvh; width: 100vw; }
@@ -65,6 +68,7 @@ thead th { background: #1c1c1c; }
 .hint { position: fixed; top: 12px; right: 18px; font-size: .8rem; color: #555; font-family: var(--dot); }
 @media (max-width: 760px) { .grid3, .tri { grid-template-columns: 1fr; } .two { grid-template-columns: 1fr; } .tri > div { border-left: 0; border-top: 3px solid var(--line); } .tri > div:first-child { border-top: 0; } .slide { overflow-y: auto; justify-content: flex-start; padding-bottom: 70px; } }
 @media (prefers-reduced-motion: reduce) { .slide, .frag, .card .es { transition: none; } }
+html,body{overflow-x:hidden}
 </style>
 </head>
 <body>
