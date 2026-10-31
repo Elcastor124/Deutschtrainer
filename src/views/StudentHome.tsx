@@ -68,7 +68,7 @@ export function StudentHome() {
           <div className="sh-hw-head"><h2 id="sh-hw-t">Deberes</h2><span className="sh-chip">{d.homework!.filter((h) => !h.done).length} pendientes</span></div>
           <ul className="sh-hw-list">{d.homework!.map((h) => (
             <li key={h.id} className={h.done ? 'is-done' : ''}>
-              <label className="sh-hw-check"><input type="checkbox" checked={h.done} onChange={async (e) => { const r = await setHomeworkDone(h.id, e.target.checked); setD({ ...d, homework: r.homework }); }} /><span className="sr">Marcar «{h.title}» como hecho</span></label>
+              <label className="sh-hw-check"><input type="checkbox" checked={h.done} onChange={async (e) => { const on = e.target.checked; setD({ ...d, homework: d.homework!.map((x) => (x.id === h.id ? { ...x, done: on } : x)) }); try { const r = await setHomeworkDone(h.id, on); setD((cur) => (cur ? { ...cur, homework: r.homework } : cur)); } catch { setD((cur) => (cur ? { ...cur, homework: cur.homework!.map((x) => (x.id === h.id ? { ...x, done: !on } : x)) } : cur)); } }} /><span className="sr">Marcar «{h.title}» como hecho</span></label>
               <div><b>{h.title}</b>{h.text && <p>{h.text}</p>}<small>{h.due ? `Para el ${new Date(`${h.due}T12:00:00`).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}` : 'Sin fecha límite'}</small></div>
               {h.topics.length > 0 && <a className="btn sm" href={`/practica?temas=${h.topics.join(',')}`} onClick={go(`/practica?temas=${h.topics.join(',')}`)}>Practicar {h.topics.map(topicName).join(', ')} →</a>}
             </li>))}</ul>

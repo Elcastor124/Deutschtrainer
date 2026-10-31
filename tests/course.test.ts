@@ -35,7 +35,7 @@ describe('Ruta del curso', () => {
     }
     expect(COURSE[0].steps[0].desc).toContain('Traducción web de la presentación original');
     expect(COURSE.find((u) => u.id === 'krankenhaus')!.steps[2].primary.href).toBe('/presentaciones/krankenhaus-remaster.html');
-    expect(COURSE.at(-1)!.steps.map((s) => s.primary.href)).toContain('/road-to-b1');
+    expect(COURSE.at(-1)!.steps.map((s) => s.primary.href)).toContain('/examenes/a1-a2');
     expect(new Set(ALL_STEP_IDS).size).toBe(ALL_STEP_IDS.length);
   });
 
