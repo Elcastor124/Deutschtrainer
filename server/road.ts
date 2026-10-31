@@ -159,6 +159,32 @@ export function createRoadHandler({ dataDir = process.env.DATA_DIR || resolve(im
     const norm = (s: string) => ' ' + s.replace(/[.,!?;:„“"]/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
     const t = norm(text); return ROAD_LEVEL.dictation.rubric.map(k => t.includes(norm(k)));
   }
+  /** Corrige SOLO lo respondido. La nota final (sobre 10) solo existe al terminar: antes, una nota provisional explícita. */
+  function soloCheck(input: Record<string, unknown>) {
+    const raw = input.answers && typeof input.answers === 'object' && !Array.isArray(input.answers) ? input.answers as Record<string, unknown> : {};
+    const answers: Record<string, string> = {};
+    for (const q of questions) { const v = raw[q.id]; if (typeof v === 'string' && v.trim() && v.length <= 200) answers[q.id] = v; }
+    const dictation = typeof input.dictation === 'string' ? input.dictation.slice(0, 12000) : '';
+    const finish = input.finish === true;
+    const results: Record<string, { ok: boolean; solution: string }> = {};
+    for (const [id, v] of Object.entries(answers)) results[id] = { ok: v === ROAD_SECRET.answers[id], solution: ROAD_SECRET.answers[id] };
+    const part = (qs: typeof reading) => { const done = qs.filter(q => answers[q.id]); return { answered: done.length, correct: done.filter(q => results[q.id].ok).length, total: qs.length }; };
+    const lesen = part(reading), horen = part(listening);
+    const rubric = dictation.trim() ? autoRubric(dictation) : null;
+    const diktat = { written: !!rubric, points: rubric ? rubric.filter(Boolean).length : 0, max: ROAD_LEVEL.dictation.rubric.length };
+    const answered = lesen.answered + horen.answered, totalQ = lesen.total + horen.total;
+    const points = lesen.correct + horen.correct + diktat.points;
+    const checkedMax = lesen.answered + horen.answered + (diktat.written ? diktat.max : 0);
+    const final = finish ? { total: points, outOf: ROAD_LEVEL.maxPoints, grade: Math.round((points / ROAD_LEVEL.maxPoints) * 100) / 10, percent: Math.round((points / ROAD_LEVEL.maxPoints) * 100), passed: points >= ROAD_LEVEL.maxPoints * 0.6 } : null;
+    return {
+      results, lesen, horen, diktat, answered, totalQuestions: totalQ, complete: answered === totalQ && diktat.written,
+      points, outOf: ROAD_LEVEL.maxPoints,
+      // Acierto sobre lo corregido (no es la nota): evita el «10/10» con una sola respuesta.
+      accuracy: checkedMax ? Math.round((points / checkedMax) * 100) : null,
+      final,
+      ...(finish ? { dictationSolution: ROAD_SECRET.dictation, rubric: ROAD_LEVEL.dictation.rubric, rubricHits: rubric ?? [] } : {}),
+    };
+  }
   function score(p: Player): RoadScore {
     const lesen = reading.filter(q => p.answers[q.id] === ROAD_SECRET.answers[q.id]).length;
     const horen = listening.filter(q => p.answers[q.id] === ROAD_SECRET.answers[q.id]).length;
@@ -212,7 +238,7 @@ export function createRoadHandler({ dataDir = process.env.DATA_DIR || resolve(im
     };
   }
   async function dispatch(req: IncomingMessage, res: ServerResponse, url: URL) {
-    const methods: Record<string,string> = { levels: 'GET', create: 'POST', join: 'POST', projector: 'POST', state: 'GET', action: 'POST', audio: 'GET' };
+    const methods: Record<string,string> = { levels: 'GET', create: 'POST', join: 'POST', projector: 'POST', state: 'GET', action: 'POST', audio: 'GET', 'solo/level': 'GET', 'solo/audio': 'GET', 'solo/check': 'POST' };
     const route = url.pathname.slice('/api/road/'.length);
     if (!Object.hasOwn(methods, route)) fail(404, 'Ruta desconocida.');
     if (req.method !== methods[route]) { res.setHeader('Allow', methods[route]); fail(405, 'Método no permitido.'); }
@@ -225,6 +251,18 @@ export function createRoadHandler({ dataDir = process.env.DATA_DIR || resolve(im
       const bytes = readFileSync(join(import.meta.dirname, 'road-audio', `${grant.audioId}.mp3`));
       res.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Content-Length': bytes.length, 'Cache-Control': 'no-store, private', 'Accept-Ranges': 'none', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' }); res.end(bytes); return;
     }
+    // ── Modo individual (sin sala ni profesor): el alumno hace el simulacro a su ritmo y corrige cuando quiere.
+    //    Las soluciones nunca salen enteras: solo la de cada pregunta que el alumno ya ha respondido y manda a corregir.
+    if (route === 'solo/level') return json(res, 200, { ...ROAD_LEVEL, dictation: { ...ROAD_LEVEL.dictation, rubric: [] }, dictationFragments: ROAD_SECRET.dictationFragments.length });
+    if (route === 'solo/audio') {
+      const id = url.searchParams.get('id') || '';
+      const ok = ROAD_LEVEL.listening.some(p => p.audio.id === id) || id === 'diktat' || ROAD_SECRET.dictationFragments.some((_, i) => id === `diktat-${i + 1}`);
+      const file = join(import.meta.dirname, 'road-audio', `${id}.mp3`);
+      if (!ok || !existsSync(file)) fail(404, 'Audio no disponible.');
+      const bytes = readFileSync(file);
+      res.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Content-Length': bytes.length, 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff' }); res.end(bytes); return;
+    }
+    if (route === 'solo/check') return json(res, 200, soloCheck(await body(req)));
     if (route === 'levels') { const { id, version, title, schedule, maxPoints } = ROAD_LEVEL; return json(res, 200, [{ id, version, title, schedule, maxPoints }]); }
     if (route === 'create') {
       const input = await body(req); if (input.levelId !== ROAD_LEVEL.id) fail(400, 'Nivel desconocido.');
@@ -267,7 +305,7 @@ export function createRoadHandler({ dataDir = process.env.DATA_DIR || resolve(im
     const url = new URL(req.url || '/', 'http://road.local');
     if (url.pathname !== '/api/road' && !url.pathname.startsWith('/api/road/')) return false;
     const ip = guard?.ip(req);
-    const lookup = !/\/(create|levels|audio)$/.test(url.pathname);
+    const lookup = !/\/(create|levels|audio)$/.test(url.pathname) && !url.pathname.startsWith('/api/road/solo/');
     if (guard && ip && lookup && guard.roomLookupBlocked(ip)) { json(res, 429, { error: 'Demasiados intentos con códigos de sala. Espera unos minutos.' }); return true; }
     void dispatch(req, res, url).catch((e: unknown) => {
       if (guard && ip && e instanceof ApiError && e.status === 404) guard.roomMiss(ip);

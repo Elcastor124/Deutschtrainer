@@ -1,6 +1,6 @@
-// /biblioteca (y /tema/1) — Biblioteca de materiales: estanterías por tema con carpetas semi 3D.
-// Al abrir una carpeta se abre su presentación; el PDF, si existe, es una acción secundaria.
-import { useEffect, useState, type CSSProperties } from 'react';
+// /biblioteca (y /tema/1) — Biblioteca como estantería 3D: un mueble por tema, las presentaciones son libros vistos de frente.
+// Al pasar el ratón (o tocar) un libro sale de la balda y aparece su ficha; clic abre la presentación.
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from 'react';
 import { loadCatalog, type Presentation } from '../catalog.ts';
 import { COURSE, courseOrder } from '../course.ts';
 import { followLearningLink } from '../components/LearningNav.tsx';
@@ -12,6 +12,14 @@ export const LIBRARY_TOPICS = [
 ] as const;
 
 const unitTitle = (n?: number) => COURSE.find((u) => u.n === n)?.title.split(' · ')[0] ?? '';
+const isReview = (id: string) => COURSE.some((u) => u.review?.id === id);
+/** Lomo estable por libro: color de cubierta, ancho y alto salen del id (no cambian entre visitas). */
+const COVERS = ['#7d1612', '#1b1b1b', '#2c2c2c', '#a51e18', '#141414', '#3b2f12', '#5a0f0c', '#e6e0d2'];
+function spine(id: string, review: boolean) {
+  let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const cover = review ? '#3b2f12' : COVERS[h % COVERS.length];
+  return { cover, light: cover === '#e6e0d2', w: 50 + (h % 5) * 4, h: 228 + ((h >> 3) % 6) * 8 };
+}
 
 export function Library() {
   const [entries, setEntries] = useState<Presentation[] | null>(null);
@@ -25,7 +33,6 @@ export function Library() {
   }, [attempt]);
   const t = LIBRARY_TOPICS.find((x) => x.id === topic) ?? LIBRARY_TOPICS[0];
   const items = (entries ?? []).filter((p) => p.unit !== undefined && (t.units as readonly number[]).includes(p.unit)).sort((a, b) => courseOrder(a.id) - courseOrder(b.id));
-  const pdfs = items.filter((p) => p.pdf).length;
 
   return (
     <main className="dt-page lib-page">
@@ -42,15 +49,11 @@ export function Library() {
         </div>
       </header>
 
-      <section className="lib-cabinet" role="tabpanel" aria-label={`${t.label} · ${t.de}`}>
-        <div className="lib-plate">
-          <span className="dotnum">{t.label}</span>
-          <span lang="de">{t.de}</span>
-          <span className="lib-count">{entries ? `${items.length} presentaciones · ${pdfs} PDF` : ' '}</span>
-        </div>
+      <section className="bs-case" role="tabpanel" aria-label={`${t.label} · ${t.de}`}>
+        <div className="bs-sign"><span className="dotnum">{t.label}</span><small lang="de">{t.de}</small></div>
         {error ? <div className="lib-msg" role="alert"><p>No hemos podido cargar los materiales.</p><button className="dt-btn dt-btn-ghost sm" onClick={() => setAttempt((n) => n + 1)}><span className="dt-btn-label">Reintentar</span></button></div>
           : entries === null ? <p className="lib-msg" role="status">Cargando materiales…</p>
-          : <ul className="lib-shelf">{items.map((p, i) => <Folder key={p.id} p={p} i={i} />)}</ul>}
+          : <Shelves items={items} />}
       </section>
 
       <p className="lib-foot"><a className="dt-link" href="/tema/1/taller" onClick={followLearningLink}>Taller de escritura y escenas</a></p>
@@ -58,21 +61,72 @@ export function Library() {
   );
 }
 
-function Folder({ p, i }: { p: Presentation; i: number }) {
-  const review = COURSE.some((u) => u.review?.id === p.id);
+/** Reparte los libros en baldas según el ancho disponible. */
+function Shelves({ items }: { items: Presentation[] }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    const el = box.current; if (!el) return;
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth)); ro.observe(el); setWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+  const rows: Presentation[][] = [];
+  let row: Presentation[] = [], used = 0;
+  for (const p of items) {
+    const w = spine(p.id, isReview(p.id)).w + 6;
+    if (row.length && width && used + w > width - 40) { rows.push(row); row = []; used = 0; }
+    row.push(p); used += w;
+  }
+  if (row.length) rows.push(row);
+  if (!width) return <div className="bs-rows" ref={box} />;
+  return <div className="bs-rows" ref={box}>{rows.map((r, i) => <Shelf key={i} books={r} />)}</div>;
+}
+
+function Shelf({ books }: { books: Presentation[] }) {
+  const [active, setActive] = useState<string | null>(null);
+  const [at, setAt] = useState(0);
+  const row = useRef<HTMLUListElement>(null);
+  const touch = useRef(false);
+  const show = (id: string, el: HTMLElement) => { setActive(id); setAt(el.offsetLeft + el.offsetWidth / 2); };
+  const p = books.find((b) => b.id === active);
+  const rowW = row.current?.clientWidth ?? 600;
   return (
-    <li className={`lib-item${review ? ' is-review' : ''}`} style={{ '--i': i } as CSSProperties}>
-      <a className="lib-folder" href={p.file} target="_blank" rel="noopener noreferrer" aria-label={`Abrir presentación: ${p.title}`}>
-        <span className="lib-back" aria-hidden="true"><span className="lib-tab dotnum">L{String(p.unit ?? 0).padStart(2, '0')}</span></span>
-        <span className="lib-sheet s1" aria-hidden="true" /><span className="lib-sheet s2" aria-hidden="true" />
-        <span className="lib-front">
-          <span className="lib-unit">Lektion {p.unit} · {unitTitle(p.unit)}{review ? ' · repaso' : ''}</span>
-          <b className="lib-title">{p.title}</b>
-          <span className="lib-desc">{p.description}</span>
-          <span className="lib-meta">{p.level && <i>{p.level}</i>}{p.topics.slice(0, 3).map((x) => <i key={x}>{x}</i>)}</span>
-        </span>
-      </a>
-      {p.pdf && <a className="lib-pdf" href={p.pdf} target="_blank" rel="noopener noreferrer">PDF<span className="sr">: {p.title}</span></a>}
-    </li>
+    <div className="bs-shelf" onMouseLeave={() => setActive(null)}>
+      <ul className="bs-books" ref={row}>
+        {books.map((b, i) => {
+          const review = isReview(b.id); const s = spine(b.id, review);
+          return (
+            <li key={b.id} className={`bs-book${active === b.id ? ' is-out' : ''}${s.light ? ' is-light' : ''}`} style={{ '--c': s.cover, '--bw': `${s.w}px`, '--bh': `${s.h}px`, '--i': i } as CSSProperties}>
+              <a href={b.file} target="_blank" rel="noopener noreferrer" aria-describedby={active === b.id ? 'bs-card' : undefined}
+                onMouseEnter={(e) => show(b.id, e.currentTarget.parentElement!)} onFocus={(e) => show(b.id, e.currentTarget.parentElement!)}
+                onPointerDown={(e: RPointerEvent) => { touch.current = e.pointerType !== 'mouse'; }}
+                onClick={(e) => { if (touch.current && active !== b.id) { e.preventDefault(); show(b.id, e.currentTarget.parentElement!); } }}>
+                <span className="bs-top" aria-hidden="true" />
+                <span className="bs-spine">
+                  <span className="bs-code dotnum">L{String(b.unit ?? 0).padStart(2, '0')}</span>
+                  <span className="bs-title">{b.title.split(' · ')[0]}</span>
+                  <span className="bs-bands" aria-hidden="true" />
+                </span>
+                <span className="sr">: abrir presentación</span>
+              </a>
+            </li>
+          );
+        })}
+        <li className="bs-end" aria-hidden="true" />
+      </ul>
+      <div className="bs-plank" aria-hidden="true" />
+      {p && (
+        <div className="bs-card" id="bs-card" role="tooltip" style={{ left: at + 330 < rowW ? at + 44 : Math.max(0, at - 344) } as CSSProperties}>
+          <p className="bs-card-k">Lektion {p.unit} · {unitTitle(p.unit)}{isReview(p.id) ? ' · repaso' : ''}</p>
+          <h3>{p.title}</h3>
+          <p>{p.description}</p>
+          <p className="bs-card-meta">{p.level && <i>{p.level}</i>}{p.topics.map((x) => <i key={x}>{x}</i>)}</p>
+          <div className="bs-card-actions">
+            <a className="dt-btn dt-btn-primary sm" href={p.file} target="_blank" rel="noopener noreferrer"><span className="dt-btn-label">Abrir presentación →</span></a>
+            {p.pdf && <a className="dt-link" href={p.pdf} target="_blank" rel="noopener noreferrer">PDF</a>}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

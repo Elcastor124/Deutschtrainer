@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { GAMES, LEVEL_LABEL } from '../../shared/play.ts';
 import { TOPICS } from '../../shared/rules.ts';
-import { getDashboard, getAchievements, refreshAccount, type Dashboard } from '../play-client.ts';
+import { getDashboard, getAchievements, refreshAccount, setHomeworkDone, type Dashboard } from '../play-client.ts';
 import { navigate, store } from '../util.ts';
 import '../libre.css';
 import '../account.css';
@@ -60,6 +60,25 @@ export function StudentHome() {
           <span className="sh-dot" aria-hidden="true" />
           <div><b>Tu clase «{live[0].title}» está en marcha</b><span>Código {live[0].room}</span></div>
           <a className="btn primary" href={`/p/${live[0].room}`} onClick={go(`/p/${live[0].room}`)}>Unirme ahora</a>
+        </section>
+      )}
+
+      {(d.homework?.length ?? 0) > 0 && (
+        <section className="sh-hw" id="deberes" aria-labelledby="sh-hw-t">
+          <div className="sh-hw-head"><h2 id="sh-hw-t">Deberes</h2><span className="sh-chip">{d.homework!.filter((h) => !h.done).length} pendientes</span></div>
+          <ul className="sh-hw-list">{d.homework!.map((h) => (
+            <li key={h.id} className={h.done ? 'is-done' : ''}>
+              <label className="sh-hw-check"><input type="checkbox" checked={h.done} onChange={async (e) => { const on = e.target.checked; setD({ ...d, homework: d.homework!.map((x) => (x.id === h.id ? { ...x, done: on } : x)) }); try { const r = await setHomeworkDone(h.id, on); setD((cur) => (cur ? { ...cur, homework: r.homework } : cur)); } catch { setD((cur) => (cur ? { ...cur, homework: cur.homework!.map((x) => (x.id === h.id ? { ...x, done: !on } : x)) } : cur)); } }} /><span className="sr">Marcar «{h.title}» como hecho</span></label>
+              <div><b>{h.title}</b>{h.text && <p>{h.text}</p>}<small>{h.due ? `Para el ${new Date(`${h.due}T12:00:00`).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}` : 'Sin fecha límite'}</small></div>
+              {h.topics.length > 0 && <a className="btn sm" href={`/practica?temas=${h.topics.join(',')}`} onClick={go(`/practica?temas=${h.topics.join(',')}`)}>Practicar {h.topics.map(topicName).join(', ')} →</a>}
+            </li>))}</ul>
+        </section>
+      )}
+
+      {(d.grades?.length ?? 0) > 0 && (
+        <section className="sh-grades" id="notas" aria-labelledby="sh-gr-t">
+          <h2 id="sh-gr-t">Mis notas</h2>
+          <ul>{d.grades!.map((g) => <li key={g.id}><span className={`sh-score ${g.score >= 5 ? 'ok' : 'ko'}`}>{String(g.score).replace('.', ',')}</span><div><b>{g.title}</b>{g.comment && <p>«{g.comment}»</p>}<small>{new Date(g.at).toLocaleDateString('es-ES')} · {g.by}</small></div></li>)}</ul>
         </section>
       )}
 

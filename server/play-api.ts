@@ -46,9 +46,11 @@ export function identify(accounts: AccountStore, req: Pick<IncomingMessage, 'hea
 
 export interface PlayApiDeps { accounts: AccountStore; guard: Guard; log: () => ProgressLog; bank: Map<string, Question>; now?: () => number;
   /** Lo que la academia (Teacher OS) dice de este alumno y que él puede ver: nivel, repasos asignados, sus clases. */
-  studentExtras?: (a: Account) => Record<string, unknown> }
+  studentExtras?: (a: Account) => Record<string, unknown>;
+  /** Marca (o desmarca) unos deberes como hechos. false si no existen o no son para esta cuenta. */
+  setHomeworkDone?: (a: Account, id: string, done: boolean) => boolean }
 
-export function createPlayApi({ accounts, guard, log, bank, now = Date.now, studentExtras }: PlayApiDeps) {
+export function createPlayApi({ accounts, guard, log, bank, now = Date.now, studentExtras, setHomeworkDone }: PlayApiDeps) {
   const pub = (a: Account) => ({ alias: a.alias, rankingOptIn: a.rankingOptIn });
   const need = (req: IncomingMessage): Account => {
     const who = identify(accounts, req);
@@ -204,6 +206,20 @@ export function createPlayApi({ accounts, guard, log, bank, now = Date.now, stud
         ...(weak ? [{ id: 'weak', title: `Repasa «${(TOPICS as Record<string, { de: string }>)[weak]?.de ?? weak}» (10 preguntas)`, topic: weak, value: mine.filter((e) => e.kind === 'answer' && e.topic === weak).length, goal: 10 }] : []),
       ].map((c) => ({ ...c, value: Math.min(c.value, c.goal), done: c.value >= c.goal }));
       return json(res, 200, { account: pub(a), summary: s, challenges, ...(studentExtras?.(a) ?? {}) });
+    }
+    if (route === '/api/account/inbox') {
+      only('GET');
+      // Lo que el alumno debe ver al entrar: deberes pendientes y sus notas (lo publica el profesor en Teacher OS).
+      const x = (studentExtras?.(need(req)) ?? {}) as { homework?: { done: boolean }[]; grades?: unknown[] };
+      return json(res, 200, { homework: x.homework ?? [], grades: x.grades ?? [] });
+    }
+    if (route === '/api/account/homework') {
+      only('POST');
+      const a = need(req); const input = await body(req);
+      if (typeof input.id !== 'string' || typeof input.done !== 'boolean') fail(400, 'Se esperaba { id, done }.');
+      if (!setHomeworkDone?.(a, input.id as string, input.done as boolean)) fail(404, 'Esos deberes no existen o no son para ti.');
+      const x = (studentExtras?.(a) ?? {}) as { homework?: unknown[] };
+      return json(res, 200, { homework: x.homework ?? [] });
     }
     if (route === '/api/account/me') { only('GET'); return json(res, 200, { account: pub(need(req)) }); }
     if (route === '/api/account/progress') { only('GET'); return json(res, 200, summary(need(req))); }

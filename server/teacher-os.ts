@@ -31,6 +31,8 @@ interface Live { code: string; owner?: string; phase: string; players: number; c
 export interface TeacherOsDeps {
   accounts: AccountStore; guard: Guard; log: () => ProgressLog; bank: Map<string, Question>; data: TeacherData;
   liveRooms: () => Live[]; publicDir: string; now?: () => number;
+  /** Limpieza tras borrar una cuenta (perfil de juego, datos de la academia…). */
+  onRemoved?: (id: string) => void;
 }
 
 /** Agregado descriptivo: n y precisión (null si n = 0). Nunca una predicción. */
@@ -143,7 +145,8 @@ export function createTeacherOs(d: TeacherOsDeps) {
       grammar: [...grammar].map(([topic, g]) => ({ topic, name: (TOPICS as Record<string, { de: string }>)[topic]?.de ?? topic, n: g.n, accuracy: Math.round((g.correct / g.n) * 100) / 100, byDiff: agg(g.byDiff, [...DIFFS, ...(g.byDiff.has('desconocida') ? ['desconocida'] : [])]) })).sort((x, y) => y.n - x.n),
       errors: [...errors.values()].filter((x) => x.wrong >= 2).sort((x, y) => y.wrong - x.wrong).slice(0, 10).map((x) => ({ ...x, prompt: qprompt(x.qid), topic: qtopic(x.qid) ?? '' })),
       activities: evs.filter((e) => e.kind === 'game' && e.game).slice(-50).reverse().map((e) => ({ at: e.at, game: e.game, level: e.level ?? null, total: e.total ?? 0, correct: e.correct ?? 0, points: e.points, room: e.room ?? null })),
-      notes: meta?.notes ?? [], attendance: meta?.attendance ?? [], reviews: meta?.reviews ?? [],
+      notes: meta?.notes ?? [], attendance: meta?.attendance ?? [], reviews: meta?.reviews ?? [], grades: meta?.grades ?? [],
+      homework: d.data.homeworkFor(a.id).map((h) => ({ id: h.id, title: h.title, due: h.due ?? null, at: h.at, done: meta?.hwDone?.[h.id] ?? null })),
       minN: MIN_N,
     };
   }
@@ -288,6 +291,61 @@ export function createTeacherOs(d: TeacherOsDeps) {
         return json(res, 200, { reviews: d.data.meta(a.id).reviews });
       }
       if (r2 === 'reset-password' && method === 'POST') return json(res, 200, { password: await d.accounts.resetByTeacher(a) });
+      if (r2 === 'grades' && method === 'POST') {
+        const input = await body(req);
+        if (input.delete) { d.data.removeGrade(a.id, String(input.delete)); return json(res, 200, { grades: d.data.meta(a.id).grades ?? [] }); }
+        const title = typeof input.title === 'string' ? input.title.trim().slice(0, 80) : '';
+        const score = Number(input.score);
+        if (!title) fail(400, 'Escribe un título para la nota (p. ej. «Examen Tema 1»).');
+        if (!Number.isFinite(score) || score < 0 || score > 10) fail(400, 'La nota va de 0 a 10.');
+        d.data.addGrade(a.id, teachers.nameOf(me), title, Math.round(score * 100) / 100, typeof input.comment === 'string' && input.comment.trim() ? input.comment.trim().slice(0, 500) : undefined);
+        return json(res, 200, { grades: d.data.meta(a.id).grades ?? [] });
+      }
+      if (r2 === 'delete' && method === 'POST') {
+        const input = await body(req);
+        if (input.confirm !== a.alias) fail(400, 'Para borrar, escribe el alias exacto del alumno.');
+        d.accounts.removeByTeacher(a); d.data.forget(a.id); d.onRemoved?.(a.id);
+        return json(res, 200, { ok: true });
+      }
+    }
+    if (r0 === 'bulk' && method === 'POST') {
+      const input = await body(req);
+      const ids = Array.isArray(input.ids) ? [...new Set((input.ids as unknown[]).filter((x): x is string => typeof x === 'string' && !!d.accounts.byId(x)))] : [];
+      if (!ids.length) fail(400, 'Selecciona al menos un alumno.');
+      const gid = typeof input.group === 'string' ? input.group : '';
+      if (input.action === 'add-group' || input.action === 'remove-group') {
+        if (!d.data.data.groups.some((g) => g.id === gid)) fail(400, 'Grupo no válido.');
+        for (const sid of ids) { const m = d.data.meta(sid); m.groups = input.action === 'add-group' ? [...new Set([...m.groups, gid])] : m.groups.filter((g) => g !== gid); }
+        d.data.save(); return json(res, 200, { ok: true, n: ids.length });
+      }
+      if (input.action === 'level') {
+        if (input.level !== null && !(LEVELS_OK as readonly unknown[]).includes(input.level)) fail(400, 'Nivel no válido.');
+        for (const sid of ids) d.data.meta(sid).level = (input.level ?? undefined) as StudentLevel | undefined;
+        d.data.save(); return json(res, 200, { ok: true, n: ids.length });
+      }
+      fail(400, 'Acción no válida.');
+    }
+    if (r0 === 'homework') {
+      if (!r1 && method === 'GET') {
+        const all = d.accounts.all();
+        return json(res, 200, { homework: d.data.data.homework.map((h) => {
+          const who = all.filter((a) => d.data.targets(h, a.id));
+          return { ...h, targets: who.length, done: who.filter((a) => d.data.peek(a.id)?.hwDone?.[h.id]).map((a) => a.alias) };
+        }), groups: d.data.data.groups });
+      }
+      if (!r1 && method === 'POST') {
+        const input = await body(req);
+        const title = typeof input.title === 'string' ? input.title.trim().slice(0, 100) : '';
+        if (!title) fail(400, 'Escribe un título para los deberes.');
+        const text = typeof input.text === 'string' ? input.text.trim().slice(0, 2000) : '';
+        const topics = Array.isArray(input.topics) ? [...new Set((input.topics as unknown[]).filter((t): t is string => typeof t === 'string' && Object.hasOwn(TOPICS, t)))] : [];
+        const groups = Array.isArray(input.groups) ? (input.groups as unknown[]).filter((g): g is string => typeof g === 'string' && d.data.data.groups.some((x) => x.id === g)) : [];
+        const students = Array.isArray(input.students) ? (input.students as unknown[]).filter((x): x is string => typeof x === 'string' && !!d.accounts.byId(x)) : [];
+        if (!groups.length && !students.length) fail(400, 'Elige al menos un grupo o un alumno.');
+        const due = typeof input.due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input.due) ? input.due : undefined;
+        return json(res, 200, d.data.addHomework({ by: teachers.nameOf(me), title, text, topics, groups, students, ...(due ? { due } : {}) }));
+      }
+      if (r1 && r2 === 'delete' && method === 'POST') { d.data.removeHomework(r1); return json(res, 200, { ok: true }); }
     }
     if (r0 === 'sessions') {
       if (!r1 && method === 'GET') return json(res, 200, { sessions: d.data.data.sessions, groups: d.data.data.groups, live: d.liveRooms().filter((r) => !r.private) });
@@ -328,5 +386,7 @@ export function studentView(data: TeacherData, a: { id: string }, today: string)
     classes: data.data.sessions.filter((s) => s.status !== 'done' && s.date >= today && ((!!s.groupId && groups.includes(s.groupId)) || !!s.studentIds?.includes(a.id)))
       .map((s) => ({ id: s.id, title: s.title, date: s.date, game: s.game, topics: s.topics, status: s.status, ...(s.status === 'live' && s.room ? { room: s.room } : {}) })),
     groups: groups.map((g) => data.data.groups.find((x) => x.id === g)?.name).filter(Boolean),
+    homework: data.homeworkFor(a.id).map((h) => ({ id: h.id, at: h.at, title: h.title, text: h.text, topics: h.topics, due: h.due ?? null, done: !!m?.hwDone?.[h.id] })),
+    grades: (m?.grades ?? []).map((g) => ({ id: g.id, at: g.at, title: g.title, score: g.score, ...(g.comment ? { comment: g.comment } : {}), by: g.by })),
   };
 }

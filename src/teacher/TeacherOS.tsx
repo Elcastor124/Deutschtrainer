@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type
 import { TOPICS } from '../../shared/rules.ts';
 import { navigate, store, usePath } from '../util.ts';
 import { AccuracyBars, DiffStack, TrendChart } from './charts.tsx';
-import { tapi, TeacherApiError, type Analytics, type Detail, type Group, type LibraryItem, type Overview, type PlannedSession, type StudentRow } from './api.ts';
+import { tapi, TeacherApiError, type Analytics, type Detail, type Group, type Homework, type LibraryItem, type Overview, type PlannedSession, type StudentRow } from './api.ts';
 import '../libre.css';
 import './teacher.css';
 
@@ -28,6 +28,7 @@ export function launchUrl(game: string, topics: string[]) {
 const NAV = [
   { id: '', label: 'Übersicht', es: 'Resumen', icon: 'M4 13h7V4H4zM13 20h7v-9h-7zM4 20h7v-5H4zM13 4v5h7V4z' },
   { id: 'schueler', label: 'Schüler', es: 'Alumnos', icon: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 12 0v1M16 3.5a4 4 0 0 1 0 7.5M22 21v-1a6 6 0 0 0-4-5.6' },
+  { id: 'hausaufgaben', label: 'Hausaufgaben', es: 'Deberes', icon: 'M9 4h6l1 2h3v15H5V6h3zM9 4v3h6V4M8 12l2.5 2.5L16 9' },
   { id: 'unterricht', label: 'Unterricht', es: 'Clases', icon: 'M3 5h18v12H3zM8 21h8M12 17v4' },
   { id: 'analyse', label: 'Analyse', es: 'Análisis', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' },
   { id: 'bibliothek', label: 'Bibliothek', es: 'Biblioteca', icon: 'M4 4h5v16H4zM10 4h5v16h-5zM16 5l4 1-3 14-4-1z' },
@@ -142,6 +143,9 @@ function Students() {
   const [q, setQ] = useState(''); const [g, setG] = useState(''); const [lv, setLv] = useState('');
   const [adding, setAdding] = useState(false); const [created, setCreated] = useState<{ alias: string; password: string } | null>(null);
   const [newGroup, setNewGroup] = useState('');
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [bulkGroup, setBulkGroup] = useState(''); const [bulkMsg, setBulkMsg] = useState<string | null>(null); const [hwFor, setHwFor] = useState(false);
+  const bulk = async (body: Record<string, unknown>) => { try { const r = await tapi<{ n: number }>('bulk', { ...body, ids: [...sel] }); setBulkMsg(`Hecho: ${r.n} alumno(s).`); reload(); } catch (e) { setBulkMsg((e as Error).message); } };
   if (error) return <p className="libre-err" role="alert">{error}</p>;
   if (!data) return <div className="tos-skel" aria-busy="true" />;
   const rows = data.students.filter((s) => (!q || s.alias.toLowerCase().includes(q.toLowerCase())) && (!g || s.groups.includes(g)) && (!lv || (lv === 'none' ? !s.level : s.level === lv)));
@@ -149,8 +153,8 @@ function Students() {
   return (
     <div className="tos-page" data-tos="students">
       <header className="tos-page-head">
-        <div><p className="dt-eyebrow">Schüler</p><h1>Alumnos</h1><p className="tos-sub">{data.students.length} cuentas · {data.groups.length} grupos</p></div>
-        <div className="tos-quick"><button className="btn primary lg" onClick={() => { setAdding(true); setCreated(null); }}>Añadir alumno</button></div>
+        <div><p className="dt-eyebrow">Schüler</p><h1>Alumnos</h1><p className="tos-sub">{data.students.length} cuentas registradas en la web · {data.groups.length} grupos. Los alumnos se registran solos en «Crear cuenta» y aparecen aquí.</p></div>
+        <div className="tos-quick"><button className="btn lg" onClick={() => { setAdding(true); setCreated(null); }}>Dar de alta yo</button></div>
       </header>
       {adding && <AddStudent groups={data.groups} onDone={(c) => { setCreated(c); setAdding(false); reload(); }} onCancel={() => setAdding(false)} />}
       {created && <div className="tos-callout" role="status"><b>Cuenta creada: {created.alias}</b><span>Contraseña temporal (se muestra solo ahora): <code className="tos-secret">{created.password}</code></span><span className="libre-note">Dásela en mano al alumno. Podrá cambiarla en «Mi cuenta». Si la pierde, restablécela desde su ficha.</span><button className="btn sm" onClick={() => setCreated(null)}>Hecho</button></div>}
@@ -159,12 +163,26 @@ function Students() {
         <select className="field" value={g} onChange={(e) => setG(e.target.value)} aria-label="Filtrar por grupo"><option value="">Todos los grupos</option>{data.groups.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
         <select className="field" value={lv} onChange={(e) => setLv(e.target.value)} aria-label="Filtrar por nivel"><option value="">Todos los niveles</option><option>A1</option><option>A2</option><option>B1</option><option value="none">Sin nivel</option></select>
       </div>
+      {sel.size > 0 && (
+        <div className="tos-bulk" role="region" aria-label="Acciones con los seleccionados">
+          <b>{sel.size} seleccionado(s)</b>
+          <select className="field" value={bulkGroup} onChange={(e) => setBulkGroup(e.target.value)} aria-label="Grupo"><option value="">Grupo…</option>{data.groups.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
+          <button className="btn sm" disabled={!bulkGroup} onClick={() => bulk({ action: 'add-group', group: bulkGroup })}>Meter en grupo</button>
+          <button className="btn sm" disabled={!bulkGroup} onClick={() => bulk({ action: 'remove-group', group: bulkGroup })}>Sacar del grupo</button>
+          <select className="field" defaultValue="" onChange={(e) => { if (e.target.value) void bulk({ action: 'level', level: e.target.value === 'none' ? null : e.target.value }); e.target.value = ''; }} aria-label="Poner nivel"><option value="">Nivel…</option><option>A1</option><option>A2</option><option>B1</option><option value="none">Quitar nivel</option></select>
+          <button className="btn primary sm" onClick={() => setHwFor(true)}>Mandar deberes</button>
+          <button className="tos-x" aria-label="Quitar selección" onClick={() => { setSel(new Set()); setBulkMsg(null); }}>×</button>
+          {bulkMsg && <span className="libre-note" role="status">{bulkMsg}</span>}
+        </div>
+      )}
+      {hwFor && <HomeworkForm groups={data.groups} students={data.students} preset={[...sel]} onDone={() => { setHwFor(false); setBulkMsg('Deberes enviados. Les saldrá un aviso al entrar.'); }} onCancel={() => setHwFor(false)} />}
       {rows.length ? (
         <div className="tos-table-wrap">
           <table className="tos-table">
-            <thead><tr><th>Alumno</th><th>Nivel</th><th>Grupos</th><th>Última actividad</th><th title="Respuestas en 7 días">7 d</th><th title="Precisión en 30 días, con su n">Precisión 30 d</th><th>Racha</th></tr></thead>
+            <thead><tr><th className="tos-cb"><input type="checkbox" aria-label="Seleccionar todos" checked={rows.every((r) => sel.has(r.id))} onChange={(e) => setSel(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())} /></th><th>Alumno</th><th>Nivel</th><th>Grupos</th><th>Última actividad</th><th title="Respuestas en 7 días">7 d</th><th title="Precisión en 30 días, con su n">Precisión 30 d</th><th>Racha</th></tr></thead>
             <tbody>{rows.map((s) => (
               <tr key={s.id} className={s.disabled ? 'off' : ''} tabIndex={0} onClick={() => navigate(`/teacher/schueler/${s.id}`)} onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/teacher/schueler/${s.id}`); }}>
+                <td className="tos-cb" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}><input type="checkbox" aria-label={`Seleccionar ${s.alias}`} checked={sel.has(s.id)} onChange={(e) => { const n = new Set(sel); if (e.target.checked) n.add(s.id); else n.delete(s.id); setSel(n); }} /></td>
                 <td><span className="tos-avatar" aria-hidden="true">{s.alias[0].toUpperCase()}</span><b>{s.alias}</b>{s.disabled && <span className="tos-pill">desactivada</span>}</td>
                 <td>{s.level ?? <span className="dim">—</span>}</td>
                 <td>{s.groups.map(gname).join(', ') || <span className="dim">—</span>}</td>
@@ -183,6 +201,70 @@ function Students() {
         </form>
         {data.groups.length ? <ul className="tos-chips">{data.groups.map((x) => <li key={x.id}><span>{x.name} <small className="dim">{data.students.filter((s) => s.groups.includes(x.id)).length}</small></span><button className="tos-x" aria-label={`Borrar grupo ${x.name}`} onClick={async () => { if (confirm(`¿Borrar el grupo «${x.name}»? Los alumnos no se borran.`)) { await tapi(`groups/${x.id}/delete`, {}); reload(); } }}>×</button></li>)}</ul> : <p className="tos-empty-inline">Sin grupos todavía.</p>}
       </Card>
+    </div>
+  );
+}
+
+/** Notas VISIBLES para el alumno (0–10) y estado de sus deberes. */
+function GradesCard({ id, alias, grades, homework, onChange }: { id: string; alias: string; grades: Detail['grades']; homework: Detail['homework']; onChange: (g: Detail['grades']) => void }) {
+  const [f, setF] = useState({ title: '', score: '', comment: '' }); const [err, setErr] = useState<string | null>(null);
+  return (
+    <Card title="Notas y deberes (los ve el alumno)" className="span2">
+      <form className="tos-inline tos-grade-form" onSubmit={async (e) => { e.preventDefault(); setErr(null); try { const r = await tapi<{ grades: Detail['grades'] }>(`students/${id}/grades`, { title: f.title, score: Number(f.score.replace(',', '.')), comment: f.comment || undefined }); onChange(r.grades); setF({ title: '', score: '', comment: '' }); } catch (x) { setErr((x as Error).message); } }}>
+        <input className="field" placeholder="Título, p. ej. «Examen Tema 1»" value={f.title} maxLength={80} onChange={(e) => setF({ ...f, title: e.target.value })} aria-label="Título de la nota" />
+        <input className="field tos-score" inputMode="decimal" placeholder="0–10" value={f.score} onChange={(e) => setF({ ...f, score: e.target.value })} aria-label="Nota de 0 a 10" />
+        <input className="field" placeholder="Comentario para el alumno (opcional)" value={f.comment} maxLength={500} onChange={(e) => setF({ ...f, comment: e.target.value })} aria-label="Comentario" />
+        <button className="btn primary" disabled={!f.title.trim() || !f.score.trim()}>Poner nota</button>
+      </form>
+      {err && <p className="libre-err" role="alert">{err}</p>}
+      {grades.length ? <ul className="tos-list">{grades.map((g) => <li key={g.id}><div className="tos-row"><b>{g.title}</b><span className={`tos-pill${g.score >= 5 ? '' : ' warn'}`}>{String(g.score).replace('.', ',')}</span><button className="tos-x" aria-label={`Borrar nota ${g.title}`} onClick={async () => { if (!confirm(`¿Borrar la nota «${g.title}» de ${alias}?`)) return; const r = await tapi<{ grades: Detail['grades'] }>(`students/${id}/grades`, { delete: g.id }); onChange(r.grades); }}>×</button></div><small>{new Date(g.at).toLocaleDateString('es-ES')} · {g.by}{g.comment ? ` · «${g.comment}»` : ''}</small></li>)}</ul> : <p className="tos-empty-inline">Sin notas todavía.</p>}
+      {homework.length > 0 && <><h3 className="tos-h3">Deberes</h3><ul className="tos-list">{homework.map((h) => <li key={h.id}><div className="tos-row"><b>{h.title}</b><span className={`tos-pill${h.done ? '' : ' warn'}`}>{h.done ? `hecho ${new Date(h.done).toLocaleDateString('es-ES')}` : 'pendiente'}</span></div>{h.due && <small>Para el {h.due}</small>}</li>)}</ul></>}
+    </Card>
+  );
+}
+
+/** Crear deberes para grupos y/o alumnos concretos. `preset` = alumnos ya seleccionados en la lista. */
+function HomeworkForm({ groups, students, preset = [], onDone, onCancel }: { groups: Group[]; students: StudentRow[]; preset?: string[]; onDone: () => void; onCancel: () => void }) {
+  const [f, setF] = useState({ title: '', text: '', due: '', topics: [] as string[], groups: [] as string[], students: preset });
+  const [err, setErr] = useState<string | null>(null); const [busy, setBusy] = useState(false);
+  const toggle = (k: 'topics' | 'groups' | 'students', v: string) => setF({ ...f, [k]: f[k].includes(v) ? f[k].filter((x) => x !== v) : [...f[k], v] });
+  return (
+    <form className="tos-card tos-hw-form" onSubmit={async (e) => { e.preventDefault(); setBusy(true); setErr(null); try { await tapi('homework', { ...f, due: f.due || undefined }); onDone(); } catch (x) { setErr((x as Error).message); } finally { setBusy(false); } }}>
+      <h2>Mandar deberes</h2>
+      <label className="acc-field"><span>Título</span><input className="field" required maxLength={100} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder="p. ej. «Repasa el Dativ: 20 preguntas»" /></label>
+      <label className="acc-field"><span>Instrucciones (opcional)</span><textarea className="field" rows={3} maxLength={2000} value={f.text} onChange={(e) => setF({ ...f, text: e.target.value })} /></label>
+      <label className="acc-field"><span>Fecha límite (opcional)</span><input className="field" type="date" value={f.due} onChange={(e) => setF({ ...f, due: e.target.value })} /></label>
+      <fieldset className="tos-groups"><legend>Temas para practicar (opcional)</legend>{TOPIC_IDS.map((t) => <label key={t}><input type="checkbox" checked={f.topics.includes(t)} onChange={() => toggle('topics', t)} /> {topicName(t)}</label>)}</fieldset>
+      <fieldset className="tos-groups"><legend>Para estos grupos</legend>{groups.length ? groups.map((g) => <label key={g.id}><input type="checkbox" checked={f.groups.includes(g.id)} onChange={() => toggle('groups', g.id)} /> {g.name}</label>) : <span className="dim">Sin grupos</span>}</fieldset>
+      <fieldset className="tos-groups"><legend>Y/o estos alumnos ({f.students.length})</legend>{students.map((s) => <label key={s.id}><input type="checkbox" checked={f.students.includes(s.id)} onChange={() => toggle('students', s.id)} /> {s.alias}</label>)}</fieldset>
+      {err && <p className="libre-err" role="alert">{err}</p>}
+      <div className="libre-row"><button className="btn primary" disabled={busy || !f.title.trim() || (!f.groups.length && !f.students.length)}>Enviar deberes</button><button type="button" className="btn ghost" onClick={onCancel}>Cancelar</button></div>
+    </form>
+  );
+}
+
+function HomeworkPage() {
+  const { data, error, reload } = useLoad(() => tapi<{ homework: Homework[]; groups: Group[] }>('homework'), []);
+  const { data: studs } = useLoad(() => tapi<{ students: StudentRow[] }>('students'), []);
+  const [open, setOpen] = useState(false);
+  if (error) return <p className="libre-err" role="alert">{error}</p>;
+  if (!data || !studs) return <div className="tos-skel" aria-busy="true" />;
+  const gname = (id: string) => data.groups.find((x) => x.id === id)?.name ?? '';
+  const sname = (id: string) => studs.students.find((x) => x.id === id)?.alias ?? '';
+  return (
+    <div className="tos-page" data-tos="homework">
+      <header className="tos-page-head">
+        <div><p className="dt-eyebrow">Hausaufgaben</p><h1>Deberes</h1><p className="tos-sub">Los alumnos los ven en su página y con un aviso al entrar en la web. Marcan cuándo los han hecho.</p></div>
+        <div className="tos-quick"><button className="btn primary lg" onClick={() => setOpen(true)}>Mandar deberes</button></div>
+      </header>
+      {open && <HomeworkForm groups={data.groups} students={studs.students} onDone={() => { setOpen(false); reload(); }} onCancel={() => setOpen(false)} />}
+      {data.homework.length ? <ul className="tos-hw-list">{data.homework.map((h) => (
+        <li key={h.id} className="tos-card">
+          <div className="tos-row"><b>{h.title}</b><span className={`tos-pill${h.done.length >= h.targets && h.targets ? '' : ' warn'}`}>{h.done.length}/{h.targets} hechos</span><button className="tos-x" aria-label={`Borrar ${h.title}`} onClick={async () => { if (confirm(`¿Borrar los deberes «${h.title}»?`)) { await tapi(`homework/${h.id}/delete`, {}); reload(); } }}>×</button></div>
+          {h.text && <p>{h.text}</p>}
+          <small>{[...h.groups.map(gname), ...h.students.map(sname)].filter(Boolean).join(', ')}{h.due ? ` · para el ${h.due}` : ''}{h.topics.length ? ` · ${h.topics.map(topicName).join(', ')}` : ''}</small>
+          {h.done.length > 0 && <small className="dim">Hechos: {h.done.join(', ')}</small>}
+        </li>))}</ul> : <Empty title="Sin deberes todavía" action={<button className="btn primary" onClick={() => setOpen(true)}>Mandar los primeros</button>}>Elige un grupo o varios alumnos y escribe qué tienen que hacer.</Empty>}
     </div>
   );
 }
@@ -251,9 +333,11 @@ function StudentDetail({ id }: { id: string }) {
               <div className="tos-inline"><input className="field" placeholder="Indicación para el alumno (opcional, la verá)" value={reviewNote} maxLength={200} onChange={(e) => setReviewNote(e.target.value)} /><button className="btn primary" disabled={!reviewTopics.length} onClick={async () => { await tapi(`students/${id}/review`, { topics: reviewTopics, note: reviewNote || undefined }); setReviewTopics([]); setReviewNote(''); reload(); }}>Asignar</button></div>
               {d.reviews.length > 0 && <ul className="tos-list">{d.reviews.map((r) => <li key={r.id}><div className="tos-row"><b>{r.topics.map(topicName).join(', ')}</b><button className="tos-x" aria-label="Quitar repaso" onClick={async () => { await tapi(`students/${id}/review`, { delete: r.id }); reload(); }}>×</button></div><small>{new Date(r.at).toLocaleDateString('es-ES')} · {r.by}{r.note ? ` · «${r.note}»` : ''}</small></li>)}</ul>}
             </Card>
+            <GradesCard id={id} alias={s.alias} grades={d.grades} homework={d.homework} onChange={(grades) => setData({ ...d, grades })} />
             <Card title="Cuenta" className="span2">
               <div className="libre-row">
                 <button className="btn" onClick={async () => { const r = await tapi<{ password: string }>(`students/${id}/reset-password`, {}); setMsg(null); alert(`Nueva contraseña temporal para ${s.alias}:\n\n${r.password}\n\nSe muestra solo ahora. Sus sesiones abiertas se han cerrado.`); }}>Restablecer contraseña</button>
+                <button className="btn danger" onClick={async () => { const c = prompt(`Esto BORRA la cuenta de ${s.alias} y todos sus datos. No se puede deshacer.\n\nEscribe su alias para confirmar:`); if (c === null) return; try { await tapi(`students/${id}/delete`, { confirm: c.trim() }); navigate('/teacher/schueler'); } catch (e) { setMsg((e as Error).message); } }}>Borrar cuenta</button>
                 <button className={`btn${s.disabled ? ' primary' : ''}`} onClick={() => { if (s.disabled || confirm(`¿Desactivar la cuenta de ${s.alias}? No podrá entrar, pero sus datos se conservan.`)) void patch({ disabled: !s.disabled }); }}>{s.disabled ? 'Reactivar cuenta' : 'Desactivar cuenta'}</button>
               </div>
             </Card>
@@ -479,6 +563,7 @@ export function TeacherOS() {
         {section === '' && <Overview_ />}
         {section === 'schueler' && (seg[1] ? <StudentDetail key={seg[1]} id={seg[1]} /> : <Students />)}
         {section === 'unterricht' && <Lessons />}
+        {section === 'hausaufgaben' && <HomeworkPage />}
         {section === 'analyse' && <AnalysePage />}
         {section === 'bibliothek' && <Library />}
         {section === 'einstellungen' && <Settings me={me} onOut={() => void out()} onChange={check} />}

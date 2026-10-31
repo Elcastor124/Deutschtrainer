@@ -104,7 +104,7 @@ function buildSteps(u: UnitSeed): CourseStep[] {
   const steps: Omit<CourseStep, 'n'>[] = [];
   if (u.exam) {
     steps.push(mk('practicar', 'Entrena todo el curso sin tiempo antes del examen.', { label: 'Practicar todo', href: `/practica${q}` }));
-    steps.push(mk('examen', 'El profesor abre la sala; tú entras con tu código. 105 minutos, 50 puntos.', { label: 'Abrir Road to B1', href: '/road-to-b1' }));
+    steps.push(mk('examen', 'Simulacro A1/A2 a tu ritmo, sin sala: corrige lo que lleves cuando quieras. 50 puntos, nota sobre 10.', { label: 'Hacer el simulacro', href: '/examenes/a1-a2' }, [{ label: 'En clase con profesor', href: '/road-to-b1/level-1' }]));
     steps.push(mk('repaso', 'Revisa tus resultados y vuelve a practicar lo que falló.', { label: 'Repasar errores', href: `/practica${q}` }));
   } else {
     const pres = u.presentation!;
