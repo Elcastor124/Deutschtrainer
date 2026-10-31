@@ -4,18 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Brücke A1 · Clase puente de alemán</title>
+<link rel="stylesheet" href="/design-tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@400;700;900&family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0c0f16; --bg2:#121724; --card:#181f30; --card2:#1f2839;
-  --line:#2b3448; --txt:#eef2ff; --dim:#94a3b8;
-  --neu:#38bdf8; --weiter:#f472b6; --ok:#34d399; --warn:#fbbf24;
-  --acc:#a78bfa;
+  --bg:var(--dt-ink-0); --bg2:var(--dt-ink-1); --card:var(--dt-ink-2); --card2:var(--dt-ink-3);
+  --line:var(--dt-hair-2); --txt:var(--dt-paper); --dim:var(--dt-muted);
+  --neu:#38bdf8; --weiter:var(--dt-red); --ok:var(--dt-ok); --warn:var(--dt-gold);
+  --acc:var(--dt-red);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{
   background:radial-gradient(1200px 700px at 50% -10%,#1b2338 0%,var(--bg) 60%);
-  color:var(--txt);font-family:"Inter","Segoe UI",system-ui,sans-serif;
+  color:var(--txt);font-family:var(--dt-display);
   overflow:hidden;
 }
 /* ---------- HUD ---------- */
@@ -109,6 +112,7 @@ input.nm{background:var(--card2);border:1px solid var(--line);color:var(--txt);b
   padding:12px 16px;font-size:18px;font-family:inherit;width:100%}
 .flash{animation:fl .5s}
 @keyframes fl{0%{transform:scale(.92);opacity:.2}100%{transform:none;opacity:1}}
+html,body{overflow-x:hidden}
 </style>
 </head>
 <body>

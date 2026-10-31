@@ -4,9 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zusammenfassung Thema 1 · Deutschtrainer</title>
+<link rel="stylesheet" href="/design-tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@400;700;900&family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0b0b0c;--bg2:#141416;--card:#1b1b1f;--line:#2c2c33;--w:#f4f1ea;--mut:#a8a39a;--red:#e2231a;--red2:#ff4b3e;--gold:#e9b949;--gold2:#ffd77a;--ok:#3ccf7a;--bad:#ff4b3e;
---f:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;--mono:Consolas,"Cascadia Mono",ui-monospace,monospace}
+:root{--bg:var(--dt-ink-0);--bg2:var(--dt-ink-1);--card:var(--dt-ink-2);--line:var(--dt-hair-2);--w:var(--dt-paper);--mut:var(--dt-muted);--red:var(--dt-red);--red2:var(--dt-red);--gold:var(--dt-gold);--gold2:var(--dt-gold);--ok:var(--dt-ok);--bad:var(--dt-red);
+--f:var(--dt-display);--mono:var(--dt-mono)}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--w);font-family:var(--f);overflow:hidden}
 button{font:inherit;color:inherit;cursor:pointer}
@@ -184,6 +187,7 @@ h3{font-size:clamp(19px,1.95vw,33px)}
 .slide:has(.sec) .box{font-size:clamp(17px,1.9vw,33px)}
 .slide:has(.sec) .big{font-size:clamp(24px,2.9vw,50px)!important}
 @media(max-height:780px){.toc{margin-top:2vh}.toc button{padding:1.1vh .8vw}.mini td{font-size:clamp(14px,1.35vw,22px)}}
+html,body{overflow-x:hidden}
 </style>
 </head>
 <body>
