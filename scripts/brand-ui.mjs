@@ -82,7 +82,7 @@ try {
   await c.until(`/Continúa/.test(document.querySelector('.dt-resume')?.textContent||'')`, 'continúa donde lo dejaste');
   report.checks.resume = await c.eval(`document.querySelector('.dt-resume h2').textContent`);
   // Paso 1 abre la presentación real.
-  const presHref = await c.eval(`(()=>{location.href='/curso?intro=0';return true})()`);
+  const presHref = await c.go('/curso?intro=0');
   await c.until(`!!document.querySelector('.cp-pop a[href$=".html"]')`, 'enlace presentación');
   const href = await c.eval(`document.querySelector('.cp-pop a[href$=".html"]').getAttribute('href')`);
   const r = await fetch(env.base + href); assert.equal(r.status, 200); void presHref;
