@@ -68,3 +68,61 @@ describe('logros', () => {
     expect(ACHIEVEMENTS.every((a) => a.goal > 0 && a.name && a.desc)).toBe(true);
   });
 });
+
+describe('logros ampliados', () => {
+  const at = (h: number, dayOffset = 0) => Date.UTC(2026, 9, 5 + dayOffset, h - 2); // h en hora de Madrid (CEST = UTC+2)
+  const mission = (t: number): ProgressEvent => ({ at: t, profile: P, kind: 'session', source: 'mission', points: 5 });
+  it('el catálogo amplía a unos 100 logros, al final, con grupos y métricas válidos', () => {
+    expect(ACHIEVEMENTS.length).toBeGreaterThanOrEqual(115);
+    const originals = ACHIEVEMENTS.slice(0, 20).map((a) => a.id);
+    expect(originals[0]).toBe('first-answer');
+    expect(originals.at(-1)).toBe('champion');
+    const groups = new Set(['aprendizaje', 'constancia', 'juegos', 'ranking', 'dominio', 'temas', 'habitos']);
+    for (const a of ACHIEVEMENTS.slice(20)) { expect(groups.has(a.group), a.id).toBe(true); expect(a.metric, a.id).toBeTruthy(); }
+    expect(ACHIEVEMENTS.slice(20).filter((a) => a.group === 'temas')).toHaveLength(20); // 16 dominios por tema + 4 de variedad
+  });
+  it('umbral exacto: correct-25 se desbloquea en la respuesta 25.ª correcta, no antes', () => {
+    const evs = Array.from({ length: 30 }, (_, i) => ans(T0 + i * 1000, true));
+    const c = get(computeAchievements(evs), 'correct-25');
+    expect(c).toMatchObject({ unlocked: true, at: T0 + 24 * 1000 });
+    expect(get(computeAchievements(evs.slice(0, 24)), 'correct-25')).toMatchObject({ unlocked: false, value: 24 });
+  });
+  it('dominio de tema: 30 intentos con un 85 % o más; con 84 % no', () => {
+    const ok = Array.from({ length: 30 }, (_, i) => ans(T0 + i, i < 26, 'dativ'));  // 26/30 = 86,7 %
+    const no = Array.from({ length: 30 }, (_, i) => ans(T0 + i, i < 25, 'dativ'));  // 25/30 = 83,3 %
+    expect(get(computeAchievements(ok), 'master-dativ').unlocked).toBe(true);
+    expect(get(computeAchievements(no), 'master-dativ').unlocked).toBe(false);
+    expect(get(computeAchievements(ok), 'master-perfekt').unlocked).toBe(false);
+  });
+  it('horarios de Madrid: antes de las 8 y después de las 22', () => {
+    expect(get(computeAchievements([ans(at(7), true)]), 'early-1').unlocked).toBe(true);   // 07:00 Madrid
+    expect(get(computeAchievements([ans(at(9), true)]), 'early-1').unlocked).toBe(false);  // 09:00 Madrid
+    expect(get(computeAchievements([ans(at(23), true)]), 'night-1').unlocked).toBe(true);  // 23:00 Madrid
+    expect(get(computeAchievements([ans(at(21), true)]), 'night-1').unlocked).toBe(false); // 21:00 Madrid
+  });
+  it('racha de misiones: una misión por día, días seguidos', () => {
+    const three = [0, 1, 2].map((d) => mission(at(18, d)));
+    expect(get(computeAchievements(three), 'mission-streak-3').unlocked).toBe(true);
+    const gap = [mission(at(18, 0)), mission(at(18, 1)), mission(at(18, 3))];   // hueco el día 2
+    expect(get(computeAchievements(gap), 'mission-streak-3').unlocked).toBe(false);
+    expect(get(computeAchievements([mission(at(18, 0)), mission(at(19, 0))]), 'mission-1').value).toBe(1); // dos misiones el mismo día cuentan como una racha
+  });
+  it('aciertos con ayuda no cuentan como aciertos independientes', () => {
+    const helped = Array.from({ length: 25 }, (_, i) => ({ ...ans(T0 + i, true), assisted: true }) as ProgressEvent);
+    expect(get(computeAchievements(helped), 'indep-25')).toMatchObject({ unlocked: false, value: 0 });
+    const alone = Array.from({ length: 25 }, (_, i) => ans(T0 + i, true));
+    expect(get(computeAchievements(alone), 'indep-25').unlocked).toBe(true);
+  });
+  it('racha de aciertos seguidos se corta con un fallo', () => {
+    const evs = [...Array.from({ length: 4 }, (_, i) => ans(T0 + i, true)), ans(T0 + 4, false), ...Array.from({ length: 5 }, (_, i) => ans(T0 + 5 + i, true))];
+    expect(get(computeAchievements(evs), 'run-5')).toMatchObject({ unlocked: true, at: T0 + 9 });
+    expect(get(computeAchievements(evs.slice(0, 8)), 'run-5').unlocked).toBe(false);
+  });
+  it('ranking: 3 semanas en el podio desbloquean podium-3 en la tercera', () => {
+    const p = (week: number, rank: number) => ({ week: `w${week}`, rank, at: T0 + week * DAY });
+    const r = computeAchievements([], [p(1, 2), p(2, 3), p(3, 1), p(4, 5)]);
+    expect(get(r, 'podium-3')).toMatchObject({ unlocked: true, at: T0 + 3 * DAY });
+    expect(get(r, 'podium-10')).toMatchObject({ unlocked: false, value: 3 });
+    expect(get(r, 'champion-2')).toMatchObject({ unlocked: false, value: 1 });
+  });
+});
