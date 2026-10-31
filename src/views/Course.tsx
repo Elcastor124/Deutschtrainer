@@ -1,6 +1,6 @@
 // /curso — Ruta del curso como camino vertical: cada Lektion abre con un banner y sus pasos son bloques 3D
 // unidos por una línea gris que se enciende en rojo neón al completar. Crece hacia abajo: escala a cualquier nº de clases.
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { COURSE, STEP_META, nextStep, overallProgress, unitProgress, unitStatus, type CourseStep, type CourseUnit } from '../course.ts';
 import { TOPICS } from '../../shared/rules.ts';
 import { followLearningLink } from '../components/LearningNav.tsx';
@@ -55,11 +55,12 @@ export function Course() {
     const el = root.current?.querySelector(`[data-step="${id}"]`);
     el?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center' });
   };
-  useEffect(() => {
+  // Antes del primer pintado: la vista ya aparece centrada en el paso que toca (sin salto posterior).
+  useLayoutEffect(() => {
     const hash = (location.hash ?? '').slice(1);
     const unit = COURSE.find((u) => u.id === hash);
     const target = unit ? (unit.steps.find((s) => !done.has(s.id)) ?? unit.steps[0]).id : next?.step.id;
-    if (target) { const t = setTimeout(() => reveal(target, false), 80); return () => clearTimeout(t); }
+    if (target) reveal(target, false);
   }, []);
   useEffect(() => {
     const close = (e: KeyboardEvent) => { if (e.key === 'Escape') setSel(null); };
