@@ -330,10 +330,12 @@ const MIME: Record<string, string> = {
 
 const progressHandler = createProgressHandler({dataDir: DATA_DIR, profiles: id => store.data.profiles[id]});
 const teacherData = new TeacherData(DATA_DIR);
-const playApi = createPlayApi({ accounts, guard, log: () => progressHandler.log, bank, studentExtras: (a) => studentView(teacherData, a, madridDay(Date.now())) });
-playApi.setOnRemoved((id) => { delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); });
+const playApi = createPlayApi({ accounts, guard, log: () => progressHandler.log, bank, studentExtras: (a) => studentView(teacherData, a, madridDay(Date.now())),
+  setHomeworkDone: (a, id, done) => teacherData.setHomeworkDone(a.id, id, done) });
+const forgetAccount = (id: string) => { delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); };
+playApi.setOnRemoved(forgetAccount);
 const teacherOs = createTeacherOs({
-  accounts, guard, log: () => progressHandler.log, bank, data: teacherData, publicDir: join(ROOT, 'public'),
+  accounts, guard, log: () => progressHandler.log, bank, data: teacherData, publicDir: join(ROOT, 'public'), onRemoved: forgetAccount,
   liveRooms: () => [...rooms.values()].filter((r) => r.s.mode === 'class').map((r) => ({
     code: r.s.code, owner: r.s.owner, phase: r.s.phase, block: r.s.block, players: r.s.players.length, connected: r.s.players.filter((p) => p.connected).length,
     review: Object.values(r.s.answers).filter((x) => x.status === 'review').length, private: !!r.s.private,

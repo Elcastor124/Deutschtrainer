@@ -30,6 +30,9 @@ export interface Detail {
   activities: { at: number; game: string; level: string | null; total: number; correct: number; points: number; room: string | null }[];
   notes: { id: string; at: number; by: string; text: string }[]; attendance: { date: string; status: 'present' | 'absent' | 'late'; by: string }[];
   reviews: { id: string; at: number; by: string; topics: string[]; note?: string }[]; minN: number;
+  grades: Grade[]; homework: { id: string; title: string; due: string | null; at: number; done: number | null }[];
 }
+export interface Grade { id: string; at: number; by: string; title: string; score: number; comment?: string }
+export interface Homework { id: string; at: number; by: string; title: string; text: string; topics: string[]; due?: string; groups: string[]; students: string[]; targets: number; done: string[] }
 export interface Analytics { n: number; students: number; accuracy: number | null; sufficient: boolean; minN: number; byWeekday: Agg[]; byHour: Agg[]; byTopic: Agg[]; byDiff: Agg[]; bySource: Agg[]; note: string }
 export interface LibraryItem { id: string; type: 'presentacion' | 'juego' | 'examen' | 'actividad' | 'repaso'; title: string; description: string; topics: string[]; levels: string[]; unit: number | null; open: string | null; pdf: string | null; launch: string | null }

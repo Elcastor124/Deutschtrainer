@@ -166,3 +166,19 @@
   .tos-session-actions { justify-content: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) { .tos-page, .tos-panel, .tos-bar-track i, .tos-lib-item, .tos-nav a, .tos-table tbody tr { animation: none !important; transition: none !important; } }
+
+/* Selección múltiple y acciones en bloque */
+.tos-cb { width: 36px; }
+.tos-cb input { width: 18px; height: 18px; accent-color: var(--dt-red); }
+.tos-bulk { position: sticky; top: 8px; z-index: 5; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 16px; border-radius: 14px; background: color-mix(in srgb, var(--dt-red) 12%, var(--dt-ink-2)); border: 1px solid color-mix(in srgb, var(--dt-red) 55%, transparent); box-shadow: 0 12px 30px rgba(0,0,0,.5); }
+.tos-bulk .field { width: auto; min-width: 140px; }
+/* Deberes */
+.tos-hw-form { display: grid; gap: 12px; padding: 20px; }
+.tos-hw-form h2 { margin: 0; }
+.tos-hw-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.tos-hw-list li { display: grid; gap: 6px; padding: 16px 18px; }
+.tos-hw-list p { margin: 0; color: var(--dt-paper-2); }
+.tos-h3 { margin: 14px 0 6px; font-size: 1rem; }
+.tos-grade-form .tos-score { width: 80px; flex: 0 0 auto; }
+.btn.danger { border-color: color-mix(in srgb, var(--dt-red) 70%, transparent); color: var(--dt-red); }
+.btn.danger:hover { background: var(--dt-red); color: #0a0a0a; }

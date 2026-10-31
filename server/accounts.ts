@@ -172,6 +172,12 @@ export class AccountStore {
     this.save();
     return true;
   }
+  /** Baja decidida por el profesor (sin contraseña del alumno). Cierra todas sus sesiones. */
+  removeByTeacher(a: Account) {
+    this.accounts = this.accounts.filter((x) => x !== a); this.byAlias.delete(a.aliasKey);
+    for (const s of a.sessions) this.byToken.delete(s.h);
+    this.save();
+  }
   /** Moderación: un alias bloqueado deja de mostrarse en el ranking y la cuenta sale de él. */
   setAliasStatus(alias: string, status: 'approved' | 'blocked'): boolean {
     const a = this.byAlias.get(aliasKey(alias)); if (!a) return false;

@@ -217,3 +217,45 @@ describe('clases, análisis y biblioteca', () => {
     expect(ov.live.map((r: Msg) => r.code)).toContain(w.room);
   });
 });
+
+describe('deberes, notas visibles, acciones en bloque y bajas', () => {
+  it('el profesor manda deberes a un grupo; solo sus alumnos los ven al entrar y los marcan; las notas las ve solo su alumno', async () => {
+    const { s, t } = await teacherServer();
+    const ana = await student(s, 'Ana_Hw'), ben = await student(s, 'Ben_Hw'), eva = await student(s, 'Eva_Hw');
+    const rows = (await req(s, '/api/teacher/students', { cookie: t })).body.students as Msg[];
+    const id = (alias: string) => rows.find((r) => r.alias === alias)!.id as string;
+    const g = (await req(s, '/api/teacher/groups', { cookie: t, body: { name: 'Mañana' } })).body;
+    // En bloque: Ana y Ben al grupo.
+    expect((await req(s, '/api/teacher/bulk', { cookie: t, body: { action: 'add-group', group: g.id, ids: [id('Ana_Hw'), id('Ben_Hw')] } })).body.n).toBe(2);
+    expect((await req(s, '/api/teacher/homework', { cookie: t, body: { title: 'Repasa el Dativ', groups: [] } })).status).toBe(400); // sin destinatarios
+    const hw = (await req(s, '/api/teacher/homework', { cookie: t, body: { title: 'Repasa el Dativ', text: '20 preguntas', topics: ['dativ', 'xx'], groups: [g.id], due: '2026-11-07' } })).body;
+    expect(hw.topics).toEqual(['dativ']);
+    const inbox = async (c: string) => (await req(s, '/api/account/inbox', { cookie: c })).body;
+    expect((await inbox(ana)).homework).toMatchObject([{ id: hw.id, title: 'Repasa el Dativ', done: false, due: '2026-11-07' }]);
+    expect((await inbox(eva)).homework).toEqual([]);
+    expect((await req(s, '/api/account/homework', { cookie: eva, body: { id: hw.id, done: true } })).status).toBe(404); // no es suyo
+    expect((await req(s, '/api/account/homework', { cookie: ana, body: { id: hw.id, done: true } })).body.homework[0].done).toBe(true);
+    const list = (await req(s, '/api/teacher/homework', { cookie: t })).body.homework[0];
+    expect(list).toMatchObject({ targets: 2, done: ['Ana_Hw'] });
+    // Notas visibles (0–10), solo para ese alumno; las notas privadas siguen sin salir.
+    expect((await req(s, `/api/teacher/students/${id('Ben_Hw')}/grades`, { cookie: t, body: { title: 'Examen', score: 11 } })).status).toBe(400);
+    await req(s, `/api/teacher/students/${id('Ben_Hw')}/grades`, { cookie: t, body: { title: 'Examen Tema 1', score: 7.5, comment: 'Bien el Perfekt' } });
+    await req(s, `/api/teacher/students/${id('Ben_Hw')}/notes`, { cookie: t, body: { text: 'privado: llega tarde' } });
+    const benBox = await inbox(ben);
+    expect(benBox.grades).toMatchObject([{ title: 'Examen Tema 1', score: 7.5, comment: 'Bien el Perfekt' }]);
+    expect(JSON.stringify(benBox)).not.toContain('llega tarde');
+    expect((await inbox(ana)).grades).toEqual([]);
+    expect((await req(s, '/api/account/inbox')).status).toBe(401);
+    expect((await req(s, '/api/account/inbox', { cookie: t })).status).toBe(401); // la sesión de profesor no es de alumno
+  });
+  it('el profesor puede borrar una cuenta (confirmando el alias) y deja de existir', async () => {
+    const { s, t } = await teacherServer();
+    const zoe = await student(s, 'Zoe_Del');
+    const zid = ((await req(s, '/api/teacher/students', { cookie: t })).body.students as Msg[]).find((r) => r.alias === 'Zoe_Del')!.id;
+    expect((await req(s, `/api/teacher/students/${zid}/delete`, { cookie: t, body: { confirm: 'otra' } })).status).toBe(400);
+    expect((await req(s, `/api/teacher/students/${zid}/delete`, { cookie: t, body: { confirm: 'Zoe_Del' } })).body.ok).toBe(true);
+    expect(((await req(s, '/api/teacher/students', { cookie: t })).body.students as Msg[]).some((r) => r.alias === 'Zoe_Del')).toBe(false);
+    expect((await req(s, '/api/account/me', { cookie: zoe })).status).toBe(401);
+    expect((await req(s, `/api/teacher/students/${zid}/delete`, { body: { confirm: 'Zoe_Del' } })).status).toBe(401); // sin profesor
+  });
+});

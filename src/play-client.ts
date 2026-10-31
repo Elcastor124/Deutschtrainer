@@ -32,7 +32,12 @@ export interface Dashboard {
   account: AccountPub; summary: ProgressSummary; challenges: { id: string; title: string; value: number; goal: number; done: boolean; topic?: string }[];
   level: Level | null; reviews: { id: string; at: number; topics: string[]; note?: string }[];
   classes: { id: string; title: string; date: string; game: string; topics: string[]; status: string; room?: string }[]; groups: string[];
+  homework?: HomeworkItem[]; grades?: GradeItem[];
 }
+export interface HomeworkItem { id: string; at: number; title: string; text: string; topics: string[]; due: string | null; done: boolean }
+export interface GradeItem { id: string; at: number; title: string; score: number; comment?: string; by: string }
+export const getInbox = () => playRequest<{ homework: HomeworkItem[]; grades: GradeItem[] }>('/api/account/inbox');
+export const setHomeworkDone = (id: string, done: boolean) => playRequest<{ homework: HomeworkItem[] }>('/api/account/homework', { id, done });
 export const getDashboard = () => playRequest<Dashboard>('/api/account/dashboard');
 export const getAchievements = () => playRequest<{ achievements: AchievementState[] }>('/api/account/achievements');
 export const getRanking = (which: 'current' | 'previous' = 'current', limit = 50, signal?: AbortSignal) => playRequest<RankingView>(`/api/play/leaderboard?week=${which}&limit=${limit}`, undefined, signal);

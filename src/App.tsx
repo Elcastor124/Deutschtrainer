@@ -21,6 +21,7 @@ import { Workshop } from './views/Workshop.tsx';
 import { Player } from './views/Player.tsx';
 import { Practice } from './views/Practice.tsx';
 import { Library } from './views/Library.tsx';
+import { HomeworkNotice } from './components/HomeworkNotice.tsx';
 import { KlausSkins } from './views/KlausSkins.tsx';
 import { GameSetup } from './views/GameSetup.tsx';
 import { Teacher } from './views/Teacher.tsx';
@@ -63,5 +64,5 @@ export function App() {
   else if (/^\/jenga\/?$/.test(path)) screen = <GameSetup mode="jenga" />;
   else if (/^\/jugar\/?$/.test(path) || invited) screen = <GameSetup mode="blackcard" />;
   else screen = <Landing />;
-  return <><AmbientField path={path} search={search} /><Intro path={path} search={search} />{!teacherOs && <LearningNav path={invited ? '/jugar' : path} />}<PageTransition path={path}>{screen}</PageTransition><ScrollReveal path={path} /><AchievementWatcher path={path} /></>;
+  return <><AmbientField path={path} search={search} /><Intro path={path} search={search} />{!teacherOs && <LearningNav path={invited ? '/jugar' : path} />}<PageTransition path={path}>{screen}</PageTransition><ScrollReveal path={path} /><AchievementWatcher path={path} />{!teacherOs && <HomeworkNotice path={path} />}</>;
 }
