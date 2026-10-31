@@ -81,10 +81,12 @@ export const FREEPLAY_RULES: readonly { points: string; title: string; text: str
 
 // ───────────── Logros e insignias ─────────────
 export type AchievementTier = 'bronze' | 'silver' | 'gold';
-export interface AchievementDef { id: string; name: string; desc: string; tier: AchievementTier; icon: string; goal: number; group: 'constancia' | 'aprendizaje' | 'juegos' | 'ranking' }
+/** `metric`: qué mide el servidor para este logro (ver METRICS en server/achievements.ts). Los originales no lo llevan. */
+export interface AchievementDef { id: string; name: string; desc: string; tier: AchievementTier; icon: string; goal: number; group: AchievementGroup; metric?: string }
+export type AchievementGroup = 'constancia' | 'aprendizaje' | 'juegos' | 'ranking' | 'dominio' | 'temas' | 'habitos';
 export interface AchievementState { id: string; unlocked: boolean; at?: number; value: number; goal: number }
 /** Catálogo. Las condiciones las evalúa server/achievements.ts sobre eventos validados (nunca el cliente). */
-export const ACHIEVEMENTS: readonly AchievementDef[] = [
+const ACHIEVEMENTS_BASE: AchievementDef[] = [
   { id: 'first-answer', name: 'Los geht\'s!', desc: 'Responde tu primera pregunta.', tier: 'bronze', icon: 'spark', goal: 1, group: 'aprendizaje' },
   { id: 'correct-100', name: 'Hundert', desc: '100 respuestas correctas.', tier: 'bronze', icon: 'check', goal: 100, group: 'aprendizaje' },
   { id: 'correct-500', name: 'Fünfhundert', desc: '500 respuestas correctas.', tier: 'silver', icon: 'check', goal: 500, group: 'aprendizaje' },
@@ -106,3 +108,111 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'podium', name: 'Auf dem Podest', desc: 'Termina una semana entre los 3 primeros del ranking.', tier: 'silver', icon: 'podium', goal: 1, group: 'ranking' },
   { id: 'champion', name: 'Wochensieger', desc: 'Gana una semana del ranking.', tier: 'gold', icon: 'crown', goal: 1, group: 'ranking' },
 ];
+
+// ───────── Logros ampliados (todos derivados de eventos validados; ver METRICS en server/achievements.ts) ─────────
+type T = AchievementTier;
+const d = (id: string, name: string, desc: string, tier: T, icon: string, goal: number, group: AchievementGroup, metric: string): AchievementDef =>
+  ({ id, name, desc, tier, icon, goal, group, metric });
+const TOPIC_NAMES: [string, string, string][] = [
+  ['vocab', 'Wortschatz', 'Wortschatz'], ['perfekt', 'Perfekt', 'Perfekt'], ['nebensatz', 'Nebensatz', 'Nebensätze'], ['dativ', 'Dativ', 'Dativ'],
+  ['akkusativ', 'Akkusativ', 'Akkusativ'], ['praesens', 'Präsens', 'Präsens'], ['trennbar', 'Trennbar', 'Verbos separables'], ['satzbau', 'Satzbau', 'Satzbau'],
+  ['alltag', 'Alltag', 'Alltag'], ['lesen', 'Lese', 'Comprensión lectora'], ['modal', 'Modal', 'Modalverben'], ['possessiv', 'Possessiv', 'Posesivos'],
+  ['praep', 'Präpositionen', 'Preposiciones'], ['adjektiv', 'Adjektiv', 'Adjetivos y comparativos'], ['imperativ', 'Imperativ', 'Imperativo'], ['vorstellen', 'Vorstellen', 'Presentarse'],
+];
+const ACHIEVEMENTS_EXTRA: AchievementDef[] = [
+  // Dominio: volumen, precisión y rachas
+  d('correct-10', 'Zehn richtige', '10 respuestas correctas.', 'bronze', 'check', 10, 'dominio', 'correct'),
+  d('correct-25', 'Fünfundzwanzig', '25 respuestas correctas.', 'bronze', 'check', 25, 'dominio', 'correct'),
+  d('correct-50', 'Halbhundert', '50 respuestas correctas.', 'bronze', 'check', 50, 'dominio', 'correct'),
+  d('correct-250', 'Zweihundertfünfzig', '250 respuestas correctas.', 'silver', 'check', 250, 'dominio', 'correct'),
+  d('correct-750', 'Dreiviertelkönner', '750 respuestas correctas.', 'silver', 'check', 750, 'dominio', 'correct'),
+  d('correct-2000', 'Zweitausend', '2000 respuestas correctas.', 'gold', 'medal', 2000, 'dominio', 'correct'),
+  d('correct-5000', 'Fünftausend', '5000 respuestas correctas.', 'gold', 'medal', 5000, 'dominio', 'correct'),
+  d('answers-10', 'Aufwärmen', '10 respuestas (acertadas o no).', 'bronze', 'spark', 10, 'dominio', 'answers'),
+  d('answers-50', 'Im Rhythmus', '50 respuestas.', 'bronze', 'spark', 50, 'dominio', 'answers'),
+  d('answers-250', 'Dabei bleiben', '250 respuestas.', 'silver', 'spark', 250, 'dominio', 'answers'),
+  d('answers-1000', 'Tausendmal geübt', '1000 respuestas.', 'gold', 'spark', 1000, 'dominio', 'answers'),
+  d('answers-2500', 'Unermüdlich lernen', '2500 respuestas.', 'gold', 'spark', 2500, 'dominio', 'answers'),
+  d('indep-25', 'Auf eigene Faust', '25 aciertos sin ayuda de Klaus.', 'bronze', 'shield', 25, 'dominio', 'indep'),
+  d('indep-100', 'Ohne Hilfe', '100 aciertos sin ayuda.', 'silver', 'shield', 100, 'dominio', 'indep'),
+  d('indep-300', 'Selbstständig', '300 aciertos sin ayuda.', 'gold', 'shield', 300, 'dominio', 'indep'),
+  d('indep-1000', 'Eigenständig', '1000 aciertos sin ayuda.', 'gold', 'shield', 1000, 'dominio', 'indep'),
+  d('points-100', 'Punktesammler', 'Acumula 100 puntos.', 'bronze', 'medal', 100, 'dominio', 'points'),
+  d('points-500', 'Fleißige Punkte', 'Acumula 500 puntos.', 'bronze', 'medal', 500, 'dominio', 'points'),
+  d('points-1000', 'Tausend Punkte', 'Acumula 1000 puntos.', 'silver', 'medal', 1000, 'dominio', 'points'),
+  d('points-2500', 'Punktereich', 'Acumula 2500 puntos.', 'silver', 'medal', 2500, 'dominio', 'points'),
+  d('points-5000', 'Goldgrube', 'Acumula 5000 puntos.', 'gold', 'medal', 5000, 'dominio', 'points'),
+  d('points-10000', 'Legende der Punkte', 'Acumula 10 000 puntos.', 'gold', 'medal', 10000, 'dominio', 'points'),
+  d('run-5', 'Fünf am Stück', '5 aciertos seguidos.', 'bronze', 'bolt', 5, 'dominio', 'run'),
+  d('run-10', 'Zehn am Stück', '10 aciertos seguidos.', 'silver', 'bolt', 10, 'dominio', 'run'),
+  d('run-25', 'Fünfundzwanzig am Stück', '25 aciertos seguidos.', 'silver', 'bolt', 25, 'dominio', 'run'),
+  d('run-50', 'Unbeirrbar', '50 aciertos seguidos.', 'gold', 'bolt', 50, 'dominio', 'run'),
+  d('run-100', 'Blitzschnell', '100 aciertos seguidos.', 'gold', 'bolt', 100, 'dominio', 'run'),
+  d('dayc-10', 'Guter Tag', '10 respuestas correctas en un mismo día.', 'bronze', 'target', 10, 'dominio', 'dayCorrect'),
+  d('dayc-25', 'Starker Tag', '25 respuestas correctas en un mismo día.', 'silver', 'target', 25, 'dominio', 'dayCorrect'),
+  d('dayc-50', 'Großer Tag', '50 respuestas correctas en un mismo día.', 'gold', 'target', 50, 'dominio', 'dayCorrect'),
+  d('daya-20', 'Intensiv', '20 respuestas en un mismo día.', 'bronze', 'rocket', 20, 'dominio', 'dayAnswers'),
+  d('daya-50', 'Marathon', '50 respuestas en un mismo día.', 'silver', 'rocket', 50, 'dominio', 'dayAnswers'),
+  d('daya-100', 'Ausdauer', '100 respuestas en un mismo día.', 'gold', 'rocket', 100, 'dominio', 'dayAnswers'),
+  // Temas: dominio por tema (30 intentos con un 85 % o más, igual que «Especialista»)
+  ...TOPIC_NAMES.map(([id, short, de]) => d(`master-${id}`, `${short}-Profi`, `Domina «${de}»: 30 intentos con un 85 % de acierto o más.`, 'silver', 'star', 1, 'temas', `mastery:${id}`)),
+  d('topics-3', 'Neugierig', 'Practica 3 temas distintos (en total).', 'bronze', 'compass', 3, 'temas', 'topics'),
+  d('topics-6', 'Vielseitig', 'Practica 6 temas distintos (en total).', 'silver', 'compass', 6, 'temas', 'topics'),
+  d('topics-10', 'Weltenbummler', 'Practica 10 temas distintos (en total).', 'gold', 'globe', 10, 'temas', 'topics'),
+  d('topics-16', 'Alles gelernt', 'Practica los 16 temas.', 'gold', 'globe', 16, 'temas', 'topics'),
+  // Hábitos: constancia, días, misiones y horarios (la hora es la de Madrid)
+  d('streak-5', 'Fünf Tage', 'Practica 5 días seguidos.', 'bronze', 'flame', 5, 'habitos', 'streak'),
+  d('streak-14', 'Zwei Wochen', 'Practica 14 días seguidos.', 'silver', 'flame', 14, 'habitos', 'streak'),
+  d('streak-60', 'Zwei Monate', 'Practica 60 días seguidos.', 'gold', 'flame', 60, 'habitos', 'streak'),
+  d('streak-90', 'Drei Monate', 'Practica 90 días seguidos.', 'gold', 'flame', 90, 'habitos', 'streak'),
+  d('streak-180', 'Halbjahr', 'Practica 180 días seguidos.', 'gold', 'flame', 180, 'habitos', 'streak'),
+  d('streak-365', 'Ein Jahr', 'Practica 365 días seguidos.', 'gold', 'flame', 365, 'habitos', 'streak'),
+  d('days-10', 'Zehn Tage', 'Practica en 10 días distintos.', 'bronze', 'calendar', 10, 'habitos', 'days'),
+  d('days-30', 'Dreißig Tage', 'Practica en 30 días distintos.', 'silver', 'calendar', 30, 'habitos', 'days'),
+  d('days-100', 'Hundert Tage', 'Practica en 100 días distintos.', 'gold', 'calendar', 100, 'habitos', 'days'),
+  d('days-200', 'Zweihundert Tage', 'Practica en 200 días distintos.', 'gold', 'calendar', 200, 'habitos', 'days'),
+  d('week-3', 'Dreimal in einer Woche', 'Practica 3 días dentro de una misma semana.', 'bronze', 'calendar', 3, 'habitos', 'weekDays'),
+  d('week-5', 'Fünf Tage in einer Woche', 'Practica 5 días dentro de una misma semana.', 'silver', 'calendar', 5, 'habitos', 'weekDays'),
+  d('week-7', 'Jeden Tag der Woche', 'Practica los 7 días de una misma semana.', 'gold', 'calendar', 7, 'habitos', 'weekDays'),
+  d('mission-1', 'Erste Mission', 'Completa tu primera misión diaria.', 'bronze', 'book', 1, 'habitos', 'missions'),
+  d('mission-5', 'Fünf Missionen', 'Completa 5 misiones diarias.', 'bronze', 'book', 5, 'habitos', 'missions'),
+  d('mission-10', 'Zehn Missionen', 'Completa 10 misiones diarias.', 'silver', 'book', 10, 'habitos', 'missions'),
+  d('mission-30', 'Dreißig Missionen', 'Completa 30 misiones diarias.', 'silver', 'book', 30, 'habitos', 'missions'),
+  d('mission-60', 'Sechzig Missionen', 'Completa 60 misiones diarias.', 'gold', 'book', 60, 'habitos', 'missions'),
+  d('mission-100', 'Hundert Missionen', 'Completa 100 misiones diarias.', 'gold', 'book', 100, 'habitos', 'missions'),
+  d('mission-streak-3', 'Drei Tage Mission', 'Completa la misión 3 días seguidos.', 'bronze', 'book', 3, 'habitos', 'missionStreak'),
+  d('mission-streak-7', 'Eine Woche Mission', 'Completa la misión 7 días seguidos.', 'silver', 'book', 7, 'habitos', 'missionStreak'),
+  d('early-1', 'Frühaufsteher', 'Responde antes de las 8:00 (hora de Madrid).', 'bronze', 'sun', 1, 'habitos', 'early'),
+  d('early-10', 'Früh übt sich', '10 respuestas antes de las 8:00.', 'silver', 'sun', 10, 'habitos', 'early'),
+  d('early-50', 'Morgenmensch', '50 respuestas antes de las 8:00.', 'gold', 'sun', 50, 'habitos', 'early'),
+  d('night-1', 'Nachtschicht', 'Responde después de las 22:00 (hora de Madrid).', 'bronze', 'moon', 1, 'habitos', 'night'),
+  d('night-10', 'Nachteule', '10 respuestas después de las 22:00.', 'silver', 'moon', 10, 'habitos', 'night'),
+  d('night-50', 'Nachtmensch', '50 respuestas después de las 22:00.', 'gold', 'moon', 50, 'habitos', 'night'),
+  d('weekend-1', 'Am Wochenende', 'Practica un sábado o domingo.', 'bronze', 'leaf', 1, 'habitos', 'weekend'),
+  d('weekend-10', 'Wochenend-Lernen', '10 respuestas en fin de semana.', 'silver', 'leaf', 10, 'habitos', 'weekend'),
+  d('weekend-50', 'Ohne Wochenpause', '50 respuestas en fin de semana.', 'gold', 'leaf', 50, 'habitos', 'weekend'),
+  // Juegos
+  d('activities-3', 'Drei Aktivitäten', 'Completa 3 actividades.', 'bronze', 'flag', 3, 'juegos', 'activities'),
+  d('activities-25', 'Fünfundzwanzig Aktivitäten', 'Completa 25 actividades.', 'silver', 'flag', 25, 'juegos', 'activities'),
+  d('activities-100', 'Hundert Aktivitäten', 'Completa 100 actividades.', 'gold', 'flag', 100, 'juegos', 'activities'),
+  d('perfect-3', 'Dreimal fehlerfrei', '3 actividades de 10 preguntas o más sin fallos.', 'silver', 'diamond', 3, 'juegos', 'perfect'),
+  d('perfect-10', 'Zehnmal fehlerfrei', '10 actividades sin fallos.', 'gold', 'diamond', 10, 'juegos', 'perfect'),
+  d('boxer-5', 'Boxkämpfer', 'Termina 5 combates de boxeo.', 'silver', 'glove', 5, 'juegos', 'game:boxing'),
+  d('boxer-20', 'Ringlegende', 'Termina 20 combates de boxeo.', 'gold', 'glove', 20, 'juegos', 'game:boxing'),
+  d('builder-5', 'Turmfan', 'Completa 5 partidas de Wort-Jenga.', 'silver', 'tower', 5, 'juegos', 'game:jenga'),
+  d('builder-20', 'Turmmeister', 'Completa 20 partidas de Wort-Jenga.', 'gold', 'tower', 20, 'juegos', 'game:jenga'),
+  d('bc-1', 'BlackCard-Debüt', 'Juega una partida de BlackCard.', 'bronze', 'grid', 1, 'juegos', 'game:blackcard'),
+  d('bc-5', 'BlackCard-Fan', 'Juega 5 partidas de BlackCard.', 'silver', 'grid', 5, 'juegos', 'game:blackcard'),
+  d('bc-20', 'BlackCard-Profi', 'Juega 20 partidas de BlackCard.', 'gold', 'grid', 20, 'juegos', 'game:blackcard'),
+  d('b1-3', 'B1 dreimal', 'Completa 3 actividades de B1 con un 70 % o más.', 'silver', 'mountain', 3, 'juegos', 'b1'),
+  d('b1-10', 'B1 zu Hause', 'Completa 10 actividades de B1 con un 70 % o más.', 'gold', 'mountain', 10, 'juegos', 'b1'),
+  // Ranking
+  d('podium-3', 'Dreimal auf dem Podest', 'Termina 3 semanas entre los 3 primeros del ranking.', 'silver', 'podium', 3, 'ranking', 'podiums'),
+  d('podium-10', 'Stammgast im Podest', 'Termina 10 semanas entre los 3 primeros.', 'gold', 'podium', 10, 'ranking', 'podiums'),
+  d('champion-2', 'Zweifacher Sieger', 'Gana 2 semanas del ranking.', 'gold', 'crown', 2, 'ranking', 'champions'),
+  d('champion-5', 'Serienmeister', 'Gana 5 semanas del ranking.', 'gold', 'crown', 5, 'ranking', 'champions'),
+];
+/** Catálogo completo (los originales primero; los ampliados al final). */
+export const ACHIEVEMENTS: readonly AchievementDef[] = [...ACHIEVEMENTS_BASE, ...ACHIEVEMENTS_EXTRA];
+
+

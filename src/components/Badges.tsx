@@ -19,6 +19,17 @@ const ICONS: Record<string, string> = {
   grid: 'M7 7 H14 V14 H7 Z M18 7 H25 V14 H18 Z M7 18 H14 V25 H7 Z M18 18 H25 V25 H18 Z',
   podium: 'M4 26 L4 18 L11 18 L11 26 M11 26 L11 11 L21 11 L21 26 M21 26 L21 15 L28 15 L28 26 M3 26 L29 26',
   crown: 'M5 24 L7 10 L12.5 16 L16 7 L19.5 16 L25 10 L27 24 Z',
+  medal: 'M10 4 L14 13 M22 4 L18 13 M10 19 A6 6 0 1 0 22 19 A6 6 0 1 0 10 19',
+  shield: 'M16 4 L26 8 V15 C26 21 21.5 26 16 28 C10.5 26 6 21 6 15 V8 Z',
+  bolt: 'M18 3 L8 18 H15 L13 29 L24 13 H17 Z',
+  target: 'M16 4 A12 12 0 1 0 16.01 4 M16 9 A7 7 0 1 0 16.01 9 M16 14 A2 2 0 1 0 16.01 14',
+  rocket: 'M16 3 C21 7 22 13 20 19 L16 23 L12 19 C10 13 11 7 16 3 Z M12 19 L8 22 L9 26 L13 23 M20 19 L24 22 L23 26 L19 23 M16 23 V29',
+  book: 'M5 6 C9 4 13 5 16 8 C19 5 23 4 27 6 V26 C23 24 19 25 16 28 C13 25 9 24 5 26 Z M16 8 V28',
+  sun: 'M16 11 A5 5 0 1 0 16.01 11 M16 3 V6 M16 26 V29 M3 16 H6 M26 16 H29 M7 7 L9 9 M23 23 L25 25 M25 7 L23 9 M9 23 L7 25',
+  moon: 'M20 4 A12 12 0 1 0 28 22 A10 10 0 0 1 20 4 Z',
+  calendar: 'M5 8 H27 V27 H5 Z M5 13 H27 M11 5 V10 M21 5 V10',
+  leaf: 'M6 26 C6 14 12 7 26 6 C26 19 20 26 6 26 Z M6 26 L16 16',
+  globe: 'M16 4 A12 12 0 1 0 16.01 4 M4 16 H28 M16 4 C12 8 12 24 16 28 M16 4 C20 8 20 24 16 28',
 };
 export const defOf = (id: string) => ACHIEVEMENTS.find((a) => a.id === id)!;
 
@@ -34,7 +45,8 @@ export function Medal({ def, unlocked, size = 64 }: { def: AchievementDef; unloc
 }
 
 const GROUPS: { id: AchievementDef['group']; title: string }[] = [
-  { id: 'aprendizaje', title: 'Aprendizaje' }, { id: 'constancia', title: 'Constancia' }, { id: 'juegos', title: 'Juegos' }, { id: 'ranking', title: 'Ranking' },
+  { id: 'aprendizaje', title: 'Aprendizaje' }, { id: 'dominio', title: 'Dominio' }, { id: 'temas', title: 'Temas' },
+  { id: 'constancia', title: 'Constancia' }, { id: 'habitos', title: 'Hábitos' }, { id: 'juegos', title: 'Juegos' }, { id: 'ranking', title: 'Ranking' },
 ];
 
 export function BadgeGrid({ list }: { list: AchievementState[] }) {
@@ -46,15 +58,19 @@ export function BadgeGrid({ list }: { list: AchievementState[] }) {
         <span className="bdg-count"><b className="dotnum">{done}</b>/{list.length}</span>
         <span className="bdg-total" aria-hidden="true"><i style={{ width: `${Math.round((done / Math.max(1, list.length)) * 100)}%` }} /></span>
       </header>
-      {GROUPS.map((g) => (
-        <div key={g.id} className="bdg-group">
-          <h3>{g.title}</h3>
+      {GROUPS.map((g) => {
+        const items = list.filter((a) => defOf(a.id)?.group === g.id);
+        const got = items.filter((a) => a.unlocked).length;
+        // Con 121 logros, un grupo sin nada conseguido se pliega: se ve su progreso y se abre al pulsar.
+        return (
+        <details key={g.id} className="bdg-group" open={got > 0 || g.id === 'aprendizaje'}>
+          <summary><h3>{g.title}</h3><span className="bdg-gcount">{got}/{items.length}</span></summary>
           <ul className="bdg-grid">
-            {list.filter((a) => defOf(a.id)?.group === g.id).map((a) => {
+            {items.map((a) => {
               const d = defOf(a.id);
               return (
                 <li key={a.id} className={`bdg${a.unlocked ? ' is-on' : ''}`} data-badge={a.id} title={d.desc}>
-                  <Medal def={d} unlocked={a.unlocked} />
+                  <Medal def={d} unlocked={a.unlocked} size={52} />
                   <b>{d.name}</b>
                   <span>{d.desc}</span>
                   {a.unlocked
@@ -64,8 +80,9 @@ export function BadgeGrid({ list }: { list: AchievementState[] }) {
               );
             })}
           </ul>
-        </div>
-      ))}
+        </details>
+        );
+      })}
     </section>
   );
 }
