@@ -56,7 +56,7 @@
     ],
     "level": "A1–A2",
     "source": "nebensatz-perfekt.html",
-    "sha256": "951a53305723d0a2403a8c4601874a689f16bfe7c1da00cb0026f0f93c167e94",
+    "sha256": "15701def9b6762846326029079f5d8547c9cc36b8865bba8090b1528debdd8b2",
     "pdf": "/presentaciones/nebensaetze-perfekt.pdf"
   },
   {
@@ -87,7 +87,7 @@
     ],
     "level": "A1–A2",
     "source": "krankenhaus.html",
-    "sha256": "7112eb713c37681c0a3ff3ca82c9a160ff26af72a515e94ba382b92978358835",
+    "sha256": "b154d50b15b17ff49a3b294ebcc13522a3953d26e067392ca845ccb12a840213",
     "pdf": "/presentaciones/krankenhaus.pdf"
   },
   {
@@ -105,7 +105,7 @@
     ],
     "level": "A1–A2",
     "source": "IM_KRANKENHAUS_3D_DATIV_REMASTER.html",
-    "sha256": "3b15febb007aaa536e63bd9d1b7cf3f9fcdf794d3b2ddf278f178415ecac9c4b"
+    "sha256": "de8baa6d5a4749ace4574d375579250cd9cb344e19293fc802f2b8d98df1ce50"
   },
   {
     "id": "unterwegs",
@@ -120,7 +120,7 @@
     ],
     "level": "A1–A2",
     "source": "dativ.html",
-    "sha256": "ff950f1a7b34c8a7af43d835fb55599bd7ea385faf70f97cb4ed10f9a831c76f",
+    "sha256": "077370f5934ad0a54209546cac48ca0ea952e98eb93f0404d74303644b6f5ab0",
     "pdf": "/presentaciones/unterwegs.pdf"
   },
   {
@@ -136,7 +136,7 @@
     ],
     "level": "A1–A2",
     "source": "akkusativ.html",
-    "sha256": "f49a236f55a2e67735569a490f8f4bdf1deefb971a35403e77228e1aa4fcb940",
+    "sha256": "a42bd9f92e70cdd7007a3588c15cf136fff27ac054d3968ae2be044c7b1c2c7d",
     "pdf": "/presentaciones/akkusativ.pdf"
   },
   {
