@@ -72,7 +72,7 @@ try {
   // Teclado: espacio sobre la casilla enfocada.
   await c.eval(`document.getElementById('step-bruecke-a1-practicar').focus()`);
   await c.key(' ');
-  await c.until(`document.getElementById('step-bruecke-a1-practicar').checked`, 'marcar con teclado');
+  await c.until(`!!document.querySelector('[data-step="bruecke-a1:practicar"].is-done')`, 'marcar con teclado');
   await c.reload();
   await c.until(`!!document.querySelector('[data-step="bruecke-a1:practicar"].is-done')`, 'progreso persistente');
   report.checks.courseNext = await c.eval(`document.querySelector('.cg-step.is-next input').id`);
