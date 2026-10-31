@@ -4,7 +4,7 @@ export type Difficulty = 'easy' | 'medium' | 'hard' | 'special';
 export type Topic =
   | 'vocab' | 'perfekt' | 'nebensatz' | 'dativ' | 'akkusativ'
   | 'praesens' | 'trennbar' | 'satzbau' | 'alltag' | 'lesen'
-  | 'modal' | 'possessiv' | 'praep' | 'adjektiv' | 'imperativ';
+  | 'modal' | 'possessiv' | 'praep' | 'adjektiv' | 'imperativ' | 'vorstellen';
 /** Origen real de cada contenido (ver shared/sources.ts). */
 export type Source = 'bank' | 'warum' | 'kh' | 'unterwegs' | 'bruecke' | 'trainer' | 'lesen' | 'a1';
 export type QType = 'mc' | 'write' | 'gap' | 'order' | 'error' | 'match' | 'build';

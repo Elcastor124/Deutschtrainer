@@ -35,6 +35,7 @@ export const TOPICS: Record<Topic, { de: string; es: string }> = {
   praep: { de: 'Präpositionen', es: 'für · ohne · in · auf · unter… ¿dónde o adónde?' },
   adjektiv: { de: 'Adjektive & Komparativ', es: 'groß · größer · am größten · als / wie' },
   imperativ: { de: 'Imperativ', es: 'Komm! · Kommt! · Kommen Sie!' },
+  vorstellen: { de: 'Sich vorstellen', es: 'Presentarte: Wie heißt du? · Woher kommst du?' },
 };
 
 export const TYPE_LABEL: Record<QType, string> = {

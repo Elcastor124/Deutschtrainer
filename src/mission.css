@@ -1,0 +1,101 @@
+/* Tägliche Mission + Klaus tutor. Klaus va en una columna propia (debajo en móvil): nunca tapa la pregunta ni los botones. */
+.ms-page { width: min(1180px, 100%); margin: 0 auto; padding: var(--dt-space-9, 24px) var(--gut, 16px) 72px; display: grid; gap: 20px; position: relative; z-index: 1; }
+.ms-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.ms-note { margin: 0; color: var(--dt-paper-3); font-size: .85rem; }
+.ms-k { font-family: var(--dt-mono); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--dt-red); margin-right: 6px; }
+
+/* Inicio */
+.ms-start { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; align-items: center; padding: 30px; border-radius: 28px; background: radial-gradient(ellipse 60% 80% at 0% 50%, color-mix(in srgb, var(--dt-red) 12%, transparent), transparent 70%), var(--dt-ink-2); border: 1px solid var(--dt-hair-2); }
+.ms-klaus-big { height: 200px; }
+.ms-start-body { display: grid; gap: 14px; min-width: 0; }
+.ms-start h1, .ms-end h1 { margin: 4px 0 0; font-size: clamp(2rem, 1.4rem + 2.4vw, 3.4rem); line-height: 1; }
+.ms-lead { margin: 0; color: var(--dt-paper-2); font-size: 1.05rem; }
+.ms-topics { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ms-topics li { padding: 5px 12px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--dt-red) 50%, var(--dt-hair-2)); font-size: .85rem; }
+.ms-plan { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; counter-reset: ms; }
+.ms-plan li { display: grid; grid-template-columns: 24px 120px minmax(0, 1fr); gap: 10px; align-items: baseline; font-size: .88rem; color: var(--dt-paper-2); counter-increment: ms; }
+.ms-plan li::before { content: counter(ms); font-family: var(--dt-mono); color: var(--dt-red); }
+.ms-plan li.done { opacity: .5; }
+.ms-plan b { color: var(--dt-paper); font-weight: 600; }
+.ms-week { display: inline-flex; gap: 4px; }
+.ms-week span { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; font-family: var(--dt-mono); font-size: .72rem; color: var(--dt-paper-3); border: 1px solid var(--dt-hair-2); }
+.ms-week span.on { color: #0a0a0a; background: var(--dt-gold); border-color: var(--dt-gold); }
+
+/* Juego */
+.ms-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; }
+.ms-exit { color: var(--dt-paper-2); font-size: .9rem; }
+.ms-progress { display: grid; grid-auto-flow: column; gap: 6px; }
+.ms-progress span { height: 8px; border-radius: 999px; background: #222; transition: background .3s; }
+.ms-progress span.ok { background: var(--dt-red); box-shadow: 0 0 10px color-mix(in srgb, var(--dt-red) 60%, transparent); }
+.ms-progress span.help { background: var(--dt-gold); }
+.ms-progress span.ko { background: #5a5a5a; }
+.ms-progress span.cur { outline: 2px solid var(--dt-paper-2); outline-offset: 2px; }
+.ms-count { font-family: var(--dt-mono); color: var(--dt-paper-2); }
+.ms-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 22px; align-items: start; }
+.ms-card { display: grid; gap: 18px; padding: 28px; border-radius: 24px; background: var(--dt-ink-2); border: 1px solid var(--dt-hair-2); min-width: 0; }
+.ms-slot { margin: 0; font-size: .82rem; color: var(--dt-paper-3); }
+.ms-slot b { color: var(--dt-red); font-family: var(--dt-mono); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: .72rem; }
+.ms-prompt { margin: 0; font-size: clamp(1.3rem, 1.05rem + 1vw, 1.9rem); line-height: 1.25; }
+.ms-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.ms-opts button { min-height: 56px; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--dt-hair-2); background: #141414; color: var(--dt-paper); font: 600 1.02rem/1.25 inherit; text-align: left; cursor: pointer; transition: border-color .15s, transform .15s, background .15s; }
+.ms-opts button:hover:not(:disabled) { border-color: var(--dt-paper-3); transform: translateY(-1px); }
+.ms-opts button.ko { opacity: .45; text-decoration: line-through; border-color: color-mix(in srgb, var(--dt-red) 50%, transparent); }
+.ms-opts button.sol { border-color: var(--dt-gold); background: color-mix(in srgb, var(--dt-gold) 12%, #141414); box-shadow: 0 0 0 1px var(--dt-gold) inset; }
+.ms-opts button:disabled { cursor: default; }
+.ms-feedback { padding: 14px 16px; border-radius: 14px; background: var(--dt-ink-1); border-left: 4px solid var(--dt-gold); }
+.ms-feedback.ko { border-left-color: var(--dt-red); }
+.ms-feedback p { margin: 6px 0 0; color: var(--dt-paper-2); }
+
+/* Klaus tutor (acompañante, no ventana emergente) */
+.ms-klaus { position: sticky; top: 84px; display: grid; gap: 8px; padding: 16px; border-radius: 22px; background: var(--dt-ink-2); border: 1px solid var(--dt-hair-2); transition: border-color .3s, box-shadow .3s; }
+.ms-klaus.open { border-color: color-mix(in srgb, var(--dt-gold) 50%, var(--dt-hair-2)); box-shadow: 0 0 30px color-mix(in srgb, var(--dt-gold) 10%, transparent); }
+.ms-klaus-fig { height: 110px; }
+.ms-bubble { display: grid; gap: 8px; font-size: .92rem; }
+.ms-bubble p { margin: 0; }
+.ms-hint { padding: 10px 12px; border-radius: 12px; background: var(--dt-ink-1); border: 1px solid var(--dt-hair); animation: ms-in .35s cubic-bezier(.22, 1, .36, 1) both; }
+.ms-hint small { font-family: var(--dt-mono); font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--dt-gold); }
+.ms-hint.l3 small { color: var(--dt-red); }
+.ms-ex { color: var(--dt-paper-2); font-size: .86rem; margin-top: 6px !important; }
+.ms-hint-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ms-auto { display: flex; gap: 8px; align-items: center; font-size: .78rem; color: var(--dt-paper-3); }
+@keyframes ms-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* Final: animación breve y sobria */
+.ms-end { display: grid; gap: 14px; justify-items: start; padding: 34px; border-radius: 28px; background: var(--dt-ink-2); border: 1px solid var(--dt-hair-2); }
+.ms-end p { margin: 0; color: var(--dt-paper-2); }
+.ms-check { width: 64px; height: 64px; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.ms-check circle { stroke: color-mix(in srgb, var(--dt-red) 40%, transparent); stroke-width: 3; stroke-dasharray: 176; stroke-dashoffset: 176; animation: ms-draw .7s ease-out forwards; }
+.ms-check path { stroke: var(--dt-red); stroke-width: 4; stroke-dasharray: 40; stroke-dashoffset: 40; animation: ms-draw .4s .55s ease-out forwards; }
+@keyframes ms-draw { to { stroke-dashoffset: 0; } }
+.ms-score { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.ms-score li { display: grid; gap: 2px; padding: 12px 16px; border-radius: 14px; background: var(--dt-ink-1); border: 1px solid var(--dt-hair); min-width: 130px; }
+.ms-score b { font-family: var(--dt-mono); font-size: 1.6rem; }
+.ms-score span { font-size: .8rem; color: var(--dt-paper-3); }
+.ms-next { color: var(--dt-paper) !important; font-weight: 600; }
+
+/* Tarjeta de misión en /mi */
+.ms-home { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 20px 24px; border-radius: 22px; background: radial-gradient(ellipse 60% 120% at 0% 50%, color-mix(in srgb, var(--dt-red) 14%, transparent), transparent 70%), var(--dt-ink-2); border: 1px solid color-mix(in srgb, var(--dt-red) 40%, var(--dt-hair-2)); }
+.ms-home-fig { height: 80px; }
+.ms-home h2 { margin: 2px 0 4px; font-size: 1.25rem; }
+.ms-home p { margin: 0; color: var(--dt-paper-2); font-size: .9rem; }
+.ms-mastery { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ms-mastery li { display: grid; grid-template-columns: minmax(0, 1fr) 140px auto; gap: 12px; align-items: center; font-size: .9rem; }
+.ms-bar { height: 8px; border-radius: 999px; background: var(--dt-ink-0, #050505); overflow: hidden; }
+.ms-bar i { display: block; height: 100%; background: var(--dt-red); }
+.ms-mastery .st { font-family: var(--dt-mono); font-size: .7rem; color: var(--dt-paper-3); }
+.ms-mastery .st.fuerte { color: var(--dt-gold); } .ms-mastery .st.reforzar { color: #ff8a84; }
+
+/* Pista de Klaus en la práctica */
+.tutor-hint { display: grid; gap: 6px; padding: 10px 14px; border-radius: 12px; background: var(--dt-ink-1, #0e0e0e); border: 1px dashed color-mix(in srgb, var(--dt-gold) 45%, transparent); font-size: .9rem; }
+.tutor-hint p { margin: 0; }
+
+@media (max-width: 900px) {
+  .ms-layout { grid-template-columns: 1fr; }
+  .ms-klaus { position: static; grid-template-columns: 80px minmax(0, 1fr); align-items: start; }
+  .ms-klaus-fig { height: 72px; }
+  .ms-start { grid-template-columns: 1fr; padding: 22px; }
+  .ms-klaus-big { height: 140px; }
+  .ms-home { grid-template-columns: 70px minmax(0, 1fr); } .ms-home > :last-child { grid-column: 1 / -1; }
+  .ms-plan li { grid-template-columns: 20px minmax(0, 1fr); } .ms-plan li span { grid-column: 2; }
+}
+@media (prefers-reduced-motion: reduce) { .ms-check circle, .ms-check path { animation: none; stroke-dashoffset: 0; } .ms-hint { animation: none; } }

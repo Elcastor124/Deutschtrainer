@@ -3,7 +3,13 @@
 import { useEffect, useState } from 'react';
 import { GAMES, LEVEL_LABEL } from '../../shared/play.ts';
 import { TOPICS } from '../../shared/rules.ts';
-import { getDashboard, getAchievements, refreshAccount, setHomeworkDone, type Dashboard } from '../play-client.ts';
+import { getDashboard, getAchievements, playRequest, refreshAccount, setHomeworkDone, type Dashboard } from '../play-client.ts';
+import { getMission, WeekDots, type MissionView } from './Mission.tsx';
+import { KlausFigure } from '../klaus/KlausFigure.tsx';
+import { useKlausSkin } from '../klaus/skin-client.ts';
+import '../mission.css';
+
+interface MissionHistory { completed: number; due: number; mastery: { topic: string; name: string; mastery: number; recurring: boolean; status: string }[]; missions: { day: string; independent: number; total: number; reinforced: string[]; recover: string[] }[] }
 import { navigate, store } from '../util.ts';
 import '../libre.css';
 import '../account.css';
@@ -26,10 +32,15 @@ export function StudentHome() {
   const [d, setD] = useState<Dashboard | null>(null);
   const [done, setDone] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mission, setMission] = useState<MissionView | null>(null);
+  const [hist, setHist] = useState<MissionHistory | null>(null);
+  const look = useKlausSkin();
   useEffect(() => {
     void refreshAccount().then((a) => {
       if (!a) { navigate('/entrar?volver=/mi'); return; }
       getDashboard().then(setD).catch((e: Error) => setError(e.message));
+      getMission().then(setMission).catch(() => setMission(null));
+      playRequest<MissionHistory>('/api/mission/history').then(setHist).catch(() => setHist(null));
       getAchievements().then((r) => setDone(r.achievements.filter((x) => x.unlocked).length)).catch(() => setDone(null));
     });
   }, []);
@@ -63,6 +74,17 @@ export function StudentHome() {
         </section>
       )}
 
+      {mission && (() => {
+        const n = mission.items.filter((x) => x.final).length, all = mission.items.length;
+        return (
+          <section className="ms-home" aria-label="Misión de hoy">
+            <div className="ms-home-fig" aria-hidden="true"><KlausFigure reaction={mission.completedAt ? 'correct' : 'idle'} look={look} /></div>
+            <div><p className="dt-eyebrow">Tägliche Mission · 5 min</p><h2>{mission.completedAt ? 'Misión de hoy completada' : n ? `Misión a medias: ${n}/${all}` : 'Tu misión de hoy está lista'}</h2><p>{mission.completedAt ? 'Mañana tendrás una nueva, adaptada a lo que hayas fallado.' : `${all} ejercicios: ${mission.topics.join(' · ')}`}</p><WeekDots days={mission.weekDays} /></div>
+            <a className="btn primary lg" href="/mision" onClick={go('/mision')}>{mission.completedAt ? 'Ver resumen' : n ? 'Continuar' : 'Empezar'} →</a>
+          </section>
+        );
+      })()}
+
       {(d.homework?.length ?? 0) > 0 && (
         <section className="sh-hw" id="deberes" aria-labelledby="sh-hw-t">
           <div className="sh-hw-head"><h2 id="sh-hw-t">Deberes</h2><span className="sh-chip">{d.homework!.filter((h) => !h.done).length} pendientes</span></div>
@@ -79,6 +101,15 @@ export function StudentHome() {
         <section className="sh-grades" id="notas" aria-labelledby="sh-gr-t">
           <h2 id="sh-gr-t">Mis notas</h2>
           <ul>{d.grades!.map((g) => <li key={g.id}><span className={`sh-score ${g.score >= 5 ? 'ok' : 'ko'}`}>{String(g.score).replace('.', ',')}</span><div><b>{g.title}</b>{g.comment && <p>«{g.comment}»</p>}<small>{new Date(g.at).toLocaleDateString('es-ES')} · {g.by}</small></div></li>)}</ul>
+        </section>
+      )}
+
+      {hist && (hist.completed > 0 || hist.mastery.length > 0) && (
+        <section className="sh-grades" id="misiones" aria-labelledby="sh-ms-t">
+          <h2 id="sh-ms-t">Mis misiones y lo que Klaus recuerda</h2>
+          <p className="libre-note">{hist.completed} misión(es) completada(s) · {hist.due} pregunta(s) pendientes de repaso espaciado.</p>
+          {hist.mastery.length > 0 && <ul className="ms-mastery">{hist.mastery.slice(0, 10).map((t) => <li key={t.topic}><span>{t.name}{t.recurring ? ' · error recurrente' : ''}</span><span className="ms-bar"><i style={{ width: `${Math.round(t.mastery * 100)}%` }} /></span><span className={`st ${t.status === 'fuerte' ? 'fuerte' : t.status === 'a reforzar' ? 'reforzar' : ''}`}>{t.status}</span></li>)}</ul>}
+          {hist.missions.length > 0 && <ul>{hist.missions.slice(0, 5).map((x) => <li key={x.day}><span className="sh-score ok">{x.independent}/{x.total}</span><div><b>{new Date(`${x.day}T12:00:00`).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}</b><p>{x.reinforced.length ? `Reforzado: ${x.reinforced.join(', ')}` : 'Sin aciertos independientes'}{x.recover.length ? ` · A recuperar: ${x.recover.join(', ')}` : ''}</p></div></li>)}</ul>}
         </section>
       )}
 

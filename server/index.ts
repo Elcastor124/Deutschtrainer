@@ -1,5 +1,6 @@
 // Servidor de juego: HTTP (cliente compilado) + WebSocket (estado en tiempo real).
 // Arranque: node server/index.ts   (Node ≥ 22.18 ejecuta TypeScript directamente)
+import { createLearning, LearningStore } from './learning.ts';
 import { cloudConfig, restoreFromCloud, startCloudSync } from './cloud-sync.ts';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
@@ -338,10 +339,12 @@ const progressHandler = createProgressHandler({dataDir: DATA_DIR, profiles: id =
 const teacherData = new TeacherData(DATA_DIR);
 const playApi = createPlayApi({ accounts, guard, log: () => progressHandler.log, bank, studentExtras: (a) => studentView(teacherData, a, madridDay(Date.now())),
   setHomeworkDone: (a, id, done) => teacherData.setHomeworkDone(a.id, id, done) });
-const forgetAccount = (id: string) => { delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); };
+const learningStore = new LearningStore(DATA_DIR);
+const learning = createLearning({ accounts, log: () => progressHandler.log, bank, store: learningStore, levelOf: (id) => teacherData.peek(id)?.level ?? null });
+const forgetAccount = (id: string) => { delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); };
 playApi.setOnRemoved(forgetAccount);
 const teacherOs = createTeacherOs({
-  accounts, guard, log: () => progressHandler.log, bank, data: teacherData, publicDir: join(ROOT, 'public'), onRemoved: forgetAccount,
+  accounts, guard, log: () => progressHandler.log, bank, data: teacherData, publicDir: join(ROOT, 'public'), onRemoved: forgetAccount, learning: (id) => learning.history(id),
   liveRooms: () => [...rooms.values()].filter((r) => r.s.mode === 'class').map((r) => ({
     code: r.s.code, owner: r.s.owner, phase: r.s.phase, block: r.s.block, players: r.s.players.length, connected: r.s.players.filter((p) => p.connected).length,
     review: Object.values(r.s.answers).filter((x) => x.status === 'review').length, private: !!r.s.private,
@@ -420,6 +423,7 @@ function serve(req: IncomingMessage, res: ServerResponse) {
   if (playApi(req, res)) return;
   if (progressHandler(req, res)) return;
   if (roadHandler(req, res)) return;
+  if (learning(req, res)) return;
   if (boxingHandler(req, res)) return;
   const url = new URL(req.url ?? '/', 'http://x');
   if (url.pathname === '/api/info') {
