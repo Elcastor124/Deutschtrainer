@@ -1,5 +1,6 @@
 // Servidor de juego: HTTP (cliente compilado) + WebSocket (estado en tiempo real).
 // Arranque: node server/index.ts   (Node ≥ 22.18 ejecuta TypeScript directamente)
+import { cloudConfig, restoreFromCloud, startCloudSync } from './cloud-sync.ts';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { networkInterfaces } from 'node:os';
@@ -36,6 +37,11 @@ const DIST = join(ROOT, 'dist');
 const DATA_DIR = process.env.DATA_DIR || join(ROOT, 'data');
 // Una sola instancia por directorio de datos (el estado vive en memoria): si hay otra viva, no arrancamos.
 const instanceLock = await acquireInstanceLock(DATA_DIR, { waitMs: Number(process.env.INSTANCE_LOCK_WAIT_MS ?? 35_000) }).catch((e: Error) => { console.error(`[lock] ${e.message}`); process.exit(1); });
+// Sin disco persistente (Render free): los datos se recuperan de Supabase ANTES de que los lean los almacenes.
+if (cloudConfig()) {
+  try { console.log(`[cloud] restaurados ${await restoreFromCloud(DATA_DIR)} ficheros desde Supabase`); }
+  catch (e) { console.error(`[cloud] NO se pudieron restaurar los datos: ${(e as Error).message}`); process.exit(1); }
+}
 const guard = createGuard({ dataDir: DATA_DIR });
 const store = new Store<RoomState>(DATA_DIR);
 const accounts = new AccountStore(DATA_DIR);
@@ -474,12 +480,19 @@ setInterval(() => {
   }
 }, 250);
 
-const shutdown = () => {
+const cloud = startCloudSync(DATA_DIR);
+if (cloud.enabled) console.log('[cloud] copia continua en Supabase activada');
+let closing = false;
+const shutdown = async () => {
+  if (closing) return; closing = true;
   store.data.rooms = Object.fromEntries([...rooms].map(([k, r]) => [k, r.s]));
-  store.flush(); progressHandler.log.flush(); instanceLock.release(); process.exit(0);
+  store.flush(); progressHandler.log.flush();
+  // Última subida antes de apagar (un deploy en Render manda SIGTERM): como mucho 8 s.
+  await Promise.race([cloud.flush(), new Promise((r) => setTimeout(r, 8000))]);
+  instanceLock.release(); process.exit(0);
 };
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+process.on('SIGINT', () => void shutdown());
+process.on('SIGTERM', () => void shutdown());
 
 // Limpieza periódica: salas abandonadas (sin nadie conectado) y contadores de los limitadores.
 // Una sala con algún cliente conectado NUNCA se descarta; ver server/room-ttl.ts para los TTL.
