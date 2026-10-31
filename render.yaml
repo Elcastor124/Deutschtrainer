@@ -15,6 +15,10 @@ services:
         value: optional
       - key: TEACHER_PASSWORD  # contraseña de Teacher OS: se pone en el panel de Render, nunca aquí
         sync: false
+      - key: SUPABASE_URL      # copia de los datos en Supabase (sin disco persistente). Valores en el panel de Render
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
       - key: NODE_VERSION
         value: 22.19.0
       - key: DATA_DIR
