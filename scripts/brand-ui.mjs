@@ -83,7 +83,8 @@ try {
   report.checks.resume = await c.eval(`document.querySelector('.dt-resume h2').textContent`);
   // Paso 1 abre la presentación real.
   const presHref = await c.go('/curso?intro=0');
-  await c.until(`!!document.querySelector('.cp-pop a[href$=".html"]')`, 'enlace presentación');
+  await c.until(`location.pathname==='/curso' && document.readyState==='complete' && !!document.querySelector('.cp-node')`, 'curso cargado');
+  await c.until(`!!document.querySelector('.cp-pop a[href$=".html"]')`, 'enlace presentación', 15000);
   const href = await c.eval(`document.querySelector('.cp-pop a[href$=".html"]').getAttribute('href')`);
   const r = await fetch(env.base + href); assert.equal(r.status, 200); void presHref;
   // /tema/1 enlaza al curso.
