@@ -12,6 +12,8 @@
 .lib-foot { margin: 0; }
 
 /* Mueble */
+.lib-page > * { min-width: 0; }
+.bs-case { min-width: 0; max-width: 100%; overflow-x: clip; overflow-y: visible; }
 .bs-case { position: relative; padding: 64px clamp(16px, 3vw, 40px) 30px; border-radius: 10px; perspective: 1600px; perspective-origin: 50% -10%;
   background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(255,255,255,.05), transparent 70%), linear-gradient(180deg, #0d0d0d, #080808);
   border: 14px solid #161616; border-top-width: 18px; border-bottom-width: 22px;

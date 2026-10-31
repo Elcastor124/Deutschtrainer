@@ -64,7 +64,7 @@ export function Library() {
 /** Reparte los libros en baldas según el ancho disponible. */
 function Shelves({ items }: { items: Presentation[] }) {
   const box = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(1000);
+  const [width, setWidth] = useState(0);
   useLayoutEffect(() => {
     const el = box.current; if (!el) return;
     const ro = new ResizeObserver(() => setWidth(el.clientWidth)); ro.observe(el); setWidth(el.clientWidth);
@@ -74,10 +74,11 @@ function Shelves({ items }: { items: Presentation[] }) {
   let row: Presentation[] = [], used = 0;
   for (const p of items) {
     const w = spine(p.id, isReview(p.id)).w + 6;
-    if (row.length && used + w > width - 40) { rows.push(row); row = []; used = 0; }
+    if (row.length && width && used + w > width - 40) { rows.push(row); row = []; used = 0; }
     row.push(p); used += w;
   }
   if (row.length) rows.push(row);
+  if (!width) return <div className="bs-rows" ref={box} />;
   return <div className="bs-rows" ref={box}>{rows.map((r, i) => <Shelf key={i} books={r} />)}</div>;
 }
 
