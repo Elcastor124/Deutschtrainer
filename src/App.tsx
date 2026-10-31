@@ -21,6 +21,7 @@ import { Workshop } from './views/Workshop.tsx';
 import { Player } from './views/Player.tsx';
 import { Practice } from './views/Practice.tsx';
 import { Library } from './views/Library.tsx';
+import { Mission } from './views/Mission.tsx';
 import { ExamHub } from './views/ExamHub.tsx';
 import { RoadSolo } from './views/RoadSolo.tsx';
 import { HomeworkNotice } from './components/HomeworkNotice.tsx';
@@ -58,6 +59,7 @@ export function App() {
   else if (/^\/mi\/?$/.test(path)) screen = <StudentHome />;
   else if (/^\/ranking\/?$/.test(path)) screen = <Ranking />;
   else if (/^\/klaus\/?$/.test(path)) screen = <KlausSkins />;
+  else if (/^\/mision\/?$/.test(path)) screen = <Mission />;
   else if (/^\/libre\/jugar\/?$/.test(path)) screen = <FreeGame key={search} />;
   else if (path === '/preview/klaus') screen = <Suspense fallback={<p className="home">Cargando a Klaus…</p>}><KlausShowcase /></Suspense>;
   else if (/^\/curso\/?$/.test(path)) screen = <Course />;

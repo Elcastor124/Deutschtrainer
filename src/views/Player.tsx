@@ -19,6 +19,7 @@ import '../libre.css';
 import { PracticeProgress } from '../brand/PracticeProgress.tsx';
 import { usePracticeFeedback } from '../brand/usePracticeFeedback.ts';
 import { readEffectsEnabled } from '../brand/effects.ts';
+import { TutorHint } from '../components/TutorHint.tsx';
 
 export function Player({ code }: { code: string }) {
   // Con cuenta del modo libre, el alias sirve de nombre (en una sala privada el servidor usa siempre el alias).
@@ -179,6 +180,7 @@ export function PlayScreen({ net, st, onNewPractice, onChangeTopics }: { net: Ne
           {(v.phase === 'question' || v.phase === 'review' || v.phase === 'reveal') && v.q && (
             <section className={`panel qpanel screen${v.phase === 'reveal' ? ' is-reveal' : ''}`} key={v.q.id} data-practice-feedback={practice && feel ? feel.kind : undefined} data-practice-feedback-id={practice ? feel?.id : undefined}>
               <QuestionHead q={v.q} no={v.qNo} total={v.qTotal} />
+              {practice && v.phase === 'question' && <TutorHint key={v.q.id} qid={v.q.id} />}
               {v.phase === 'question' && v.timer && <Timer timer={v.timer} offset={st.offset} onLow={(s) => sfx.tick(5 - s)} />}
               {v.phase === 'question' && me.state === 'retry' && (
                 <div className="alert retry" role="status"><b>No es correcto.</b> Second Chance: tienes otro intento por la mitad de puntos.</div>

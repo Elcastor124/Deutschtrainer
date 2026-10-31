@@ -96,6 +96,12 @@ export function buildMission(input: { profile: string; day: string; now: number;
     const cands = shuffle(pool.filter((q) => topics.includes(q.topic) && !used.has(q.id) && diffs.includes(q.diff)));
     return cands.find((q) => !stats.has(q.id)) ?? cands.find((q) => { const s = stats.get(q.id); return !!s && !today(s) && s.due <= now; }) ?? cands.find((q) => !today(stats.get(q.id)));
   };
+  /** Equilibrado: primero el TEMA (los que aún no salen en la misión, en orden aleatorio) y luego una pregunta de ese tema. */
+  const freshByTopic = (topics: string[], diffs = LEVEL_DIFFS[level]) => {
+    const order = shuffle([...new Set(topics)]).sort((a, b) => Number(out.some((o) => o.topic === a)) - Number(out.some((o) => o.topic === b)));
+    for (const t of order) { const q = fresh([t], diffs); if (q) return q; }
+    return undefined;
+  };
   const days = (t: number) => Math.max(1, Math.round((now - t) / DAY));
 
   // 1–2 · Repaso: lo acertado antes cuyo intervalo ya venció (lo más atrasado primero; temas distintos si se puede).
@@ -104,8 +110,8 @@ export function buildMission(input: { profile: string; day: string; now: number;
   for (const s of due) { if (out.length >= 2) break; if (out.some((o) => o.topic === s.topic) && due.some((x) => !used.has(x.qid) && !out.some((o) => o.topic === x.topic))) continue; take(s.qid, 'repaso', `Repaso: la acertaste hace ${days(s.last)} día${days(s.last) === 1 ? '' : 's'}.`); }
   while (out.length < 2) {
     const practiced = [...seenTopics].filter((t) => allowed.has(t));
-    const q = fresh(practiced.length ? practiced : LEVEL_TOPICS[level].slice(0, 4), ['easy', 'medium']);
-    if (!q) break; take(q.id, 'repaso', practiced.length ? `Repaso de «${topicName(q.topic)}», que ya has trabajado.` : `Base del nivel ${level}: ${topicName(q.topic)}.`);
+    const q = practiced.length ? freshByTopic(practiced, ['easy', 'medium']) : freshByTopic(LEVEL_TOPICS[level].slice(0, 3), ['easy']);
+    if (!q) break; take(q.id, practiced.length ? 'repaso' : 'nivel', practiced.length ? `Repaso de «${topicName(q.topic)}», que ya has trabajado.` : `Base del nivel ${level}: ${topicName(q.topic)}.`);
   }
 
   // 3 · Error reciente (recurrente primero). Si esa pregunta ya salió hoy, otra del mismo tema.
@@ -122,15 +128,15 @@ export function buildMission(input: { profile: string; day: string; now: number;
   // 4 · Consolidar el nivel: el tema del nivel con menos dominio (los no vistos cuentan como 0).
   const mastery = new Map(topicMastery(stats, now).map((m) => [m.topic, m.mastery]));
   const levelTopics = shuffle([...LEVEL_TOPICS[level]]).sort((a, b) => (mastery.get(a) ?? 0) - (mastery.get(b) ?? 0));
-  const target = (out.length < 3 ? levelTopics : levelTopics.filter((t) => !out.some((o) => o.topic === t)));
+  const target = [...levelTopics.filter((t) => !out.some((o) => o.topic === t)), ...levelTopics.filter((t) => out.some((o) => o.topic === t))];
   for (const t of target) { const q = fresh([t]); if (q) { take(q.id, 'nivel', `Consolidar ${level}: ${topicName(t)}${mastery.has(t) ? ` (dominio ${Math.round(mastery.get(t)! * 100)} %)` : ' (nuevo para ti)'}.`); break; } }
   // Si no había error que repasar, otra de consolidación.
-  while (out.length < MISSION_SIZE - 1) { const q = fresh(levelTopics); if (!q) break; take(q.id, 'nivel', `Consolidar ${level}: ${topicName(q.topic)}.`); }
+  while (out.length < MISSION_SIZE - 1) { const q = freshByTopic(levelTopics); if (!q) break; take(q.id, 'nivel', `Consolidar ${level}: ${topicName(q.topic)}.`); }
 
   // 5 · Vocabulario breve.
-  const v = fresh(VOCAB_TOPICS.filter((t) => allowed.has(t)), ['easy']) ?? fresh(VOCAB_TOPICS.filter((t) => allowed.has(t)));
+  const v = freshByTopic(VOCAB_TOPICS.filter((t) => allowed.has(t)), ['easy']) ?? fresh(VOCAB_TOPICS.filter((t) => allowed.has(t)));
   if (v) take(v.id, 'vocab', `Vocabulario: ${topicName(v.topic)}.`);
-  while (out.length < MISSION_SIZE) { const q = fresh([...allowed]); if (!q) break; take(q.id, 'nivel', `Consolidar ${level}: ${topicName(q.topic)}.`); }
+  while (out.length < MISSION_SIZE) { const q = freshByTopic([...allowed]); if (!q) break; take(q.id, 'nivel', `Consolidar ${level}: ${topicName(q.topic)}.`); }
   return out;
 }
 

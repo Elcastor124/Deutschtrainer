@@ -101,6 +101,9 @@ export const RULES: Rule[] = [
     hint: '¿A quién le das la orden: a una persona (du), a varias (ihr) o en formal (Sie)?', rule: 'du: raíz sin -st y sin pronombre (Komm!, Lies!); ihr: forma de ihr sin pronombre (Kommt!); Sie: verbo + Sie (Kommen Sie!).',
     example: { ok: 'Komm bitte her!', ko: 'Kommst bitte her!' } },
   // ── Wortschatz / Alltag
+  { id: 'vocab-art', topic: 'vocab', level: 'A1', match: has(/der, die o das|der\/die\/das/i), errorType: 'género del sustantivo',
+    hint: 'Piensa en el género de la palabra. Algunas terminaciones lo delatan.', rule: 'Pistas de género: -ung, -heit, -keit, -schaft, -ion, -tät → die · -chen, -lein, -ment, -um → das · días, meses, estaciones y muchas palabras en -er (personas) → der. Si no hay pista, apréndela siempre con su artículo.',
+    example: { ok: 'die Zeitung, das Mädchen, der Montag', ko: 'der Zeitung' } },
   { id: 'vocab', topic: 'vocab', level: 'A1', errorType: 'vocabulario',
     hint: 'Piensa en el contexto de la frase: ¿de qué tema se habla? Descarta las opciones que no encajan.', rule: 'Aprende cada sustantivo con su artículo (der/die/das) y en una frase: es más fácil recordarlo en contexto.',
     example: { ok: 'die Lampe — la lámpara', ko: 'der Lampe' } },

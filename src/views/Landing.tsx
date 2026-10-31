@@ -141,11 +141,11 @@ export function Landing() {
             </span>
           </h1>
           <p className="dt-hero-sub" data-editorial-support style={{ '--d': '300ms' } as CSSProperties}>
-            {COURSE.length - 1} Lektionen en orden y un examen final. En cada clase sigues siempre el mismo camino: <b>ver</b>, <b>practicar</b>, <b>jugar</b> y <b>repasar</b>.
+            {COURSE.length - 1} Lektionen en orden y un examen final. En cada clase: <b>ver</b>, <b>practicar</b> y <b>repasar</b>. Y cada día, una misión de 5 minutos que recuerda tus errores.
           </p>
           <div className="dt-hero-cta" data-editorial-support style={{ '--d': '400ms' } as CSSProperties}>
             <MagneticLink href={cta.href}>{cta.label} <span aria-hidden="true">→</span></MagneticLink>
-            <MagneticLink href="/practica" variant="ghost">Practicar ahora</MagneticLink>
+            <MagneticLink href="/mision" variant="ghost">Misión de hoy · 5 min</MagneticLink>
           </div>
           <ul className="dt-hero-facts" data-editorial-support style={{ '--d': '500ms' } as CSSProperties} aria-label="El curso en datos">
             <li><b className="dotnum">{COURSE.length - 1}</b><span>Lektionen</span></li>
