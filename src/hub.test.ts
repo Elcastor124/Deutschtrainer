@@ -37,7 +37,7 @@ describe('Student learning hub', () => {
     expect(html.indexOf('Brücke A1')).toBeLessThan(html.indexOf('Auf der Bank'));
     expect(html.indexOf('Auf der Bank')).toBeLessThan(html.indexOf('Mission Stadt'));
     expect(html).toContain('href="/presentaciones/mission-01.html"');
-    expect(html).toContain('href="/practica?temas=praesens,alltag,vocab,satzbau"');
+    expect(html).toContain('href="/practica?temas=vorstellen,praesens,alltag"');
     expect(html).toContain('Marcar hecho');
     expect(html).toContain('Siguiente');
     expect(html).not.toContain('BlackCard');

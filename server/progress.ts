@@ -48,10 +48,12 @@ function shiftDay(day: string, days: number): string {
 
 // ───────────── modelo ─────────────
 export type ProgressKind = 'answer' | 'session' | 'game';
-export type ProgressSource = 'practice' | 'class' | 'jenga' | 'boxing' | 'road';
+export type ProgressSource = 'practice' | 'class' | 'jenga' | 'boxing' | 'road' | 'mission';
 export interface ProgressEvent {
   at: number; profile: string; kind: ProgressKind; source: ProgressSource;
   qid?: string; topic?: string; ok?: boolean; points: number; room?: string;
+  /** Acierto conseguido con ayuda (pistas de Klaus o un segundo intento): no es evidencia de dominio independiente. */
+  assisted?: boolean;
   /** Parte de `points` que procede del bonus diario (transparencia para el profesor). */
   bonus?: number;
   /** Solo en `kind:'game'` del modo libre: actividad educativa completada (ver ProgressLog.activity). */
@@ -83,7 +85,7 @@ const GAMES_OK = ['blackcard', 'jenga', 'boxing'] as const;
 export const RETENTION_DAYS = 180;
 const MAX_EVENTS = 200_000;
 const KINDS: readonly ProgressKind[] = ['answer', 'session', 'game'];
-const SOURCES: readonly ProgressSource[] = ['practice', 'class', 'jenga', 'boxing', 'road'];
+const SOURCES: readonly ProgressSource[] = ['practice', 'class', 'jenga', 'boxing', 'road', 'mission'];
 export const PROFILE_RE = /^[\w-]{8,64}$/;
 const str = (v: unknown, max: number) => (typeof v === 'string' && v.length > 0 ? v.slice(0, max) : undefined);
 
@@ -152,6 +154,7 @@ export class ProgressLog {
     if (input.kind === 'answer') {
       if (!qid || typeof input.ok !== 'boolean') return null;
       ev.ok = input.ok;
+      if (input.assisted === true) ev.assisted = true;
       ev.points = this.answerPoints(ev);
     } else {
       const p = Number(input.points);
@@ -236,7 +239,7 @@ export class ProgressLog {
     const day = madridDay(ev.at);
     const today = this.events.filter((e) => e.profile === ev.profile && e.kind === 'answer' && madridDay(e.at) === day);
     const scoredBefore = today.some((e) => e.qid === ev.qid && e.ok === ev.ok && e.points - (e.bonus ?? 0) > 0);
-    let pts = scoredBefore ? 0 : ev.ok ? POINTS.correct : POINTS.attempt;
+    let pts = scoredBefore ? 0 : ev.ok && !ev.assisted ? POINTS.correct : POINTS.attempt;
     if (today.length === 0) {
       const streak = this.streakEnding(ev.profile, shiftDay(day, -1)) + 1;
       ev.bonus = streak >= POINTS.streakFor ? POINTS.streakBonus : POINTS.dailyBonus;

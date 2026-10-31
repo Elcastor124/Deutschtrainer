@@ -5,7 +5,7 @@ import '../topicpicker.css';
 
 const ICON: Record<Topic, string> = {
   vocab: '📚', perfekt: '⏪', nebensatz: '🔗', dativ: '🎁', akkusativ: '🎯', praesens: '🔧', trennbar: '✂️', satzbau: '🧩',
-  alltag: '☕', lesen: '📖', modal: '💪', possessiv: '🏷️', praep: '📍', adjektiv: '📏', imperativ: '📣',
+  alltag: '☕', lesen: '📖', modal: '💪', possessiv: '🏷️', praep: '📍', adjektiv: '📏', imperativ: '📣', vorstellen: '👋',
 };
 
 export function TopicPicker({ value, onChange, exclude = [] }: { value: Topic[]; onChange: (t: Topic[]) => void; exclude?: Topic[] }) {

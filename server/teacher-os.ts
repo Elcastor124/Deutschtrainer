@@ -33,6 +33,8 @@ export interface TeacherOsDeps {
   liveRooms: () => Live[]; publicDir: string; now?: () => number;
   /** Limpieza tras borrar una cuenta (perfil de juego, datos de la academia…). */
   onRemoved?: (id: string) => void;
+  /** Memoria de aprendizaje (misiones, dominio por tema): solo lectura para el profesor. */
+  learning?: (id: string) => unknown;
 }
 
 /** Agregado descriptivo: n y precisión (null si n = 0). Nunca una predicción. */
@@ -146,6 +148,7 @@ export function createTeacherOs(d: TeacherOsDeps) {
       errors: [...errors.values()].filter((x) => x.wrong >= 2).sort((x, y) => y.wrong - x.wrong).slice(0, 10).map((x) => ({ ...x, prompt: qprompt(x.qid), topic: qtopic(x.qid) ?? '' })),
       activities: evs.filter((e) => e.kind === 'game' && e.game).slice(-50).reverse().map((e) => ({ at: e.at, game: e.game, level: e.level ?? null, total: e.total ?? 0, correct: e.correct ?? 0, points: e.points, room: e.room ?? null })),
       notes: meta?.notes ?? [], attendance: meta?.attendance ?? [], reviews: meta?.reviews ?? [], grades: meta?.grades ?? [],
+      learning: d.learning?.(a.id) ?? null,
       homework: d.data.homeworkFor(a.id).map((h) => ({ id: h.id, title: h.title, due: h.due ?? null, at: h.at, done: meta?.hwDone?.[h.id] ?? null })),
       minN: MIN_N,
     };

@@ -63,7 +63,7 @@ const SEEDS: UnitSeed[] = [
   { id: 'bruecke-a1', title: 'Brücke A1 · Empieza aquí', de: 'Hallo! Ich bin…', level: 'A1',
     summary: 'Saludos, presentarte, números, preguntas personales e idiomas: la base para todo lo demás.',
     goals: ['Saludar y presentarme (Ich heiße…, Ich komme aus…)', 'Contar y decir números y la hora', 'Hacer y responder preguntas personales', 'Conjugar verbos en presente'],
-    topics: ['praesens', 'alltag', 'vocab', 'satzbau'], presentation: 'mission-01', presentationNote: 'Traducción web de la presentación original «DEUTSCHTRAINER · Mission 01» que nos pasaste.',
+    topics: ['vorstellen', 'praesens', 'alltag'], presentation: 'mission-01', presentationNote: 'Traducción web de la presentación original «DEUTSCHTRAINER · Mission 01» que nos pasaste.',
     review: { id: 'bruecke-a1', label: 'Brücke A1 (repaso)' }, games: ['jenga', 'jugar'] },
   { id: 'bank', title: 'Auf der Bank', de: 'Ich möchte ein Konto eröffnen.', level: 'A2',
     summary: 'Vocabulario del banco, trato formal con «Sie» y diálogos para situaciones reales.',
