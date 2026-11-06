@@ -1,0 +1,161 @@
+{
+  "examId": "horen-001",
+  "specSha256": "c15d64bd20adf6d91d81cbd364f34000079d6041aa4949f649df789736dcdc7d",
+  "provider": "Microsoft Edge TTS (one-time generation)",
+  "generator": "scripts/horen-audio-generate.py",
+  "edgeTtsVersion": "7.3.1",
+  "generatedAt": "2026-11-06T19:04:54.954815+00:00",
+  "assets": [
+    {
+      "id": "a1",
+      "file": "a1.mp3",
+      "voices": [
+        "de-DE-AmalaNeural",
+        "de-DE-ConradNeural",
+        "de-DE-FlorianMultilingualNeural",
+        "de-DE-KatjaNeural",
+        "de-DE-KillianNeural",
+        "de-DE-SeraphinaMultilingualNeural"
+      ],
+      "rate": "+0%",
+      "sourceSha256": "4eff0f2ddce7c0104ee147eb0e40b6cc06fe35f452e5b9f4afff0ac565f8d30b",
+      "sha256": "2e54590041c9d4300437c676063a1c096e8ddba687cc82e1d271c5cb89d41c53",
+      "bytes": 1791980,
+      "duration": 223.906,
+      "codec": "mp3",
+      "decoded": true
+    },
+    {
+      "id": "a2",
+      "file": "a2.mp3",
+      "voices": [
+        "de-DE-AmalaNeural",
+        "de-DE-KillianNeural"
+      ],
+      "rate": "+0%",
+      "sourceSha256": "a61f3389981571055d340c09c2bf741bd25644d0bc2b0dc29cf52cc095985871",
+      "sha256": "465bf8c9470bd5d45c812a9ec76973bd006a360baceeede3ad8949f4ba1d3d36",
+      "bytes": 1385132,
+      "duration": 173.042,
+      "codec": "mp3",
+      "decoded": true
+    },
+    {
+      "id": "a3",
+      "file": "a3.mp3",
+      "voices": [
+        "de-DE-KatjaNeural"
+      ],
+      "rate": "+0%",
+      "sourceSha256": "6ec9e91acaf753ce0487bec9367cd0a862512a46a473c3322649146528c5c9a1",
+      "sha256": "374cd0882f99caca6c268eeafa1190418013f2169fce8b5460079477985a053a",
+      "bytes": 1227500,
+      "duration": 153.344,
+      "codec": "mp3",
+      "decoded": true
+    },
+    {
+      "id": "a4",
+      "file": "a4.mp3",
+      "voices": [
+        "de-DE-AmalaNeural",
+        "de-DE-ConradNeural",
+        "de-DE-FlorianMultilingualNeural",
+        "de-DE-KatjaNeural",
+        "de-DE-KillianNeural",
+        "de-DE-SeraphinaMultilingualNeural"
+      ],
+      "rate": "+0%",
+      "sourceSha256": "0e65ef13ab4ce30a0da09e7e3e0f337ac6041c0ae928202203fbc7ff9edb822e",
+      "sha256": "06bdee877d3e21ffbe9726568e99ef47872c9f0017f2c462069f9ca2d6178c39",
+      "bytes": 2005676,
+      "duration": 250.612,
+      "codec": "mp3",
+      "decoded": true
+    },
+    {
+      "id": "a5",
+      "file": "a5.mp3",
+      "voices": [
+        "de-DE-SeraphinaMultilingualNeural"
+      ],
+      "rate": "+0%",
+      "sourceSha256": "b3d1ec60ee15172fa04b9d00fd7912b5d0d370b75512755ec1aa38a6d3ce0a76",
+      "sha256": "7b0b14638f3c983fe7d0d7e86e2c5836b89cd41f8f9eddbb1643f828a9a27285",
+      "bytes": 2111468,
+      "duration": 263.84,
+      "codec": "mp3",
+      "decoded": true
+    },
+    {
+      "id": "i1",
+      "file": "i1.mp3",
+      "voices": [
+        "de-DE-FlorianMultilingualNeural"
+      ],
+      "rate": "+0%",
+      "sourceSha256": "a57b8b2e0934b81d840b57b2da9f6cb0f63da59400acb65a5ce3d78abbd369a4",
+      "sha256": "8dd2593170c95b61c155776f3691c72ece29b2b1514a6bf71222421498e2022e",
+      "bytes": 63212,
+      "duration": 7.816,
+      "codec": "mp3",
+      "decoded": true
+    },
+    {
+      "id": "i2",
+      "file": "i2.mp3",
+      "voices": [
+        "de-DE-FlorianMultilingualNeural"
+      ],
+      "rate": "+0%",
+      "sourceSha256": "b0998f3a180aa6604b63b8c16f5478af97398fc7fa951d1ca1553d3623405fb1",
+      "sha256": "cf9ef656982fc0ea2f0f473c507dfb47e655dd8910a0100a5d9067e87546cc10",
+      "bytes": 65708,
+      "duration": 8.128,
+      "codec": "mp3",
+      "decoded": true
+    },
+    {
+      "id": "i3",
+      "file": "i3.mp3",
+      "voices": [
+        "de-DE-FlorianMultilingualNeural"
+      ],
+      "rate": "+0%",
+      "sourceSha256": "4de6a32e359874347166c46280feeffec63588d0a341211e482db098ec266acb",
+      "sha256": "a23b96a365d85bb0fa2aa1bf12b5d544f4224efec0008f6e773d28dd98b3c16e",
+      "bytes": 77804,
+      "duration": 9.64,
+      "codec": "mp3",
+      "decoded": true
+    },
+    {
+      "id": "i4",
+      "file": "i4.mp3",
+      "voices": [
+        "de-DE-FlorianMultilingualNeural"
+      ],
+      "rate": "+0%",
+      "sourceSha256": "84d22d6b37db678801ebcee9318886b5fce9496fb7c6535d9edcb2278716ce93",
+      "sha256": "4ccbfc20de6aa1105b0bb961f62dcb44ab8dc7951451daa3fb541353de94696e",
+      "bytes": 96812,
+      "duration": 12.016,
+      "codec": "mp3",
+      "decoded": true
+    },
+    {
+      "id": "i5",
+      "file": "i5.mp3",
+      "voices": [
+        "de-DE-FlorianMultilingualNeural"
+      ],
+      "rate": "+0%",
+      "sourceSha256": "b8498770a08d3397e204ef5f784d1f50c113a43890788137adb1ddf174f47a61",
+      "sha256": "0d00aa64057354db971d656e52b0f8dc978d632bf20356c61440ccaa29c5bfdd",
+      "bytes": 77804,
+      "duration": 9.64,
+      "codec": "mp3",
+      "decoded": true
+    }
+  ]
+}

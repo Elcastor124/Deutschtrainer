@@ -17,6 +17,7 @@ import { openPractice } from './practice-session.ts';
 import { Store, type Profile } from './store.ts';
 import { createBoxingHandler } from './boxing.ts';
 import { createRoadHandler } from './road.ts';
+import { createHorenHandler } from './horen.ts';
 import { createProgressHandler, isAccountProfile, madridDay, recordEvent } from './progress.ts';
 import { AccountStore } from './accounts.ts';
 import { STUDENT_COOKIE, readCookie } from './cookies.ts';
@@ -351,6 +352,7 @@ const teacherOs = createTeacherOs({
   })),
 });
 const roadHandler = createRoadHandler({ dataDir: DATA_DIR, guard });
+const horenHandler = createHorenHandler({ dataDir: DATA_DIR, guard });
 const boxingHandler = createBoxingHandler({
   dataDir: DATA_DIR, guard, identify: (req) => identify(accounts, req),
   progress: {
@@ -423,6 +425,7 @@ function serve(req: IncomingMessage, res: ServerResponse) {
   if (playApi(req, res)) return;
   if (progressHandler(req, res)) return;
   if (roadHandler(req, res)) return;
+  if (horenHandler(req, res)) return;
   if (learning(req, res)) return;
   if (boxingHandler(req, res)) return;
   const url = new URL(req.url ?? '/', 'http://x');
@@ -507,7 +510,7 @@ function sweepRooms(at = Date.now()) {
     delete store.data.rooms[code];
     removed++;
   }
-  removed += roadHandler.sweep(at) + boxingHandler.sweep(at);
+  removed += roadHandler.sweep(at) + horenHandler.sweep(at) + boxingHandler.sweep(at);
   guard.sweep();
   if (removed) { store.saveSoon(); console.log(`[ttl] ${removed} sala(s) caducada(s) eliminada(s)`); }
 }

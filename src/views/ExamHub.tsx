@@ -4,9 +4,10 @@ import { navigate } from '../util.ts';
 import '../road-solo.css';
 
 const EXAMS = [
-  { n: 1, level: 'A1 / A2', title: 'Die erste Prüfung', href: '/examenes/a1-a2', room: '/road-to-b1/level-1', parts: ['Lesen 30', 'Hören 10', 'Diktat 10'], min: 105, ready: true },
-  { n: 2, level: 'A2 / B1', title: 'Próximamente', href: '', room: '', parts: ['Lesen', 'Hören', 'Schreiben'], min: 0, ready: false },
-  { n: 3, level: 'B1', title: 'Próximamente', href: '', room: '', parts: ['Lesen', 'Hören', 'Schreiben', 'Sprechen'], min: 0, ready: false },
+  { n: 1, level: 'A1 / A2', title: 'Die erste Prüfung', href: '/examenes/a1-a2', room: '/road-to-b1/level-1', parts: ['Lesen 30', 'Hören 10', 'Diktat 10'], min: 105, ready: true, meta: '' },
+  { n: 2, level: 'A1+ / A2', title: 'Hörverstehen 001', href: '/examenes/horen-001?modo=practica', room: '/examenes/horen-001', parts: ['Hören 30', '5 Teile', 'Jeder Text 2×'], min: 60, ready: true, meta: '60 min · 30 puntos · nota sobre 20 · estilo DSD I' },
+  { n: 3, level: 'A2 / B1', title: 'Próximamente', href: '', room: '', parts: ['Lesen', 'Hören', 'Schreiben'], min: 0, ready: false, meta: '' },
+  { n: 4, level: 'B1', title: 'Próximamente', href: '', room: '', parts: ['Lesen', 'Hören', 'Schreiben', 'Sprechen'], min: 0, ready: false, meta: '' },
 ];
 const go = (path: string) => (e: { preventDefault: () => void }) => { e.preventDefault(); navigate(path); };
 
@@ -30,7 +31,7 @@ export function ExamHub() {
               <h2>{x.title}</h2>
               <ul className="ex-parts">{x.parts.map((p) => <li key={p}>{p}</li>)}</ul>
               {x.ready ? <>
-                <p className="ex-meta">{x.min} min orientativos · 50 puntos · nota sobre 10</p>
+                <p className="ex-meta">{x.meta || `${x.min} min orientativos · 50 puntos · nota sobre 10`}</p>
                 <div className="ex-actions">
                   <a className="dt-btn dt-btn-primary" href={x.href} onClick={go(x.href)}><span className="dt-btn-label">Empezar el simulacro →</span></a>
                   <a className="dt-link" href={x.room} onClick={go(x.room)}>En clase con profesor</a>
