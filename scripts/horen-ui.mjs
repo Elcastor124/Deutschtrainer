@@ -3,7 +3,7 @@
 import { launch, sleep } from './cdp.mjs';
 
 const ok = (c, m) => { if (!c) throw new Error(`FALLO: ${m}`); console.log(`✓ ${m}`); };
-const { base, newPage, close } = await launch({ shots: 'shots/horen' });
+const { base, newPage, close } = await launch({ shots: 'shots/horen', base: process.env.HOREN_BASE });
 const SECRET_PROBES = ['Der nächste Bus fährt um zwanzig nach acht', 'Sein Fahrrad war kaputt', 'Lösung'];
 try {
   // ── Lobby / hub ──
@@ -22,6 +22,7 @@ try {
     await S.go(`/examenes/horen-001?code=${code}`); await S.until(`!!document.querySelector('[data-horen-name]')`, `${name}: formulario`);
     await S.type('[data-horen-name]', name);
     await S.click('[data-horen-join]'); await S.until(`document.querySelector('[data-horen-mode]')?.dataset.horenMode==='player'`, `${name}: dentro`);
+    await S.until(`!!document.querySelector('[data-horen-arm]')`, `${name}: sala cargada`, 15000);
     await S.click('[data-horen-arm]');
     students.push(S);
   }
@@ -44,9 +45,8 @@ try {
   await students[0].until(`document.querySelector('[data-horen-step]')?.dataset.horenStep==='read'`, 'paso lectura');
   await T.click('[data-horen-next]');
   await students[0].until(`document.querySelector('[data-horen-step]')?.dataset.horenStep==='listen1'`, 'paso 1. Hören');
-  await sleep(2500);
-  const playing = await Promise.all(students.map((S) => S.eval(`(()=>{const a=[...document.querySelectorAll('audio')];return performance.getEntriesByType('resource').filter(r=>r.name.includes('/api/horen/audio?id=a1')).length})()`)));
-  ok(playing.every((n) => n > 0), 'los dos alumnos cargan la pista a1 en 1. Hören');
+  for (const S of students) await S.until(`document.documentElement.dataset.horenPlaying==='a1'`, `${S.label}: suena la pista a1 (evento playing)`, 20000);
+  ok(true, 'los dos alumnos reproducen la pista a1 en 1. Hören');
   await students[1].shot('03-student-mobile-listen1');
   await T.shot('04-teacher-running');
 

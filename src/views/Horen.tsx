@@ -281,9 +281,13 @@ function useSyncedAudio(v: HorenView | null, pos: { step: number; elapsed: numbe
     const a = new Audio(audioUrl(step!.audioId!)); el.current = a;
     a.currentTime = pos!.elapsed / 1000;
     a.addEventListener('loadedmetadata', () => { if (cur.current === id) a.currentTime = Math.max(0, pos!.elapsed / 1000); }, { once: true });
+    // Observable playback state (used by the browser checks): set only when sound is really running.
+    const root = document.documentElement;
+    a.addEventListener('playing', () => { if (cur.current === id) root.dataset.horenPlaying = step!.audioId!; });
+    a.addEventListener('pause', () => { if (root.dataset.horenPlaying === step!.audioId) delete root.dataset.horenPlaying; });
     void a.play().catch(() => { /* gesture lost: the arm button reappears */ });
   });
-  useEffect(() => () => { el.current?.pause(); }, []);
+  useEffect(() => () => { el.current?.pause(); delete document.documentElement.dataset.horenPlaying; }, []);
 }
 
 function Room({ code, token, role, onLeave }: { code: string; token: string; role: 'teacher' | 'player'; onLeave: () => void }) {
