@@ -27,8 +27,8 @@ async function answer(page){const v=await page.state();const a=answerFor(v.q);as
 try {
   for(const mode of ['during','paused']){
     const page=await browser.newPage(mode,1366,900);
-    await page.go('/practica?temas=dativ');await page.until('!!document.querySelector("form.home input.field")','setup');
-    await page.type('form.home input.field',`Global-${mode}`);await activate(page,'form.home .btn.primary.lg');
+    await page.go('/practica?temas=dativ');await page.until('!!document.querySelector("form[data-practice-form] input.field")','setup');
+    await page.type('form[data-practice-form] input.field',`Global-${mode}`);await activate(page,'form[data-practice-form] .btn.primary.lg');
     await page.until('globalThis.__bcNet?.state.view?.phase==="question"','practice');
     if(mode==='paused')await activate(page,'[data-effects-toggle]');
     await answer(page);

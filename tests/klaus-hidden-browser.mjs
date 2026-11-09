@@ -53,9 +53,9 @@ try {
       const B = await L.newPage(`Klaus hide ${mode}`, 1366, 900);
       await L.send('Page.addScriptToEvaluateOnNewDocument', { source: `globalThis.__toneCount=0; const NativeAudio=globalThis.AudioContext; globalThis.AudioContext=class extends NativeAudio { createOscillator(){ globalThis.__toneCount++; return super.createOscillator(); } };` }, B.sid);
       await B.go('/practica?temas=dativ');
-      await B.until(`!!document.querySelector('form.home input.field')`, 'practice setup');
-      await B.type('form.home input.field', `HiddenQA-${mode}`);
-      await activate(B, 'form.home .btn.primary.lg');
+      await B.until(`!!document.querySelector('form[data-practice-form] input.field')`, 'practice setup');
+      await B.type('form[data-practice-form] input.field', `HiddenQA-${mode}`);
+      await activate(B, 'form[data-practice-form] .btn.primary.lg');
       await B.until(`${phase} === 'question'`, 'real practice');
       await activate(B, '[data-klaus-control="mute"]');
       await B.until(`document.querySelector('[data-klaus-panel]').dataset.klausMuted === 'false'`, 'sound opt-in');
@@ -67,7 +67,7 @@ try {
       if (mode === 'during') await activate(B, '[data-klaus-control="hide"]');
       assert.equal(await B.eval(`!!document.querySelector('[data-klaus-figure]')`), false);
       await activate(B, '[data-klaus-control="hide"]');
-      const after = await B.eval(`({state:${stage}, id:document.querySelector('[data-klaus-panel]').dataset.klausEvent, tones:globalThis.__toneCount, elapsed:performance.now()-${before.at}, reaction:document.querySelector('[data-klaus-figure]')?.dataset.klausReaction, burst:!!document.querySelector('[data-klaus-burst]'), animation:getComputedStyle(document.querySelector('.klaus-rig')).animationName, animationTime:document.querySelector('.klaus-rig').getAnimations()[0]?.currentTime, comment:document.querySelector('[data-klaus-comment]').textContent, live:document.querySelector('[data-klaus-comment]').getAttribute('aria-live'), streak:document.querySelector('[data-klaus-streak]')?.dataset.klausStreak, signature:!!document.querySelector('[data-klaus-signature]')})`);
+      const after = await B.eval(`({state:${stage}, id:document.querySelector('[data-klaus-panel]').dataset.klausEvent, tones:globalThis.__toneCount, elapsed:performance.now()-${before.at}, reaction:document.querySelector('[data-klaus-figure]')?.dataset.klausReaction, burst:!!document.querySelector('[data-klaus-burst]'), motion:document.querySelector('[data-klaus-figure]')?.dataset.klausMotion, comment:document.querySelector('[data-klaus-comment]').textContent, live:document.querySelector('[data-klaus-comment]').getAttribute('aria-live'), streak:document.querySelector('[data-klaus-streak]')?.dataset.klausStreak, signature:!!document.querySelector('[data-klaus-signature]') || (() => { const c = document.querySelector('[data-klaus-figure] canvas'); if (!c || !c.width) return false; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let ink = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 16) ink++; return ink > 200; })()})`);
       result.before = before; result.after = after;
       await B.shot(`${result.proof}-${mode}-show`);
       assert.ok(after.elapsed < 5200, 'show must occur inside the original reaction lifetime');

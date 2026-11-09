@@ -40,7 +40,7 @@ try {
   await healthy(p, 'course entrance');
   // Hit the next route before the previous accent finishes: no delayed navigation queue.
   await p.click('.dt-nav-links a[href="/practica"]');
-  await p.until(`!!document.querySelector('form.home')`, 'practice setup');
+  await p.until(`!!document.querySelector('form[data-practice-form]')`, 'practice setup');
   await sleep(500);
   await p.until(`${running} === 0`, 'entrance settles');
   await p.eval('history.back()');
@@ -53,14 +53,14 @@ try {
   assert.equal(await p.eval(`document.querySelector('#contenido').dataset.pageDirection`), 'forward');
   await sleep(500);
   // Query updates and answer snapshots must not remount practice or replay route motion.
-  await p.type('form.home input.field', 'Navigation QA');
-  await p.eval(`window.__input = document.querySelector('form.home input.field'); window.__input.focus()`);
+  await p.type('form[data-practice-form] input.field', 'Navigation QA');
+  await p.eval(`window.__input = document.querySelector('form[data-practice-form] input.field'); window.__input.focus()`);
   const beforeQuery = await p.eval(count);
   await p.eval(route('/practica?temas=dativ&qa=query'));
   await sleep(100);
   assert.equal(await p.eval(count), beforeQuery, 'query-only update does not animate');
-  assert.equal(await p.eval(`document.querySelector('form.home input.field') === window.__input && window.__input.value === 'Navigation QA' && document.activeElement === window.__input`), true, 'query preserves field DOM, value and focus');
-  await p.click('form.home .btn.primary.lg');
+  assert.equal(await p.eval(`document.querySelector('form[data-practice-form] input.field') === window.__input && window.__input.value === 'Navigation QA' && document.activeElement === window.__input`), true, 'query preserves field DOM, value and focus');
+  await p.click('form[data-practice-form] .btn.primary.lg');
   await p.until(`globalThis.__bcNet?.state?.view?.phase === 'question'`, 'real practice question', 12000);
   await p.eval(`window.__net = globalThis.__bcNet`);
   const beforeAnswer = await p.eval(count);
@@ -81,7 +81,7 @@ try {
   await p.until(`${running} === 0`, 'live motion preference cancels entrance');
   assert.equal(await p.eval(`getComputedStyle(document.querySelector('[data-page-accent]').parentElement).display`), 'none');
   const beforeReduced = await p.eval(count);
-  await p.click('.dt-nav-links a[href="/road-to-b1"]');
+  await p.click('.dt-nav-links a[href="/examenes"]');
   assert.equal(await p.eval(count), beforeReduced, 'reduced motion navigation has no entrance');
   await healthy(p, 'reduced assessment');
   await p.shot('reduced-motion');
@@ -95,17 +95,20 @@ try {
   results.push('live reduced motion cancellation and re-enable');
 
   // Same-page hash scrolling must retain DOM/focus and never create another entrance.
-  await p.click('.dt-nav-brand');
-  await sleep(500);
+  // Contrato vigente: «Juegos» es una página propia (/juegos), ya no un ancla de la portada. La intención se conserva:
+  // un cambio de hash dentro de la misma página no remonta nada ni crea otra entrada de página.
+  await p.click('.dt-nav-links a[href="/juegos"]');
+  await p.until(`location.pathname === '/juegos' && !!document.querySelector('#juegos')`, 'games page');
+  await sleep(900);
   const beforeHash = await p.eval(count);
-  await p.click('.dt-nav-links a[href="/#juegos"]');
+  await p.eval(`location.hash = '#juegos'; document.getElementById('juegos').scrollIntoView(); true`);
   await sleep(900);
   assert.equal(await p.eval(count), beforeHash, 'same-page anchor does not animate');
   assert.equal(await p.eval(`document.querySelector('#juegos').getBoundingClientRect().top < innerHeight && document.querySelector('#juegos').getBoundingClientRect().bottom > 0`), true, 'games hash reaches section');
   // Rapid real pointer clicks without waiting for the entrance; bring the sticky nav into view after the anchor.
   await p.eval(`window.scrollTo({top:0,behavior:'instant'})`);
   await p.until(`document.querySelector('.dt-nav-links a').getBoundingClientRect().top >= 0`, 'navigation visible after hash');
-  for (const href of ['/curso','/practica','/curso','/road-to-b1','/curso']) {
+  for (const href of ['/curso','/practica','/curso','/examenes','/curso']) {
     const q = await p.eval(`(() => {const r=document.querySelector('.dt-nav-links a[href="${href}"]').getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
     for (const type of ['mousePressed','mouseReleased']) await env.send('Input.dispatchMouseEvent', {type,...q,button:'left',clickCount:1}, p.sid);
     await sleep(25);

@@ -20,6 +20,12 @@ function answerFor(publicQ) {
   }
 }
 
+// Contrato vigente de /practica: recargar a mitad de sesión muestra el selector de temas con «Continuar» (no reanuda solo).
+async function reloadAndResume(B, label) {
+  await B.reload();
+  await B.until(`!!document.querySelector('form[data-practice-form]') && [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Continuar')`, `${label}: se ofrece Continuar`);
+  await B.eval(`[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Continuar').click(); true`);
+}
 const L = await launch({ shots: 'shots/klaus-ui', ...(process.env.BASE ? { base: process.env.BASE } : {}) });
 let checks = 0;
 const check = (condition, label) => { assert.ok(condition, label); checks++; console.log(`  PASS ${label}`); };
@@ -63,7 +69,7 @@ try {
       check(await B.eval(`${stage} === 'idle'`), 'celebration settles and stays idle through another network snapshot');
     }
     if (n === 3) {
-      await B.reload();
+      await reloadAndResume(B, `reload@${n}`);
       await B.until(`${phase} === 'reveal'`, 'resume reveal');
       check(await B.eval(`${stage} === 'idle'`), 'reloading a result does not replay its milestone');
       await B.click('[data-klaus-preferences] > summary');
@@ -75,7 +81,7 @@ try {
       check(await B.eval(`document.querySelector('[data-klaus-panel]').dataset.klausMuted === 'false' && globalThis.__klausAudio?.state === 'running'`), 'sound enables only after an explicit user gesture');
       await B.click('[data-klaus-control="hide"]');
       await B.until(`${stage} === 'hidden'`, 'hide');
-      await B.reload();
+      await reloadAndResume(B, `reload@${n}`);
       await B.until(`${phase} === 'reveal' && ${stage} === 'hidden'`, 'hidden state restored');
       check(await B.eval(`!document.querySelector('[data-klaus-figure]')`), 'hide preference survives reload and removes artwork/comments');
       check(await B.eval(`document.querySelector('[data-klaus-panel]').dataset.klausMuted === 'false'`), 'sound preference survives reload');
@@ -85,8 +91,8 @@ try {
       check(await B.eval(`${stage} === 'idle'`), 'showing Klaus never replays the old result');
       check(await B.eval(`globalThis.__klausAudio?.state === 'running'`), 'explicit show gesture resumes opted-in sound without replaying the old reaction');
       await B.click('[data-klaus-control="motion"]');
-      check(await B.eval(`getComputedStyle(document.querySelector('.klaus-rig')).animationName === 'none'`), 'persisted reduced motion stops rig animation');
-      await B.reload();
+      check(await B.eval(`document.querySelector('[data-klaus-figure]').dataset.klausMotion === 'reduced'`), 'persisted reduced motion stops Klaus animation');
+      await reloadAndResume(B, `reload@${n}`);
       await B.until(`${phase} === 'reveal'`, 'reduced-motion resume');
       check(await B.eval(`document.querySelector('[data-klaus-panel]').dataset.klausReduced === 'true'`), 'motion preference survives reload');
       await B.eval(`const NativeAudio=globalThis.AudioContext; globalThis.AudioContext=class extends NativeAudio { constructor(...args){super(...args);globalThis.__klausAudio=this;} }; true`);
@@ -111,7 +117,7 @@ try {
   await B.shot('complete');
   await L.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] }, B.sid);
   await B.until(`document.querySelector('[data-klaus-panel]').dataset.klausReduced === 'true'`, 'OS reduced motion');
-  check(await B.eval(`document.querySelector('[data-klaus-control="motion"]').disabled && getComputedStyle(document.querySelector('.klaus-rig')).animationName === 'none'`), 'OS reduced motion wins and disables opt-out');
+  check(await B.eval(`document.querySelector('[data-klaus-control="motion"]').disabled && document.querySelector('[data-klaus-figure]').dataset.klausMotion === 'reduced'`), 'OS reduced motion wins and disables opt-out');
   check(B.errors().length === 0, `desktop JS errors: ${B.errors().length}`);
   for (const width of [320, 390]) {
     const M = await L.newPage(`mobile ${width}`, width, 844, true);

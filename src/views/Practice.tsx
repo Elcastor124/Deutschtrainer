@@ -93,7 +93,7 @@ export function Practice() {
             <button type="button" className="btn ghost" onClick={() => { store.del(KEY); location.reload(); }}>Empezar otra</button>
           </div>
         )}
-        <form className="panel stack" onSubmit={start}>
+        <form className="panel stack" data-practice-form="" onSubmit={start}>
           <TopicPicker value={topics} onChange={setTopics} />
           <div className="setup-bar">
             <div className="row" role="radiogroup" aria-label="Preguntas por sesión" style={{ gap: 8 }}>

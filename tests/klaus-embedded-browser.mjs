@@ -9,9 +9,9 @@ try {
   for (const [width, height] of [[1366,768],[1024,768],[390,844],[320,740]]) {
     const B = await L.newPage(`embedded ${width}`, width, height, width < 500);
     await B.go('/practica?temas=dativ');
-    await B.until(`!!document.querySelector('form.home input.field')`, 'setup');
-    await B.type('form.home input.field', 'EmbeddedQA');
-    await B.click('form.home .btn.primary.lg');
+    await B.until(`!!document.querySelector('form[data-practice-form] input.field')`, 'setup');
+    await B.type('form[data-practice-form] input.field', 'EmbeddedQA');
+    await B.click('form[data-practice-form] .btn.primary.lg');
     await B.until(`!!document.querySelector('.qpanel') && !!document.querySelector('[data-klaus-figure]')`, 'real question and companion');
     await sleep(450);
     await B.eval('scrollTo(0,0)');
