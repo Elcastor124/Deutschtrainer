@@ -34,7 +34,7 @@ describe('AccountStore', () => {
     if (!r.ok) throw new Error(r.error);
     const raw = readFileSync(join(dir, 'accounts.json'), 'utf8');
     expect(raw).not.toContain(PW); expect(raw).not.toContain(r.token); expect(raw).not.toContain(r.token.slice(4));
-    expect(statSync(join(dir, 'accounts.json')).mode & 0o777).toBe(0o600);
+    if (process.platform !== 'win32') expect(statSync(join(dir, 'accounts.json')).mode & 0o777).toBe(0o600);
     expect(r.token).toMatch(/^dts_[A-Za-z0-9_-]{43}$/);
     expect(r.account.id).toMatch(/^acc_[0-9a-f]{32}$/);
   });

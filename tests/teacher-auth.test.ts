@@ -18,7 +18,7 @@ describe('TeacherDirectory', () => {
     expect(key).toMatch(/^dtk_[0-9a-f]{12}\.[A-Za-z0-9_-]{43}$/);
     const raw = readFileSync(join(dir, 'teachers.json'), 'utf8');
     expect(raw).not.toContain(key.split('.')[1]); // el secreto nunca se guarda en claro
-    expect(statSync(join(dir, 'teachers.json')).mode & 0o777).toBe(0o600);
+    if (process.platform !== 'win32') expect(statSync(join(dir, 'teachers.json')).mode & 0o777).toBe(0o600);
     expect(t.verify(key)).toBe(id);
     expect(new TeacherDirectory(dir).verify(key)).toBe(id); // sobrevive a un reinicio
   });

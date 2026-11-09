@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      # Nunca apuntar a producción: CI usa datos efímeros y no tiene credenciales de Supabase ni de profesor.
+      DATA_DIR: ${{ runner.temp }}/deutschtrainer-ci-data
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: npm
+      - run: npm ci --include=dev
+      - run: npm run check
+      - run: npm run build
+      - name: Tests unitarios y de servidor
+        run: npx vitest run
+      - name: Smoke E2E (servidor real + WebSocket)
+        run: npm run e2e

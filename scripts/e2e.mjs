@@ -1,14 +1,16 @@
 // Prueba de extremo a extremo: servidor real + 3 clientes WebSocket (profesor y dos alumnos).
 // Uso: node scripts/e2e.mjs
 import { spawn } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
 import { loadBank } from '../server/bank/index.ts';
 
 const PORT = 3900 + Math.floor(Math.random() * 80);
-const URL = `ws://127.0.0.1:${PORT}/ws`;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const WS_URL = `ws://127.0.0.1:${PORT}/ws`;
 const DATA = mkdtempSync(join(tmpdir(), 'bc-e2e-'));
 const bank = loadBank();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -17,25 +19,25 @@ const ok = (cond, msg) => { console.log(`${cond ? '  ✔' : '  ✘'} ${msg}`); i
 
 let server;
 async function startServer() {
-  server = spawn(process.execPath, ['server/index.ts'], { env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA }, stdio: ['ignore', 'pipe', 'pipe'] });
-  server.stderr.on('data', (d) => { const s = String(d); if (!s.includes('ExperimentalWarning') && !s.includes('--trace-warnings')) process.stderr.write(s); });
+  server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA }, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+  let serverLog = '';
+  server.stdout.on('data', (d) => { serverLog += String(d); });
+  let serverErr = '';
+  server.stderr.on('data', (d) => { const s = String(d); serverErr += s; if (!s.includes('ExperimentalWarning') && !s.includes('--trace-warnings')) process.stderr.write(s); });
   for (let i = 0; i < 60; i++) {
     try { const r = await fetch(`http://127.0.0.1:${PORT}/api/health`); if (r.ok) return; } catch { /* aún no */ }
     await sleep(150);
   }
-  throw new Error('el servidor no arranca');
+  throw new Error('el servidor no arranca. Salida:\n' + serverLog + '\n' + serverErr);
 }
-async function stopServer() {
-  const done = new Promise((r) => server.once('exit', r));
-  server.kill();
-  await done;
-}
+import { stopServerProcess } from '../tests/helpers/server-stop.ts';
+async function stopServer() { await stopServerProcess(server); }
 
 class Client {
   constructor(label, hello) { this.label = label; this.hello = hello; this.state = null; this.welcome = null; this.seq = 0; this.acks = new Map(); this.waits = new Set(); this.errors = []; }
   connect() {
     return new Promise((resolve, reject) => {
-      const ws = new WebSocket(URL);
+      const ws = new WebSocket(WS_URL);
       this.ws = ws;
       let first = true;
       ws.on('open', () => ws.send(JSON.stringify(this.hello)));

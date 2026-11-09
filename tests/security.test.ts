@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 import { resolveStatic } from '../server/static.ts';
+import { stopServerProcess } from './helpers/server-stop.ts';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const PORT = 4600 + Math.floor(Math.random() * 300);
@@ -42,21 +43,21 @@ async function conn(hello: Msg) {
 }
 
 beforeAll(async () => {
-  server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA }, stdio: ['ignore', 'ignore', 'pipe'] });
+  server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA }, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
   server.stderr?.on('data', (d) => { stderr += String(d); });
   for (let i = 0; i < 80; i++) { if (await alive()) return; await sleep(150); }
   throw new Error('el servidor no arranca: ' + stderr);
 }, 20_000);
 afterAll(async () => {
-  if (server.exitCode === null) { const done = new Promise((r) => server.once('exit', r)); server.kill(); await done; }
+  await stopServerProcess(server);
   rmSync(DATA, { recursive: true, force: true });
 });
 
 describe('resolveStatic', () => {
   const root = '/srv/app/dist';
   it('acepta rutas normales y la raíz', () => {
-    expect(resolveStatic(root, '/')).toBe('/srv/app/dist/');
-    expect(resolveStatic(root, '/assets/a%20b.js')).toBe('/srv/app/dist/assets/a b.js');
+    expect(resolveStatic(root, '/')).toBe(join(root, '/'));
+    expect(resolveStatic(root, '/assets/a%20b.js')).toBe(join(root, 'assets', 'a b.js'));
   });
   it('rechaza % mal formado, bytes nulos y salidas de la raíz (incluido un hermano con el mismo prefijo)', () => {
     for (const p of ['/%E0%A4%A', '/%', '/a%00b', '/../secret', '/..%2Fsecret', '/..%2Fdist-evil/x', '/%2e%2e/%2e%2e/etc/passwd', '/a/../../dist2/x']) expect(resolveStatic(root, p), p).toBeNull();

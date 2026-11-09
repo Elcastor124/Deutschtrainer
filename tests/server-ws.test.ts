@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 import { loadBank } from '../server/bank/index.ts';
+import { stopServerProcess } from './helpers/server-stop.ts';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const PORT = 4300 + Math.floor(Math.random() * 300);
@@ -17,17 +18,12 @@ let server: ChildProcess;
 let stderr = '';
 
 async function start() {
-  server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA }, stdio: ['ignore', 'ignore', 'pipe'] });
+  server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA }, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
   server.stderr?.on('data', (d) => { stderr += String(d); });
   for (let i = 0; i < 80; i++) { if (await alive()) return; await sleep(150); }
   throw new Error('el servidor no arranca: ' + stderr);
 }
-async function stop() {
-  if (server.exitCode !== null) return;
-  const done = new Promise((r) => server.once('exit', r));
-  server.kill();
-  await done;
-}
+async function stop() { await stopServerProcess(server); }
 async function alive() { try { return (await fetch(`http://127.0.0.1:${PORT}/api/health`)).ok; } catch { return false; } }
 
 type Msg = Record<string, any>;

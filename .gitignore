@@ -3,3 +3,6 @@ dist/
 data/
 shots/
 *.tmp
+.env
+.env.*
+!.env.example

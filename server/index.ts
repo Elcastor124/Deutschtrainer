@@ -500,6 +500,8 @@ const shutdown = async () => {
 };
 process.on('SIGINT', () => void shutdown());
 process.on('SIGTERM', () => void shutdown());
+// Windows no entrega SIGTERM a procesos hijos: los tests paran el servidor por IPC con el mismo camino de apagado.
+process.on('message', (m) => { if (m === 'shutdown') void shutdown(); });
 
 // Limpieza periódica: salas abandonadas (sin nadie conectado) y contadores de los limitadores.
 // Una sala con algún cliente conectado NUNCA se descarta; ver server/room-ttl.ts para los TTL.

@@ -9,6 +9,7 @@ import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 import { TeacherDirectory } from '../server/teacher-auth.ts';
+import { stopServerProcess } from './helpers/server-stop.ts';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -24,11 +25,11 @@ async function start(env: Record<string, string> = {}, dir?: string, opts: { exp
   if (!dir) dirs.push(d);
   const port = await freePort();
   let err = '';
-  const proc = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, env: { ...process.env, PORT: String(port), DATA_DIR: d, ...env }, stdio: ['ignore', 'ignore', 'pipe'] });
+  const proc = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, env: { ...process.env, PORT: String(port), DATA_DIR: d, ...env }, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
   proc.stderr?.on('data', (x) => { err += String(x); });
   const srv: Srv = {
     port, dir: d, proc, stderr: () => err, url: (p) => `http://127.0.0.1:${port}${p}`,
-    async stop() { if (proc.exitCode === null) { const done = new Promise((r) => proc.once('exit', r)); proc.kill(); await done; } },
+    async stop() { await stopServerProcess(proc); },
   };
   running.push(srv);
   if (opts.expectExit) return srv;
