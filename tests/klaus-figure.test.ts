@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { KlausFigure } from '../src/klaus/KlausFigure.tsx';
+import { KlausFigureSvg as KlausFigure } from '../src/klaus/KlausFigureSvg.tsx';
 
 describe('canonical Klaus vector port', () => {
   const render = (reaction: Parameters<typeof KlausFigure>[0]['reaction'] = 'idle', reducedMotion = false) =>

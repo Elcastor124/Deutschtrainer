@@ -1,6 +1,8 @@
 .klaus-figure { --klaus-accent: #f2c65d; display: block; width: 100%; height: 100%; overflow: visible; color: #f4f4f4; }
 .klaus-figure[data-klaus-skin="fire"] { --klaus-accent: #ff8a44; color: #fff3e8; }
 .klaus-figure[data-klaus-skin="royal"] { --klaus-accent: #ffd54a; color: #fff3c4; }
+.klaus-canvas { overflow: hidden; }
+.klaus-canvas canvas { display: block; width: 100%; height: 100%; }
 .klaus-shadow { fill: #f2c65d; opacity: .09; }
 .klaus-rig { transform-origin: 60px 66px; animation: klaus-breathe 4.33s ease-in-out infinite; }
 .klaus-ear-left { transform-origin: 31px 35px; }

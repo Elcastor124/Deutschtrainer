@@ -68,7 +68,7 @@ export function KlausSkins() {
         {list.map((s) => {
           const has = owned.has(s.id); const on = c.equipped === s.id;
           return <li key={s.id} className={`ks-card r-${s.rarity}${has ? '' : ' locked'}${on ? ' on' : ''}`}>
-            <div className="ks-fig">{has ? <KlausFigure look={s} /> : <span className="ks-lock" aria-hidden="true">?</span>}</div>
+            <div className="ks-fig">{has ? <KlausFigure look={s} still /> : <span className="ks-lock" aria-hidden="true">?</span>}</div>
             <b>{has ? s.label : '???'}</b><span>{RARITY_LABEL[s.rarity]}</span>
             {has && <button className={`btn sm${on ? ' on' : ''}`} disabled={on} onClick={() => void equip(s.id)}>{on ? 'Equipada' : 'Equipar'}</button>}
           </li>;

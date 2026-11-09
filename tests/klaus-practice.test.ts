@@ -6,7 +6,8 @@ import { Practice } from '../src/views/Practice.tsx';
 it('includes the original waving Klaus in the real practice setup without replacing the form', () => {
   const html = renderToStaticMarkup(createElement(Practice, {}));
   expect(html).toContain('data-klaus-state="waving"');
-  expect(html).toContain('data-klaus-paw=""');
+  // La pata y las 52 skins las dibuja ahora el motor Canvas (el SVG con la pata de cuatro almohadillas queda de respaldo, probado en klaus-figure.test.ts).
+  expect(html).toContain('data-klaus-engine="canvas"');
   expect(html).toContain('Empezar práctica');
   expect(html).toContain('Tu nombre');
 });

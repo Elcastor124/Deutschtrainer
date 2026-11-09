@@ -44,7 +44,7 @@ try {
   const B = await L.newPage('Klaus real practice', 1366, 900);
   await B.go('/practica?temas=dativ');
   await B.until(`!!document.querySelector('form .btn.primary.lg')`, 'practice form');
-  check(await B.eval(`${stage} === 'waving' && !!document.querySelector('[data-klaus-paw]')`), 'setup shows original Klaus with four-bean paw');
+  check(await B.eval(`${stage} === 'waving' && !!document.querySelector('[data-klaus-engine=canvas]')`), 'setup shows original Klaus with four-bean paw');
   await B.type('form input.field', 'KlausQA');
   await B.click('form .btn.primary.lg');
   await B.until(`${phase} === 'question'`, 'real practice');
