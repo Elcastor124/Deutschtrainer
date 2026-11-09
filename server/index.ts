@@ -32,6 +32,11 @@ import { CLASS_ROOM_TTL_MS, staleRooms } from './room-ttl.ts';
 import { cleanName } from './boxing-free.ts';
 import { cleanTopics } from './practice-session.ts';
 import { LEVEL_DIFFS, isLevel } from '../shared/play.ts';
+import { createKlausAi } from './ai/klaus-api.ts';
+import { KlausStore } from './ai/klaus-store.ts';
+import { AiUsage } from './ai/usage.ts';
+import { MockLlm } from './ai/mock-llm.ts';
+import { buildProviders, loadAiConfig } from './ai/providers.ts';
 
 const PORT = Number(process.env.PORT) || 4747;
 const ROOT = resolve(import.meta.dirname, '..');
@@ -342,7 +347,14 @@ const playApi = createPlayApi({ accounts, guard, log: () => progressHandler.log,
   setHomeworkDone: (a, id, done) => teacherData.setHomeworkDone(a.id, id, done) });
 const learningStore = new LearningStore(DATA_DIR);
 const learning = createLearning({ accounts, log: () => progressHandler.log, bank, store: learningStore, levelOf: (id) => teacherData.peek(id)?.level ?? null });
-const forgetAccount = (id: string) => { delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); };
+// Klaus AI: sin claves ni KLAUS_ALLOW_PAID=1 todo corre en modo determinista (sin gasto). Ver server/ai/providers.ts.
+const aiConfig = loadAiConfig();
+const klausAi = createKlausAi({
+  accounts, guard, providers: buildProviders(aiConfig, new MockLlm()), usage: new AiUsage(aiConfig, { dataDir: DATA_DIR }), store: new KlausStore(DATA_DIR),
+  teacherOk: (req) => !!guard.teacherFromRequest(req),
+});
+console.log(`[klaus-ai] LLM=${aiConfig.llm.provider} STT=${aiConfig.stt.provider} TTS=${aiConfig.tts.provider}${aiConfig.llm.reason ? ` (${aiConfig.llm.reason})` : ''}`);
+const forgetAccount = (id: string) => { delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); klausAi.forget(id); };
 playApi.setOnRemoved(forgetAccount);
 const teacherOs = createTeacherOs({
   accounts, guard, log: () => progressHandler.log, bank, data: teacherData, publicDir: join(ROOT, 'public'), onRemoved: forgetAccount, learning: (id) => learning.history(id),
@@ -421,6 +433,7 @@ function serve(req: IncomingMessage, res: ServerResponse) {
     return void res.end(JSON.stringify({ error: 'Demasiadas peticiones. Espera un minuto.' }));
   }
   if (req.url?.split('?')[0] === '/api/play/room') return void createPrivateRoom(req, res).catch((e: unknown) => httpJson(res, 500, { error: 'No se pudo crear la sala.' }, e));
+  if (klausAi(req, res)) return;
   if (teacherOs(req, res)) return;
   if (playApi(req, res)) return;
   if (progressHandler(req, res)) return;
@@ -493,7 +506,7 @@ let closing = false;
 const shutdown = async () => {
   if (closing) return; closing = true;
   store.data.rooms = Object.fromEntries([...rooms].map(([k, r]) => [k, r.s]));
-  store.flush(); progressHandler.log.flush();
+  store.flush(); progressHandler.log.flush(); klausAi.flush();
   // Última subida antes de apagar (un deploy en Render manda SIGTERM): como mucho 8 s.
   await Promise.race([cloud.flush(), new Promise((r) => setTimeout(r, 8000))]);
   instanceLock.release(); process.exit(0);
@@ -516,6 +529,7 @@ function sweepRooms(at = Date.now()) {
   guard.sweep();
   if (removed) { store.saveSoon(); console.log(`[ttl] ${removed} sala(s) caducada(s) eliminada(s)`); }
 }
+setInterval(() => { try { klausAi.sweep(); } catch (e) { console.error('[klaus-ai] error en la limpieza:', (e as Error).name); } }, 6 * 3600_000).unref();
 setInterval(() => { try { sweepRooms(); } catch (e) { console.error('[ttl] error en la limpieza:', e); } }, 10 * 60_000).unref();
 sweepRooms();
 

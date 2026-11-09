@@ -19,12 +19,13 @@ export function followLearningLink(event: MouseEvent<HTMLAnchorElement>) {
   else window.scrollTo({ top: 0 });
 }
 
-export type NavSection = 'home' | 'course' | 'practice' | 'games' | 'ranking' | 'road' | 'teacher' | 'account';
+export type NavSection = 'home' | 'course' | 'practice' | 'write' | 'games' | 'ranking' | 'road' | 'teacher' | 'account';
 export function navSection(path: string): NavSection {
   if (/^\/(cuenta|mi|registro|entrar)(\/|$)/.test(path)) return 'account';
   if (path.startsWith('/ranking')) return 'ranking';
   if (path.startsWith('/road-to-b1') || path.startsWith('/examenes')) return 'road';
   if (path.startsWith('/curso') || path.startsWith('/biblioteca') || /^\/tema\/1\/?$/.test(path)) return 'course';
+  if (path.startsWith('/escribir')) return 'write';
   if (path.startsWith('/practi') || path.startsWith('/tema/1/taller')) return 'practice';
   if (/^\/(juegos|jugar|jenga|boxeo|libre|t|p|j)(\/|$)/.test(path)) return 'games';
   if (path.startsWith('/profesor')) return 'teacher';
@@ -35,6 +36,7 @@ const LINKS: { id: NavSection; href: string; label: string; de: string }[] = [
   { id: 'home', href: '/', label: 'Inicio', de: 'Start' },
   { id: 'course', href: '/curso', label: 'Curso', de: 'Kurs' },
   { id: 'practice', href: '/practica', label: 'Practicar', de: 'Üben' },
+  { id: 'write', href: '/escribir', label: 'Escribir', de: 'Schreiben' },
   { id: 'games', href: '/juegos', label: 'Juegos', de: 'Spiele' },
   { id: 'ranking', href: '/ranking', label: 'Ranking', de: 'Rangliste' },
   { id: 'road', href: '/examenes', label: 'Exámenes', de: 'Prüfungen' },

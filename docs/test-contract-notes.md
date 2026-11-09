@@ -12,6 +12,7 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
 | Temas como `.chips .btn[aria-pressed]` | Tarjetas `.tp-tile[aria-pressed]` (`TopicPicker`). | `c247036` |
 | `/jugar` y `/jenga`: `.home-card`, `.home-title`, `.chips` | `section[aria-labelledby=gs-teacher]`, `form[aria-labelledby=gs-student]`, `.setup-head h1`, `.tp-tile`. | `c247036` |
 | Enlace de menú `/road-to-b1` y ancla `/#juegos` | «Exámenes» (`/examenes`) y «Juegos» (`/juegos`, página propia). | cambio de navegación local (`f9ef2f0`) |
+| `/#juegos` en la portada (captura de `brand-ui`) | La portada ya no tiene la sección de juegos; ahora captura `#route-title` («De «Hallo» al examen»). Los juegos están en `/juegos`. | navegación local (`f9ef2f0`) |
 | Pata SVG (`[data-klaus-paw]`, `.klaus-rig`, `[data-klaus-signature]`) | Figura dibujada por el motor Canvas (`[data-klaus-engine=canvas]`); el SVG queda como respaldo. | port de skins (`cfc08d3`) |
 
 ## Qué se cambió y qué no

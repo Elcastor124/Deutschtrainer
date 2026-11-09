@@ -105,7 +105,7 @@ try {
       const name = route === '/' ? 'landing' : route.slice(1).replace(/\//g, '-');
       if (['/', '/curso', '/profesor'].includes(route) || w === 390) await p.shot(`${name}-${w}`);
       if (route === '/' && w >= 1366) {
-        await p.eval(`document.getElementById('juegos').scrollIntoView({block:'start'})`); await sleep(900); await p.shot(`landing-games-${w}`);
+        await p.eval(`document.getElementById('route-title').scrollIntoView({block:'start'})`); await sleep(900); await p.shot(`landing-route-${w}`);
         await p.eval(`document.querySelector('.dt-flow').scrollIntoView({block:'center'})`); await sleep(900); await p.shot(`landing-flow-${w}`);
       }
     }
