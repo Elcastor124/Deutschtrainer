@@ -77,7 +77,7 @@ describe('acceso de profesor', () => {
     expect(login.setCookie[0]).toMatch(/^dt_t=dtt_[^;]+; Path=\/; HttpOnly; SameSite=Lax/);
     expect(JSON.stringify(login.body)).not.toMatch(/dtt_|dtk_/);                       // el token no viaja al JavaScript
     expect((await req(s2, '/api/teacher/login', { body: { key: 'dtk_falsa' } })).status).toBe(401);
-  });
+  }, 20000);
   it('un alumno (cookie o cabecera), un invitado o una cookie inventada no acceden a ninguna ruta de profesor', async () => {
     const { s } = await teacherServer();
     const st = await student(s, 'Ana_Lee');

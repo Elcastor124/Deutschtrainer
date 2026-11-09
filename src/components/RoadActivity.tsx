@@ -8,6 +8,6 @@ export function RoadActivity() {
    <p>Lectura, dictado y audición en una sesión guiada por el profesor. Respuestas guardadas, corrección por fases y resultados sobre 50 puntos.</p>
    <p className="small dim">Simulacro pedagógico original A1–A2 inspirado en formatos B1. No es un examen oficial ni una certificación Goethe.</p>
   </div>
-  <a className="btn signal lg" href="/road-to-b1" onClick={followLearningLink}>Abrir Road to B1 →</a>
+  <a className="btn signal lg" href="/road-to-b1" onClick={followLearningLink}>Abrir simulacro →</a>
  </section>;
 }

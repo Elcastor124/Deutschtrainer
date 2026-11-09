@@ -91,7 +91,7 @@ const SEEDS: UnitSeed[] = [
     summary: 'Repaso general interactivo: estructuras, ejercicios y diccionario de todo el curso.',
     goals: ['Combinar Präsens, Perfekt y Nebensätze', 'Elegir el caso correcto (Akkusativ/Dativ)', 'Usar el vocabulario de todas las Lektionen', 'Sentirme listo para el simulacro'],
     topics: ['vocab', 'perfekt', 'nebensatz', 'dativ', 'akkusativ'], presentation: 'sprache-in-bewegung', games: ['jenga', 'jugar', 'boxeo'], workshop: true },
-  { id: 'road-to-b1', title: 'Road to B1 · Die erste Prüfung', de: 'Viel Erfolg!', level: 'A1–A2 → B1',
+  { id: 'road-to-b1', title: 'Die erste Prüfung · Simulacro', de: 'Viel Erfolg!', level: 'A1–A2 → B1',
     summary: 'Simulacro de examen de 105 minutos guiado por el profesor: lectura, dictado y audición.',
     goals: ['Leer un texto y responder con seguridad', 'Escribir un dictado', 'Entender audios cortos', 'Gestionar el tiempo de un examen'],
     topics: ['lesen', 'vocab', 'perfekt', 'nebensatz', 'dativ', 'akkusativ'], games: [], exam: true },

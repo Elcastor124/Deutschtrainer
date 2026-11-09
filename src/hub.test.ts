@@ -11,12 +11,12 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('Student learning hub', () => {
   it('makes the Dativ and Akkusativ review game discoverable from the homepage and topic', () => {
-    for (const path of ['/']) {
-      const html = renderRoute(path);
-      expect(html).toContain('href="/boxeo"');
-      expect(html).toContain('Repaso de Dativ y Akkusativ');
-      expect(html).toContain('dos jugadores');
-    }
+    // Los juegos viven en /juegos (página propia); la portada enlaza a esa página.
+    expect(renderRoute('/')).toContain('href="/juegos"');
+    const games = renderRoute('/juegos');
+    expect(games).toContain('href="/boxeo"');
+    expect(games).toContain('Repaso de Dativ y Akkusativ');
+    expect(games).toContain('dos jugadores');
   });
 
   it('opens the brand landing at the root with the course, practice, games and navigation', () => {
@@ -25,9 +25,9 @@ describe('Student learning hub', () => {
     const headline = /<h1[^>]*id="hero-title"[^>]*>([\s\S]*?)<\/h1>/.exec(html)?.[1].replace(/<[^>]*>/g, '');
     expect(headline).toContain('Aprende alemán');
     expect(html).toContain('aria-label="Deutschtrainer"');
-    for (const href of ['/curso', '/practica', '/road-to-b1', '/jugar', '/jenga', '/boxeo', '/tema/1', '/profesor']) expect(html).toContain(`href="${href}"`);
+    for (const href of ['/curso', '/practica', '/examenes', '/juegos', '/tema/1', '/profesor']) expect(html).toContain(`href="${href}"`);
     expect(html).toContain('Nebensätze');
-    expect(html).toContain('Wort-Jenga');
+    expect(html).toContain('Exámenes');
     expect(html).toContain('Tu primer paso');
   });
 
@@ -80,7 +80,7 @@ describe('Student learning hub', () => {
     expect(html).toContain('autoevaluación');
     expect(html).toContain('Ein verrückter Samstag');
     expect(html).toContain('textarea');
-    expect(html).toContain('Wort-Jenga');
+    expect(html).toContain('Exámenes');
   });
 
   it('retains the resume action and existing quiz profile data', () => {

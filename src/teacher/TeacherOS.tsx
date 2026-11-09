@@ -14,7 +14,7 @@ const pct = (x: number | null | undefined) => (x === null || x === undefined ? '
 const ago = (t: number | null) => { if (!t) return 'nunca'; const d = Math.floor((Date.now() - t) / 86_400_000); return d <= 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`; };
 const go = (path: string) => (e: { preventDefault: () => void }) => { e.preventDefault(); navigate(path); };
 const today = () => new Date().toLocaleDateString('sv-SE');
-const GAMES: Record<string, string> = { blackcard: 'BlackCard', jenga: 'Wort-Jenga', boxing: 'Boxeo', road: 'Road to B1', none: 'Solo presentación' };
+const GAMES: Record<string, string> = { blackcard: 'BlackCard', jenga: 'Wort-Jenga', boxing: 'Boxeo', road: 'Simulacro de examen', none: 'Solo presentación' };
 
 /** URL que crea la sala con el sistema de clases existente (mismo código, mismos Chromebooks). */
 export function launchUrl(game: string, topics: string[]) {
@@ -454,7 +454,7 @@ function AnalysePage() {
   const { data: a, error } = useLoad(() => tapi<Analytics>(`analytics?${qs}`), [qs]);
   const diffName = (k: string) => ({ easy: 'Fácil', medium: 'Media', hard: 'Difícil', special: 'Examen', desconocida: 'Sin dato' } as Record<string, string>)[k] ?? k;
   const dayName = (k: string) => ({ Mon: 'Lunes', Tue: 'Martes', Wed: 'Miércoles', Thu: 'Jueves', Fri: 'Viernes', Sat: 'Sábado', Sun: 'Domingo' } as Record<string, string>)[k] ?? k;
-  const srcName = (k: string) => ({ practice: 'Práctica', class: 'Clase', jenga: 'Wort-Jenga', boxing: 'Boxeo', road: 'Road to B1' } as Record<string, string>)[k] ?? k;
+  const srcName = (k: string) => ({ practice: 'Práctica', class: 'Clase', jenga: 'Wort-Jenga', boxing: 'Boxeo', road: 'Simulacro de examen' } as Record<string, string>)[k] ?? k;
   return (
     <div className="tos-page" data-tos="analyse">
       <header className="tos-page-head"><div><p className="dt-eyebrow">Analyse</p><h1>Rendimiento</h1><p className="tos-sub">Estadística descriptiva de respuestas reales. Cada valor lleva su número de observaciones.</p></div></header>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, type CSSProperties } from 'react';
 import { COURSE, GAME_INFO, STEP_META, nextStep, overallProgress, unitProgress, unitStatus } from '../course.ts';
 import { followLearningLink } from '../components/LearningNav.tsx';
+import { EXAMS } from './ExamHub.tsx';
 import { Hero3D } from '../brand/Hero3D.tsx';
 import { Wordmark } from '../brand/Logo.tsx';
 import { IntroReplayButton } from '../brand/Intro.tsx';
@@ -20,7 +21,7 @@ const FLOW_TEXT: Record<(typeof FLOW)[number]['k'], string> = {
   repaso: 'Comprueba tus «Ich kann…» y marca la Lektion como completada.',
 };
 
-const GAMES = [
+export const GAMES = [
   { id: 'jenga', ...GAME_INFO.jenga, de: 'Bau den Turm', text: 'Saca un bloque, responde bien y la torre aguanta. Elige los temas de la clase.', tag: 'Multijugador · temas a elegir' },
   { id: 'jugar', ...GAME_INFO.jugar, de: 'Das Klassenspiel', text: 'El quiz de clase con cartas negras, cofres y podio. El profesor abre la sala.', tag: 'Sala de clase · código' },
   { id: 'boxeo', ...GAME_INFO.boxeo, de: 'Repaso de Dativ y Akkusativ', text: 'Combate de repaso: dos jugadores responden casos y Wo/Wohin; acertar desbloquea golpes.', tag: '1 contra 1 · casos' },
@@ -244,34 +245,15 @@ export function Landing() {
             <p>Todo el banco de preguntas sin tiempo; elige temas o repasa tus errores.</p>
             <span className="dt-card-go" aria-hidden="true">→</span>
           </a>
-          <a className="dt-card dt-card-road" href="/road-to-b1" onClick={followLearningLink} data-reveal style={{ '--d': '160ms' } as CSSProperties}>
+          <a className="dt-card dt-card-exams" href="/examenes" onClick={followLearningLink} data-reveal style={{ '--d': '160ms' } as CSSProperties}>
             <span className="dt-card-k">03 · Prüfung</span>
-            <h3>Road to B1</h3>
-            <p>Simulacro de 105 minutos: lectura, dictado y audición, guiado por el profesor.</p>
+            <h3>Exámenes</h3>
+            <p>{EXAMS.filter((x) => x.ready).length} exámenes disponibles para hacer a tu ritmo, con nota y revisión.</p>
             <span className="dt-card-go" aria-hidden="true">→</span>
           </a>
         </div>
       </section>
 
-      <section className="dt-section dt-games" id="juegos" aria-labelledby="games-title" tabIndex={-1}>
-        <header className="dt-section-head" data-reveal>
-          <p className="dt-eyebrow">Spiele · juegos de clase</p>
-          <h2 id="games-title">Juega con lo que aprendes<b className="dt-punkt">.</b></h2>
-          <p>Los juegos son multijugador: el profesor abre la sala y entras con tu nombre y el código.</p>
-        </header>
-        <div className="dt-games-grid">
-          {GAMES.map((g, i) => (
-            <a key={g.id} className={`dt-game g-${g.id}`} href={g.href} onClick={followLearningLink} data-reveal style={{ '--d': `${i * 90}ms` } as CSSProperties}>
-              <GameArt id={g.id} />
-              <span className="dt-game-tag">{g.tag}</span>
-              <h3>{g.label}</h3>
-              <p className="dt-game-de">{g.de}</p>
-              <p>{g.text}</p>
-              <span className="dt-game-cta">Jugar <span aria-hidden="true">→</span></span>
-            </a>
-          ))}
-        </div>
-      </section>
 
       <footer className="dt-footer" data-reveal>
         <Wordmark height={54} className="dt-footer-mark" />
@@ -280,6 +262,7 @@ export function Landing() {
         <nav className="dt-footer-links" aria-label="Pie de página">
           <a href="/curso" onClick={followLearningLink}>Curso</a>
           <a href="/tema/1" onClick={followLearningLink}>Biblioteca de materiales</a>
+          <a href="/juegos" onClick={followLearningLink}>Juegos</a>
           <a href="/tema/1/taller" onClick={followLearningLink}>Taller de escritura</a>
           <a href="/profesor" onClick={followLearningLink}>Profesor</a>
         </nav>
@@ -289,7 +272,7 @@ export function Landing() {
 }
 
 /** Ilustraciones de juego dibujadas en código (SVG), en los colores de marca. */
-function GameArt({ id }: { id: 'jenga' | 'jugar' | 'boxeo' }) {
+export function GameArt({ id }: { id: 'jenga' | 'jugar' | 'boxeo' }) {
   if (id === 'jenga') return (
     // Torre de Jenga vista de frente: capas alternas (un bloque largo / tres testas); un bloque dorado sale.
     <svg className="dt-game-art" viewBox="0 0 120 70" aria-hidden="true">

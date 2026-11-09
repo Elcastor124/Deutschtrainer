@@ -26,7 +26,7 @@ export function navSection(path: string): NavSection {
   if (path.startsWith('/road-to-b1') || path.startsWith('/examenes')) return 'road';
   if (path.startsWith('/curso') || path.startsWith('/biblioteca') || /^\/tema\/1\/?$/.test(path)) return 'course';
   if (path.startsWith('/practi') || path.startsWith('/tema/1/taller')) return 'practice';
-  if (/^\/(jugar|jenga|boxeo|libre|t|p|j)(\/|$)/.test(path)) return 'games';
+  if (/^\/(juegos|jugar|jenga|boxeo|libre|t|p|j)(\/|$)/.test(path)) return 'games';
   if (path.startsWith('/profesor')) return 'teacher';
   return 'home';
 }
@@ -35,7 +35,7 @@ const LINKS: { id: NavSection; href: string; label: string; de: string }[] = [
   { id: 'home', href: '/', label: 'Inicio', de: 'Start' },
   { id: 'course', href: '/curso', label: 'Curso', de: 'Kurs' },
   { id: 'practice', href: '/practica', label: 'Practicar', de: 'Üben' },
-  { id: 'games', href: '/#juegos', label: 'Juegos', de: 'Spiele' },
+  { id: 'games', href: '/juegos', label: 'Juegos', de: 'Spiele' },
   { id: 'ranking', href: '/ranking', label: 'Ranking', de: 'Rangliste' },
   { id: 'road', href: '/examenes', label: 'Exámenes', de: 'Prüfungen' },
 ];

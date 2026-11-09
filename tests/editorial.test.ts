@@ -162,8 +162,10 @@ describe('landing editorial type', () => {
     expect(css).not.toMatch(/:root\s*\{|@import|https?:\/\//);
     expect(css).not.toMatch(/:is\([^)]*::(?:before|after)/);
   });
-  it('keeps the right glove mirroring on a non-animated parent so hover cannot flatten the artwork', () => {
-    const html = renderToStaticMarkup(createElement(landing.Landing));
+  it('keeps the right glove mirroring on a non-animated parent so hover cannot flatten the artwork', async () => {
+    // El arte de boxeo vive en GameArt (tarjeta de /juegos).
+    const { GameArt } = await import('../src/views/Landing.tsx');
+    const html = renderToStaticMarkup(createElement(GameArt, { id: 'boxeo' }));
     expect(html).toContain('<g transform="translate(120 0) scale(-1 1)"><g class="glove r">');
   });
   it('ships only the two requested headline weights locally while keeping the readable UI families', () => {

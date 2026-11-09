@@ -25,6 +25,7 @@ import { Mission } from './views/Mission.tsx';
 import { ExamHub } from './views/ExamHub.tsx';
 import { RoadSolo } from './views/RoadSolo.tsx';
 import { Horen } from './views/Horen.tsx';
+import { Games } from './views/Games.tsx';
 import { HomeworkNotice } from './components/HomeworkNotice.tsx';
 import { KlausSkins } from './views/KlausSkins.tsx';
 import { GameSetup } from './views/GameSetup.tsx';
@@ -52,6 +53,7 @@ export function App() {
   else if (m) screen = <Player key={m[2]} code={m[2].toUpperCase()} />;
   else if (/^\/road-to-b1\/level-1\/?$/.test(path) || (/^\/road-to-b1\/?$/.test(path) && /[?&]code=/.test(search))) screen = <Road />;
   else if (/^\/(examenes|road-to-b1)\/?$/.test(path)) screen = <ExamHub />;
+  else if (/^\/juegos\/?$/.test(path)) screen = <Games />;
   else if (/^\/examenes\/a1-a2\/?$/.test(path)) screen = <RoadSolo />;
   else if (/^\/examenes\/horen-001\/?$/.test(path)) screen = <Horen />;
   else if (/^\/libre\/?$/.test(path)) screen = <Libre />;

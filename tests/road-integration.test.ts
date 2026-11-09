@@ -16,7 +16,8 @@ describe('Road to B1 integration',()=>{
   expect(source('src/components/LearningNav.tsx')).toContain("href: '/examenes'");
   expect(source('src/App.tsx')).toContain('<ExamHub />');
   expect(source('src/App.tsx')).toContain('<RoadSolo />');
-  expect(source('src/views/Landing.tsx')).toContain('href="/road-to-b1"');
+  expect(source('src/views/Landing.tsx')).toContain('href="/examenes"');
+  expect(source('src/App.tsx')).toContain("/^\\/juegos\\/?$/");
  });
  it('keeps examination secrets out of browser imports',()=>{
   for(const p of ['src/App.tsx','src/views/Road.tsx','src/road-client.ts']) {

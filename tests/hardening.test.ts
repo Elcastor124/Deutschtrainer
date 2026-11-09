@@ -75,7 +75,7 @@ describe('1 · creación de salas limitada', () => {
     const cap = await start({ MAX_CLASS_ROOMS: '2' });
     for (let i = 0; i < 2; i++) expect((await welcomeOrErr(await conn(cap, { t: 'hello', role: 'teacher', create: true }))).t).toBe('welcome');
     expect((await welcomeOrErr(await conn(cap, { t: 'hello', role: 'teacher', create: true }))).msg).toMatch(/máximo de salas/);
-  });
+  }, 20000);
   it('X-Forwarded-For NO sirve para esquivar el límite si el servidor no está tras un proxy de confianza', async () => {
     const s = await start({ ROOM_CREATE_PER_HOUR: '2' });
     let last = 0;

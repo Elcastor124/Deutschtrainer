@@ -3,7 +3,7 @@
 import { navigate } from '../util.ts';
 import '../road-solo.css';
 
-const EXAMS = [
+export const EXAMS = [
   { n: 1, level: 'A1 / A2', title: 'Die erste Prüfung', href: '/examenes/a1-a2', room: '/road-to-b1/level-1', parts: ['Lesen 30', 'Hören 10', 'Diktat 10'], min: 105, ready: true, meta: '' },
   { n: 2, level: 'A1+ / A2', title: 'Hörverstehen 001', href: '/examenes/horen-001?modo=practica', room: '/examenes/horen-001', parts: ['Hören 30', '5 Teile', 'Jeder Text 2×'], min: 60, ready: true, meta: '60 min · 30 puntos · nota sobre 20 · estilo DSD I' },
   { n: 3, level: 'A2 / B1', title: 'Próximamente', href: '', room: '', parts: ['Lesen', 'Hören', 'Schreiben'], min: 0, ready: false, meta: '' },
@@ -16,7 +16,7 @@ export function ExamHub() {
     <main className="dt-page rs-page">
       <header className="rs-head">
         <div>
-          <p className="dt-eyebrow">Road to B1 · Prüfungen</p>
+          <p className="dt-eyebrow">Exámenes · Prüfungen</p>
           <h1>Exámenes de práctica<b className="dt-punkt">.</b></h1>
           <p className="rs-lead">Simulacros completos para hacer a tu ritmo, sin sala. Corrige lo que lleves cuando quieras y termina para ver tu nota.</p>
         </div>

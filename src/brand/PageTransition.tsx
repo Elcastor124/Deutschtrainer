@@ -2,7 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import './page-transition.css';
 import { readEffectsEnabled } from './effects.ts';
 
-const routeOrder = ['/', '/curso', '/tema/1', '/tema/1/taller', '/practica', '/jugar', '/jenga', '/boxeo', '/road-to-b1', '/profesor'];
+const routeOrder = ['/', '/curso', '/tema/1', '/tema/1/taller', '/practica', '/jugar', '/jenga', '/boxeo', '/examenes', '/juegos', '/profesor'];
 
 /** One live page, never an exit copy or a keyed game subtree. */
 export function PageTransition({ path, children }: { path: string; children: ReactNode }) {
