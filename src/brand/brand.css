@@ -73,6 +73,11 @@ body { overflow-x: clip; }
   .dt-nav-links a[aria-current='page']::after { left: 6px; bottom: auto; top: 50%; transform: translateY(-50%); }
   .dt-nav-teacher { margin: 8px 0 0; justify-content: flex-start !important; }
 }
+/* Con 7 enlaces + cuenta, entre 1361 y 1480 px la barra va justa: relleno más estrecho para no desbordar ni colapsar a hamburguesa. */
+@media (min-width: 1361px) and (max-width: 1480px) {
+  .dt-nav-links a { padding-inline: 9px; }
+  .dt-nav-inner { gap: 12px; }
+}
 @media (max-width: 420px) { .dt-nav-brand .dt-wordmark { height: 13px; width: auto; } }
 
 /* ── Intro ── */
