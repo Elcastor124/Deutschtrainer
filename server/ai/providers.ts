@@ -15,7 +15,8 @@ export interface LlmRequest {
   schemaName: string; schema: Record<string, unknown>; maxTokens: number; signal?: AbortSignal;
 }
 export interface Usage { inputTokens: number; outputTokens: number }
-export interface LlmResult { json: unknown; usage: Usage; model: string; latencyMs: number }
+/** fallback: la respuesta la dio el modo determinista porque la IA gratuita no estaba disponible (no es IA, coste 0). */
+export interface LlmResult { json: unknown; usage: Usage; model: string; latencyMs: number; fallback?: boolean }
 export interface LlmProvider { readonly name: string; readonly model: string; readonly real: boolean; complete(req: LlmRequest): Promise<LlmResult> }
 
 export interface SttRequest { audio: Buffer; mime: string; seconds: number; language: 'de'; prompt?: string; signal?: AbortSignal }
@@ -35,7 +36,7 @@ export class ProviderError extends Error {
 // ───────────── Configuración ─────────────
 export interface Prices { llmInPerM: number | null; llmOutPerM: number | null; sttPerMinute: number | null; ttsPer1kChars: number | null }
 export interface KlausAiConfig {
-  llm: { provider: 'mock' | 'anthropic'; model: string; key?: string; reason?: string };
+  llm: { provider: 'mock' | 'anthropic' | 'openrouter-free'; model: string; key?: string; keys?: string[]; models?: string[]; reason?: string };
   stt: { provider: 'mock' | 'openai'; model: string; key?: string; reason?: string };
   tts: { provider: 'mock' | 'openai'; model: string; voice: string; key?: string; reason?: string };
   allowPaid: boolean; prices: Prices; eurPerUsd: number; budgetEur: number; dailyBudgetEur: number;
@@ -59,11 +60,17 @@ export function loadAiConfig(env: NodeJS.ProcessEnv = process.env): KlausAiConfi
     if (!priceOk) return { provider: 'mock', reason: `${label}: faltan los precios configurados para medir el coste` };
     return { provider: real, key };
   };
-  const llm = pick(env.KLAUS_LLM_PROVIDER, 'anthropic', env.ANTHROPIC_API_KEY, prices.llmInPerM !== null && prices.llmOutPerM !== null, 'LLM');
+  // OpenRouter SOLO GRATUITO: no necesita KLAUS_ALLOW_PAID porque nunca puede cobrar (ver OpenRouterFreeLlm). Se activa con
+  // KLAUS_LLM_PROVIDER=openrouter-free + OPENROUTER_API_KEY (y opcionalmente OPENROUTER_API_KEY_2 como reserva).
+  const orKeys = [env.OPENROUTER_API_KEY, env.OPENROUTER_API_KEY_2].filter((k): k is string => !!k && k.startsWith('sk-or-'));
+  const orModels = (env.KLAUS_FREE_MODELS || FREE_MODELS.join(',')).split(',').map((m) => m.trim()).filter((m) => m.endsWith(':free'));
+  const llm = env.KLAUS_LLM_PROVIDER === 'openrouter-free'
+    ? orKeys.length && orModels.length ? { provider: 'openrouter-free' as const, keys: orKeys, models: orModels } : { provider: 'mock' as const, reason: 'LLM gratuito: falta OPENROUTER_API_KEY o modelos :free' }
+    : pick(env.KLAUS_LLM_PROVIDER, 'anthropic', env.ANTHROPIC_API_KEY, prices.llmInPerM !== null && prices.llmOutPerM !== null, 'LLM');
   const stt = pick(env.KLAUS_STT_PROVIDER, 'openai', env.OPENAI_API_KEY, true, 'STT');
   const tts = pick(env.KLAUS_TTS_PROVIDER, 'openai', env.OPENAI_API_KEY, prices.ttsPer1kChars !== null, 'TTS');
   return {
-    llm: { ...llm, model: env.KLAUS_LLM_MODEL || 'claude-haiku-5-5' },
+    llm: { ...llm, model: llm.provider === 'openrouter-free' ? orModels[0] : env.KLAUS_LLM_MODEL || 'claude-haiku-5-5' },
     stt: { ...stt, model: env.KLAUS_STT_MODEL || 'gpt-4o-mini-transcribe' },
     tts: { ...tts, model: env.KLAUS_TTS_MODEL || 'gpt-4o-mini-tts', voice: env.KLAUS_TTS_VOICE || 'marin' },
     allowPaid, prices, eurPerUsd: num(env.KLAUS_EUR_PER_USD) ?? 0.9,
@@ -115,6 +122,72 @@ export class AnthropicLlm implements LlmProvider {
     if (!block || body.stop_reason === 'max_tokens') throw new ProviderError('bad_output', 'El modelo no devolvió un resultado utilizable.');
     return { json: block.input, usage: { inputTokens: body.usage?.input_tokens ?? 0, outputTokens: body.usage?.output_tokens ?? 0 }, model: this.model, latencyMs: Date.now() - t0 };
   }
+}
+
+/** Modelos gratuitos de OpenRouter probados con salida JSON por esquema (en orden de preferencia). Solo se admiten ids «:free». */
+export const FREE_MODELS = ['dots-studio/dots-3-note-preview:free', 'nvidia/nemotron-3.5-super-vl:free', 'google/gemma-4-31b-it:free', 'google/gemma-4-26b-a4b-it:free', 'recursive/flint-v1.0:free'];
+
+/**
+ * OpenRouter, EXCLUSIVAMENTE gratis. Candados (cualquiera basta para no pagar):
+ *  1) solo se envían modelos cuyo id termina en «:free» (se comprueba aquí, no solo en la config);
+ *  2) cada petición lleva provider.max_price = 0 (OpenRouter rechaza cualquier proveedor que cobre);
+ *  3) si la respuesta trae un coste > 0, se descarta y se apaga el adaptador (no se vuelve a llamar);
+ *  4) las claves son de nivel gratuito (límite de crédito 0).
+ * Si todos los modelos gratis están saturados (429) o fallan, responde el modo determinista (fallback) en vez de dar error:
+ * el alumno nunca se queda sin respuesta y nunca se cobra.
+ */
+export class OpenRouterFreeLlm implements LlmProvider {
+  readonly name = 'openrouter-free'; readonly real = true;
+  #keys: string[]; #models: string[]; #fetch: FetchLike; #fallback: LlmProvider; #base: string; #off = false;
+  /** Modelo → instante hasta el que se evita (tras 429/fallo), para no insistir sobre uno saturado. */
+  #cool = new Map<string, number>(); #next = 0;
+  /** Modelos que no permiten desactivar el razonamiento (aprendido tras un 400). */
+  #mustReason = new Set<string>();
+  constructor(o: { keys: string[]; models: string[]; fallback: LlmProvider; fetch?: FetchLike; baseUrl?: string }) {
+    this.#keys = o.keys; this.#models = o.models.filter((m) => m.endsWith(':free')); this.#fallback = o.fallback; this.#fetch = o.fetch ?? fetch; this.#base = o.baseUrl ?? 'https://openrouter.ai/api/v1';
+  }
+  get model() { return this.#models[0] ?? 'none'; }
+  get disabled() { return this.#off; }
+  async complete(req: LlmRequest): Promise<LlmResult> {
+    const t0 = Date.now(), now = Date.now();
+    const order = this.#models.filter((m) => (this.#cool.get(m) ?? 0) <= now);
+    const queue = this.#off ? [] : order.slice(0, 3);
+    for (let i = 0; i < queue.length; i++) {
+      const model = queue[i];
+      if (Date.now() - t0 > 40_000) break; // el alumno no espera más: responde el modo determinista
+      if (!model.endsWith(':free')) continue;
+      const key = this.#keys[this.#next++ % this.#keys.length];
+      let res: Response;
+      try {
+        res = await this.#fetch(`${this.#base}/chat/completions`, {
+          method: 'POST', signal: signalFor(req.signal),
+          headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json', 'x-title': 'Deutschtrainer' },
+          body: JSON.stringify({
+            // Muchos modelos gratis «piensan» antes de responder: sin razonamiento (o mínimo si es obligatorio) y margen de tokens.
+            model, max_tokens: Math.max(req.maxTokens * 3, 1500), reasoning: this.#mustReason.has(model) ? { effort: 'low', exclude: true } : { enabled: false }, provider: { max_price: { prompt: 0, completion: 0, request: 0 }, allow_fallbacks: false },
+            messages: [{ role: 'system', content: `${req.system}\nDevuelve SOLO un objeto JSON válido que cumpla el esquema «${req.schemaName}». Sin texto fuera del JSON.` }, { role: 'user', content: req.user }],
+            response_format: { type: 'json_schema', json_schema: { name: req.schemaName, strict: true, schema: req.schema } },
+          }),
+        });
+      } catch (e) { if (req.signal?.aborted) throw mapFetchError(e, req.signal); this.#cool.set(model, Date.now() + 60_000); continue; }
+      if (res.status === 400 && !this.#mustReason.has(model)) { this.#mustReason.add(model); i--; continue; } // mismo modelo, con razonamiento mínimo
+      if (!res.ok) { this.#cool.set(model, Date.now() + (res.status === 429 ? 90_000 : 300_000)); if (res.status === 401 || res.status === 402) this.#keys = this.#keys.filter((k) => k !== key); if (!this.#keys.length) this.#off = true; continue; }
+      let body: { choices?: { message?: { content?: string | null } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number; cost?: number } };
+      try { body = await res.json() as typeof body; } catch { this.#cool.set(model, Date.now() + 60_000); continue; }
+      if ((body.usage?.cost ?? 0) > 0) { this.#off = true; console.error('[klaus-ai] OpenRouter devolvió un coste > 0: IA desactivada (solo se permite gratis).'); break; }
+      const json = parseJsonLoose(body.choices?.[0]?.message?.content);
+      if (json === undefined) { this.#cool.set(model, Date.now() + 30_000); continue; }
+      return { json, usage: { inputTokens: body.usage?.prompt_tokens ?? 0, outputTokens: body.usage?.completion_tokens ?? 0 }, model, latencyMs: Date.now() - t0 };
+    }
+    const r = await this.#fallback.complete(req);
+    return { ...r, fallback: true, latencyMs: Date.now() - t0 };
+  }
+}
+/** Acepta JSON puro o envuelto en ```json … ```. */
+export function parseJsonLoose(s: unknown): unknown {
+  if (typeof s !== 'string') return undefined;
+  const t = s.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+  try { return JSON.parse(t); } catch { const m = t.match(/\{[\s\S]*\}/); if (m) { try { return JSON.parse(m[0]); } catch { /* nada */ } } return undefined; }
 }
 
 /** OpenAI `POST /v1/audio/transcriptions` (multipart). STT solo transcribe: NO evalúa pronunciación. */
@@ -175,7 +248,8 @@ export class MockTts implements TtsProvider {
 
 export interface Providers { llm: LlmProvider; stt: SttProvider; tts: TtsProvider; config: KlausAiConfig }
 export function buildProviders(config: KlausAiConfig, mockLlm: LlmProvider, fetchImpl?: FetchLike): Providers {
-  const llm = config.llm.provider === 'anthropic' && config.llm.key ? new AnthropicLlm({ key: config.llm.key, model: config.llm.model, fetch: fetchImpl }) : mockLlm;
+  const llm = config.llm.provider === 'openrouter-free' && config.llm.keys?.length ? new OpenRouterFreeLlm({ keys: config.llm.keys, models: config.llm.models ?? [], fallback: mockLlm, fetch: fetchImpl })
+    : config.llm.provider === 'anthropic' && config.llm.key ? new AnthropicLlm({ key: config.llm.key, model: config.llm.model, fetch: fetchImpl }) : mockLlm;
   const stt = config.stt.provider === 'openai' && config.stt.key ? new OpenAiStt({ key: config.stt.key, model: config.stt.model, fetch: fetchImpl }) : new MockStt();
   const tts = config.tts.provider === 'openai' && config.tts.key ? new OpenAiTts({ key: config.tts.key, model: config.tts.model, voice: config.tts.voice, fetch: fetchImpl }) : new MockTts();
   return { llm, stt, tts, config };

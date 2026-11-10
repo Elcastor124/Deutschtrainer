@@ -77,8 +77,10 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
   async function ask(a: Account, task: Parameters<Providers['llm']['complete']>[0]['task'], system: string, user: string, input: unknown, schemaName: string, schema: Record<string, unknown>, maxTokens: number, signal: AbortSignal) {
     const llm = providers.llm;
     const r = await llm.complete({ task, system, user, input, schemaName, schema, maxTokens, signal });
-    const costEur = usage.costOf({ inputTokens: r.usage.inputTokens, outputTokens: r.usage.outputTokens }, 'llm', llm.real);
-    return { r, rec: { provider: llm.name, model: r.model, real: llm.real, aiCall: llm.real, usage: r.usage, latencyMs: r.latencyMs, costEur } };
+    // IA gratuita: coste 0 siempre. Si respondió el modo determinista (fallback), no es IA.
+    const real = llm.real && !r.fallback, free = llm.name === 'openrouter-free';
+    const costEur = free ? 0 : usage.costOf({ inputTokens: r.usage.inputTokens, outputTokens: r.usage.outputTokens }, 'llm', real);
+    return { r, src: (real ? 'ai' : 'mock') as 'ai' | 'mock', rec: { provider: r.fallback ? 'mock' : llm.name, model: r.model, real, aiCall: real, usage: r.usage, latencyMs: r.latencyMs, costEur } };
   }
 
   // ───────────── Schreibt ─────────────
@@ -90,8 +92,8 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
     const lvl = level(b), draftId = typeof b.draftId === 'string' ? b.draftId : null;
     if (draftId && !store.draft(a.id, draftId)) fail(404, 'Borrador no encontrado.');
     const out = await metered<{ review: WritingReview; reviewId: string | null }>(req, a, { feature: 'text', amount: 1, requestId: rid(b), op: 'writing_review', real: providers.llm.real }, async (signal) => {
-      const { r, rec } = await ask(a, 'writing_review', fill(SYSTEM.writing, { level: levelNote(lvl) }), wrap('texto_alumno', text), { text, level: lvl }, 'revision_escritura', SCHEMAS.writing as never, 1800, signal);
-      const parsed = parseWritingReview(r.json, text, providers.llm.real ? 'ai' : 'mock', ruleText);
+      const { r, rec, src } = await ask(a, 'writing_review', fill(SYSTEM.writing, { level: levelNote(lvl) }), wrap('texto_alumno', text), { text, level: lvl }, 'revision_escritura', SCHEMAS.writing as never, 1800, signal);
+      const parsed = parseWritingReview(r.json, text, src, ruleText);
       if (!parsed.ok) throw new ProviderError('bad_output', parsed.error);
       const saved = draftId ? store.addReview(a.id, draftId, text, parsed.value) : null;
       return { value: { review: parsed.value, reviewId: saved?.id ?? null }, rec };
@@ -114,7 +116,7 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
       const recent = s.turns.slice(-6).map((t) => `${t.role === 'klaus' ? 'Klaus' : 'Alumno'}: ${t.text}`).join('\n');
       // Modo libre: el tema (fijo, de FREE_TOPICS) se añade al rol; nunca texto del alumno en el rol.
       const topic = freeTopicById(s.topic), role = topic ? `${sc.role} Tema elegido por el alumno: ${topic.de} (${topic.label}).` : sc.role;
-      const { r, rec } = await ask(a, 'redet_turn', fill(SYSTEM.redet, { level: levelNote(s.level), role }), `${wrap('contexto', recent)}\n${wrap('texto_alumno', text)}`,
+      const { r, rec, src } = await ask(a, 'redet_turn', fill(SYSTEM.redet, { level: levelNote(s.level), role }), `${wrap('contexto', recent)}\n${wrap('texto_alumno', text)}`,
         { scenarioId: sc.id, topic: topic?.id ?? null, turn: s.turns.filter((t) => t.role === 'student').length, text }, 'turno_conversacion', SCHEMAS.redet as never, 700, signal);
       const parsed = parseRedetTurn(r.json, text);
       if (!parsed.ok) throw new ProviderError('bad_output', parsed.error);
@@ -122,7 +124,7 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
       s.corrections.push(...parsed.value.corrections);
       for (const e of parsed.value.expressions) if (!s.expressions.some((x) => x.de === e.de)) s.expressions.push(e);
       s.corrections = s.corrections.slice(-30); s.expressions = s.expressions.slice(-20); store.save();
-      return { value: { reply: parsed.value.reply, corrections: parsed.value.corrections, expressions: parsed.value.expressions, source: providers.llm.real ? 'ai' : 'mock' }, rec };
+      return { value: { reply: parsed.value.reply, corrections: parsed.value.corrections, expressions: parsed.value.expressions, source: src }, rec };
     });
   }
   async function redetEnd(req: IncomingMessage, a: Account) {
@@ -133,16 +135,18 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
     // El resumen reutiliza lo ya registrado: solo pide al modelo temas y sugerencias (no gasta cuota del alumno; sí cuenta en métricas).
     const ft = freeTopicById(s.topic);
     let topics = [ft ? `${sc.title}: ${ft.label}` : sc.title], suggestions = ['Repite el diálogo en voz alta.', 'Usa las expresiones nuevas en una frase propia.'];
+    let summarySrc: 'ai' | 'mock' = 'mock';
     if (providers.llm.real && s.turns.length > 2) {
       try {
         const { r, rec } = await ask(a, 'redet_summary', SYSTEM.redetSummary, wrap('contexto', s.turns.map((t) => `${t.role}: ${t.text}`).join('\n').slice(0, 3000)), { scenarioId: sc.id }, 'resumen_conversacion', SCHEMAS.redetSummary as never, 500, AbortSignal.timeout(25_000));
         const o = r.json as { topics?: unknown; suggestions?: unknown };
         const arr = (v: unknown, n: number, m: number) => (Array.isArray(v) ? v.map((x) => clean(x, m)).filter(Boolean).slice(0, n) : []);
         if (arr(o.topics, 5, 80).length) topics = arr(o.topics, 5, 80); if (arr(o.suggestions, 4, 140).length) suggestions = arr(o.suggestions, 4, 140);
+        if (rec.real) summarySrc = 'ai';
         usage.record({ op: 'redet_summary', accountId: a.id, feature: 'text', session: s.id, ...rec } as never);
       } catch { /* si falla el resumen con IA, queda el resumen local: la sesión no se pierde */ }
     }
-    const summary: RedetSummary = { topics, expressions: s.expressions, mistakes: s.corrections.filter((c) => c.kind === 'error').slice(0, 8), suggestions, source: providers.llm.real ? 'ai' : 'mock' };
+    const summary: RedetSummary = { topics, expressions: s.expressions, mistakes: s.corrections.filter((c) => c.kind === 'error').slice(0, 8), suggestions, source: summarySrc };
     s.summary = summary; s.endedAt = now(); store.save();
     usage.record({ op: 'redet_end', accountId: a.id, session: s.id, provider: 'local', model: 'local', real: false });
     return { summary };
@@ -237,11 +241,11 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
       const ruleId = act && 'ruleId' in act ? act.ruleId : undefined, rule = ruleId ? ruleText(ruleId) : null;
       const last = Object.entries(p.answers).at(-1);
       const ctx = [`lección: ${lesson.id} · ${lesson.title}`, `objetivo: ${lesson.objectives[0]}`, rule ? `teoría verificada: ${rule}` : '', act ? `actividad actual: ${act.id} (${act.kind}) «${act.title}»` : '', last ? `último resultado: ${last[0]} ${last[1].ok ? 'correcto' : 'incorrecto'}` : '', p.digest ? `resumen: ${p.digest}` : '', `actividades válidas: ${p.plan.join(', ')}`].filter(Boolean).join('\n');
-      const { r, rec } = await ask(a, 'klasse_answer', SYSTEM.klasse, `${wrap('contexto', ctx)}\n${wrap('pregunta_alumno', q)}`, { question: q, ruleId }, 'respuesta_clase', SCHEMAS.klasse as never, 600, signal);
+      const { r, rec, src } = await ask(a, 'klasse_answer', SYSTEM.klasse, `${wrap('contexto', ctx)}\n${wrap('pregunta_alumno', q)}`, { question: q, ruleId }, 'respuesta_clase', SCHEMAS.klasse as never, 600, signal);
       const parsed = parseKlasseAnswer(r.json, p.plan);
       if (!parsed.ok) throw new ProviderError('bad_output', parsed.error);
       p.asks++; p.digest = `${p.digest} P:${q.slice(0, 40)}`.trim().slice(-240); p.updatedAt = now(); store.save();
-      return { value: { answer: parsed.value, source: providers.llm.real ? 'ai' : 'mock', asksLeft: Math.max(0, usage.limits[planInfo(a).plan].klasseAsks - p.asks) }, rec };
+      return { value: { answer: parsed.value, source: src, asksLeft: Math.max(0, usage.limits[planInfo(a).plan].klasseAsks - p.asks) }, rec };
     });
   }
 

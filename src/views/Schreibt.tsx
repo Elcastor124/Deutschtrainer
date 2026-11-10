@@ -78,6 +78,8 @@ export function Schreibt() {
   const open = corrections.filter((c) => !resolved.has(c.id));
   const stale = !!review && review.textSnapshot !== text;
   const taskTasks = useMemo(() => tasks.filter((t) => t.level === level), [tasks, level]);
+  // «Tarea guiada» elegida antes de que lleguen las tareas: en cuanto cargan, se elige la primera del nivel.
+  useEffect(() => { if (mode === 'tarea' && !taskId && taskTasks[0]) setTaskId(taskTasks[0].id); }, [mode, taskId, taskTasks]);
 
   const load = (d: DraftView) => {
     setDraftId(d.id); setTitle(d.title); setText(d.text); setLevel(d.level); setTaskId(d.taskId); setMode(d.taskId ? 'tarea' : 'libre'); setDirty(false); setMsg(null);

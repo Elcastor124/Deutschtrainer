@@ -5,7 +5,7 @@
 //   npm run plus            → http://localhost:5173
 //   npm run plus -- --reset → empieza con datos vacíos
 import { spawn } from 'node:child_process';
-import { mkdirSync, rmSync, watch } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, watch } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -18,6 +18,13 @@ mkdirSync(DATA_DIR, { recursive: true });
 // Sin claves de proveedores aunque existan en el entorno: Klaus AI funciona en modo básico (determinista, gratis).
 const env = { ...process.env, PORT, DATA_DIR, FORCE_COLOR: '1', KLAUS_ALLOW_PAID: '0' };
 for (const k of Object.keys(env)) if (/API_KEY$|SUPABASE_SERVICE_ROLE_KEY/.test(k)) delete env[k];
+// IA GRATUITA opcional: si existe .env.openrouter (fuera de git), se usan SOLO modelos «:free» de OpenRouter (nunca cobra).
+try {
+  for (const line of readFileSync(join(ROOT, '.env.openrouter'), 'utf8').split(/\r?\n/)) {
+    const m = line.match(/^(OPENROUTER_API_KEY(?:_2)?)=(sk-or-\S+)$/); if (m) env[m[1]] = m[2];
+  }
+  if (env.OPENROUTER_API_KEY) { env.KLAUS_LLM_PROVIDER = 'openrouter-free'; console.log('[plus] Klaus AI: OpenRouter solo gratis (.env.openrouter)'); }
+} catch { /* sin fichero: modo básico */ }
 
 const kids = [];
 const run = (args, name) => {

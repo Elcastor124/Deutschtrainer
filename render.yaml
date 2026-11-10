@@ -19,6 +19,12 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: KLAUS_LLM_PROVIDER  # Klaus AI SOLO GRATIS (modelos «:free» de OpenRouter, max_price=0). Sin clave: modo básico
+        value: openrouter-free
+      - key: OPENROUTER_API_KEY  # claves de OpenRouter: se ponen en el panel de Render, nunca aquí
+        sync: false
+      - key: OPENROUTER_API_KEY_2
+        sync: false
       - key: NODE_VERSION
         value: 22.19.0
       - key: DATA_DIR
