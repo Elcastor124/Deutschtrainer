@@ -62,6 +62,17 @@ body { overflow-x: clip; }
 .dt-nav-toggle i:nth-of-type(2) { top: 27px; background: var(--dt-red); }
 .dt-nav.is-open .dt-nav-toggle i:nth-of-type(1) { top: 23px; transform: rotate(45deg); }
 .dt-nav.is-open .dt-nav-toggle i:nth-of-type(2) { top: 23px; transform: rotate(-45deg); }
+/* Indicador deslizante de la pestaña activa: una sola pieza que viaja (continuidad espacial), no un fondo que aparece en cada enlace. */
+.dt-nav-links { position: relative; }
+.dt-nav-ind { position: absolute; left: 0; top: 50%; height: 44px; width: var(--ind-w, 0); margin-top: -22px; border-radius: 999px; background: rgba(242, 241, 238, 0.07); pointer-events: none; opacity: 0;
+  transform: translate3d(var(--ind-x, 0), 0, 0); }
+.dt-nav-ind::after { content: ''; position: absolute; left: 50%; bottom: 3px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--dt-gold); }
+.dt-nav-links[data-ind] .dt-nav-ind { opacity: 1; }
+.dt-nav-links[data-ind='on'] .dt-nav-ind { transition: transform 420ms cubic-bezier(.22, 1, .36, 1), width 420ms cubic-bezier(.22, 1, .36, 1); }
+.dt-nav-links[data-ind] > a[data-nav-tab][aria-current='page'] { background: none; }
+.dt-nav-links[data-ind] > a[data-nav-tab][aria-current='page']::after { display: none; }
+html[data-dt-effects='off'] .dt-nav-links[data-ind] .dt-nav-ind { transition: none; }
+@media (prefers-reduced-motion: reduce) { .dt-nav-links[data-ind] .dt-nav-ind { transition: none; } }
 @media (max-width: 1360px) {
   .dt-nav-inner { min-height: 62px; padding-block: 8px; }
   .dt-nav-toggle { display: block; }
@@ -72,6 +83,7 @@ body { overflow-x: clip; }
   .dt-nav-links a small { opacity: 1; max-height: none; font-size: 0.7rem; }
   .dt-nav-links a[aria-current='page']::after { left: 6px; bottom: auto; top: 50%; transform: translateY(-50%); }
   .dt-nav-teacher { margin: 8px 0 0; justify-content: flex-start !important; }
+  .dt-nav-ind { display: none; }
 }
 /* Con 7 enlaces + cuenta, entre 1361 y 1480 px la barra va justa: relleno más estrecho para no desbordar ni colapsar a hamburguesa. */
 @media (min-width: 1361px) and (max-width: 1480px) {
