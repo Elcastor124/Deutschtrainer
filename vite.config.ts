@@ -24,7 +24,11 @@ export default defineConfig({
   plugins: [react(), designTokens()],
   server: {
     host: true,
-    proxy: { '/ws': { target: `ws://localhost:${process.env.PORT || 4747}`, ws: true } },
+    // /ws (WebSocket de práctica y salas) y /api (cuentas, Klaus, exámenes) van al servidor de juego.
+    proxy: {
+      '/ws': { target: `ws://localhost:${process.env.PORT || 4747}`, ws: true },
+      '/api': { target: `http://localhost:${process.env.PORT || 4747}` },
+    },
   },
   build: { outDir: 'dist', chunkSizeWarningLimit: 900 },
   test: { include: ['tests/**/*.test.ts', 'src/**/*.test.ts'] },
