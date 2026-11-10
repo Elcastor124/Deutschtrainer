@@ -5,7 +5,7 @@
 //   npm run plus            → http://localhost:5173
 //   npm run plus -- --reset → empieza con datos vacíos
 import { spawn } from 'node:child_process';
-import { mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, rmSync, watch } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -28,12 +28,47 @@ const run = (args, name) => {
 let stopping = false;
 function stop(code = 0) {
   if (stopping) return; stopping = true;
+  server?.kill();
   for (const k of kids) { try { k.kill(); } catch { /* ya terminado */ } }
   process.exit(code);
 }
 for (const s of ['SIGINT', 'SIGTERM']) process.on(s, () => stop(0));
 
-run(['--disable-warning=ExperimentalWarning', '--watch-path=server', '--watch-path=shared', 'server/index.ts'], 'servidor');
+// Servidor supervisado: se reinicia al cambiar server/ o shared/ y, si un arranque falla (p. ej. el puerto aún no se ha
+// liberado en Windows), reintenta solo en vez de quedarse esperando otro cambio como hacía `node --watch`.
+let server = null, restartTimer = null, fails = 0;
+function startServer() {
+  const p = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, stdio: 'inherit', env });
+  const born = Date.now();
+  server = p;
+  p.on('exit', (code) => {
+    if (stopping || server !== p) return;
+    server = null;
+    fails = Date.now() - born < 5000 ? fails + 1 : 0;
+    const wait = Math.min(8000, 600 * 2 ** Math.min(fails, 4));
+    console.log(`[servidor] terminó (${code}); reintento en ${(wait / 1000).toFixed(1)} s`);
+    restartTimer = setTimeout(startServer, wait);
+  });
+}
+function restartServer() {
+  clearTimeout(restartTimer);
+  restartTimer = setTimeout(() => {
+    fails = 0;
+    const old = server;
+    if (!old) return startServer();
+    server = null;
+    old.once('exit', () => setTimeout(startServer, 250));
+    old.kill();
+  }, 250);
+}
+for (const dir of ['server', 'shared']) {
+  watch(join(ROOT, dir), { recursive: true }, (_, file) => {
+    if (!file || !/\.(ts|json)$/.test(file)) return;
+    console.log(`[servidor] cambio en ${dir}/${file}: reiniciando`);
+    restartServer();
+  });
+}
+startServer();
 run(['node_modules/vite/bin/vite.js', '--port', '5173', '--strictPort'], 'vite');
 
 // Aviso cuando ambos responden.
