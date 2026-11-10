@@ -1,0 +1,95 @@
+/* Tablón (/tablon). Editorial: lista de tickets como un tablón de corcho sobrio (tinta), formulario en papel a la derecha.
+   Rojo: solo para «Algo falla» y el foco; dorado: solo para «Hecha» (logro). */
+.tb-page { width: min(1240px, 100%); margin: 0 auto; padding: 28px var(--dt-pad, 16px) 80px; display: grid; gap: 28px; align-content: start; position: relative; z-index: 1; }
+.tb-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; }
+.tb-head h1 { font: 700 clamp(2.4rem, 5vw, 4rem)/0.95 var(--dt-display, var(--display)); letter-spacing: -0.03em; margin: 6px 0 10px; }
+.tb-lede { color: var(--dt-paper-2); max-width: 60ch; margin: 0; }
+.tb-stats { display: flex; gap: 28px; margin: 0; }
+.tb-stats div { display: grid; gap: 2px; }
+.tb-stats dt { font: 500 0.66rem/1 var(--dt-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dt-muted); }
+.tb-stats dd { margin: 0; font-size: 2.4rem; line-height: 1; color: var(--dt-paper); }
+.tb-stats div + div dd { color: var(--dt-gold); }
+.tb-mono { font: 500 0.7rem/1.4 var(--dt-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dt-muted); margin: 0; }
+.tb-muted, .tb-note { color: var(--dt-muted); font-size: 0.88rem; margin: 0; }
+.tb-err { color: #ff7a74; margin: 0; }
+.tb-ok { color: var(--dt-gold); margin: 0; font-size: 0.9rem; }
+.tb-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.tb-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 32px; align-items: start; }
+.tb-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--dt-hair-2); }
+.tb-filters { display: flex; gap: 4px; padding: 3px; border-radius: 999px; border: 1px solid var(--dt-hair-2); }
+.tb-filters button { min-height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--dt-paper-2); font: 500 0.85rem var(--dt-display); cursor: pointer; }
+.tb-filters button[aria-pressed='true'] { background: var(--dt-paper); color: var(--dt-ink-1); }
+.tb-filters button:focus-visible { outline: 2px solid var(--dt-gold); outline-offset: 2px; }
+.tb-empty { margin: 0; padding: 48px 0; color: var(--dt-muted); text-align: center; border-bottom: 1px solid var(--dt-hair-2); }
+
+.tb-list { list-style: none; margin: 0; padding: 0; }
+.tb-ticket { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 18px; padding: 20px 0; border-bottom: 1px solid var(--dt-hair-2); position: relative; }
+.tb-ticket.is-fresh::before { content: ''; position: absolute; left: -14px; top: 20px; bottom: 20px; width: 2px; background: var(--dt-red); }
+.tb-ticket.s-hecho h3, .tb-ticket.s-descartado h3 { color: var(--dt-paper-2); }
+.tb-ticket.s-descartado { opacity: 0.6; }
+html[data-dt-effects='on'] .tb-ticket { animation: tb-rise 380ms cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 35ms); }
+@keyframes tb-rise { from { opacity: 0; transform: translateY(8px); } }
+
+.tb-vote { display: grid; justify-items: center; align-content: center; gap: 2px; width: 56px; height: 64px; border-radius: 14px; border: 1px solid var(--dt-hair-2); background: var(--dt-ink-2); color: var(--dt-paper); cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease; }
+.tb-vote svg { width: 14px; height: 14px; fill: currentColor; }
+.tb-vote span { font-size: 1.15rem; line-height: 1; }
+.tb-vote:hover:not(:disabled) { border-color: var(--dt-paper-2); transform: translateY(-1px); }
+.tb-vote.is-on { background: var(--dt-paper); color: var(--dt-ink-1); border-color: var(--dt-paper); }
+.tb-vote:disabled { cursor: default; color: var(--dt-muted); }
+.tb-vote:focus-visible { outline: 2px solid var(--dt-gold); outline-offset: 2px; }
+
+.tb-t-body { min-width: 0; display: grid; gap: 6px; align-content: start; }
+.tb-t-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 0; font: 500 0.7rem/1 var(--dt-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dt-muted); }
+.tb-n { color: var(--dt-paper-2); font-size: 0.85rem; letter-spacing: 0.04em; }
+.tb-cat, .tb-status, .tb-mine { padding: 4px 8px; border-radius: 999px; border: 1px solid var(--dt-hair-2); color: var(--dt-paper-2); }
+.tb-cat.c-error { border-color: rgba(255, 56, 50, 0.5); color: #ff8a84; }
+.tb-status.s-en-curso { border-color: var(--dt-paper-2); color: var(--dt-paper); }
+.tb-status.s-hecho { border-color: rgba(233, 185, 73, 0.6); color: var(--dt-gold); }
+.tb-mine { background: var(--dt-ink-3); }
+.tb-date { margin-left: auto; }
+.tb-t-body h3 { margin: 2px 0 0; font-size: 1.15rem; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.tb-t-text { margin: 0; color: var(--dt-paper-2); font-size: 0.94rem; white-space: pre-line; overflow-wrap: anywhere; }
+.tb-reply { margin-top: 6px; padding: 12px 14px; border-left: 2px solid var(--dt-gold); background: var(--dt-ink-2); border-radius: 0 10px 10px 0; }
+.tb-reply p:last-child { margin: 4px 0 0; color: var(--dt-paper); font-size: 0.92rem; white-space: pre-line; }
+.tb-link { justify-self: start; padding: 0; border: 0; background: none; color: var(--dt-muted); font: inherit; font-size: 0.84rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.tb-link:hover { color: var(--dt-paper); }
+
+.tb-side { display: grid; gap: 16px; position: sticky; top: calc(var(--dt-nav-height, 72px) + 16px); }
+.tb-card { display: grid; gap: 12px; padding: 22px; border-radius: var(--dt-r-lg, 24px); background: var(--dt-ink-2); border: 1px solid var(--dt-hair-2); }
+.tb-card h2 { margin: 0; font-size: 1.35rem; letter-spacing: -0.02em; }
+.tb-card > p:not(.tb-mono):not(.tb-ok):not(.tb-err):not(.tb-note) { margin: 0; color: var(--dt-paper-2); font-size: 0.93rem; }
+.tb-form { background: var(--dt-paper); color: var(--dt-ink-1); border-color: transparent; }
+.tb-form .tb-mono { color: #5b5a55; }
+.tb-form h2 { color: var(--dt-ink-1); }
+.tb-form .tb-err { color: #b3201b; }
+.tb-form .tb-ok { color: #6e5310; }
+.tb-form .tb-note { color: #5b5a55; }
+.tb-cats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; padding: 0; border: 0; }
+.tb-cats label { position: relative; display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(15, 15, 14, 0.16); cursor: pointer; transition: border-color 160ms ease, background 160ms ease; }
+.tb-cats input { position: absolute; opacity: 0; pointer-events: none; }
+.tb-cats b { font-size: 0.9rem; }
+.tb-cats small { font-size: 0.74rem; color: #5b5a55; line-height: 1.3; }
+.tb-cats label.is-on { border-color: var(--dt-ink-1); background: #e7e5df; box-shadow: inset 0 0 0 1px var(--dt-ink-1); }
+.tb-cats label:has(input:focus-visible) { outline: 2px solid var(--dt-red); outline-offset: 2px; }
+.tb-field { display: grid; gap: 6px; }
+.tb-field span { font: 500 0.7rem/1 var(--dt-mono); letter-spacing: 0.12em; text-transform: uppercase; color: #5b5a55; }
+.tb-field input, .tb-field textarea { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 10px; border: 1px solid rgba(15, 15, 14, 0.22); background: #fbfaf8; color: var(--dt-ink-1); font: 400 0.95rem/1.45 var(--dt-display); resize: vertical; }
+.tb-field input:focus, .tb-field textarea:focus { outline: 2px solid var(--dt-ink-1); outline-offset: 0; border-color: transparent; }
+.tb-field small { justify-self: end; font: 500 0.7rem var(--dt-mono); color: #6b6a64; }
+.tb-form .btn.primary { justify-self: stretch; }
+.tb-rules { margin: 0; padding: 0 4px 0 20px; color: var(--dt-muted); font-size: 0.84rem; display: grid; gap: 6px; }
+
+@media (max-width: 980px) {
+  .tb-grid { grid-template-columns: minmax(0, 1fr); }
+  .tb-side { position: static; order: -1; }
+}
+@media (max-width: 560px) {
+  .tb-ticket { grid-template-columns: 46px minmax(0, 1fr); gap: 12px; }
+  .tb-vote { width: 46px; height: 56px; }
+  .tb-cats { grid-template-columns: 1fr; }
+  .tb-date { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .tb-ticket { animation: none !important; } .tb-vote { transition: none; } }
+.tb-page a.btn { text-decoration: none; }
