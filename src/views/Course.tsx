@@ -1,6 +1,6 @@
 // /curso — Ruta del curso como camino vertical: cada Lektion abre con un banner y sus pasos son bloques 3D
 // unidos por una línea gris que se enciende en rojo neón al completar. Crece hacia abajo: escala a cualquier nº de clases.
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent as RMouseEvent } from 'react';
 import { COURSE, STEP_META, nextStep, overallProgress, unitProgress, unitStatus, type CourseStep, type CourseUnit } from '../course.ts';
 import { TOPICS } from '../../shared/rules.ts';
 import { followLearningLink } from '../components/LearningNav.tsx';
@@ -9,6 +9,10 @@ import { useCourseProgress } from '../brand/progress.ts';
 import { KlausFigure } from '../klaus/KlausFigure.tsx';
 import { useKlausSkin } from '../klaus/skin-client.ts';
 import '../course-path.css';
+import { PlusOffer } from '../components/PlusOffer.tsx';
+import { freeStatus, lektionState, type FreeStatus } from '../free-client.ts';
+import { cachedAlias } from '../play-client.ts';
+import { navigate } from '../util.ts';
 
 const STATUS_LABEL = { done: 'Completada', current: 'Ahora', started: 'Empezada', todo: 'Pendiente' } as const;
 const W = 420;          // ancho lógico del camino
@@ -41,6 +45,18 @@ export function Course() {
   const next = nextStep(done);
   const overall = overallProgress(done);
   const [sel, setSel] = useState<string | null>(() => next?.step.id ?? null);
+  // Plan Free: 2 Lektionen nuevas al día (lo decide el servidor al servir las diapositivas). Aquí solo se avisa antes.
+  const [free, setFree] = useState<FreeStatus | null>(null);
+  const [offer, setOffer] = useState(false);
+  const refreshFree = () => { void freeStatus().then(setFree).catch(() => setFree(null)); };
+  useEffect(() => { refreshFree(); addEventListener('focus', refreshFree); return () => removeEventListener('focus', refreshFree); }, []);
+  /** Clic en una diapositiva del curso: sin cuenta → registro; sin cupo → pestaña de Plus; si no, se abre (y se refresca el cupo). */
+  const gate = (unitN: number) => (e: RMouseEvent<HTMLAnchorElement>) => {
+    const s = lektionState(free, unitN);
+    if (s === 'account') { e.preventDefault(); navigate('/registro?volver=/curso'); return; }
+    if (s === 'blocked') { e.preventDefault(); setOffer(true); return; }
+    if (s === 'new') setTimeout(refreshFree, 800);
+  };
   const focusUnit = COURSE.find((u) => u.steps.some((s) => s.id === sel)) ?? next?.unit ?? COURSE[0];
   const root = useRef<HTMLDivElement>(null);
   // Al marcar hecho el paso abierto, se abre solo el siguiente recomendado.
@@ -80,7 +96,7 @@ export function Course() {
             <PathLines done={done} />
             {PATH.nodes.map((n) => n.kind === 'banner'
               ? <Banner key={n.unit.id} unit={n.unit} y={n.y} done={done} />
-              : <Tile key={n.step.id} n={n} done={done} next={next?.step.id} open={sel === n.step.id} onOpen={() => setSel(sel === n.step.id ? null : n.step.id)} onToggle={toggle} />)}
+              : <Tile key={n.step.id} n={n} done={done} next={next?.step.id} open={sel === n.step.id} onOpen={() => setSel(sel === n.step.id ? null : n.step.id)} onToggle={toggle} lek={lektionState(free, n.unit.n)} gate={gate(n.unit.n)} />)}
             {next && <Mascot at={STEPS.find((s) => s.step.id === next.step.id)!} />}
           </div>
         </section>
@@ -97,11 +113,18 @@ export function Course() {
               </div>
             </div>
           </div>
+          {free && free.plan !== 'plus' && free.enabled && (
+            <a className="cp-lib cp-free" href="/plus" onClick={followLearningLink} data-free-lektionen={free.lektionen?.left ?? 'guest'}>
+              <span className="dotnum">{free.plan === null ? '—' : free.lektionen?.left ?? 0}</span>
+              <span><b>{free.plan === null ? 'Crea tu cuenta para abrir las diapositivas' : `Lektionen nuevas hoy: ${free.lektionen?.left ?? 0} de ${free.limits.lektionenPerDay}`}</b>
+                <small>Plan Free · las que ya abriste, siempre. Plus: sin límite.</small></span><i aria-hidden="true">→</i></a>
+          )}
           <UnitCard unit={focusUnit} done={done} />
           <a className="cp-lib cp-klasse" href="/unterricht" onClick={followLearningLink}><span className="dotnum">K</span><span><b>Clase con Klaus</b><small>Lecciones guiadas con explicación y ejercicios</small></span><i aria-hidden="true">→</i></a>
           <a className="cp-lib" href="/biblioteca" onClick={followLearningLink}><span className="dotnum">▤</span><span><b>Biblioteca</b><small>Todas las presentaciones y PDF</small></span><i aria-hidden="true">→</i></a>
         </aside>
       </div>
+      {offer && <div className="po-modal" role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) setOffer(false); }}><PlusOffer reason="diapos" alias={cachedAlias()} onClose={() => setOffer(false)} /></div>}
     </main>
   );
 }
@@ -141,7 +164,10 @@ function Banner({ unit, y, done }: { unit: CourseUnit; y: number; done: Readonly
   );
 }
 
-function Tile({ n, done, next, open, onOpen, onToggle }: { n: Extract<Node, { kind: 'step' }>; done: ReadonlySet<string>; next?: string; open: boolean; onOpen: () => void; onToggle: (id: string, on?: boolean) => void }) {
+function Tile({ n, done, next, open, onOpen, onToggle, lek, gate }: { n: Extract<Node, { kind: 'step' }>; done: ReadonlySet<string>; next?: string; open: boolean; onOpen: () => void; onToggle: (id: string, on?: boolean) => void;
+  lek: ReturnType<typeof lektionState>; gate: (e: RMouseEvent<HTMLAnchorElement>) => void }) {
+  const isSlides = (href: string) => href.startsWith('/presentaciones/');
+  const click = (href: string) => (e: RMouseEvent<HTMLAnchorElement>) => { if (isSlides(href)) { gate(e); if (e.defaultPrevented) return; } followLearningLink(e); };
   const { step, unit } = n;
   const isDone = done.has(step.id), isNext = next === step.id;
   const ext = (x: { external?: boolean }) => (x.external ? { target: '_blank', rel: 'noopener noreferrer' } : {});
@@ -164,9 +190,12 @@ function Tile({ n, done, next, open, onOpen, onToggle }: { n: Extract<Node, { ki
             ? <ul className="cp-goals" aria-label="Ich kann…">{unit.goals.map((g) => <li key={g}>{g}</li>)}</ul>
             : <p>{step.desc}</p>}
           <div className="cp-pop-actions">
-            <a className="dt-btn dt-btn-primary sm" href={step.primary.href} onClick={followLearningLink} {...ext(step.primary)}><span className="dt-btn-label">{step.primary.label} →</span></a>
-            {step.extra.map((x) => <a key={x.href + x.label} className="dt-link" href={x.href} onClick={followLearningLink} {...ext(x)}>{x.label}</a>)}
+            <a className="dt-btn dt-btn-primary sm" href={step.primary.href} onClick={click(step.primary.href)} {...ext(step.primary)} data-slides-state={isSlides(step.primary.href) ? lek : undefined}><span className="dt-btn-label">{isSlides(step.primary.href) && lek === 'blocked' ? 'Plus · sin cupo hoy' : step.primary.label} →</span></a>
+            {step.extra.map((x) => <a key={x.href + x.label} className="dt-link" href={x.href} onClick={click(x.href)} {...ext(x)}>{x.label}</a>)}
           </div>
+          {[step.primary, ...step.extra].some((x) => isSlides(x.href)) && lek !== 'open' && (
+            <p className="cp-mono cp-free-note" data-lek-note={lek}>{lek === 'new' ? 'Plan Free: abrir esta Lektion gasta 1 de tus 2 de hoy.' : lek === 'blocked' ? 'Hoy ya abriste 2 Lektionen nuevas. Mañana, dos más (o Plus).' : 'Crea tu cuenta gratis para abrir las diapositivas.'}</p>
+          )}
           <label className="dt-check" htmlFor={cbId}>
             <input id={cbId} type="checkbox" checked={isDone} onChange={(e) => onToggle(step.id, e.target.checked)} />
             <span className="dt-check-box" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" /></svg></span>

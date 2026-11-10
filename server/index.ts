@@ -2,7 +2,7 @@
 // Arranque: node server/index.ts   (Node ≥ 22.18 ejecuta TypeScript directamente)
 import { createLearning, LearningStore } from './learning.ts';
 import { cloudConfig, restoreFromCloud, startCloudSync } from './cloud-sync.ts';
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { networkInterfaces } from 'node:os';
 import { extname, join, resolve } from 'node:path';
@@ -36,6 +36,7 @@ import { createKlausAi } from './ai/klaus-api.ts';
 import { createTablon, TablonStore } from './tablon.ts';
 import { KlausStore } from './ai/klaus-store.ts';
 import { AiUsage } from './ai/usage.ts';
+import { FreeAccess, lektionOfPresentation } from './free-access.ts';
 import { MockLlm } from './ai/mock-llm.ts';
 import { buildProviders, loadAiConfig } from './ai/providers.ts';
 
@@ -193,7 +194,7 @@ function ctl(room: Room, a: CtlAction): Result {
   }
 }
 
-class LimitError extends Error {}
+class LimitError extends Error { code?: 'plus' | 'account'; constructor(msg: string, code?: 'plus' | 'account') { super(msg); this.code = code; } }
 
 function hello(c: Client, m: Extract<ClientMsg, { t: 'hello' }>) {
   // «session: 'cookie'»: el navegador no conoce su token (cookie HttpOnly); se usa el de la cookie de esta conexión.
@@ -264,6 +265,12 @@ function hello(c: Client, m: Extract<ClientMsg, { t: 'hello' }>) {
         newRoomCode: () => {
           const adm = guard.admitCreate('practice', c.ip, countRooms('practice'));
           if (!adm.ok) throw new LimitError(adm.error);
+          // /practica (sin `game`: los juegos en solitario de /libre no cuentan): plan Free = 2 prácticas nuevas al día.
+          if (m.game === undefined) {
+            const acc = c.studentToken ? accounts.verify(c.studentToken) : undefined;
+            const v = freeAccess.startPractice(acc ? { accountId: acc.id, plan: planOfAccount(acc) } : null, !!c.teacherId);
+            if (!v.ok) throw new LimitError(v.error, v.code);
+          }
           return 'P' + uniqueCode(5);
         },
         // Recuperar historial por código de alumno: intentos fallidos limitados por IP y en global.
@@ -277,7 +284,7 @@ function hello(c: Client, m: Extract<ClientMsg, { t: 'hello' }>) {
         ensureProfile, resumeProfile, freeProfile,
       }, m);
     } catch (e) {
-      if (e instanceof LimitError) return send(c.ws, { t: 'err', msg: e.message, fatal: true });
+      if (e instanceof LimitError) return send(c.ws, { t: 'err', msg: e.message, fatal: true, ...(e.code ? { code: e.code } : {}) });
       throw e;
     }
     if (!r.ok) return send(c.ws, { t: 'err', msg: locked ?? r.error, fatal: true });
@@ -351,6 +358,11 @@ const learning = createLearning({ accounts, log: () => progressHandler.log, bank
 // Klaus AI: sin claves ni KLAUS_ALLOW_PAID=1 todo corre en modo determinista (sin gasto). Ver server/ai/providers.ts.
 const aiConfig = loadAiConfig();
 const aiUsage = new AiUsage(aiConfig, { dataDir: DATA_DIR });
+// Límites del plan Free (diapositivas del curso y /practica). DT_FREE_LIMITS=0 los apaga (solo para pruebas antiguas).
+const freeAccess = new FreeAccess({ dataDir: DATA_DIR, day: madridDay, enabled: process.env.DT_FREE_LIMITS !== '0' });
+const planOfAccount = (a: { id: string; alias: string }) => aiUsage.planOf(a.id, a.alias);
+let presCatalog: { id: string; unit?: number }[] = [];
+try { presCatalog = JSON.parse(readFileSync(join(ROOT, 'public', 'presentaciones', 'catalogo.json'), 'utf8')); } catch { /* sin catálogo: nada que limitar */ }
 const klausAi = createKlausAi({
   accounts, guard, providers: buildProviders(aiConfig, new MockLlm()), usage: aiUsage, store: new KlausStore(DATA_DIR),
   teacherOk: (req) => !!guard.teacherFromRequest(req),
@@ -361,7 +373,7 @@ const tablon = createTablon({
   accounts, store: new TablonStore(DATA_DIR), teacherOk: (req) => !!guard.teacherFromRequest(req),
   hasActivity: (id) => progressHandler.log.events.some((e) => e.profile === id) || klausAi.active(id),
 });
-const forgetAccount = (id: string) => { delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); klausAi.forget(id); tablon.forget(id); };
+const forgetAccount = (id: string) => { delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); klausAi.forget(id); tablon.forget(id); freeAccess.forget(id); };
 playApi.setOnRemoved(forgetAccount);
 const teacherOs = createTeacherOs({
   accounts, guard, log: () => progressHandler.log, bank, data: teacherData, publicDir: join(ROOT, 'public'), onRemoved: forgetAccount, learning: (id) => learning.history(id),
@@ -458,6 +470,25 @@ function serve(req: IncomingMessage, res: ServerResponse) {
   if (url.pathname === '/api/health') {
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ ok: true, rooms: rooms.size, bank: bank.size, teacherAuth: guard.stats() }));
+  }
+  if (url.pathname === '/api/free/status') {
+    const who = identify(accounts, req);
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+    if (who.kind !== 'account') return res.end(JSON.stringify({ plan: null, enabled: freeAccess.enabled, limits: freeAccess.status('', 'free').limits }));
+    return res.end(JSON.stringify(freeAccess.status(who.account.id, planOfAccount(who.account))));
+  }
+  // Diapositivas del curso: plan Free = 2 Lektionen nuevas al día (las ya abiertas, siempre); sin cuenta, no.
+  const lek = lektionOfPresentation(url.pathname, presCatalog);
+  if (lek) {
+    const who = identify(accounts, req);
+    const acc = who.kind === 'account' ? who.account : null;
+    const v = freeAccess.openLektion(acc ? { accountId: acc.id, plan: planOfAccount(acc) } : null, lek, !!guard.teacherFromRequest(req));
+    if (!v.ok) {
+      const to = v.code === 'account' ? `/registro?volver=${encodeURIComponent('/curso')}` : `/plus?motivo=diapos&lektion=${lek}`;
+      res.writeHead(302, { location: to, 'cache-control': 'no-store' });
+      return res.end();
+    }
+    res.setHeader('cache-control', 'no-store');
   }
   if (!existsSync(DIST)) {
     res.writeHead(503, { 'content-type': 'text/plain; charset=utf-8' });

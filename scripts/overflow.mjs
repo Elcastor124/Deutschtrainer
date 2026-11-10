@@ -1,14 +1,16 @@
 // Recorre muchas preguntas de práctica en un móvil de 390 px y avisa si alguna desborda la pantalla.
+import { studentPlus } from '../tests/helpers/plus-browser.mjs';
 import { launch, sleep } from './cdp.mjs';
 const L = await launch({ shots: process.argv[2] ?? 'shots' });
 let bad = 0, seen = 0;
 try {
   const B = await L.newPage('móvil', 390, 844, true);
+  // Practicar exige cuenta (plan Free con límite diario): cuenta de prueba con Plus. Ver docs/test-contract-notes.md.
+  await B.go('/?intro=0'); await studentPlus(B, L.base);
   for (let s = 0; s < 4; s++) {
     await B.go('/practica');
     await B.until(`!!document.querySelector('form .btn.primary.lg')`, 'form');
     await B.eval(`localStorage.removeItem('bc:practice'); true`);
-    await B.type('form input.field', 'Test');
     await B.click('form .btn.primary.lg');
     for (let k = 0; k < 15; k++) {
       await B.until(`['question','reveal','final'].includes(globalThis.__bcNet?.state?.view?.phase)`, 'q');

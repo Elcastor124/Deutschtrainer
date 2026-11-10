@@ -326,4 +326,4 @@ export type ServerMsg =
   | { t: 'welcome'; role: 'teacher' | 'player' | 'practice'; room: string; token: string; pid?: string; profile?: string; profileCode?: string; notice?: string }
   | { t: 'state'; s: RoomView }
   | { t: 'ack'; id: number; ok: boolean; error?: string; retry?: boolean }
-  | { t: 'err'; msg: string; fatal?: boolean };
+  | { t: 'err'; msg: string; fatal?: boolean; /** Límite del plan Free: «plus» = pásate a Plus; «account» = crea tu cuenta. */ code?: 'plus' | 'account' };

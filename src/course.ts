@@ -39,6 +39,8 @@ export interface CourseUnit {
   klaus?: string[];
   workshop?: boolean;
   exam?: boolean;
+  /** Sin paso de Repaso propio (la presentación de repaso pasa a «Ver»). Lektion 1: se pidió quitar esa etapa. */
+  noReviewStep?: boolean;
   steps: CourseStep[];
 }
 
@@ -70,7 +72,7 @@ const SEEDS: UnitSeed[] = [
     summary: 'Saludos, presentarte, números, preguntas personales e idiomas: la base para todo lo demás.',
     goals: ['Saludar y presentarme (Ich heiße…, Ich komme aus…)', 'Contar y decir números y la hora', 'Hacer y responder preguntas personales', 'Conjugar verbos en presente'],
     topics: ['vorstellen', 'praesens', 'alltag'], presentation: 'mission-01', presentationNote: 'Traducción web de la presentación original «DEUTSCHTRAINER · Mission 01» que nos pasaste.',
-    review: { id: 'bruecke-a1', label: 'Brücke A1 (repaso)' }, games: ['jenga', 'jugar'], klaus: ['vor-01', 'praes-01', 'satz-01'] },
+    review: { id: 'bruecke-a1', label: 'Brücke A1 (repaso)' }, games: ['jenga', 'jugar'], klaus: ['vor-01', 'praes-01', 'satz-01'], noReviewStep: true },
   { id: 'bank', title: 'Auf der Bank', de: 'Ich möchte ein Konto eröffnen.', level: 'A2',
     summary: 'Vocabulario del banco, trato formal con «Sie» y diálogos para situaciones reales.',
     goals: ['Usar Sie y las fórmulas de cortesía', 'Pedir algo con möchte / können', 'Entender un diálogo en el banco', 'Recordar el vocabulario con su artículo'],
@@ -116,10 +118,12 @@ function buildSteps(u: UnitSeed): CourseStep[] {
     const pres = u.presentation!;
     // Junto a la presentación: la teoría (para leerla con calma) y la clase de Klaus de ese tema, a un clic.
     const study: StepLink[] = u.klaus?.length ? [{ label: 'Ver la teoría', href: theoryHref(u.id) }, { label: 'Clase con Klaus', href: klausLessonHref(u.klaus[0]) }] : [];
+    const reviewInVer: StepLink[] = u.noReviewStep && u.review ? [{ label: u.review.label, href: presentationHref(u.review.id), external: true }] : [];
     steps.push(mk('ver', u.presentationNote ?? 'Abre la presentación de clase y recorre los ejemplos.', { label: 'Abrir presentación', href: presentationHref(pres), external: true },
-      [...study, ...(u.pdf ? [{ label: 'PDF con soluciones', href: pdfHref(pres), external: true }] : [])]));
+      [...study, ...(u.pdf ? [{ label: 'PDF con soluciones', href: pdfHref(pres), external: true }] : []), ...reviewInVer]));
     steps.push(mk('practicar', 'Preguntas sin tiempo de los temas de esta Lektion.', { label: 'Practicar ahora', href: `/practica${q}` }));
     // Los juegos (BlackCard, Jenga, Boxen) viven en /juegos: la ruta se centra en presentación, práctica y repaso.
+    if (u.noReviewStep) return steps.map((s, i) => ({ ...s, n: i + 1 }));
     const extra: StepLink[] = [];
     if (u.review) extra.push({ label: u.review.label, href: presentationHref(u.review.id), external: true });
     if (u.workshop) extra.push({ label: 'Taller de escritura', href: '/tema/1/taller' });

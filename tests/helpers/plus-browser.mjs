@@ -30,3 +30,12 @@ export async function setPlan(base, match, plan = 'plus') {
 }
 /** Plus para todas las cuentas que aún no lo tienen. */
 export const plusAll = (base) => setPlan(base, (s) => s.plan !== 'plus');
+
+/** Practicar exige cuenta (plan Free: 2 al día). Crea una cuenta en la página `P` (cookie real), la deja con sesión y le da Plus. */
+export async function studentPlus(P, base, alias = 'Qa' + Date.now().toString(36).slice(-6)) {
+  const st = await P.eval(`fetch('/api/account/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({alias:'${alias}',password:'zorro-azul-mesa-72-lluvia'})}).then(r=>r.status)`);
+  if (st !== 200) throw new Error(`alta de ${alias} (${st})`);
+  await P.eval(`localStorage.setItem('dt:student-session','cookie'); localStorage.setItem('dt:student-alias','${alias}'); true`);
+  await setPlan(base, alias);
+  return alias;
+}

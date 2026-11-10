@@ -18,7 +18,7 @@ let server: ChildProcess;
 let stderr = '';
 
 async function start() {
-  server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA }, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
+  server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA, DT_FREE_LIMITS: '0' }, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
   server.stderr?.on('data', (d) => { stderr += String(d); });
   for (let i = 0; i < 80; i++) { if (await alive()) return; await sleep(150); }
   throw new Error('el servidor no arranca: ' + stderr);

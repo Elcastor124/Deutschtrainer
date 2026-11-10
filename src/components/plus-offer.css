@@ -1,0 +1,37 @@
+/* Tarjeta «Solicita tu suscripción Plus». Dorado = solo Plus. Sin gradientes ni brillos. */
+.po { position: relative; max-width: 560px; padding: 26px 26px 22px; border-radius: 22px; border: 1px solid rgba(233, 185, 73, .45); background: #121212; color: var(--dt-paper, #F2F1EE); }
+.po-tag { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; font: 600 .74rem/1 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; color: #E9B949; }
+.po-dot { width: 8px; height: 8px; border-radius: 50%; background: #E9B949; }
+.po h2 { margin: 0 0 8px; font: 700 clamp(1.4rem, 2.4vw, 1.9rem)/1.15 'Space Grotesk', system-ui, sans-serif; letter-spacing: -.01em; }
+.po-lead { margin: 0 0 12px; color: rgba(242, 241, 238, .78); }
+.po-phone { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; padding: 14px 18px; border-radius: 16px; background: var(--dt-paper, #F2F1EE); color: #0b0b0b; text-decoration: none; transition: transform .18s ease, box-shadow .18s ease; }
+.po-phone span { font-size: clamp(1.35rem, 3vw, 1.75rem); letter-spacing: .02em; }
+.po-phone small { font: 600 .82rem/1 'JetBrains Mono', ui-monospace, monospace; color: #FF3832; }
+.po-phone:hover { transform: translateY(-1px); box-shadow: 0 0 0 4px rgba(233, 185, 73, .22); }
+.po-phone:focus-visible { outline: 2px solid #E9B949; outline-offset: 3px; }
+.po-list { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 8px; }
+.po-list li { padding-left: 16px; position: relative; color: rgba(242, 241, 238, .82); line-height: 1.45; }
+.po-list li::before { content: ''; position: absolute; left: 0; top: .6em; width: 6px; height: 6px; border-radius: 50%; background: #E9B949; }
+.po-list b { display: block; color: var(--dt-paper, #F2F1EE); }
+.po-how { margin: 14px 0 0; font-size: .92rem; color: rgba(242, 241, 238, .64); }
+.po-act { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+.po-act a.btn, .po-act a.btn:hover { text-decoration: none; }
+.po-compact { padding: 20px; }
+.po-compact h2 { font-size: 1.3rem; }
+
+/* Página /plus */
+.po-page { display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr) minmax(0, 560px); align-items: start; }
+.po-page-copy h1 { margin: 6px 0 12px; }
+.po-page-copy p { color: rgba(242, 241, 238, .72); max-width: 46ch; }
+.po-table { margin-top: 22px; width: 100%; max-width: 520px; border-collapse: collapse; font-size: .95rem; }
+.po-table th, .po-table td { padding: 10px 8px; border-bottom: 1px solid rgba(242, 241, 238, .1); text-align: left; }
+.po-table th { font: 600 .72rem/1 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; color: rgba(242, 241, 238, .55); }
+.po-table td.gold { color: #E9B949; }
+@media (max-width: 960px) { .po-page { grid-template-columns: 1fr; } }
+
+/* Pestaña flotante (diapositivas/práctica bloqueadas) */
+.po-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 18px; background: rgba(0, 0, 0, .66); }
+.po-modal .po { width: min(560px, 100%); max-height: calc(100vh - 36px); overflow: auto; box-shadow: 0 30px 80px rgba(0, 0, 0, .55); }
+@media (prefers-reduced-motion: no-preference) { .po-modal .po { animation: po-in .32s cubic-bezier(.2, .8, .2, 1); } }
+[data-dt-effects='off'] .po-modal .po { animation: none; }
+@keyframes po-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }

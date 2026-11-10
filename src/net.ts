@@ -19,6 +19,8 @@ export interface NetState {
   pid?: string;
   /** Aviso no bloqueante del servidor (p. ej. «tu práctica anterior ya no estaba: empezamos una nueva»). */
   notice?: string;
+  /** Motivo de un error de límite del plan Free (ver PlusOffer). */
+  errCode?: 'plus' | 'account';
 }
 
 export class Net {
@@ -90,7 +92,7 @@ export class Net {
       this.pending.get(m.id)?.(m);
       this.pending.delete(m.id);
     } else if (m.t === 'err') {
-      this.set({ error: m.msg, fatal: !!m.fatal });
+      this.set({ error: m.msg, fatal: !!m.fatal, errCode: m.code });
       if (m.fatal) this.close();
     }
   }

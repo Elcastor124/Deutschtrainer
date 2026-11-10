@@ -1,6 +1,7 @@
 // Real browser regression. Test-only bank access stays in Node, never in the page bundle.
 // Run after npm run build: node --disable-warning=ExperimentalWarning tests/klaus-browser.mjs
 import assert from 'node:assert/strict';
+import { studentPlus } from './helpers/plus-browser.mjs';
 import { launch, sleep } from '../scripts/cdp.mjs';
 import { loadBank } from '../server/bank/index.ts';
 
@@ -48,10 +49,11 @@ async function answer(B, good = true) {
 }
 try {
   const B = await L.newPage('Klaus real practice', 1366, 900);
+  // Practicar exige cuenta (plan Free con límite diario): cuenta de prueba con Plus. Ver docs/test-contract-notes.md.
+  await B.go('/?intro=0'); await studentPlus(B, L.base);
   await B.go('/practica?temas=dativ');
   await B.until(`!!document.querySelector('form .btn.primary.lg')`, 'practice form');
   check(await B.eval(`${stage} === 'waving' && !!document.querySelector('[data-klaus-engine=canvas]')`), 'setup shows original Klaus with four-bean paw');
-  await B.type('form input.field', 'KlausQA');
   await B.click('form .btn.primary.lg');
   await B.until(`${phase} === 'question'`, 'real practice');
   check(await B.eval(`${stage} === 'thinking'`), 'actual question puts Klaus in thinking mode');
@@ -79,6 +81,8 @@ try {
       await B.until(`document.querySelector('[data-klaus-panel]').dataset.klausMuted === 'false'`, 'keyboard toggles sound');
       check(await B.eval(`${phase} === 'reveal'`), 'Enter on Klaus controls does not advance the question');
       check(await B.eval(`document.querySelector('[data-klaus-panel]').dataset.klausMuted === 'false' && globalThis.__klausAudio?.state === 'running'`), 'sound enables only after an explicit user gesture');
+      // Con cuenta (practicar ya la exige) aparece el aviso de logro «primera respuesta», que tapa unos segundos esta esquina.
+      await B.until(`!document.querySelector('[data-achievement-toast]')`, 'achievement toast gone', 15000);
       await B.click('[data-klaus-control="hide"]');
       await B.until(`${stage} === 'hidden'`, 'hide');
       await reloadAndResume(B, `reload@${n}`);
@@ -121,10 +125,10 @@ try {
   check(B.errors().length === 0, `desktop JS errors: ${B.errors().length}`);
   for (const width of [320, 390]) {
     const M = await L.newPage(`mobile ${width}`, width, 844, true);
+    await M.go('/?intro=0'); await studentPlus(M, L.base);
     await M.go('/practica?temas=dativ');
-    await M.until(`!!document.querySelector('form input.field')`, 'mobile setup');
+    await M.until(`!!document.querySelector('form .btn.primary.lg') && !document.querySelector('form .btn.primary.lg').disabled`, 'mobile setup');
     check(await M.eval(`document.documentElement.scrollWidth <= innerWidth + 1`), `${width}px setup has no horizontal overflow`);
-    await M.type('form input.field', 'MobileQA');
     await M.click('form .btn.primary.lg');
     await M.until(`${phase} === 'question'`, 'mobile practice');
     check(await M.eval(`document.documentElement.scrollWidth <= innerWidth + 1`), `${width}px active practice has no horizontal overflow`);

@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { studentPlus } from './helpers/plus-browser.mjs';
 import { launch, sleep } from '../scripts/cdp.mjs';
 import { loadBank } from '../server/bank/index.ts';
 
@@ -52,9 +53,10 @@ try {
     try {
       const B = await L.newPage(`Klaus hide ${mode}`, 1366, 900);
       await L.send('Page.addScriptToEvaluateOnNewDocument', { source: `globalThis.__toneCount=0; const NativeAudio=globalThis.AudioContext; globalThis.AudioContext=class extends NativeAudio { createOscillator(){ globalThis.__toneCount++; return super.createOscillator(); } };` }, B.sid);
+      // Practicar exige cuenta (plan Free con límite diario): cuenta de prueba con Plus. Ver docs/test-contract-notes.md.
+      await B.go('/?intro=0'); await studentPlus(B, L.base);
       await B.go('/practica?temas=dativ');
-      await B.until(`!!document.querySelector('form[data-practice-form] input.field')`, 'practice setup');
-      await B.type('form[data-practice-form] input.field', `HiddenQA-${mode}`);
+      await B.until(`!!document.querySelector('form[data-practice-form] .btn.primary.lg:not(:disabled)')`, 'practice setup');
       await activate(B, 'form[data-practice-form] .btn.primary.lg');
       await B.until(`${phase} === 'question'`, 'real practice');
       await activate(B, '[data-klaus-control="mute"]');

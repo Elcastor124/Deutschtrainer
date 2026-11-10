@@ -1,5 +1,6 @@
 // Real isolated Edge/CDP navigation QA. npm run build && node scripts/page-transition-ui.mjs
 import assert from 'node:assert/strict';
+import { studentPlus } from '../tests/helpers/plus-browser.mjs';
 import { launch, sleep } from './cdp.mjs';
 const env = await launch({ shots: 'shots/page-transitions' });
 const results = [];
@@ -25,6 +26,8 @@ async function healthy(p, label) {
 try {
   const p = await env.newPage('navigation', 1366, 850);
   await p.go('/?intro=0');
+  // Practicar exige cuenta (plan Free con límite diario): cuenta de prueba con Plus.
+  await studentPlus(p, env.base); await p.go('/?intro=0');
   await p.until(`!!document.querySelector('.dt-nav-brand')`, 'home');
   await instrument(p);
   const identity = await p.eval('window.__identity');
@@ -53,13 +56,13 @@ try {
   assert.equal(await p.eval(`document.querySelector('#contenido').dataset.pageDirection`), 'forward');
   await sleep(500);
   // Query updates and answer snapshots must not remount practice or replay route motion.
-  await p.type('form[data-practice-form] input.field', 'Navigation QA');
-  await p.eval(`window.__input = document.querySelector('form[data-practice-form] input.field'); window.__input.focus()`);
+  // Antes se escribía en el campo «Tu nombre» (ya no existe: practicar exige cuenta). Mismo contrato con el interruptor de fallos.
+  await p.eval(`window.__input = document.querySelector('form[data-practice-form] .pr-focus input'); window.__input.click(); window.__input.focus(); true`);
   const beforeQuery = await p.eval(count);
   await p.eval(route('/practica?temas=dativ&qa=query'));
   await sleep(100);
   assert.equal(await p.eval(count), beforeQuery, 'query-only update does not animate');
-  assert.equal(await p.eval(`document.querySelector('form[data-practice-form] input.field') === window.__input && window.__input.value === 'Navigation QA' && document.activeElement === window.__input`), true, 'query preserves field DOM, value and focus');
+  assert.equal(await p.eval(`document.querySelector('form[data-practice-form] .pr-focus input') === window.__input && window.__input.checked === true && document.activeElement === window.__input`), true, 'query preserves field DOM, value and focus');
   await p.click('form[data-practice-form] .btn.primary.lg');
   await p.until(`globalThis.__bcNet?.state?.view?.phase === 'question'`, 'real practice question', 12000);
   await p.eval(`window.__net = globalThis.__bcNet`);

@@ -25,7 +25,7 @@ async function start(env: Record<string, string> = {}, dir?: string): Promise<Sr
   const d = dir ?? mkdtempSync(join(tmpdir(), 'bc-free-')); if (!dir) dirs.push(d);
   const port = await freePort();
   let err = '';
-  const proc = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, env: { ...process.env, PORT: String(port), DATA_DIR: d, ...env }, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
+  const proc = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/index.ts'], { cwd: ROOT, env: { ...process.env, PORT: String(port), DATA_DIR: d, DT_FREE_LIMITS: '0', ...env }, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
   proc.stderr?.on('data', (x) => { err += String(x); });
   const srv: Srv = { port, dir: d, proc, url: (p) => `http://127.0.0.1:${port}${p}`, async stop() { await stopServerProcess(proc); } };
   running.push(srv);

@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
+import { studentPlus } from '../tests/helpers/plus-browser.mjs';
 import { launch, sleep } from './cdp.mjs';
 const b = await launch({ shots: 'shots/gamefeel-header' });
 try {
   const p = await b.newPage('header', 1366, 768);
+  // Practicar exige cuenta (plan Free con límite diario): cuenta de prueba con Plus. Ver docs/test-contract-notes.md.
+  await p.go('/?intro=0'); await studentPlus(p, b.base);
   await p.go('/practica');
-  await p.until('!!document.querySelector("form[data-practice-form] input.field")','setup');
-  await p.type('form[data-practice-form] input.field', 'Header QA');
+  await p.until('!!document.querySelector("form[data-practice-form] .btn.primary.lg:not(:disabled)")','setup');
   await p.click('form[data-practice-form] .btn.primary.lg');
   await p.until('!!document.querySelector(".qpanel")','real question');
   await p.eval('scrollTo({top:150,behavior:"instant"})');

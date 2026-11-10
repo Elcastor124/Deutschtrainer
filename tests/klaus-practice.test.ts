@@ -9,5 +9,6 @@ it('includes the original waving Klaus in the real practice setup without replac
   // La pata y las 52 skins las dibuja ahora el motor Canvas (el SVG con la pata de cuatro almohadillas queda de respaldo, probado en klaus-figure.test.ts).
   expect(html).toContain('data-klaus-engine="canvas"');
   expect(html).toContain('Empezar práctica');
-  expect(html).toContain('Tu nombre');
+  // Antes «Tu nombre»: practicar sin cuenta ya no existe (plan Free = cuenta gratis). Ver docs/test-contract-notes.md.
+  expect(html).toContain('Para practicar necesitas una cuenta');
 });

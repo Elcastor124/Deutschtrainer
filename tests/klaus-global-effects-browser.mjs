@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadBank } from '../server/bank/index.ts';
+import { studentPlus } from './helpers/plus-browser.mjs';
 import { launch, sleep } from '../scripts/cdp.mjs';
 const bank = loadBank();
 function answerFor(publicQ) {
@@ -27,8 +28,9 @@ async function answer(page){const v=await page.state();const a=answerFor(v.q);as
 try {
   for(const mode of ['during','paused']){
     const page=await browser.newPage(mode,1366,900);
-    await page.go('/practica?temas=dativ');await page.until('!!document.querySelector("form[data-practice-form] input.field")','setup');
-    await page.type('form[data-practice-form] input.field',`Global-${mode}`);await activate(page,'form[data-practice-form] .btn.primary.lg');
+    // Practicar exige cuenta (plan Free con límite diario): cuenta de prueba con Plus. Ver docs/test-contract-notes.md.
+    await page.go('/?intro=0');await studentPlus(page,browser.base);
+    await page.go('/practica?temas=dativ');await page.until('!!document.querySelector("form[data-practice-form] .btn.primary.lg:not(:disabled)")','setup');await activate(page,'form[data-practice-form] .btn.primary.lg');
     await page.until('globalThis.__bcNet?.state.view?.phase==="question"','practice');
     if(mode==='paused')await activate(page,'[data-effects-toggle]');
     await answer(page);

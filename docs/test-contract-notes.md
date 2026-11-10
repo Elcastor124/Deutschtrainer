@@ -92,3 +92,26 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
 - Modo voz (Redet): `src/klaus/voice.ts` usa SpeechRecognition del navegador (de-DE) + la voz alemana del navegador.
   `tests/redet-voice-browser.mjs` lo prueba con un reconocedor simulado (Edge headless no tiene micrófono): prueba el
   bucle de la app, NO el reconocimiento real de voz.
+
+## Plan Free: límites de curso y práctica, pestaña Plus y Lektion 1 sin Repaso
+
+- Regla del producto: con plan Free, cada día 2 Lektionen NUEVAS (abrir sus diapositivas; las ya abiertas se releen
+  siempre) y 2 prácticas nuevas en /practica (reanudar no cuenta; los juegos de /libre no cuentan). Sin cuenta, ni
+  diapositivas ni práctica. Plus y profesor: sin límite. Lo decide el servidor (`server/free-access.ts`,
+  `DATA_DIR/free-access.json`); las diapositivas bloqueadas redirigen a `/registro` o a `/plus?motivo=diapos`.
+- Pestaña «Solicita tu suscripción Plus» (`src/components/PlusOffer.tsx`) con el número +34 611 778 791 (WhatsApp/llamar)
+  en Redet, Schreibt, Unterricht, el curso, la práctica y la página `/plus`.
+- Lektion 1 (Brücke A1) ya no tiene etapa de Repaso (`noReviewStep`): su presentación de repaso pasa a «Ver».
+- Expectativas obsoletas actualizadas:
+  - `tests/course.test.ts`: Lektion 1 = Ver → Practicar (antes Ver → Practicar → Repaso); progreso 1/2 (antes 1/3).
+  - `src/hub.test.ts` y `tests/klaus-practice.test.ts`: /practica ya no tiene campo «Tu nombre» (practicar exige cuenta).
+  - `tests/freeplay-server.test.ts`, `tests/hardening.test.ts`, `tests/server-ws.test.ts` arrancan con
+    `DT_FREE_LIMITS=0`: prueban el /practica antiguo por dispositivo, códigos de alumno y reconexión, no el plan Free.
+    Los límites se prueban en `tests/teacher-os.test.ts` («plan Free fuera de Klaus…») y `tests/plus-offer-browser.mjs`.
+  - Pruebas de navegador que practicaban escribiendo un nombre (`klaus-browser`, `klaus-embedded-browser`,
+    `klaus-global-effects-browser`, `klaus-hidden-browser`, `scripts/page-transition-ui`, `gamefeel-header-ui`,
+    `practice-ui`, `progress-ui`, `overflow`): ahora crean una cuenta de prueba con Plus
+    (`studentPlus` en `tests/helpers/plus-browser.mjs`, por Teacher OS). `page-transition-ui` comprueba la conservación
+    de DOM/foco con el interruptor «Repasar sobre todo mis fallos» en vez del campo de nombre; `progress-ui` lee los
+    puntos de `/api/account/progress` (con cuenta, el progreso es de la cuenta); `klaus-browser` espera a que se vaya
+    el aviso de logro «primera respuesta» (solo sale con cuenta) antes de pulsar «Ocultar a Klaus».

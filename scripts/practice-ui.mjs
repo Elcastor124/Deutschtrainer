@@ -3,6 +3,7 @@
 // práctica nueva con aviso (sin pantalla muerta), sin errores de JavaScript, y /jugar + /jenga con ?temas=.
 // Uso: node scripts/practice-ui.mjs            (arranca su propio servidor)
 //      BASE=https://… node scripts/practice-ui.mjs   (contra un despliegue; no prueba /jenga con alumnos si no hay)
+import { studentPlus } from '../tests/helpers/plus-browser.mjs';
 import { launch, sleep } from './cdp.mjs';
 
 const L0 = await launch({ shots: 'shots/practice-ui', ...(process.env.BASE ? { base: process.env.BASE } : {}) });
@@ -57,13 +58,14 @@ async function playSession(B, { reloadAt = -1, label }) {
 try {
   console.log('\nPráctica: variedad entre sesiones, recarga y final');
   const B = await L.newPage('alumno', 1366, 768);
+  // Practicar exige cuenta (plan Free con límite diario): cuenta de prueba con Plus. Ver docs/test-contract-notes.md.
+  await B.go('/?intro=0'); await studentPlus(B, L.base);
   const sessions = [];
   for (let s = 0; s < 3; s++) {
     await B.go(s === 0 ? '/practica?tema=1&temas=dativ' : '/practica?tema=1&temas=dativ');
     await B.until(`!!document.querySelector('form .btn.primary.lg')`, 'formulario');
     if (s === 0) {
       ok(await B.eval(`[...document.querySelectorAll('.tp-tile[aria-pressed=true] b')].map(b=>b.textContent).join()==='Dativ'`), '?temas=dativ preselecciona Dativ (tarjeta marcada)');
-      await B.type('form input.field', 'Probe');
       await B.click('[role=radiogroup][aria-label="Preguntas por sesión"] [role=radio]', 0); // 10 preguntas (el primer radiogroup de la página es ahora el Nivel)
     }
     await B.click('form .btn.primary.lg');
@@ -90,6 +92,7 @@ try {
 
   console.log('\nPráctica guardada que ya no existe en el servidor (reinicio en Render)');
   const C = await L.newPage('alumno2', 390, 844, true);
+  await C.go('/?intro=0'); await studentPlus(C, L.base);
   await C.go('/practica?tema=1');
   await C.until(`!!document.querySelector('form')`, 'formulario');
   await C.eval(`localStorage.setItem('bc:name','Bea'); localStorage.setItem('bc:practice', JSON.stringify({room:'PZZZZZ', token:'gone', opts:{topics:['akkusativ'],focus:false,size:10}})); true`);

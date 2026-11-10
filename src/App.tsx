@@ -33,6 +33,7 @@ import { Klasse } from './views/Klasse.tsx';
 import { Redet } from './views/Redet.tsx';
 import { Tablon } from './views/Tablon.tsx';
 import { Teoria } from './views/Teoria.tsx';
+import { PlusPage } from './views/PlusPage.tsx';
 import { GameSetup } from './views/GameSetup.tsx';
 import { Teacher } from './views/Teacher.tsx';
 import { LearningNav } from './components/LearningNav.tsx';
@@ -72,6 +73,7 @@ export function App() {
   else if (/^\/unterricht\/?$/.test(path)) screen = <Klasse />;
   else if (/^\/hablar\/?$/.test(path)) screen = <Redet />;
   else if (/^\/tablon\/?$/.test(path)) screen = <Tablon />;
+  else if (/^\/plus\/?$/.test(path)) screen = <PlusPage />;
   else if (/^\/teoria\/[\w-]+\/?$/.test(path)) screen = <Teoria key={path} unitId={path.split('/')[2]} />;
   else if (/^\/mision\/?$/.test(path)) screen = <Mission />;
   else if (/^\/libre\/jugar\/?$/.test(path)) screen = <FreeGame key={search} />;

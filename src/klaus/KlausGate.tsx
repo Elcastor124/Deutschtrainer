@@ -5,6 +5,8 @@ import type { CSSProperties, MouseEvent } from 'react';
 import { navigate } from '../util.ts';
 import { KlausFigure } from './KlausFigure.tsx';
 import type { KlausSkinDef } from '../../shared/klaus-skins.ts';
+import { PlusOffer } from '../components/PlusOffer.tsx';
+import { cachedAlias } from '../play-client.ts';
 import './klaus-gate.css';
 
 export type GateKind = 'hablar' | 'escribir' | 'clase';
@@ -15,7 +17,7 @@ const d = (i: number) => ({ '--d': i } as CSSProperties);
 /** Texto de la pantalla «Klaus es Plus» (con sesión, plan Free). El plan lo asigna el profesor en Teacher OS. */
 export const PLUS_GATE = {
   title: 'Klaus es parte de Plus.',
-  lead: 'Schreibt, Redet y Unterricht mit Klaus son del plan Plus. Pídele a tu profesor que lo active en tu cuenta; mientras tanto, la teoría, los ejercicios, los exámenes y los juegos siguen abiertos.',
+  lead: 'Schreibt, Redet y Unterricht mit Klaus son del plan Plus. Mientras tanto, la teoría, los exámenes y los juegos siguen abiertos.',
 };
 
 export function KlausGate({ kind, className, title, lead, perks, back, look, plus = false }: {
@@ -32,10 +34,7 @@ export function KlausGate({ kind, className, title, lead, perks, back, look, plu
           {perks.map(([k, v], i) => <li key={k} style={d(i)}><span className="kg-n">{String(i + 1).padStart(2, '0')}</span><span><b>{k}</b>{v}</span></li>)}
         </ol>
         {plus ? (
-          <p className="kg-cta">
-            <a className="btn primary" href="/curso" onClick={go('/curso')}>Seguir con el curso</a>
-            <span className="kg-free">Plus · lo activa tu profesor</span>
-          </p>
+          <PlusOffer reason={kind} alias={cachedAlias()} compact />
         ) : (
           <p className="kg-cta">
             <a className="btn primary" href={`/entrar?volver=${back}`} onClick={go(`/entrar?volver=${back}`)}>Iniciar sesión</a>

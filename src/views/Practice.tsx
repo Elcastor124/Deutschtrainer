@@ -17,6 +17,8 @@ import { Segmented, type SegOption } from '../components/Segmented.tsx';
 import { getCatalog, type Catalog } from '../play-client.ts';
 import type { Level } from '../../shared/play.ts';
 import '../practice-setup.css';
+import { PlusOffer } from '../components/PlusOffer.tsx';
+import { freeStatus, type FreeStatus } from '../free-client.ts';
 
 type Hello = Extract<ConstructorParameters<typeof Net>[0], { role: 'practice' }>;
 interface Opts { topics: Topic[]; focus: boolean; size: number; level?: Level }
@@ -46,15 +48,19 @@ export function Practice() {
   const [hello, setHelloRaw] = useState<Hello | null>(null);
   const [run, setRun] = useState(0);
   const setHello = (h: Hello | null) => { setRun((x) => x + 1); setHelloRaw(h); };
-  const [name, setName] = useState(store.get('bc:name') ?? '');
+  // Sin cuenta ya no se practica (plan Free con cuenta gratis); el nombre solo sirve para reanudar prácticas antiguas.
+  const name = store.get('bc:name') ?? '';
   const [topics, setTopics] = useState<Topic[]>(() => topicsFromQuery(typeof location !== 'undefined' ? location.search : ''));
   const [focus, setFocus] = useState(false);
   const [size, setSize] = useState<number>(() => Number(store.get('bc:psize')) || 15);
-  const [pcode, setPcode] = useState('');
+  const pcode = '';
   const [level, setLevel] = useState<LevelPick>(() => (store.get('bc:plevel') === 'A1' || store.get('bc:plevel') === 'A2' ? store.get('bc:plevel') as LevelPick : 'all'));
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   useEffect(() => { void getCatalog().then(setCatalog).catch(() => setCatalog(null)); }, []);
-  const myCode = store.get('bc:pcode');
+  // Plan Free: 2 prácticas nuevas al día (lo cuenta el servidor). Sin cuenta no se practica.
+  const [free, setFree] = useState<FreeStatus | null>(null);
+  const [offer, setOffer] = useState(false);
+  useEffect(() => { void freeStatus().then(setFree).catch(() => setFree(null)); }, [hello]);
 
   // Con cuenta, la práctica va por la cuenta: sus respuestas cuentan para el ranking semanal (ver /ranking).
   const [account, setAccount] = useState<AccountPub | null>(() => (cachedAlias() && studentSession() ? { alias: cachedAlias()!, rankingOptIn: false } : null));
@@ -89,6 +95,7 @@ export function Practice() {
     store.set('bc:plevel', level);
     // Con cuenta: el servidor usa la cuenta (y suma el historial de repaso de este dispositivo). profile = este dispositivo.
     // El nivel (banda de dificultad del banco) solo lo aplica el servidor con cuenta.
+    if (account && studentSession() && free?.practice?.left === 0) { setOffer(true); return; }
     if (account && studentSession()) { setHello({ t: 'hello', role: 'practice', topics, focus, size, profile: profileId(), ...(lv ? { level: lv } : {}), ...asAccount() }); return; }
     if (!name.trim() && !pcode.trim()) return;
     store.set('bc:name', name.trim());
@@ -105,7 +112,8 @@ export function Practice() {
     { id: 'A2', label: 'A2', tag: account ? 'elemental' : 'con cuenta', disabled: !account },
     { id: 'soon', label: 'B1–C2', tag: 'próximamente', disabled: true, title: 'Próximamente: el contenido de B1 a C2 aún no está completo' },
   ];
-  const canStart = (!!account || !!name.trim() || !!pcode.trim()) && !tooFew;
+  const canStart = !!account && !tooFew;
+  const practiceLeft = account ? free?.practice?.left : undefined;
   const summary = [`${size} preguntas`, topics.length ? (topics.length > 2 ? `${topics.length} temas` : topics.map((t) => TOPICS[t].de).join(' · ')) : 'todos los temas', lv ?? 'todos los niveles'].join(' · ');
   return (
     <div className="setup-stage practice-setup">
@@ -146,10 +154,7 @@ export function Practice() {
               </div>
               <label className="m-switch pr-focus"><input type="checkbox" checked={focus} onChange={(e) => setFocus(e.target.checked)} /><span>Repasar sobre todo mis fallos</span></label>
             </div>
-            {!account && <div className="pr-who">
-              <input className="field" value={name} maxLength={16} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" aria-label="Tu nombre" />
-              <input className="field dot" value={pcode} maxLength={8} onChange={(e) => setPcode(e.target.value.toUpperCase())} placeholder={myCode ? `código: ${myCode}` : 'código'} aria-label="Código de alumno (opcional)" />
-            </div>}
+
           </section>
           <div className="pr-go">
             <div className="pr-go-sum">
@@ -159,15 +164,17 @@ export function Practice() {
                 ? <small className="pr-warn" role="status">Hay muy pocas preguntas para esa combinación. Elige más temas u otro nivel.</small>
                 : <section className="practice-account" aria-label="Tu cuenta">
                   {account ? (
-                    <small className="libre-note" data-practice-account="">Practicas como <b>{account.alias}</b>: cuenta para tu progreso y el <a href="/ranking" onClick={followLearningLink}>ranking</a>.</small>
+                    <small className="libre-note" data-practice-account="">Practicas como <b>{account.alias}</b>: cuenta para tu progreso y el <a href="/ranking" onClick={followLearningLink}>ranking</a>.
+                      {typeof practiceLeft === 'number' && <> <span className="pr-left" data-practice-left={practiceLeft}>Plan Free: {practiceLeft === 0 ? 'hoy ya no te quedan prácticas' : `te quedan ${practiceLeft} de ${free!.limits.practicePerDay} prácticas hoy`}.</span> <a href="/plus?motivo=practica" onClick={followLearningLink}>Plus: sin límite</a></>}</small>
                   ) : (
-                    <small className="libre-note" data-practice-gate="">Sin cuenta no cuenta para el ranking. <a href="/entrar?volver=/practica" onClick={(e) => { e.preventDefault(); navigate('/entrar?volver=/practica'); }}>Iniciar sesión</a> · <a href="/registro?volver=/practica" onClick={(e) => { e.preventDefault(); navigate('/registro?volver=/practica'); }}>Crear cuenta</a></small>
+                    <small className="libre-note" data-practice-gate="">Para practicar necesitas una cuenta (es gratis). <a href="/entrar?volver=/practica" onClick={(e) => { e.preventDefault(); navigate('/entrar?volver=/practica'); }}>Iniciar sesión</a> · <a href="/registro?volver=/practica" onClick={(e) => { e.preventDefault(); navigate('/registro?volver=/practica'); }}>Crear cuenta</a></small>
                   )}
                 </section>}
             </div>
-            <button className="btn primary lg pr-start" disabled={!canStart}>Empezar práctica <span aria-hidden="true">→</span></button>
+            <button className="btn primary lg pr-start" disabled={!canStart}>{practiceLeft === 0 ? 'Sin prácticas hoy · Plus' : 'Empezar práctica'} <span aria-hidden="true">→</span></button>
           </div>
         </form>
+        {offer && <div className="po-modal" role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) setOffer(false); }}><PlusOffer reason="practica" alias={account?.alias} onClose={() => setOffer(false)} /></div>}
         <div className="setup-links"><a className="btn ghost sm" href="/tema/1" onClick={followLearningLink}>Materiales de Tema 1</a><a className="btn ghost sm" href="/tema/1/taller" onClick={followLearningLink}>Escritura y escenas</a></div>
       </div>
       <aside className="setup-side"><KlausCompanion /><a className="btn ghost sm" href="/klaus" onClick={followLearningLink}>Cambiar de Klaus</a></aside>
@@ -184,6 +191,7 @@ function PracticeConn({ hello, onAgain, onForm }: { hello: Hello; onAgain: () =>
   }), [hello]);
   useEffect(() => () => net.close(), [net]);
   const st = useNet(net);
+  if (st.fatal && st.errCode === 'plus') return <div className="home pr-plus" role="alert"><PlusOffer reason="practica" alias={cachedAlias()} onClose={onForm} /></div>;
   if (st.fatal) {
     return (
       <div className="home" role="alert">

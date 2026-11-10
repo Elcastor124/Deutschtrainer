@@ -115,6 +115,50 @@ describe('gestión de alumnos', () => {
     expect(o.weakTopics).toEqual([]); expect(o.attention).toEqual([]); expect(o.upcoming).toEqual([]);
     expect(o.trend.every((w: Msg) => w.n === 0 && w.accuracy === null)).toBe(true);
   });
+  it('plan Free fuera de Klaus: 2 Lektionen nuevas y 2 prácticas al día; sin cuenta, nada; Plus y profesor sin límite (servidor real)', async () => {
+    const { s, t } = await teacherServer();
+    const get = (path: string, cookie?: string) => fetch(s.url(path), { redirect: 'manual', headers: cookie ? { cookie } : {} });
+    // Sin cuenta: diapositivas → registro; práctica → error «account»
+    const anon = await get('/presentaciones/bank.html');
+    expect(anon.status).toBe(302); expect(anon.headers.get('location')).toMatch(/^\/registro/);
+    const anonP = await conn(s, { t: 'hello', role: 'practice', name: 'Anon', topics: ['vorstellen'] });
+    expect((await anonP.until((m) => m.t === 'err')).code).toBe('account');
+    // Free: 2 Lektionen nuevas; las ya abiertas se releen (también el PDF de la misma Lektion); la 3.ª → /plus
+    const ana = await student(s, 'Ana_Free');
+    expect((await get('/presentaciones/mission-01.html', ana)).status).toBe(200);   // Lektion 1
+    expect((await get('/presentaciones/bruecke-a1.html', ana)).status).toBe(200);   // Lektion 1 (misma): no gasta
+    expect((await get('/presentaciones/bank.html', ana)).status).toBe(200);         // Lektion 2
+    const third = await get('/presentaciones/krankenhaus.html', ana);              // Lektion 4: tercera nueva
+    expect(third.status).toBe(302); expect(third.headers.get('location')).toBe('/plus?motivo=diapos&lektion=4');
+    expect((await get('/presentaciones/bank.pdf', ana)).status).toBe(200);          // releer Lektion 2 sí
+    expect((await get('/presentaciones/mission-01.html', ana)).status).toBe(200);
+    const st = (await req(s, '/api/free/status', { cookie: ana })).body;
+    expect(st).toMatchObject({ plan: 'free', lektionen: { opened: ['1', '2'], left: 0 }, practice: { used: 0, left: 2 } });
+    // Free: 2 prácticas nuevas; la 3.ª → error «plus»; reanudar con token no gasta
+    const p1 = await conn(s, { t: 'hello', role: 'practice', free: true, session: 'cookie', topics: ['vorstellen'] }, { Cookie: ana });
+    const w1 = await p1.until((m) => m.t === 'welcome');
+    const p2 = await conn(s, { t: 'hello', role: 'practice', free: true, session: 'cookie', topics: ['vorstellen'] }, { Cookie: ana });
+    await p2.until((m) => m.t === 'welcome');
+    const p3 = await conn(s, { t: 'hello', role: 'practice', free: true, session: 'cookie', topics: ['vorstellen'] }, { Cookie: ana });
+    const e3 = await p3.until((m) => m.t === 'err');
+    expect(e3.code).toBe('plus'); expect(e3.msg).toMatch(/2 prácticas al día/);
+    p1.ws.terminate(); await sleep(150);
+    const again = await conn(s, { t: 'hello', role: 'practice', room: w1.room, token: w1.token, free: true, session: 'cookie' }, { Cookie: ana });
+    expect((await again.until((m) => m.t === 'welcome' || m.t === 'err')).t).toBe('welcome');
+    // Los juegos en solitario de /libre no cuentan
+    const jenga = await conn(s, { t: 'hello', role: 'practice', free: true, session: 'cookie', game: 'jenga' }, { Cookie: ana });
+    expect((await jenga.until((m) => m.t === 'welcome' || m.t === 'err')).t).toBe('welcome');
+    // Plus (lo activa el profesor): sin límite
+    const id = (await req(s, '/api/teacher/students', { cookie: t })).body.students.find((x: Msg) => x.alias === 'Ana_Free').id;
+    await req(s, `/api/teacher/students/${id}`, { body: { plan: 'plus' }, cookie: t });
+    expect((await get('/presentaciones/krankenhaus.html', ana)).status).toBe(200);
+    expect((await get('/presentaciones/akkusativ.html', ana)).status).toBe(200);
+    const p4 = await conn(s, { t: 'hello', role: 'practice', free: true, session: 'cookie', topics: ['vorstellen'] }, { Cookie: ana });
+    expect((await p4.until((m) => m.t === 'welcome' || m.t === 'err')).t).toBe('welcome');
+    expect((await req(s, '/api/free/status', { cookie: ana })).body.plan).toBe('plus');
+    // El profesor abre cualquier diapositiva sin cuenta de alumno
+    expect((await get('/presentaciones/unterwegs.html', t)).status).toBe(200);
+  });
   it('Plus desde Teacher OS: el profesor activa y quita Plus; solo con Plus se abre Klaus (servidor real)', async () => {
     const { s, t } = await teacherServer();
     const ana = await student(s, 'Ana_Plus');

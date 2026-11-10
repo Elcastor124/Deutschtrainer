@@ -2,15 +2,17 @@
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { studentPlus } from './helpers/plus-browser.mjs';
 import { launch, sleep } from '../scripts/cdp.mjs';
 const L = await launch({ shots: 'shots/klaus-embedded' });
 const metrics = [];
 try {
   for (const [width, height] of [[1366,768],[1024,768],[390,844],[320,740]]) {
     const B = await L.newPage(`embedded ${width}`, width, height, width < 500);
+    // Practicar exige cuenta (plan Free con límite diario); cada página es un contexto aislado: una cuenta Plus por página.
+    await B.go('/?intro=0'); await studentPlus(B, L.base);
     await B.go('/practica?temas=dativ');
-    await B.until(`!!document.querySelector('form[data-practice-form] input.field')`, 'setup');
-    await B.type('form[data-practice-form] input.field', 'EmbeddedQA');
+    await B.until(`!!document.querySelector('form[data-practice-form] .btn.primary.lg') && !document.querySelector('form[data-practice-form] .btn.primary.lg').disabled`, 'setup');
     await B.click('form[data-practice-form] .btn.primary.lg');
     await B.until(`!!document.querySelector('.qpanel') && !!document.querySelector('[data-klaus-figure]')`, 'real question and companion');
     await sleep(450);

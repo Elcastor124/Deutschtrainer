@@ -89,7 +89,9 @@ describe('Student learning hub', () => {
     const html = renderRoute('/practica', '?tema=1');
     expect(html).toContain('práctica a medias');
     expect(html).toContain('Continuar');
-    expect(html).toContain('value="Ana"');
+    // Antes: el formulario conservaba el nombre escrito (value="Ana"). Ahora practicar exige cuenta (plan Free) y no hay
+    // campo de nombre; la práctica a medias se sigue pudiendo continuar. Ver docs/test-contract-notes.md.
+    expect(html).not.toContain('Tu nombre');
   });
 
   it('offers the full quiz bank by default, retains all filters and names Tema 1', () => {

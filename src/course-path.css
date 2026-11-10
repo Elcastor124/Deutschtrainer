@@ -103,3 +103,9 @@
   .cp-node.is-next .cp-face, .cp-tag, .cp-pop { animation: none; }
   .cp-tile { transition: none; }
 }
+
+/* Plan Free: cupo de Lektionen nuevas del día (dorado = Plus) */
+.cp-lib.cp-free { border-color: rgba(233, 185, 73, .4); }
+.cp-lib.cp-free .dotnum { color: #E9B949; }
+.cp-free-note { margin: 10px 0 0; font-size: .74rem; color: rgba(242, 241, 238, .62); }
+.cp-free-note[data-lek-note='blocked'] { color: #E9B949; }
