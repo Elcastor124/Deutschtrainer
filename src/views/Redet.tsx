@@ -10,7 +10,7 @@ import {
 } from '../klaus-ai-client.ts';
 import { studentSession } from '../util.ts';
 import { KlausFigure } from '../klaus/KlausFigure.tsx';
-import { KlausGate } from '../klaus/KlausGate.tsx';
+import { KlausGate, PLUS_GATE } from '../klaus/KlausGate.tsx';
 import { useKlausSkin } from '../klaus/skin-client.ts';
 import type { KlausReaction } from '../klaus/events.ts';
 import { speak, stopSpeaking, useBrowserVoices } from '../klaus/speech.ts';
@@ -36,8 +36,10 @@ export function Redet() {
   const [reaction, setReaction] = useState<KlausReaction>('waving');
 
   const refresh = useCallback(async () => {
-    const [st, sc, ss] = await Promise.all([klausStatus(), redetScenarios(), redetSessions()]);
-    setStatus(st); setScenarios(sc.scenarios); setTopics(sc.topics ?? []); setSessions(ss.sessions);
+    const st = await klausStatus(); setStatus(st);
+    if (st.plan !== 'plus') return; // sin Plus el servidor no abre Redet: se enseña la pantalla de Plus
+    const [sc, ss] = await Promise.all([redetScenarios(), redetSessions()]);
+    setScenarios(sc.scenarios); setTopics(sc.topics ?? []); setSessions(ss.sessions);
   }, []);
   useEffect(() => { if (loggedIn) refresh().catch((e: Error) => setErr(e.message)); }, [loggedIn, refresh]);
   useEffect(() => () => stopSpeaking(), []);
@@ -66,6 +68,20 @@ export function Redet() {
         title="Entra para empezar una conversación con Klaus."
         lead="Elige una situación (restaurante, tienda, presentarte…) y contesta en alemán. Klaus te sigue la conversación y te marca cada error con la forma correcta."
         perks={[['7 situaciones de A1 y A2', 'Del «Wie heißt du?» a pedir en un restaurante.'], ['Corrección en cada mensaje', 'Ves qué falló, por qué y cómo se dice bien.'], ['Escucha a Klaus', 'Cada respuesta se puede oír en alemán.']]} />
+    </main>
+  );
+
+  if (!status) return (
+    <main className="dt-page rd-page" aria-busy="true">
+      <header className="rd-head"><p className="dt-eyebrow">Redet mit Klaus</p><h1>Habla con Klaus<b className="dt-punkt">.</b></h1></header>
+      {err ? <p className="rd-err" role="alert">{err}</p> : <p className="kw-loading">Cargando…</p>}
+    </main>
+  );
+  if (status.plan !== 'plus') return (
+    <main className="dt-page rd-page">
+      <header className="rd-head"><p className="dt-eyebrow">Redet mit Klaus</p><h1>Habla con Klaus<b className="dt-punkt">.</b></h1></header>
+      <KlausGate kind="hablar" className="rd-gate" back="/hablar" look={look} plus {...PLUS_GATE}
+        perks={[['Situaciones de A1 y A2', 'Del «Wie heißt du?» a pedir en un restaurante.'], ['Modo libre', 'Habla de lo que quieras, con corrección.'], ['Escucha a Klaus', 'Cada respuesta se puede oír en alemán.']]} />
     </main>
   );
 

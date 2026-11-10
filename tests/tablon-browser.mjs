@@ -2,6 +2,7 @@
 // teoría de la Lektion y acceso directo a la clase de Klaus.
 // Uso: node tests/tablon-browser.mjs [--base http://localhost:5173]
 import { mkdirSync } from 'node:fs';
+import { plusAll } from './helpers/plus-browser.mjs';
 import { launch, sleep } from '../scripts/cdp.mjs';
 const arg = (k) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : undefined; };
 const OUT = 'shots/tablon'; mkdirSync(OUT, { recursive: true });
@@ -43,6 +44,7 @@ try {
   check(await P.eval(`document.querySelector('[data-tablon-locked]').textContent.includes('al menos una actividad')`), 'se explica por qué (al menos una actividad)');
   await snap(P, 'locked');
   // Escritura libre: modo por defecto, ideas para empezar; guardar un borrador = actividad
+  await plusAll(L.base); // Schreibt es de Plus (el tablón no: lo puede usar cualquier cuenta con actividad)
   await P.go('/escribir?intro=0');
   check(await waitFor(P, has('[data-writing-mode="libre"]')), 'Schreibt: arranca en «Escritura libre»');
   check(await P.eval(`![...document.querySelectorAll('.kw-controls label')].some(l => l.textContent.trim().startsWith('Tarea'))`), 'escritura libre: sin selector de tarea');
@@ -69,6 +71,7 @@ try {
   await snap(P, 'posted');
   // Otra cuenta con actividad (una conversación libre) apoya la petición
   await logout(P); const st2 = await register(P, 'Tc'); check(st2 === 200 || st2 === 201, `segunda cuenta (${st2})`);
+  await plusAll(L.base); // Redet es de Plus
   await P.go('/hablar?intro=0'); await waitFor(P, has('[data-redet-free] .rd-topic'));
   await P.eval(`document.querySelector('[data-redet-free] .rd-topic').click(); true`); await waitFor(P, has('#rd-input'));
   await setVal(P, '#rd-input', 'Ich spiele gern Fußball.'); await P.eval(`document.querySelector('.rd-compose button[type=submit]').click(); true`);

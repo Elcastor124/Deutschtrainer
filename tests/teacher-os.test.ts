@@ -115,6 +115,23 @@ describe('gestión de alumnos', () => {
     expect(o.weakTopics).toEqual([]); expect(o.attention).toEqual([]); expect(o.upcoming).toEqual([]);
     expect(o.trend.every((w: Msg) => w.n === 0 && w.accuracy === null)).toBe(true);
   });
+  it('Plus desde Teacher OS: el profesor activa y quita Plus; solo con Plus se abre Klaus (servidor real)', async () => {
+    const { s, t } = await teacherServer();
+    const ana = await student(s, 'Ana_Plus');
+    const id = (await req(s, '/api/teacher/students', { cookie: t })).body.students.find((x: Msg) => x.alias === 'Ana_Plus').id;
+    expect((await req(s, '/api/teacher/students', { cookie: t })).body.students.find((x: Msg) => x.id === id).plan).toBe('free');
+    expect((await req(s, '/api/klaus/status', { cookie: ana })).body.plan).toBe('free');
+    expect((await req(s, '/api/klaus/redet/scenarios', { cookie: ana })).status).toBe(403);
+    // el alumno no puede darse Plus a sí mismo ni el plan admite valores raros
+    expect((await req(s, `/api/teacher/students/${id}`, { body: { plan: 'plus' }, cookie: ana })).status).toBe(401);
+    expect((await req(s, `/api/teacher/students/${id}`, { body: { plan: 'gold' }, cookie: t })).status).toBe(400);
+    expect((await req(s, `/api/teacher/students/${id}`, { body: { plan: 'plus' }, cookie: t })).body.plan).toBe('plus');
+    expect((await req(s, '/api/klaus/status', { cookie: ana })).body.plan).toBe('plus');
+    expect((await req(s, '/api/klaus/redet/scenarios', { cookie: ana })).status).toBe(200);
+    expect((await req(s, '/api/klaus/klasse/lessons', { cookie: ana })).status).toBe(200);
+    expect((await req(s, `/api/teacher/students/${id}`, { body: { plan: 'free' }, cookie: t })).body.plan).toBe('free');
+    expect((await req(s, '/api/klaus/writing/tasks', { cookie: ana })).status).toBe(403);
+  });
   it('alta por el profesor con contraseña temporal, nivel, grupo, notas privadas, asistencia, repaso, desactivar y restablecer', async () => {
     const { s, t } = await teacherServer();
     const g = (await req(s, '/api/teacher/groups', { body: { name: 'Lunes 18h' }, cookie: t })).body;

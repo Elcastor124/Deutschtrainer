@@ -22,7 +22,8 @@ afterEach(async () => { for (const s of servers.splice(0)) { s.closeAllConnectio
 async function api() {
   const dir = mkdtempSync(join(tmpdir(), 'kl-free-')); dirs.push(dir);
   const accounts = new AccountStore(dir), config = loadAiConfig({} as NodeJS.ProcessEnv), store = new KlausStore(dir);
-  const handler = createKlausAi({ accounts, guard: createGuard({ dataDir: dir }), providers: buildProviders(config, new MockLlm()), usage: new AiUsage(config, { dataDir: dir }), store });
+  const usage = new AiUsage(config, { dataDir: dir });
+  const handler = createKlausAi({ accounts, guard: createGuard({ dataDir: dir }), providers: buildProviders(config, new MockLlm()), usage, store });
   const server = createServer((req, res) => { if (!handler(req, res)) { res.writeHead(404); res.end(); } }); servers.push(server);
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
@@ -31,6 +32,7 @@ async function api() {
     return { status: res.status, body: await res.json().catch(() => null) as any };
   };
   const r = await accounts.register('Ana_Lee', 'zorro-azul-mesa-72-lluvia'); if (!r.ok) throw new Error(r.error);
+  usage.setPlan(r.account.id, 'plus'); // Klaus (Redet) es de Plus
   return { call, token: r.token, id: r.account.id, handler };
 }
 

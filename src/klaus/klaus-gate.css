@@ -103,3 +103,7 @@ html[data-dt-effects='off'] .kg-draw { stroke-dashoffset: 0; }
   .kg-perks li { grid-template-columns: 30px minmax(0, 1fr); }
   .kg-free { flex-basis: 100%; margin: 0; }
 }
+
+/* Mientras se consulta el plan (Free/Plus) en Hablar, Escribir y Clase: una línea discreta, sin parpadeo de la herramienta. */
+.kw-loading { margin: 32px 0; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--dt-muted, #8a8a8a); }
+.kg-cta a.btn, .kg-cta a.btn:hover { text-decoration: none; }

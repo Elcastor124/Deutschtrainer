@@ -265,6 +265,9 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
       const c = providers.config;
       return json(res, 200, { ...planInfo(a), providers: { llm: { provider: providers.llm.name, model: providers.llm.model, real: providers.llm.real, note: c.llm.reason ?? null }, stt: { provider: providers.stt.name, real: providers.stt.real, note: c.stt.reason ?? null }, tts: { provider: providers.tts.name, real: providers.tts.real, note: c.tts.reason ?? null } }, limits: AI_LIMITS });
     }
+    // Klaus (Schreibt, Redet y Unterricht) es parte de Plus: lo decide SOLO el servidor; el profesor lo asigna en Teacher OS.
+    // La teoría sigue siendo pública y /status responde a todos para que la web enseñe la pantalla de Plus.
+    if (usage.planOf(a.id, a.alias) !== 'plus') return fail(403, 'Klaus es parte de Plus. Pide a tu profesor que active Plus en tu cuenta.', 'plus');
     if (path === '/writing/tasks' && get) return json(res, 200, { tasks: WRITING_TASKS });
     if (path === '/writing/drafts' && get) return json(res, 200, { drafts: store.drafts(a.id).map((d) => ({ ...d, reviews: d.reviews.map((r) => ({ id: r.id, at: r.at, review: r.review, resolved: r.resolved, textSnapshot: r.textSnapshot })) })) });
     if (path === '/writing/draft' && post) {

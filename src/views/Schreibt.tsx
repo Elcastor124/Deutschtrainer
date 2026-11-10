@@ -6,7 +6,7 @@ import type { WritingTask } from '../../shared/klaus-content.ts';
 import { deleteDraft, klausStatus, newRequestId, quotaLeft, resolveCorrection, reviewWriting, saveDraft, writingDrafts, writingTasks, type DraftView, type DraftReviewView, type KlausStatus } from '../klaus-ai-client.ts';
 import { studentSession } from '../util.ts';
 import { KlausFigure } from '../klaus/KlausFigure.tsx';
-import { KlausGate } from '../klaus/KlausGate.tsx';
+import { KlausGate, PLUS_GATE } from '../klaus/KlausGate.tsx';
 import { useKlausSkin } from '../klaus/skin-client.ts';
 import '../klaus-writing.css';
 
@@ -58,8 +58,10 @@ export function Schreibt() {
   const area = useRef<HTMLTextAreaElement>(null);
 
   const refresh = useCallback(async () => {
-    const [s, t, d] = await Promise.all([klausStatus(), writingTasks(), writingDrafts()]);
-    setStatus(s); setTasks(t.tasks); setDrafts(d.drafts);
+    const s = await klausStatus(); setStatus(s);
+    if (s.plan !== 'plus') return; // sin Plus el servidor no abre Schreibt: se enseña la pantalla de Plus
+    const [t, d] = await Promise.all([writingTasks(), writingDrafts()]);
+    setTasks(t.tasks); setDrafts(d.drafts);
   }, []);
   useEffect(() => { if (loggedIn) refresh().catch((e: Error) => setMsg({ kind: 'err', text: e.message })); }, [loggedIn, refresh]);
   useEffect(() => () => abort.current?.abort(), []);
@@ -138,6 +140,20 @@ export function Schreibt() {
         title="Entra para que Klaus revise tus textos."
         lead="Correos, presentaciones y textos de examen. Klaus señala los errores en tu texto, te da una pista y, si la pides, la solución. Tu texto nunca se cambia solo."
         perks={[['5 tareas guiadas', 'Presentarte, tu familia, un correo, las vacaciones…'], ['Pista antes que solución', 'Modo guiado para pensar primero.'], ['Borradores guardados', 'Retoma donde lo dejaste, en cualquier dispositivo.']]} />
+    </main>
+  );
+
+  if (!status) return (
+    <main className="dt-page kw-page" aria-busy="true">
+      <header className="kw-head"><p className="dt-eyebrow">Schreibt mit Klaus</p><h1>Escribir<b className="dt-punkt">.</b></h1></header>
+      {msg ? <p className="kw-msg err" role="alert">{msg.text}</p> : <p className="kw-loading">Cargando…</p>}
+    </main>
+  );
+  if (status.plan !== 'plus') return (
+    <main className="dt-page kw-page">
+      <header className="kw-head"><p className="dt-eyebrow">Schreibt mit Klaus</p><h1>Escribir<b className="dt-punkt">.</b></h1></header>
+      <KlausGate kind="escribir" className="kw-gate" back="/escribir" look={look} plus {...PLUS_GATE}
+        perks={[['Escritura libre y tareas guiadas', 'Correos, presentaciones, textos de examen.'], ['Pista antes que solución', 'Modo guiado para pensar primero.'], ['Borradores guardados', 'Retoma donde lo dejaste.']]} />
     </main>
   );
 

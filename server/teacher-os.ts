@@ -35,6 +35,8 @@ export interface TeacherOsDeps {
   onRemoved?: (id: string) => void;
   /** Memoria de aprendizaje (misiones, dominio por tema): solo lectura para el profesor. */
   learning?: (id: string) => unknown;
+  /** Plan de cada cuenta (Free/Plus). Plus abre Klaus: Schreibt, Redet y Unterricht. Sin pagos: lo asigna el profesor. */
+  plans?: { of: (id: string, alias?: string) => 'free' | 'plus'; set: (id: string, plan: 'free' | 'plus') => void };
 }
 
 /** Agregado descriptivo: n y precisión (null si n = 0). Nunca una predicción. */
@@ -71,6 +73,7 @@ export function createTeacherOs(d: TeacherOsDeps) {
     const meta = d.data.peek(a.id);
     return {
       id: a.id, alias: a.alias, level: meta?.level ?? null, groups: meta?.groups ?? [], disabled: !!a.disabled, createdAt: a.createdAt, createdByTeacher: a.createdBy === 'teacher',
+      plan: d.plans?.of(a.id, a.alias) ?? 'free',
       lastActive: last || null, answers7: answers.filter((e) => e.at > t - 7 * DAY).length, answers30: recent.length,
       accuracy30: recent.length ? Math.round((recent.filter((e) => e.ok).length / recent.length) * 100) / 100 : null,
       activities: evs.filter((e) => e.kind === 'game' && e.game).length, streak: d.log().streak(a.id),
@@ -269,6 +272,7 @@ export function createTeacherOs(d: TeacherOsDeps) {
         if (input.level !== undefined) { if (input.level !== null && !(LEVELS_OK as readonly unknown[]).includes(input.level)) fail(400, 'Nivel no válido.'); m.level = (input.level ?? undefined) as StudentLevel | undefined; }
         if (input.groups !== undefined) { if (!Array.isArray(input.groups)) fail(400, 'Grupos no válidos.'); m.groups = (input.groups as unknown[]).filter((g): g is string => typeof g === 'string' && d.data.data.groups.some((x) => x.id === g)); }
         if (input.disabled !== undefined) { if (typeof input.disabled !== 'boolean') fail(400, 'Valor no válido.'); d.accounts.setDisabled(a, input.disabled as boolean); }
+        if (input.plan !== undefined) { if (input.plan !== 'free' && input.plan !== 'plus') fail(400, 'Plan no válido.'); if (!d.plans) fail(503, 'Los planes no están disponibles.'); d.plans!.set(a.id, input.plan as 'free' | 'plus'); }
         d.data.save();
         return json(res, 200, detail(a).student);
       }

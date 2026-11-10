@@ -2,6 +2,7 @@
 // reanudar tras recargar, cuota y consola sin errores. Ejecutar tras `npm run build`:
 //   node --disable-warning=ExperimentalWarning tests/klaus-writing-browser.mjs
 import assert from 'node:assert/strict';
+import { plusAll } from './helpers/plus-browser.mjs';
 import { launch, sleep } from '../scripts/cdp.mjs';
 
 const L = await launch({ shots: 'shots/klaus-writing', ...(process.env.BASE ? { base: process.env.BASE } : {}) });
@@ -16,9 +17,13 @@ try {
   const reg = await B.eval(`fetch('/api/account/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({alias:'Schreib'+(Date.now()%10000),password:'zorro-azul-mesa-72-lluvia',rankingOptIn:false})}).then(async r=>({s:r.status,e:(await r.json()).error||null}))`);
   check(reg.s === 200, `cuenta creada (HTTP ${reg.s}${reg.e ? ': ' + reg.e : ''})`);
   await B.eval(`localStorage.setItem('dt:student-session','cookie'); true`);
+  // Sin Plus: pantalla de Plus, sin editor
+  await B.go('/escribir'); await B.until(`!!document.querySelector('[data-klaus-plus="required"]')`, 'Free: Schreibt pide Plus');
+  check(await B.eval(`!document.querySelector('.kw-edit textarea')`), 'Free: sin editor');
+  await plusAll(L.base);
   await B.go('/escribir');
   await B.until(`!!document.querySelector('.kw-edit textarea') && /revisi/.test(document.querySelector('.kw-plan')?.innerText||'')`, 'editor y estado de cuota');
-  check(await B.eval(`/free/i.test(document.querySelector('.kw-plan').innerText) && /3 revisi/.test(document.querySelector('.kw-plan').innerText)`), 'plan Free con 3 revisiones/día');
+  check(await B.eval(`/plus/i.test(document.querySelector('.kw-plan').innerText) && /3 revisi/.test(document.querySelector('.kw-plan').innerText)`), 'plan Plus (límites de prueba: 3 revisiones/día)');
   check(await B.eval(`/sin ia/i.test(document.querySelector('.kw-plan').innerText)`), 'sin proveedor real: avisa «Modo básico sin IA» (no finge IA)');
 
   await B.type('.kw-edit textarea', 'Ich habe 15 Jahre. Ich wohne in Sevilla.');
@@ -69,7 +74,7 @@ try {
   await M.until(`!!document.querySelector('.kw-gate, .kw-edit')`, 'carga en móvil');
   const regM = await M.eval(`fetch('/api/account/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({alias:'Movil'+(Date.now()%10000),password:'zorro-azul-mesa-72-lluvia',rankingOptIn:false})}).then(r=>r.status)`);
   check(regM === 200, 'cuenta propia en el contexto móvil (cada página tiene su cookie)');
-  await M.eval(`localStorage.setItem('dt:student-session','cookie'); true`);
+  await M.eval(`localStorage.setItem('dt:student-session','cookie'); true`); await plusAll(L.base);
   await M.go('/escribir');
   await M.until(`!!document.querySelector('.kw-edit textarea')`, 'editor en móvil');
   check(await M.eval(`document.documentElement.scrollWidth <= innerWidth + 1`), 'sin desbordamiento horizontal (390 px)');

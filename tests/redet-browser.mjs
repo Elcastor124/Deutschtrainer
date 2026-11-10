@@ -1,6 +1,7 @@
 // Prueba de navegador de Redet mit Klaus (/hablar): menú → alta → situación → 2 mensajes (uno con error) → corrección → terminar → resumen.
 // Uso: node tests/redet-browser.mjs [--base http://localhost:5173]  (sin --base arranca su propio servidor, sin IA: guion de práctica)
 import { mkdirSync } from 'node:fs';
+import { plusAll } from './helpers/plus-browser.mjs';
 import { launch, sleep } from '../scripts/cdp.mjs';
 const arg = (k) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : undefined; };
 const OUT = 'shots/redet'; mkdirSync(OUT, { recursive: true });
@@ -12,7 +13,7 @@ const check = (ok, msg) => { console.log(`${ok ? 'OK ' : 'FAIL'} ${msg}`); if (!
 const type = (P, text) => P.eval(`(() => { const i = document.querySelector('#rd-input'); const set = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set; set.call(i, ${JSON.stringify(text)}); i.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
 const register = async (P, pre) => {
   const st = await P.eval(`fetch('/api/account/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({alias:'${pre}'+Date.now().toString(36).slice(-6),password:'zorro-azul-mesa-72-lluvia'})}).then(r=>r.status)`);
-  await P.eval(`localStorage.setItem('dt:student-session','cookie'); true`); return st;
+  await P.eval(`localStorage.setItem('dt:student-session','cookie'); true`); await plusAll(L.base); return st;
 };
 try {
   const P = await L.newPage('rd', 1440, 900);

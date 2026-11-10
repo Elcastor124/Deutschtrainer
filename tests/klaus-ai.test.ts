@@ -255,7 +255,9 @@ describe('contenido de Redet y Schreibt', () => {
 async function api(over: { llm?: LlmProvider; limits?: any } = {}) {
   const dir = tmp(); const accounts = new AccountStore(dir); const guard = createGuard({ dataDir: dir });
   const config = cfg(); const providers = buildProviders(config, over.llm ?? new MockLlm());
-  const usage = new AiUsage(config, { dataDir: dir, limits: over.limits }); const store = new KlausStore(dir);
+  // Klaus es solo Plus: los alumnos del arnés son Plus; para conservar las comprobaciones de cuota (3 textos, 1 clase…)
+  // los límites de Plus en la prueba son los pequeños por defecto (los de Free). Ver docs/test-contract-notes.md.
+  const usage = new AiUsage(config, { dataDir: dir, limits: over.limits ?? { free: { ...DEFAULT_LIMITS.free }, plus: { ...DEFAULT_LIMITS.free } } }); const store = new KlausStore(dir);
   const handler = createKlausAi({ accounts, guard, providers, usage, store });
   const server = createServer((req, res) => { if (!handler(req, res)) { res.writeHead(404); res.end(); } }); servers.push(server);
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
@@ -264,7 +266,7 @@ async function api(over: { llm?: LlmProvider; limits?: any } = {}) {
     const res = await fetch(base + path, { method: input === undefined ? 'GET' : 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { 'X-Student-Session': token } : {}), ...headers }, ...(input === undefined ? {} : { body: JSON.stringify(input) }) });
     return { status: res.status, body: await res.json().catch(() => null) as any };
   };
-  const user = async (alias: string) => { const r = await accounts.register(alias, PW); if (!r.ok) throw new Error(r.error); return r.token; };
+  const user = async (alias: string, plan: 'free' | 'plus' = 'plus') => { const r = await accounts.register(alias, PW); if (!r.ok) throw new Error(r.error); if (plan === 'plus') usage.setPlan(r.account.id, 'plus'); return r.token; };
   return { call, user, dir, usage, store, handler, accounts };
 }
 
@@ -276,10 +278,24 @@ describe('API /api/klaus', () => {
     expect((await s.call('/api/klaus/writing/review', { text: 'Hallo' })).status).toBe(401);
     expect((await s.call('/api/klaus/usage')).status).toBe(401); // solo profesor
   });
+  it('Klaus es Plus: una cuenta Free ve su estado (plan free) pero Schreibt, Redet y Unterricht responden 403 «plus»', async () => {
+    const s = await api(); const t = await s.user('Fre_Ana', 'free');
+    const st = await s.call('/api/klaus/status', undefined, t); expect(st.status).toBe(200); expect(st.body.plan).toBe('free');
+    for (const [p, b] of [['/api/klaus/writing/tasks'], ['/api/klaus/writing/drafts'], ['/api/klaus/writing/review', { text: 'Hallo', requestId: 'req-plus0001' }], ['/api/klaus/redet/scenarios'],
+      ['/api/klaus/redet/start', { scenarioId: 'libre', level: 'A1' }], ['/api/klaus/klasse/lessons'], ['/api/klaus/klasse/start', { lessonId: 'akk-01' }], ['/api/klaus/klasse/ask', { sessionId: 'x', question: 'Was?' }]] as [string, unknown?][]) {
+      const r = await s.call(p, b, t); expect(r.status, p).toBe(403); expect(r.body.code, p).toBe('plus');
+    }
+    expect(s.usage.used((await s.accounts.verify(t))!.id, 'text')).toBe(0); // no se reservó cuota
+    expect((await s.call('/api/klaus/teoria?lecciones=akk-01')).status).toBe(200); // la teoría sigue pública
+    // Al activar Plus entra; al quitarlo se vuelve a cerrar (sus datos se conservan).
+    const id = (await s.accounts.verify(t))!.id; s.usage.setPlan(id, 'plus');
+    expect((await s.call('/api/klaus/writing/tasks', undefined, t)).status).toBe(200);
+    s.usage.setPlan(id, 'free'); expect((await s.call('/api/klaus/writing/tasks', undefined, t)).status).toBe(403);
+  });
   it('estado: proveedores sin claves, plan y cuotas; en modo determinista lo dice', async () => {
     const s = await api(); const t = await s.user('Ana_Lee');
     const r = await s.call('/api/klaus/status', undefined, t);
-    expect(r.status).toBe(200); expect(r.body.plan).toBe('free'); expect(r.body.providers.llm).toMatchObject({ provider: 'mock', real: false });
+    expect(r.status).toBe(200); expect(r.body.plan).toBe('plus'); expect(r.body.providers.llm).toMatchObject({ provider: 'mock', real: false });
     expect(JSON.stringify(r.body)).not.toMatch(/sk-|api[_-]?key/i);
   });
   it('Schreibt: guardar borrador, revisar, resolver corrección y aislamiento entre alumnos', async () => {
@@ -298,7 +314,7 @@ describe('API /api/klaus', () => {
     expect((await s.call('/api/klaus/writing/draft/delete', { id }, ben)).status).toBe(404);
     expect((await s.call('/api/klaus/writing/draft/delete', { id }, ana)).status).toBe(200);
   });
-  it('Schreibt: la cuota Free se agota con 402 y un reintento con el mismo requestId no cobra', async () => {
+  it('Schreibt: la cuota diaria se agota con 402 y un reintento con el mismo requestId no cobra', async () => {
     const s = await api(); const t = await s.user('Ana_Lee');
     const rev = (n: number, rid?: string) => s.call('/api/klaus/writing/review', { text: `Ich bin Ana ${n}.`, requestId: rid ?? `req-${String(n).padStart(8, '0')}` }, t);
     expect((await rev(1)).status).toBe(200);

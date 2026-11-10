@@ -3,10 +3,10 @@
 // puede llamar a la IA (cuota klasseAsks); sin proveedor configurado responde el banco preparado y se dice así.
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import type { AnswerPayload, AnswerResult, KlasseView, PublicActivity } from '../../shared/lesson.ts';
-import { klasseAnswer, klasseAsk, klasseLessons, klasseNext, klasseSession, klasseStart, newRequestId, type KlasseAskAnswer, type KlasseLessonInfo, type KlasseSessionInfo } from '../klaus-ai-client.ts';
+import { klausStatus, klasseAnswer, klasseAsk, klasseLessons, klasseNext, klasseSession, klasseStart, newRequestId, type KlasseAskAnswer, type KlasseLessonInfo, type KlasseSessionInfo } from '../klaus-ai-client.ts';
 import { studentSession } from '../util.ts';
 import { KlausFigure } from '../klaus/KlausFigure.tsx';
-import { KlausGate } from '../klaus/KlausGate.tsx';
+import { KlausGate, PLUS_GATE } from '../klaus/KlausGate.tsx';
 import { useKlausSkin } from '../klaus/skin-client.ts';
 import type { KlausReaction } from '../klaus/events.ts';
 import { speak, stopSpeaking, useBrowserVoices, type Spoken } from '../klaus/speech.ts';
@@ -35,10 +35,13 @@ export function Klasse() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [reaction, setReaction] = useState<KlausReaction>('waving');
+  const [plan, setPlan] = useState<'free' | 'plus' | null>(null);
 
   useEffect(() => {
     if (!loggedIn) return;
-    klasseLessons().then((r) => { setLessons(r.lessons); setSessions(r.sessions); }).catch((e: Error) => setErr(e.message));
+    // Unterricht es de Plus: primero el plan (lo decide el servidor) y solo con Plus se piden las clases.
+    klausStatus().then((s) => { setPlan(s.plan); if (s.plan === 'plus') return klasseLessons().then((r) => { setLessons(r.lessons); setSessions(r.sessions); }); })
+      .catch((e: Error) => setErr(e.message));
   }, [loggedIn]);
   // Acceso directo desde la teoría o la presentación: /unterricht?leccion=<id> abre esa clase (o la retoma si ya estaba empezada).
   const wanted = useRef(new URLSearchParams(location.search).get('leccion'));
@@ -78,6 +81,20 @@ export function Klasse() {
         title="Entra para empezar una clase con Klaus."
         lead="Gramática de A1 y A2 paso a paso: explicación, tabla animada, ejercicios y un diálogo real. Si algo no queda claro, se lo preguntas."
         perks={[['15 lecciones', 'Presente, Akkusativ, Dativ, Perfekt, subordinadas…'], ['Ejercicios con corrección', 'Huecos, ordenar frases, emparejar y elegir.'], ['Guarda tu progreso', 'Cada lección sigue en el paso donde la dejaste.']]} />
+    </main>
+  );
+
+  if (!plan) return (
+    <main className="dt-page kx-page" aria-busy="true">
+      <header className="kx-head"><p className="dt-eyebrow">Unterricht mit Klaus</p><h1>Clase con Klaus<b className="dt-punkt">.</b></h1></header>
+      {err ? <p className="kx-err" role="alert">{err}</p> : <p className="kw-loading">Cargando…</p>}
+    </main>
+  );
+  if (plan === 'free') return (
+    <main className="dt-page kx-page">
+      <header className="kx-head"><p className="dt-eyebrow">Unterricht mit Klaus</p><h1>Clase con Klaus<b className="dt-punkt">.</b></h1></header>
+      <KlausGate kind="clase" className="kx-gate" back="/unterricht" look={look} plus {...PLUS_GATE}
+        perks={[['15 lecciones de A1 y A2', 'Presente, Akkusativ, Dativ, Perfekt, subordinadas…'], ['Ejercicios con corrección', 'Huecos, ordenar frases, emparejar y elegir.'], ['La teoría sigue abierta', 'Cada tema tiene su página de teoría en el curso.']]} />
     </main>
   );
 

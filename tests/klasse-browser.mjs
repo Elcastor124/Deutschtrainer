@@ -1,6 +1,7 @@
 // Prueba de navegador de Unterricht mit Klaus (/unterricht): alta → lección completa → resumen.
 // Uso: node tests/klasse-browser.mjs [--base http://localhost:5173]  (sin --base arranca su propio servidor)
 import { mkdirSync } from 'node:fs';
+import { plusAll } from './helpers/plus-browser.mjs';
 import { launch, sleep } from '../scripts/cdp.mjs';
 const arg = (k) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : undefined; };
 const OUT = 'shots/klasse'; mkdirSync(OUT, { recursive: true });
@@ -20,6 +21,10 @@ try {
   const st = await P.eval(`fetch('/api/account/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({alias:'Kx'+Date.now().toString(36).slice(-6),password:'zorro-azul-mesa-72-lluvia'})}).then(r=>r.status)`);
   check(st === 200 || st === 201, `alta de alumno (${st})`);
   await P.eval(`localStorage.setItem('dt:student-session','cookie'); true`);
+  // Sin Plus: la clase enseña la pantalla de Plus (no las lecciones)
+  await P.go('/unterricht?intro=0'); check(await waitFor(P, '[data-klaus-plus="required"]'), 'Free: Unterricht pide Plus');
+  check(await P.eval(`!document.querySelector('.kx-lesson')`), 'Free: no se listan lecciones');
+  await plusAll(L.base);
 
   // Entrada única desde Curso
   await P.go('/curso?intro=0');
@@ -84,7 +89,7 @@ try {
   await L.send('Page.bringToFront', {}, M.sid);
   await M.go('/?intro=0'); await sleep(500);
   await M.eval(`fetch('/api/account/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({alias:'Km'+Date.now().toString(36).slice(-6),password:'zorro-azul-mesa-72-lluvia'})}).then(r=>r.status)`);
-  await M.eval(`localStorage.setItem('dt:student-session','cookie'); true`);
+  await M.eval(`localStorage.setItem('dt:student-session','cookie'); true`); await plusAll(L.base);
   await M.go('/unterricht?intro=0'); await waitFor(M, '.kx-lesson .btn.primary');
   await M.eval(`document.querySelector('.kx-lesson .btn.primary')?.click(); true`); await waitFor(M, '.kx-room .kx-stage');
   const ov = await M.eval(`document.documentElement.scrollWidth`);

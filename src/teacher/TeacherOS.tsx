@@ -183,7 +183,7 @@ function Students() {
             <tbody>{rows.map((s) => (
               <tr key={s.id} className={s.disabled ? 'off' : ''} tabIndex={0} onClick={() => navigate(`/teacher/schueler/${s.id}`)} onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/teacher/schueler/${s.id}`); }}>
                 <td className="tos-cb" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}><input type="checkbox" aria-label={`Seleccionar ${s.alias}`} checked={sel.has(s.id)} onChange={(e) => { const n = new Set(sel); if (e.target.checked) n.add(s.id); else n.delete(s.id); setSel(n); }} /></td>
-                <td><span className="tos-avatar" aria-hidden="true">{s.alias[0].toUpperCase()}</span><b>{s.alias}</b>{s.disabled && <span className="tos-pill">desactivada</span>}</td>
+                <td><span className="tos-avatar" aria-hidden="true">{s.alias[0].toUpperCase()}</span><b>{s.alias}</b>{s.plan === 'plus' && <span className="tos-pill gold" data-plan-pill>Plus</span>}{s.disabled && <span className="tos-pill">desactivada</span>}</td>
                 <td>{s.level ?? <span className="dim">—</span>}</td>
                 <td>{s.groups.map(gname).join(', ') || <span className="dim">—</span>}</td>
                 <td>{ago(s.lastActive)}</td>
@@ -338,6 +338,13 @@ function StudentDetail({ id }: { id: string }) {
               {d.learning.mastery.length ? <div className="tos-table-wrap"><table className="tos-table compact"><thead><tr><th>Tema</th><th>Preguntas</th><th>Dominio</th><th>Errores 30 d</th><th>Estado</th></tr></thead><tbody>{d.learning.mastery.map((t) => <tr key={t.topic}><td><b>{t.name}</b></td><td>{t.seen}</td><td>{Math.round(t.mastery * 100)} %</td><td>{t.errors30}{t.recurring ? ' · recurrente' : ''}</td><td><span className={`tos-pill${t.status === 'a reforzar' ? ' warn' : ''}`}>{t.status}</span></td></tr>)}</tbody></table></div> : <Empty title="Sin datos todavía" />}
             </Card>}
             <GradesCard id={id} alias={s.alias} grades={d.grades} homework={d.homework} onChange={(grades) => setData({ ...d, grades })} />
+            <Card title="Plan · Klaus" className="span2">
+              <div className="libre-row" data-plan={s.plan}>
+                <span className={`tos-pill${s.plan === 'plus' ? ' gold' : ''}`}>{s.plan === 'plus' ? 'Plus' : 'Free'}</span>
+                <span className="libre-note">{s.plan === 'plus' ? 'Tiene Klaus: Schreibt, Redet y Unterricht.' : 'Sin Klaus. La teoría y el resto de la web siguen abiertos.'}</span>
+                <button className={`btn${s.plan === 'plus' ? '' : ' primary'}`} data-plan-toggle onClick={() => { if (s.plan !== 'plus' || confirm(`¿Quitar Plus a ${s.alias}? Perderá el acceso a Klaus; sus borradores y clases se conservan.`)) void patch({ plan: s.plan === 'plus' ? 'free' : 'plus' }); }}>{s.plan === 'plus' ? 'Quitar Plus' : 'Activar Plus'}</button>
+              </div>
+            </Card>
             <Card title="Cuenta" className="span2">
               <div className="libre-row">
                 <button className="btn" onClick={async () => { const r = await tapi<{ password: string }>(`students/${id}/reset-password`, {}); setMsg(null); alert(`Nueva contraseña temporal para ${s.alias}:\n\n${r.password}\n\nSe muestra solo ahora. Sus sesiones abiertas se han cerrado.`); }}>Restablecer contraseña</button>

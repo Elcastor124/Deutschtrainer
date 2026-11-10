@@ -59,3 +59,18 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
   peticiones y apoyar. El autor nunca se muestra a otros alumnos. Retirar una petición no devuelve el cupo diario.
 - Teoría: `GET /api/klaus/teoria` es pública y solo devuelve actividades de teoría, tabla y comparación (prueba en
   `tests/klaus-free.test.ts`). El resto de `/api/klaus/*` sigue exigiendo cuenta.
+
+## Klaus solo para Plus (asignado desde Teacher OS)
+
+- Regla del producto: Schreibt, Redet y Unterricht mit Klaus solo para cuentas Plus; el profesor asigna Plus en Teacher OS
+  (`POST /api/teacher/students/:id { plan: 'plus' | 'free' }`). La teoría (`/api/klaus/teoria`) sigue pública y
+  `/api/klaus/status` responde a cualquier cuenta para que la web pueda enseñar la pantalla «Klaus es parte de Plus».
+- Expectativas obsoletas actualizadas (no se han borrado comprobaciones):
+  - `tests/klaus-ai.test.ts`: el arnés da Plus a los alumnos (`user(alias, plan = 'plus')`) y, para conservar las
+    pruebas de agotamiento de cuota, usa los límites pequeños (los de Free) también para Plus. El estado pasa de
+    `plan: 'free'` a `plan: 'plus'`. Nueva prueba: una cuenta Free recibe 403 `code: 'plus'` en todas las rutas de Klaus.
+  - `tests/klaus-free.test.ts`: la cuenta del arnés es Plus.
+  - Pruebas de navegador (`klaus-writing`, `redet`, `klasse`, `tablon`): el servidor de prueba arranca con una
+    contraseña de profesor aleatoria y `KLAUS_LIMITS_PLUS` pequeño (`tests/helpers/plus-browser.mjs`); Plus se da por
+    Teacher OS, el camino real. `klaus-writing` y `klasse` comprueban antes que sin Plus sale la pantalla de Plus.
+  - `klaus-writing`: «plan Free con 3 revisiones/día» pasa a «plan Plus (límites de prueba: 3 revisiones/día)».

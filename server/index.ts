@@ -350,8 +350,9 @@ const learningStore = new LearningStore(DATA_DIR);
 const learning = createLearning({ accounts, log: () => progressHandler.log, bank, store: learningStore, levelOf: (id) => teacherData.peek(id)?.level ?? null });
 // Klaus AI: sin claves ni KLAUS_ALLOW_PAID=1 todo corre en modo determinista (sin gasto). Ver server/ai/providers.ts.
 const aiConfig = loadAiConfig();
+const aiUsage = new AiUsage(aiConfig, { dataDir: DATA_DIR });
 const klausAi = createKlausAi({
-  accounts, guard, providers: buildProviders(aiConfig, new MockLlm()), usage: new AiUsage(aiConfig, { dataDir: DATA_DIR }), store: new KlausStore(DATA_DIR),
+  accounts, guard, providers: buildProviders(aiConfig, new MockLlm()), usage: aiUsage, store: new KlausStore(DATA_DIR),
   teacherOk: (req) => !!guard.teacherFromRequest(req),
 });
 console.log(`[klaus-ai] LLM=${aiConfig.llm.provider} STT=${aiConfig.stt.provider} TTS=${aiConfig.tts.provider}${aiConfig.llm.reason ? ` (${aiConfig.llm.reason})` : ''}`);
@@ -364,6 +365,7 @@ const forgetAccount = (id: string) => { delete store.data.profiles[id]; store.sa
 playApi.setOnRemoved(forgetAccount);
 const teacherOs = createTeacherOs({
   accounts, guard, log: () => progressHandler.log, bank, data: teacherData, publicDir: join(ROOT, 'public'), onRemoved: forgetAccount, learning: (id) => learning.history(id),
+  plans: { of: (id, alias) => aiUsage.planOf(id, alias), set: (id, plan) => aiUsage.setPlan(id, plan) },
   liveRooms: () => [...rooms.values()].filter((r) => r.s.mode === 'class').map((r) => ({
     code: r.s.code, owner: r.s.owner, phase: r.s.phase, block: r.s.block, players: r.s.players.length, connected: r.s.players.filter((p) => p.connected).length,
     review: Object.values(r.s.answers).filter((x) => x.status === 'review').length, private: !!r.s.private,

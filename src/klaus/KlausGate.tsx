@@ -12,22 +12,37 @@ export type GateKind = 'hablar' | 'escribir' | 'clase';
 const go = (href: string) => (e: MouseEvent<HTMLAnchorElement>) => { e.preventDefault(); navigate(href); };
 const d = (i: number) => ({ '--d': i } as CSSProperties);
 
-export function KlausGate({ kind, className, title, lead, perks, back, look }: {
+/** Texto de la pantalla «Klaus es Plus» (con sesión, plan Free). El plan lo asigna el profesor en Teacher OS. */
+export const PLUS_GATE = {
+  title: 'Klaus es parte de Plus.',
+  lead: 'Schreibt, Redet y Unterricht mit Klaus son del plan Plus. Pídele a tu profesor que lo active en tu cuenta; mientras tanto, la teoría, los ejercicios, los exámenes y los juegos siguen abiertos.',
+};
+
+export function KlausGate({ kind, className, title, lead, perks, back, look, plus = false }: {
   kind: GateKind; className: string; title: string; lead: string; perks: [string, string][]; back: string; look?: KlausSkinDef;
+  /** Con sesión pero sin Plus: en vez de «entrar» invita a pedir Plus y a seguir con el curso. */
+  plus?: boolean;
 }) {
   return (
-    <section className={`kg kg-${kind} ${className}`} data-klaus-gate={kind}>
+    <section className={`kg kg-${kind} ${className}${plus ? ' kg-plus' : ''}`} data-klaus-gate={kind} data-klaus-plus={plus ? 'required' : undefined}>
       <div className="kg-copy">
         <h2>{title}</h2>
         <p className="kg-lead">{lead}</p>
         <ol className="kg-perks">
           {perks.map(([k, v], i) => <li key={k} style={d(i)}><span className="kg-n">{String(i + 1).padStart(2, '0')}</span><span><b>{k}</b>{v}</span></li>)}
         </ol>
-        <p className="kg-cta">
-          <a className="btn primary" href={`/entrar?volver=${back}`} onClick={go(`/entrar?volver=${back}`)}>Iniciar sesión</a>
-          <a className="btn" href="/registro" onClick={go('/registro')}>Crear cuenta</a>
-          <span className="kg-free">Gratis · sin tarjeta</span>
-        </p>
+        {plus ? (
+          <p className="kg-cta">
+            <a className="btn primary" href="/curso" onClick={go('/curso')}>Seguir con el curso</a>
+            <span className="kg-free">Plus · lo activa tu profesor</span>
+          </p>
+        ) : (
+          <p className="kg-cta">
+            <a className="btn primary" href={`/entrar?volver=${back}`} onClick={go(`/entrar?volver=${back}`)}>Iniciar sesión</a>
+            <a className="btn" href="/registro" onClick={go('/registro')}>Crear cuenta</a>
+            <span className="kg-free">Klaus · plan Plus</span>
+          </p>
+        )}
       </div>
       <div className="kg-stage" aria-hidden="true">
         {kind === 'hablar' ? <TalkScene /> : kind === 'escribir' ? <WriteScene /> : <ClassScene />}

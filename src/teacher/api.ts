@@ -12,7 +12,7 @@ export async function tapi<T>(path: string, body?: unknown): Promise<T> {
   return data as T;
 }
 export type Agg = { key: string; n: number; correct: number; accuracy: number | null };
-export interface StudentRow { id: string; alias: string; level: 'A1' | 'A2' | 'B1' | null; groups: string[]; disabled: boolean; createdAt: number; createdByTeacher: boolean; lastActive: number | null; answers7: number; answers30: number; accuracy30: number | null; activities: number; streak: number }
+export interface StudentRow { id: string; alias: string; level: 'A1' | 'A2' | 'B1' | null; groups: string[]; disabled: boolean; plan: 'free' | 'plus'; createdAt: number; createdByTeacher: boolean; lastActive: number | null; answers7: number; answers30: number; accuracy30: number | null; activities: number; streak: number }
 export interface Group { id: string; name: string }
 export interface PlannedSession { id: string; title: string; date: string; groupId?: string; studentIds?: string[]; game: string; topics: string[]; level?: string; presentation?: string; status: 'planned' | 'live' | 'done'; room?: string; startedAt?: number; endedAt?: number }
 export interface Live { code: string; phase: string; players: number; connected: number; review: number; block: string | null }
