@@ -1,13 +1,14 @@
 // Unterricht mit Klaus — aula interactiva. El motor es DETERMINISTA (server/ai/lessons.ts): teoría, tablas, comparaciones,
 // diálogos y ejercicios vienen de actividades predefinidas y se corrigen en el servidor. Solo «Pregúntale a Klaus»
 // puede llamar a la IA (cuota klasseAsks); sin proveedor configurado responde el banco preparado y se dice así.
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import type { AnswerPayload, AnswerResult, KlasseView, PublicActivity } from '../../shared/lesson.ts';
 import { klasseAnswer, klasseAsk, klasseLessons, klasseNext, klasseSession, klasseStart, newRequestId, type KlasseAskAnswer, type KlasseLessonInfo, type KlasseSessionInfo } from '../klaus-ai-client.ts';
 import { navigate, studentSession } from '../util.ts';
 import { KlausFigure } from '../klaus/KlausFigure.tsx';
 import { useKlausSkin } from '../klaus/skin-client.ts';
 import type { KlausReaction } from '../klaus/events.ts';
+import { speak, stopSpeaking, useBrowserVoices, type Spoken } from '../klaus/speech.ts';
 import '../klasse.css';
 
 const KIND: Record<PublicActivity['kind'], string> = {
@@ -83,11 +84,13 @@ export function Klasse() {
         <ol className="kx-lessons">
           {lessons.map((l, i) => {
             const open_ = sessions.find((s) => s.lessonId === l.id && !s.finished), done = sessions.some((s) => s.lessonId === l.id && s.finished);
+            const first = i === 0 || lessons[i - 1].level !== l.level;
             return (
-              <li key={l.id} className="kx-lesson" style={{ '--i': i } as CSSProperties}>
+              <Fragment key={l.id}>{first && <li className="kx-level" aria-hidden="true"><span className="dotnum">{l.level}</span><i>{lessons.filter((x) => x.level === l.level).length} lecciones</i></li>}
+              <li className="kx-lesson" style={{ '--i': i } as CSSProperties} data-lesson={l.id}>
                 <span className="kx-lesson-n dotnum">{String(i + 1).padStart(2, '0')}</span>
                 <div className="kx-lesson-body">
-                  <p className="kx-mono">{l.level} · {l.unit.replace(/^[A-C][12] · /, '')} · {l.steps} pasos{done ? ' · hecha' : ''}</p>
+                  <p className="kx-mono">{l.level} · {l.unit.replace(/^[A-C][12] · /, '')} · {l.steps} pasos{done ? ' · hecha' : ''}{!l.verified && <span className="kx-draft" title="Contenido preparado para la clase y pendiente de revisión del profesor.">Borrador</span>}</p>
                   <h2>{l.title}</h2>
                   <ul>{l.objectives.map((o) => <li key={o}>{o}</li>)}</ul>
                 </div>
@@ -96,7 +99,7 @@ export function Klasse() {
                     ? <button type="button" className="btn primary" disabled={busy} onClick={() => resume(open_.sessionId)}>Continuar · {open_.step + 1}/{open_.total}</button>
                     : <button type="button" className="btn primary" disabled={busy} onClick={() => open(l.id)}>{done ? 'Repetir' : 'Empezar'}</button>}
                 </div>
-              </li>
+              </li></Fragment>
             );
           })}
         </ol>
@@ -162,9 +165,10 @@ function Activity({ a, busy, locked, onAnswer }: { a: PublicActivity; busy: bool
       <div className="kx-theory">
         <p className="kx-text">{a.text}</p>
         {a.example && <blockquote className="kx-example"><p lang="de">{a.example.de}</p><p>{a.example.es}</p></blockquote>}
+        <Listen key={a.id} segments={a.speech ?? [{ text: a.text, lang: 'es' }, ...(a.example ? [{ text: a.example.de, lang: 'de' as const }] : [])]} />
       </div>
     );
-    case 'grammar-table': return <GrammarTable a={a} />;
+    case 'grammar-table': return <GrammarTable key={a.id} a={a} />;
     case 'comparison': return (
       <div className="kx-compare">
         {[a.left, a.right].map((side, s) => (
@@ -202,9 +206,34 @@ function Activity({ a, busy, locked, onAnswer }: { a: PublicActivity; busy: bool
 }
 
 /** Tabla que se explica sola: cada «nota» enciende la celda de la que habla (pasos predefinidos en la lección). */
+/** «Escuchar a Klaus»: voz del navegador, solo a petición (sin autoplay). Sin voz alemana instalada lo dice en vez de leer mal. */
+function Listen({ segments, onFocus }: { segments: Spoken[]; onFocus?: (focus: string | undefined) => void }) {
+  const voices = useBrowserVoices();
+  const [on, setOn] = useState(false);
+  const stop = useRef<() => void>(() => {});
+  useEffect(() => () => { stop.current(); }, []);
+  if (!segments.length) return null;
+  const needsDe = segments.some((x) => x.lang === 'de');
+  if (needsDe && !voices.de) return <p className="kx-muted kx-listen-off">Este navegador no tiene voz en alemán: la explicación no se puede escuchar aquí.</p>;
+  const toggle = () => {
+    if (on) { stop.current(); stopSpeaking(); setOn(false); onFocus?.(undefined); return; }
+    setOn(true);
+    stop.current = speak(segments, (i) => { if (segments[i].focus) onFocus?.(segments[i].focus); }, () => { setOn(false); });
+  };
+  return (
+    <button type="button" className={`kx-listen${on ? ' is-on' : ''}`} onClick={toggle} aria-pressed={on}>
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 6h2.5L9 3v10L5.5 10H3z" fill="currentColor" /><path d="M11.5 5.5a3.5 3.5 0 0 1 0 5M13 3.8a6 6 0 0 1 0 8.4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
+      {on ? 'Parar' : 'Escuchar a Klaus'}
+    </button>
+  );
+}
+
 function GrammarTable({ a }: { a: Extract<PublicActivity, { kind: 'grammar-table' }> }) {
   const [k, setK] = useState(0);
-  const step = a.steps[k], focus = step?.focus;
+  const [spoken, setSpoken] = useState<string | undefined>(undefined);
+  const step = a.steps[k], focus = spoken ?? step?.focus;
+  // Mientras Klaus habla, la casilla que nombra se resalta; al terminar vuelve el paso manual.
+  const onFocus = (f: string | undefined) => { setSpoken(f); const n = f ? a.steps.findIndex((x) => x.focus === f) : -1; if (n >= 0) setK(n); };
   return (
     <div className="kx-table-wrap">
       <table className="kx-table">
@@ -226,6 +255,7 @@ function GrammarTable({ a }: { a: Extract<PublicActivity, { kind: 'grammar-table
           </div>
         </div>
       )}
+      {a.speech && <Listen segments={a.speech} onFocus={onFocus} />}
     </div>
   );
 }

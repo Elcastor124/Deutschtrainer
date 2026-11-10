@@ -22,6 +22,18 @@
 .kx-lesson ul { margin: 0; padding-left: 1.1em; color: var(--dt-paper-2); font-size: 0.92rem; display: grid; gap: 3px; }
 .kx-lesson-act { align-self: center; }
 
+.kx-level { display: flex; align-items: baseline; gap: 14px; padding: 26px 0 10px; border-bottom: 1px solid var(--dt-hair-2); }
+.kx-level span { font-size: 1.9rem; color: var(--dt-paper); line-height: 1; }
+.kx-level i { font: 500 0.7rem/1 var(--dt-mono, var(--mono)); font-style: normal; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dt-muted); }
+.kx-lessons > .kx-level:first-child { padding-top: 14px; }
+.kx-draft { margin-left: 10px; padding: 2px 7px; border: 1px dashed var(--dt-hair-2); border-radius: 999px; color: var(--dt-muted); letter-spacing: 0.08em; }
+.kx-listen { justify-self: start; display: inline-flex; gap: 7px; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--dt-hair-2); background: none; color: var(--dt-paper-2); font: 500 0.84rem var(--dt-sans, inherit); cursor: pointer; transition: color var(--m-quick, 160ms), border-color var(--m-quick, 160ms); }
+.kx-listen:hover, .kx-listen.is-on { color: var(--dt-paper); border-color: var(--dt-paper-2); }
+.kx-listen.is-on svg { color: var(--dt-red); }
+.kx-listen:focus-visible { outline: 2px solid var(--dt-gold); outline-offset: 2px; }
+.kx-listen-off { margin: 0; }
+.kx-theory { display: grid; gap: 14px; }
+
 /* Aula */
 .kx-bar { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 18px; align-items: end; }
 .kx-back { background: none; border: 0; color: var(--dt-paper-2); font: inherit; font-size: 0.86rem; padding: 8px 0; cursor: pointer; min-height: 44px; }

@@ -6,11 +6,13 @@ import { join } from 'node:path';
 import { RULES } from '../tutor.ts';
 import type { Activity, AnswerPayload, AnswerResult, ExerciseActivity, Lesson, PublicActivity } from '../../shared/lesson.ts';
 import { isExercise } from '../../shared/lesson.ts';
+import { LESSONS_A1 } from './lesson-bank-a1.ts';
+import { LESSONS_A2 } from './lesson-bank-a2.ts';
 
 export const AUDIO_DIR = join(import.meta.dirname, '..', 'klaus-audio');
 const rule = (id: string) => RULES.find((r) => r.id === id)!;
 
-export const LESSONS: Lesson[] = [{
+const AKK_01: Lesson = {
   id: 'akk-01', unit: 'A1 · Akkusativ', level: 'A1', title: 'Akkusativ desde cero', verified: true,
   objectives: ['Reconocer el complemento directo (¿wen oder was?)', 'Saber que solo cambia el masculino: der → den, ein → einen', 'Usar el acusativo con für, ohne, gegen, durch y um'],
   ruleRefs: ['akk-obj', 'akk-prep'], progression: { maxTries: 2 }, completion: { minRatio: 0.6 },
@@ -56,7 +58,11 @@ export const LESSONS: Lesson[] = [{
     { kind: 'fill-blank', id: 'akk-r2', title: 'Refuerzo 2', prompt: 'Ich esse ___ Apfel.', answers: ['einen'], ruleId: 'akk-obj',
       hint: 'Der Apfel es masculino; lo que comes es el complemento directo.', explain: 'Ich esse einen Apfel: der Apfel es masculino, ein → einen.' },
   ],
-}];
+};
+/** Orden del curso: primero A1 y luego A2; dentro de cada nivel, el orden del banco. */
+const A1_ORDER = ['vor-01', 'praes-01', 'satz-01', 'akk-01', 'poss-01', 'modal-01', 'trenn-01', 'imp-01'];
+const byOrder = (a: Lesson, b: Lesson) => (A1_ORDER.indexOf(a.id) + 1 || 99) - (A1_ORDER.indexOf(b.id) + 1 || 99);
+export const LESSONS: Lesson[] = [...[AKK_01, ...LESSONS_A1].sort(byOrder), ...LESSONS_A2];
 export const lessonById = (id: string) => LESSONS.find((l) => l.id === id) ?? null;
 export const audioAvailable = (key: string, dir = AUDIO_DIR) => /^[a-z0-9-]{1,40}$/.test(key) && existsSync(join(dir, `${key}.mp3`));
 

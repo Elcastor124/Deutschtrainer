@@ -30,7 +30,8 @@ try {
   check(n >= 1, `lista de lecciones (${n})`);
   await P.shot('lessons');
 
-  await P.eval(`document.querySelector('.kx-lesson .btn.primary').click(); true`); await waitFor(P, '.kx-room .kx-stage');
+  // La lista ya no empieza por akk-01 (orden del curso A1 → A2): se elige esa lección por su id.
+  await P.eval(`document.querySelector('.kx-lesson[data-lesson="akk-01"] .btn.primary').click(); true`); await waitFor(P, '.kx-room .kx-stage');
   check(await P.eval(`!!document.querySelector('.kx-room .kx-stage')`), 'empieza la clase');
   let shotTable = false, wrongDone = false, steps = 0;
   for (; steps < 30; steps++) {
