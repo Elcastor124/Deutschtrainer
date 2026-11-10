@@ -19,12 +19,13 @@ export function followLearningLink(event: MouseEvent<HTMLAnchorElement>) {
   else window.scrollTo({ top: 0 });
 }
 
-export type NavSection = 'home' | 'course' | 'practice' | 'speak' | 'write' | 'games' | 'ranking' | 'road' | 'teacher' | 'account';
+export type NavSection = 'home' | 'course' | 'practice' | 'speak' | 'write' | 'games' | 'ranking' | 'road' | 'board' | 'teacher' | 'account';
 export function navSection(path: string): NavSection {
   if (/^\/(cuenta|mi|registro|entrar)(\/|$)/.test(path)) return 'account';
   if (path.startsWith('/ranking')) return 'ranking';
+  if (path.startsWith('/tablon')) return 'board';
   if (path.startsWith('/road-to-b1') || path.startsWith('/examenes')) return 'road';
-  if (path.startsWith('/curso') || path.startsWith('/biblioteca') || path.startsWith('/unterricht') || /^\/tema\/1\/?$/.test(path)) return 'course';
+  if (path.startsWith('/curso') || path.startsWith('/biblioteca') || path.startsWith('/unterricht') || path.startsWith('/teoria') || /^\/tema\/1\/?$/.test(path)) return 'course';
   if (path.startsWith('/hablar')) return 'speak';
   if (path.startsWith('/escribir')) return 'write';
   if (path.startsWith('/practi') || path.startsWith('/tema/1/taller')) return 'practice';
@@ -37,11 +38,12 @@ const LINKS: { id: NavSection; href: string; label: string; de: string }[] = [
   { id: 'home', href: '/', label: 'Inicio', de: 'Start' },
   { id: 'course', href: '/curso', label: 'Curso', de: 'Kurs' },
   { id: 'practice', href: '/practica', label: 'Practicar', de: 'Üben' },
-  { id: 'speak', href: '/hablar', label: 'Hablar', de: 'Sprechen' },
-  { id: 'write', href: '/escribir', label: 'Escribir', de: 'Schreiben' },
+  { id: 'speak', href: '/hablar', label: 'Redet mit Klaus', de: '' },
+  { id: 'write', href: '/escribir', label: 'Schreibt mit Klaus', de: '' },
   { id: 'games', href: '/juegos', label: 'Juegos', de: 'Spiele' },
   { id: 'ranking', href: '/ranking', label: 'Ranking', de: 'Rangliste' },
   { id: 'road', href: '/examenes', label: 'Exámenes', de: 'Prüfungen' },
+  { id: 'board', href: '/tablon', label: 'Tablón', de: 'Brett' },
 ];
 
 /** Alias de la cuenta de alumno (si hay sesión). Se actualiza al entrar/salir sin recargar. */
@@ -113,7 +115,10 @@ export function LearningNav({ path }: { path: string }) {
           <i className="dt-nav-ind" aria-hidden="true" />
           {LINKS.map((l) => (
             <a key={l.id} href={l.href} onClick={go} aria-current={active === l.id ? 'page' : undefined} data-nav-tab="">
-              <span>{l.label}</span><small lang="de" aria-hidden="true">{l.de}</small>
+              {/* «… mit Klaus»: en escritorio, «mit Klaus» va en una segunda línea fija (cabe la barra); se lee entero. */}
+              {l.label.endsWith(' mit Klaus')
+                ? <span className="dt-nav-klaus" lang="de">{l.label.slice(0, -10)}<b> mit Klaus</b></span>
+                : <><span>{l.label}</span><small lang="de" aria-hidden="true">{l.de}</small></>}
             </a>
           ))}
           <EffectsToggle />

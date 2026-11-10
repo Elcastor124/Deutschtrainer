@@ -10,7 +10,7 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { AI_LIMITS, clean, parseKlasseAnswer, parseRedetTurn, parseWritingReview, type AiLevel, type KlausFeature, type WritingReview } from '../../shared/klaus-ai.ts';
-import { REDET_SCENARIOS, WRITING_TASKS, scenarioById, taskById } from '../../shared/klaus-content.ts';
+import { FREE_TOPICS, REDET_SCENARIOS, WRITING_TASKS, freeTopicById, scenarioById, taskById } from '../../shared/klaus-content.ts';
 import { isExercise, type AnswerPayload, type KlasseView } from '../../shared/lesson.ts';
 import { sameOriginJson } from '../cookies.ts';
 import { identify } from '../play-api.ts';
@@ -20,7 +20,7 @@ import { RULES } from '../tutor.ts';
 import { AiUsage, type Ticket } from './usage.ts';
 import { ProviderError, levelOrDefault, type Providers } from './providers.ts';
 import { KlausStore, newId, type KlasseProgress, type RedetSummary } from './klaus-store.ts';
-import { AUDIO_DIR, LESSONS, afterCheckpoint, audioAvailable, basePlan, findActivity, grade, lessonById, publicActivity, recommendation } from './lessons.ts';
+import { AUDIO_DIR, LESSONS, theoryOf, afterCheckpoint, audioAvailable, basePlan, findActivity, grade, lessonById, publicActivity, recommendation } from './lessons.ts';
 import { SCHEMAS, SYSTEM, fill, levelNote, wrap } from './prompts.ts';
 
 class ApiError extends Error { status: number; code?: string; constructor(status: number, message: string, code?: string) { super(message); this.status = status; this.code = code; } }
@@ -112,8 +112,10 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
     return metered(req, a, { feature: 'text', amount: 1, requestId: rid(b), op: 'redet_turn', real: providers.llm.real, session: s.id }, async (signal) => {
       // Contexto COMPACTO: solo los últimos 6 turnos, no todo el historial.
       const recent = s.turns.slice(-6).map((t) => `${t.role === 'klaus' ? 'Klaus' : 'Alumno'}: ${t.text}`).join('\n');
-      const { r, rec } = await ask(a, 'redet_turn', fill(SYSTEM.redet, { level: levelNote(s.level), role: sc.role }), `${wrap('contexto', recent)}\n${wrap('texto_alumno', text)}`,
-        { scenarioId: sc.id, turn: s.turns.filter((t) => t.role === 'student').length, text }, 'turno_conversacion', SCHEMAS.redet as never, 700, signal);
+      // Modo libre: el tema (fijo, de FREE_TOPICS) se añade al rol; nunca texto del alumno en el rol.
+      const topic = freeTopicById(s.topic), role = topic ? `${sc.role} Tema elegido por el alumno: ${topic.de} (${topic.label}).` : sc.role;
+      const { r, rec } = await ask(a, 'redet_turn', fill(SYSTEM.redet, { level: levelNote(s.level), role }), `${wrap('contexto', recent)}\n${wrap('texto_alumno', text)}`,
+        { scenarioId: sc.id, topic: topic?.id ?? null, turn: s.turns.filter((t) => t.role === 'student').length, text }, 'turno_conversacion', SCHEMAS.redet as never, 700, signal);
       const parsed = parseRedetTurn(r.json, text);
       if (!parsed.ok) throw new ProviderError('bad_output', parsed.error);
       s.turns.push({ role: 'student', text, at: now() }, { role: 'klaus', text: parsed.value.reply, at: now() });
@@ -129,7 +131,8 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
     if (s.summary) return { summary: s.summary };
     const sc = scenarioById(s.scenarioId)!;
     // El resumen reutiliza lo ya registrado: solo pide al modelo temas y sugerencias (no gasta cuota del alumno; sí cuenta en métricas).
-    let topics = [sc.title], suggestions = ['Repite el diálogo en voz alta.', 'Usa las expresiones nuevas en una frase propia.'];
+    const ft = freeTopicById(s.topic);
+    let topics = [ft ? `${sc.title}: ${ft.label}` : sc.title], suggestions = ['Repite el diálogo en voz alta.', 'Usa las expresiones nuevas en una frase propia.'];
     if (providers.llm.real && s.turns.length > 2) {
       try {
         const { r, rec } = await ask(a, 'redet_summary', SYSTEM.redetSummary, wrap('contexto', s.turns.map((t) => `${t.role}: ${t.text}`).join('\n').slice(0, 3000)), { scenarioId: sc.id }, 'resumen_conversacion', SCHEMAS.redetSummary as never, 500, AbortSignal.timeout(25_000));
@@ -245,6 +248,13 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
   // ───────────── Rutas ─────────────
   async function dispatch(req: IncomingMessage, res: ServerResponse, url: URL) {
     const path = url.pathname.slice('/api/klaus'.length), get = req.method === 'GET', post = req.method === 'POST';
+    // Teoría de las lecciones: pública (se enlaza desde las presentaciones del curso). Máx. 4 lecciones por petición.
+    if (path === '/teoria' && get) {
+      const ids = (url.searchParams.get('lecciones') ?? '').split(',').filter(Boolean).slice(0, 4);
+      const lessons = ids.map((id) => lessonById(id)).filter((l): l is NonNullable<typeof l> => !!l);
+      if (!lessons.length) return fail(404, 'Lección no encontrada.');
+      return json(res, 200, { lessons: lessons.map(theoryOf) });
+    }
     if (path === '/usage' && get) { if (!teacherOk?.(req)) fail(401, 'Solo el profesor puede ver el consumo.'); return json(res, 200, usage.summary()); }
     const a = need(req);
     if (path === '/status' && get) {
@@ -268,14 +278,16 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
       const cid = String(b.correctionId ?? ''); if (r.review.corrections.some((c) => c.id === cid) && !r.resolved.includes(cid)) { r.resolved.push(cid); store.save(); }
       return json(res, 200, { resolved: r.resolved });
     }
-    if (path === '/redet/scenarios' && get) return json(res, 200, { scenarios: REDET_SCENARIOS.map(({ role: _r, script: _s, ...s }) => s) });
-    if (path === '/redet/sessions' && get) return json(res, 200, { sessions: store.redetList(a.id).map((s) => ({ id: s.id, scenarioId: s.scenarioId, level: s.level, startedAt: s.startedAt, endedAt: s.endedAt, turns: s.turns.length, summary: s.summary })) });
+    if (path === '/redet/scenarios' && get) return json(res, 200, { scenarios: REDET_SCENARIOS.map(({ role: _r, script: _s, ...s }) => s), topics: FREE_TOPICS.map(({ script: _s, ...t }) => t) });
+    if (path === '/redet/sessions' && get) return json(res, 200, { sessions: store.redetList(a.id).map((s) => ({ id: s.id, scenarioId: s.scenarioId, topic: s.topic ?? null, level: s.level, startedAt: s.startedAt, endedAt: s.endedAt, turns: s.turns.length, summary: s.summary })) });
     if (path === '/redet/session' && get) { const s = store.redet(a.id, url.searchParams.get('id') ?? ''); return s ? json(res, 200, { session: s }) : fail(404, 'Conversación no encontrada.'); }
     if (path === '/redet/start' && post) {
       csrf(req); const b = await jsonBody(req, 500), sc = scenarioById(String(b.scenarioId ?? '')), lvl = level(b);
       if (!sc) return fail(404, 'Escenario no encontrado.'); if (!sc.levels.includes(lvl)) return fail(400, `Este escenario es para ${sc.levels.join('/')}.`);
       const open = store.redetList(a.id).filter((s) => !s.endedAt).length; if (open >= 3) return fail(429, 'Tienes varias conversaciones abiertas. Termina alguna.');
-      const s = store.startRedet(a.id, sc.id, lvl, sc.opening); usage.record({ op: 'redet_start', accountId: a.id, session: s.id, provider: 'local', model: 'local', real: false });
+      // Modo libre: el alumno elige un tema de la lista (nunca texto libre en la apertura).
+      const topic = sc.id === 'libre' && b.topic !== undefined ? freeTopicById(b.topic) ?? fail(400, 'Tema no válido.') : null;
+      const s = store.startRedet(a.id, sc.id, lvl, topic?.opening ?? sc.opening, topic?.id); usage.record({ op: 'redet_start', accountId: a.id, session: s.id, provider: 'local', model: 'local', real: false });
       return json(res, 200, { session: s, scenario: { id: sc.id, title: sc.title, intro: sc.intro, phrases: sc.phrases } });
     }
     if (path === '/redet/turn' && post) return json(res, 200, await redetTurn(req, a));
@@ -309,7 +321,10 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
     });
     return true;
   };
-  return Object.assign(handler, { sweep: () => store.sweep(), forget: (id: string) => { store.forget(id); usage.forget(id); }, flush: () => { store.flush(); usage.flush(); } });
+  // ¿Ha usado esta cuenta Klaus de verdad? (borrador, mensaje en una conversación o respuesta en una clase). Solo lectura.
+  const active = (id: string) => (store.data.drafts[id]?.length ?? 0) > 0 || (store.data.redet[id] ?? []).some((s) => s.turns.some((t) => t.role === 'student'))
+    || (store.data.klasse[id] ?? []).some((p) => Object.keys(p.answers).length > 0);
+  return Object.assign(handler, { active, sweep: () => store.sweep(), forget: (id: string) => { store.forget(id); usage.forget(id); }, flush: () => { store.flush(); usage.flush(); } });
 }
 void existsSync; void newIdUnused();
 function newIdUnused() { return newId('x'); }

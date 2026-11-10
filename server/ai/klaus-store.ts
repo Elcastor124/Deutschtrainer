@@ -9,7 +9,7 @@ export interface DraftReview { id: string; at: number; textSnapshot: string; rev
 export interface Draft { id: string; title: string; text: string; level: AiLevel; taskId: string | null; updatedAt: number; reviews: DraftReview[] }
 export interface RedetTurn { role: 'student' | 'klaus'; text: string; at: number }
 export interface RedetSummary { topics: string[]; expressions: RedetExpression[]; mistakes: RedetCorrection[]; suggestions: string[]; source: 'mock' | 'ai' }
-export interface RedetSession { id: string; scenarioId: string; level: AiLevel; startedAt: number; endedAt: number | null; turns: RedetTurn[]; corrections: RedetCorrection[]; expressions: RedetExpression[]; summary: RedetSummary | null }
+export interface RedetSession { id: string; scenarioId: string; /** Tema del modo libre (FREE_TOPICS). */ topic?: string; level: AiLevel; startedAt: number; endedAt: number | null; turns: RedetTurn[]; corrections: RedetCorrection[]; expressions: RedetExpression[]; summary: RedetSummary | null }
 export interface KlasseProgress { lessonId: string; level: AiLevel; startedAt: number; updatedAt: number; step: number; plan: string[]; remedialAdded: boolean; answers: Record<string, { choice: string; ok: boolean; tries: number }>; asks: number; finished: boolean; digest: string; sessionId: string }
 interface Data { version: 1; drafts: Record<string, Draft[]>; redet: Record<string, RedetSession[]>; klasse: Record<string, KlasseProgress[]> }
 
@@ -52,9 +52,9 @@ export class KlausStore {
   // ── Conversaciones
   redetList(a: string): RedetSession[] { return (this.data.redet[a] ??= []); }
   redet(a: string, id: string): RedetSession | null { return this.redetList(a).find((s) => s.id === id) ?? null; }
-  startRedet(a: string, scenarioId: string, level: AiLevel, opening: string): RedetSession {
+  startRedet(a: string, scenarioId: string, level: AiLevel, opening: string, topic?: string): RedetSession {
     const list = this.redetList(a);
-    const s: RedetSession = { id: newId('rd'), scenarioId, level, startedAt: this.now(), endedAt: null, turns: [{ role: 'klaus', text: opening, at: this.now() }], corrections: [], expressions: [], summary: null };
+    const s: RedetSession = { id: newId('rd'), scenarioId, ...(topic ? { topic } : {}), level, startedAt: this.now(), endedAt: null, turns: [{ role: 'klaus', text: opening, at: this.now() }], corrections: [], expressions: [], summary: null };
     list.unshift(s); this.data.redet[a] = list.slice(0, MAX_REDET); this.save(); return s;
   }
   // ── Clases

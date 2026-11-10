@@ -34,6 +34,11 @@ const ALIAS_RE = /^[\p{L}\p{N}][\p{L}\p{N}_.-]{2,15}$/u;
 const COMMON = ['password', 'contraseña', 'passwort', '1234567890', 'qwertyuiop', 'abcdefghij', '0123456789', 'deutschtrainer'];
 
 export const aliasKey = (a: string) => a.normalize('NFKC').toLowerCase();
+/** Texto libre (tablón): palabra exacta, o prefijo para las raíces largas. No marca «sexto», «Sechs», «pene» dentro de otras palabras. */
+export function hasBadWords(text: string): boolean {
+  const words = text.normalize('NFKC').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  return words.some((w) => BAD.some((b) => w === b || w === `${b}s` || ((b.length >= 5 || b === 'nigg') && w.startsWith(b))));
+}
 
 /** null = válido. */
 export function validateAlias(raw: unknown): string | null {

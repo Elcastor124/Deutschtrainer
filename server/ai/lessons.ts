@@ -78,6 +78,12 @@ const shuffleStable = (items: string[], seed: string): string[] => {
   const out = [...items]; for (let i = out.length - 1; i > 0; i--) { h = Math.imul(h ^ i, 16777619) >>> 0; const j = h % (i + 1); [out[i], out[j]] = [out[j], out[i]]; }
   return out;
 };
+/** Teoría pública de una lección (sin cuenta): solo explicaciones, tablas y comparaciones. Nunca ejercicios ni soluciones. */
+export function theoryOf(lesson: Lesson) {
+  const items = lesson.activities.filter((a) => a.kind === 'theory' || a.kind === 'grammar-table' || a.kind === 'comparison').map((a) => publicActivity(a, lesson, 'teoria'));
+  return { id: lesson.id, title: lesson.title, level: lesson.level, unit: lesson.unit, objectives: lesson.objectives, verified: lesson.verified, items };
+}
+
 export function publicActivity(a: Activity, lesson: Lesson, sessionId: string): PublicActivity {
   switch (a.kind) {
     case 'theory': return { kind: 'theory', id: a.id, title: a.title, text: a.text, example: a.example, verified: !!a.ruleId && lesson.verified, speech: a.speech };

@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import type { AiLevel } from '../../shared/klaus-ai.ts';
 import {
   klausStatus, newRequestId, quotaLeft, redetEnd, redetScenarios, redetSession, redetSessions, redetStart, redetStt, redetTts, redetTurn,
-  type KlausStatus, type RedetCorrectionView, type RedetScenarioInfo, type RedetSessionInfo, type RedetSessionView, type RedetSummaryView,
+  type KlausStatus, type RedetCorrectionView, type RedetFreeTopic, type RedetScenarioInfo, type RedetSessionInfo, type RedetSessionView, type RedetSummaryView,
 } from '../klaus-ai-client.ts';
 import { studentSession } from '../util.ts';
 import { KlausFigure } from '../klaus/KlausFigure.tsx';
@@ -25,6 +25,7 @@ export function Redet() {
   const look = useKlausSkin();
   const [status, setStatus] = useState<KlausStatus | null>(null);
   const [scenarios, setScenarios] = useState<RedetScenarioInfo[] | null>(null);
+  const [topics, setTopics] = useState<RedetFreeTopic[]>([]);
   const [sessions, setSessions] = useState<RedetSessionInfo[]>([]);
   const [level, setLevel] = useState<AiLevel>('A1');
   const [conv, setConv] = useState<RedetSessionView | null>(null);
@@ -36,7 +37,7 @@ export function Redet() {
 
   const refresh = useCallback(async () => {
     const [st, sc, ss] = await Promise.all([klausStatus(), redetScenarios(), redetSessions()]);
-    setStatus(st); setScenarios(sc.scenarios); setSessions(ss.sessions);
+    setStatus(st); setScenarios(sc.scenarios); setTopics(sc.topics ?? []); setSessions(ss.sessions);
   }, []);
   useEffect(() => { if (loggedIn) refresh().catch((e: Error) => setErr(e.message)); }, [loggedIn, refresh]);
   useEffect(() => () => stopSpeaking(), []);
@@ -48,9 +49,9 @@ export function Redet() {
     setReaction(s.summary ? 'complete' : 'waving');
     window.scrollTo({ top: 0 });
   };
-  const start = async (id: string) => {
+  const start = async (id: string, topic?: string) => {
     setBusy('start'); setErr(null);
-    try { const r = await redetStart(id, level); open(r.session, false); } catch (e) { setErr((e as Error).message); } finally { setBusy(null); }
+    try { const r = await redetStart(id, level, topic); open(r.session, false); } catch (e) { setErr((e as Error).message); } finally { setBusy(null); }
   };
   const resume = async (id: string) => {
     setBusy('start'); setErr(null);
@@ -68,12 +69,16 @@ export function Redet() {
     </main>
   );
 
-  if (conv) return <Conversation conv={conv} scenario={scenario} lines={lines} setLines={setLines} summary={summary} setSummary={setSummary}
+  if (conv) return <Conversation conv={conv} scenario={scenario} topic={topics.find((t) => t.id === conv.topic)?.label ?? null} lines={lines} setLines={setLines} summary={summary} setSummary={setSummary}
     status={status} setStatus={setStatus} busy={busy} setBusy={setBusy} err={err} setErr={setErr} reaction={reaction} setReaction={setReaction} look={look} onBack={back} />;
 
   const left = quotaLeft(status, 'text');
   const openOnes = sessions.filter((s) => !s.endedAt), done = sessions.filter((s) => s.endedAt && s.summary).slice(0, 4);
-  const name = (id: string) => scenarios?.find((s) => s.id === id)?.title ?? id;
+  const name = (id: string, topic?: string | null) => { const t = topics.find((x) => x.id === topic); return t ? `Libre · ${t.label}` : scenarios?.find((s) => s.id === id)?.title ?? id; };
+  // La conversación libre tiene su propio bloque arriba: no se repite en la lista de situaciones.
+  const guided = scenarios?.filter((s) => s.id !== 'libre') ?? null;
+  const free = scenarios?.find((s) => s.id === 'libre') ?? null;
+  const full = openOnes.length >= 3;
   return (
     <main className="dt-page rd-page">
       <header className="rd-head">
@@ -86,15 +91,35 @@ export function Redet() {
       {openOnes.length > 0 && (
         <section className="rd-open" aria-label="Conversaciones abiertas">
           <h2 className="rd-mono">Sin terminar</h2>
-          <ul>{openOnes.map((s) => <li key={s.id}><span><b>{name(s.scenarioId)}</b> <span className="rd-dim">{s.level} · {s.turns} mensajes</span></span>
+          <ul>{openOnes.map((s) => <li key={s.id}><span><b>{name(s.scenarioId, s.topic)}</b> <span className="rd-dim">{s.level} · {s.turns} mensajes</span></span>
             <button type="button" className="btn" disabled={!!busy} onClick={() => void resume(s.id)}>Continuar</button></li>)}</ul>
         </section>
       )}
+      <div className="rd-level"><span className="rd-mono">Tu nivel</span><Segmented label="Nivel" value={level} onChange={setLevel} options={[{ id: 'A1', label: 'A1' }, { id: 'A2', label: 'A2' }]} /></div>
+      {free && (
+        <section className="rd-free" aria-labelledby="rd-free-h" data-redet-free="">
+          <div className="rd-free-head">
+            <p className="rd-mono" lang="de">Freies Gespräch · modo libre</p>
+            <h2 id="rd-free-h">Habla de lo que quieras.</h2>
+            <p className="rd-dim">Sin guion de situación: elige un tema para arrancar o empieza en blanco. Klaus te sigue y te corrige igual.</p>
+          </div>
+          <div className="rd-topics" role="group" aria-label="Temas del modo libre">
+            {topics.map((t) => (
+              <button key={t.id} type="button" className="rd-topic" disabled={!!busy || full} onClick={() => void start('libre', t.id)} aria-label={`Hablar de: ${t.label}`}>
+                <b>{t.label}</b><small lang="de">«{t.opening.replace(/^Hallo! /, '')}»</small>
+              </button>
+            ))}
+            <button type="button" className="rd-topic is-blank" disabled={!!busy || full} onClick={() => void start('libre')} aria-label="Empezar en blanco">
+              <b>En blanco</b><small lang="de">«{free.opening.replace(/^Hallo! /, '')}»</small>
+            </button>
+          </div>
+        </section>
+      )}
       <section className="rd-pick" aria-labelledby="rd-pick-h">
-        <div className="rd-pick-top"><h2 id="rd-pick-h">Situaciones</h2><Segmented label="Nivel" value={level} onChange={setLevel} options={[{ id: 'A1', label: 'A1' }, { id: 'A2', label: 'A2' }]} /></div>
-        {!scenarios ? <p className="rd-dim">Cargando situaciones…</p> : (
+        <div className="rd-pick-top"><h2 id="rd-pick-h">Situaciones</h2><p className="rd-dim">Conversaciones con un objetivo: pedir, preguntar, presentarte.</p></div>
+        {!guided ? <p className="rd-dim">Cargando situaciones…</p> : (
           <ol className="rd-scenes">
-            {scenarios.map((s, i) => {
+            {guided.map((s, i) => {
               const ok = s.levels.includes(level);
               return (
                 <li key={s.id} className={`rd-scene${ok ? '' : ' is-off'}`} style={{ '--i': i } as CSSProperties}>
@@ -106,7 +131,7 @@ export function Redet() {
                     <p className="rd-scene-open" lang="de">«{s.opening}»</p>
                   </div>
                   <div className="rd-scene-act">
-                    {ok ? <button type="button" className="btn primary" disabled={!!busy || openOnes.length >= 3} onClick={() => void start(s.id)} aria-label={`Empezar: ${s.title}`}>Empezar</button>
+                    {ok ? <button type="button" className="btn primary" disabled={!!busy || full} onClick={() => void start(s.id)} aria-label={`Empezar: ${s.title}`}>Empezar</button>
                       : <span className="rd-dim">Solo {s.levels.join(' / ')}</span>}
                   </div>
                 </li>
@@ -114,12 +139,12 @@ export function Redet() {
             })}
           </ol>
         )}
-        {openOnes.length >= 3 && <p className="rd-note">Tienes 3 conversaciones sin terminar: termina alguna para empezar otra.</p>}
+        {full && <p className="rd-note">Tienes 3 conversaciones sin terminar: termina alguna para empezar otra.</p>}
       </section>
       {done.length > 0 && (
         <section className="rd-past" aria-label="Conversaciones terminadas">
           <h2 className="rd-mono">Terminadas</h2>
-          <ul>{done.map((s) => <li key={s.id}><span><b>{name(s.scenarioId)}</b> <span className="rd-dim">{s.level} · {s.summary!.mistakes.length} errores · {s.summary!.expressions.length} expresiones</span></span>
+          <ul>{done.map((s) => <li key={s.id}><span><b>{name(s.scenarioId, s.topic)}</b> <span className="rd-dim">{s.level} · {s.summary!.mistakes.length} errores · {s.summary!.expressions.length} expresiones</span></span>
             <button type="button" className="btn" disabled={!!busy} onClick={() => void resume(s.id)}>Ver resumen</button></li>)}</ul>
         </section>
       )}
@@ -143,7 +168,7 @@ function Status({ status, left }: { status: KlausStatus | null; left: number | n
 }
 
 function Conversation(p: {
-  conv: RedetSessionView; scenario: RedetScenarioInfo | null; lines: Line[]; setLines: (f: (l: Line[]) => Line[]) => void;
+  conv: RedetSessionView; scenario: RedetScenarioInfo | null; topic: string | null; lines: Line[]; setLines: (f: (l: Line[]) => Line[]) => void;
   summary: RedetSummaryView | null; setSummary: (s: RedetSummaryView) => void; status: KlausStatus | null; setStatus: (s: KlausStatus) => void;
   busy: null | string; setBusy: (b: null | 'start' | 'turn' | 'end' | 'stt') => void; err: string | null; setErr: (e: string | null) => void;
   reaction: KlausReaction; setReaction: (r: KlausReaction) => void; look: ReturnType<typeof useKlausSkin>; onBack: () => void;
@@ -202,7 +227,7 @@ function Conversation(p: {
     <main className="dt-page rd-page rd-room">
       <header className="rd-bar">
         <button type="button" className="rd-back" onClick={p.onBack}>← Situaciones</button>
-        <div className="rd-bar-t"><p className="rd-mono" lang="de">{conv.level} · {scenario?.de ?? 'Redet mit Klaus'}</p><h1>{scenario?.title ?? 'Conversación'}</h1></div>
+        <div className="rd-bar-t"><p className="rd-mono" lang="de">{conv.level} · {scenario?.de ?? 'Redet mit Klaus'}</p><h1>{scenario?.title ?? 'Conversación'}{p.topic && <span className="rd-topic-tag"> · {p.topic}</span>}</h1></div>
         {!ended && <button type="button" className="btn" disabled={!!busy || lines.filter((l) => l.role === 'student').length === 0} onClick={() => void finish()}>{busy === 'end' ? 'Cerrando…' : 'Terminar'}</button>}
       </header>
 

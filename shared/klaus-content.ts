@@ -41,6 +41,25 @@ export const REDET_SCENARIOS: RedetScenario[] = [
 ];
 export const scenarioById = (id: string) => REDET_SCENARIOS.find((s) => s.id === id) ?? null;
 
+/** Modo libre de Redet: temas para empezar a hablar sin situación. Cada uno trae su pregunta de apertura y su guion determinista
+ * (lo usa el modo sin IA). Con IA real, el tema se añade al rol de Klaus y la conversación sigue lo que diga el alumno. */
+export interface FreeTopic { id: string; label: string; de: string; opening: string; script: string[] }
+export const FREE_TOPICS: FreeTopic[] = [
+  { id: 'hobbys', label: 'Aficiones', de: 'Hobbys', opening: 'Hallo! Was machst du gern in deiner Freizeit?',
+    script: ['Cool! Wie oft machst du das?', 'Mit wem machst du das am liebsten?', 'Und was möchtest du gern einmal ausprobieren?', 'Danke! Deine Hobbys klingen super.'] },
+  { id: 'schule', label: 'El instituto', de: 'Schule', opening: 'Hallo! Was ist dein Lieblingsfach in der Schule?',
+    script: ['Warum magst du dieses Fach?', 'Und welches Fach findest du schwierig?', 'Wie kommst du morgens zur Schule?', 'Danke! Viel Erfolg in der Schule!'] },
+  { id: 'familie', label: 'La familia', de: 'Familie', opening: 'Hallo! Erzähl mir von deiner Familie. Hast du Geschwister?',
+    script: ['Wie alt sind sie?', 'Was macht ihr gern zusammen?', 'Und wo wohnt deine Familie?', 'Danke! Das ist eine schöne Familie.'] },
+  { id: 'essen', label: 'Comida', de: 'Essen', opening: 'Hallo! Was isst du am liebsten?',
+    script: ['Lecker! Kochst du auch selbst?', 'Was isst du normalerweise zum Frühstück?', 'Und was möchtest du einmal probieren?', 'Danke! Jetzt habe ich Hunger.'] },
+  { id: 'wochenende', label: 'El fin de semana', de: 'Wochenende', opening: 'Hallo! Was hast du am Wochenende gemacht?',
+    script: ['Und wie war das?', 'Mit wem warst du da?', 'Was machst du nächstes Wochenende?', 'Danke! Das klingt nach einem guten Wochenende.'] },
+  { id: 'musik', label: 'Música y series', de: 'Musik und Serien', opening: 'Hallo! Welche Musik hörst du gern?',
+    script: ['Wer ist dein Lieblingssänger oder deine Lieblingsband?', 'Und welche Serie siehst du gerade?', 'Warum gefällt sie dir?', 'Danke! Ich höre mir das mal an.'] },
+];
+export const freeTopicById = (id: unknown) => FREE_TOPICS.find((t) => t.id === id) ?? null;
+
 export interface WritingTask { id: string; level: AiLevel; title: string; prompt: string; minWords: number; maxWords: number; points: string[] }
 export const WRITING_TASKS: WritingTask[] = [
   { id: 'a1-presentacion', level: 'A1', title: 'Presentación personal', prompt: 'Escribe una presentación sobre ti: cómo te llamas, cuántos años tienes, de dónde eres, dónde vives y qué te gusta.', minWords: 30, maxWords: 60, points: ['nombre', 'edad', 'origen y ciudad', 'una afición'] },

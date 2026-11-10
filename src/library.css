@@ -72,3 +72,11 @@
   .bs-book, .bs-card { animation: none; }
   .bs-book > a { transition: none; }
 }
+
+/* Ficha del libro: acceso a la teoría y a la clase de Klaus del tema */
+.bs-card-study { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--dt-hair-2); }
+.bs-card-study a { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--dt-hair-2); color: var(--dt-paper); text-decoration: none; transition: border-color 160ms ease, background 160ms ease; }
+.bs-card-study a b { font-size: 0.88rem; }
+.bs-card-study a small { font-size: 0.72rem; color: var(--dt-muted); }
+.bs-card-study a:hover { border-color: var(--dt-paper-2); background: rgba(242, 241, 238, 0.04); }
+.bs-card-study a:focus-visible { outline: 2px solid var(--dt-gold); outline-offset: 2px; }

@@ -44,13 +44,14 @@ export interface RedetCorrectionView { original: string; suggestion: string; cat
 export interface RedetExpressionView { de: string; es: string }
 export interface RedetSummaryView { topics: string[]; expressions: RedetExpressionView[]; mistakes: RedetCorrectionView[]; suggestions: string[]; source: 'mock' | 'ai' }
 export interface RedetScenarioInfo { id: string; title: string; de: string; levels: AiLevel[]; intro: string; opening: string; phrases: RedetExpressionView[] }
-export interface RedetSessionView { id: string; scenarioId: string; level: AiLevel; startedAt: number; endedAt: number | null; turns: { role: 'student' | 'klaus'; text: string; at: number }[]; corrections: RedetCorrectionView[]; expressions: RedetExpressionView[]; summary: RedetSummaryView | null }
-export interface RedetSessionInfo { id: string; scenarioId: string; level: AiLevel; startedAt: number; endedAt: number | null; turns: number; summary: RedetSummaryView | null }
+export interface RedetSessionView { id: string; scenarioId: string; topic?: string; level: AiLevel; startedAt: number; endedAt: number | null; turns: { role: 'student' | 'klaus'; text: string; at: number }[]; corrections: RedetCorrectionView[]; expressions: RedetExpressionView[]; summary: RedetSummaryView | null }
+export interface RedetFreeTopic { id: string; label: string; de: string; opening: string }
+export interface RedetSessionInfo { id: string; scenarioId: string; topic?: string | null; level: AiLevel; startedAt: number; endedAt: number | null; turns: number; summary: RedetSummaryView | null }
 export interface RedetTurnView { reply: string; corrections: RedetCorrectionView[]; expressions: RedetExpressionView[]; source: 'mock' | 'ai' }
-export const redetScenarios = () => playRequest<{ scenarios: RedetScenarioInfo[] }>('/api/klaus/redet/scenarios');
+export const redetScenarios = () => playRequest<{ scenarios: RedetScenarioInfo[]; topics?: RedetFreeTopic[] }>('/api/klaus/redet/scenarios');
 export const redetSessions = () => playRequest<{ sessions: RedetSessionInfo[] }>('/api/klaus/redet/sessions');
 export const redetSession = (id: string) => playRequest<{ session: RedetSessionView }>(`/api/klaus/redet/session?id=${encodeURIComponent(id)}`);
-export const redetStart = (scenarioId: string, level: AiLevel) => playRequest<{ session: RedetSessionView; scenario: Pick<RedetScenarioInfo, 'id' | 'title' | 'intro' | 'phrases'> }>('/api/klaus/redet/start', { scenarioId, level });
+export const redetStart = (scenarioId: string, level: AiLevel, topic?: string) => playRequest<{ session: RedetSessionView; scenario: Pick<RedetScenarioInfo, 'id' | 'title' | 'intro' | 'phrases'> }>('/api/klaus/redet/start', { scenarioId, level, ...(topic ? { topic } : {}) });
 export const redetTurn = (sessionId: string, text: string, requestId: string, signal?: AbortSignal) => playRequest<RedetTurnView>('/api/klaus/redet/turn', { sessionId, text, requestId }, signal);
 export const redetEnd = (sessionId: string) => playRequest<{ summary: RedetSummaryView }>('/api/klaus/redet/end', { sessionId });
 /** Voz del servidor (solo si hay proveedor real configurado; gasta cuota de caracteres). */

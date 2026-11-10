@@ -85,11 +85,25 @@ html[data-dt-effects='off'] .dt-nav-links[data-ind] .dt-nav-ind { transition: no
   .dt-nav-teacher { margin: 8px 0 0; justify-content: flex-start !important; }
   .dt-nav-ind { display: none; }
 }
-/* Con 7 enlaces + cuenta, entre 1361 y 1480 px la barra va justa: relleno más estrecho para no desbordar ni colapsar a hamburguesa. */
-@media (min-width: 1361px) and (max-width: 1480px) {
-  .dt-nav-links a { padding-inline: 9px; }
+/* Con 10 enlaces + cuenta, de 1441 a 1720 px la barra va justa: relleno estrecho (se carga después de account.css, por eso vive aquí). */
+@media (min-width: 1361px) and (max-width: 1720px) {
+  .dt-nav-links a { padding-inline: 8px; }
+}
+/* 1361–1500 px (portátiles de 1366): todo más compacto para que quepan las 10 entradas sin pasar a menú. */
+@media (min-width: 1361px) and (max-width: 1500px) {
+  .dt-nav-links a { padding-inline: 5px; font-size: 0.82rem !important; }
+  .dt-nav-inner { gap: 6px; }
+  .dt-nav-brand .dt-wordmark { height: 13px; width: auto; }
+  .dt-nav-join, .dt-nav-login { font-size: 0.8rem !important; }
+  .dt-nav-cta { padding: 0 10px !important; font-size: 0.82rem !important; }
   .dt-nav-inner { gap: 12px; }
 }
+/* «Redet / Schreibt mit Klaus»: «mit Klaus» en una segunda línea mono (siempre visible) en escritorio; en el menú móvil, en línea. */
+.dt-nav-klaus { display: inline-grid; justify-items: center; line-height: 1.05; }
+.dt-nav-klaus b { font: 500 0.6rem/1.2 var(--dt-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dt-muted); }
+.dt-nav-links a[aria-current='page'] .dt-nav-klaus b { color: var(--dt-red); }
+@media (max-width: 1360px) { .dt-nav-klaus { display: inline; } .dt-nav-klaus b { font: inherit; letter-spacing: 0; text-transform: none; color: inherit; } }
+@media (min-width: 1361px) { .dt-nav-inner { max-width: max(var(--dt-max), min(100vw, 1880px)); } }
 @media (max-width: 420px) { .dt-nav-brand .dt-wordmark { height: 13px; width: auto; } }
 
 /* ── Intro ── */

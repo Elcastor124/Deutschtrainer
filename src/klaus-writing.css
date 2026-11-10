@@ -53,3 +53,19 @@
   .kw-side { position: static; max-height: none; }
   }
 @media (prefers-reduced-motion: reduce) { .kw-page * { transition: none !important; animation: none !important; } }
+
+/* Modo de escritura: libre / tarea guiada */
+.kw-mode { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; border: 1px solid var(--dt-hair-2); background: var(--dt-ink-1); flex: 1 1 320px; max-width: 420px; }
+.kw-mode button { display: grid; gap: 2px; justify-items: start; padding: 8px 12px; border: 0; border-radius: 12px; background: none; color: var(--dt-paper-2); text-align: left; cursor: pointer; font: inherit; text-transform: none; letter-spacing: 0; }
+.kw-mode button b { font: 600 .92rem var(--dt-display); color: inherit; }
+.kw-mode button small { font: 500 .68rem var(--dt-mono); color: var(--dt-muted); }
+.kw-mode button.is-on { background: var(--dt-paper); color: var(--dt-ink-1); }
+.kw-mode button.is-on small { color: #5b5a55; }
+.kw-mode button:focus-visible { outline: 2px solid var(--dt-gold); outline-offset: 2px; }
+.kw-ideas { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.kw-idea { padding: 7px 12px; border-radius: 999px; border: 1px dashed var(--dt-hair-2); background: none; color: var(--dt-paper); font: 400 .84rem var(--dt-mono); cursor: pointer; }
+.kw-idea:hover { border-style: solid; border-color: var(--dt-paper-2); }
+.kw-idea:focus-visible { outline: 2px solid var(--dt-gold); outline-offset: 2px; }
+/* El título ocupa lo que queda de la fila y nunca se sale de la tarjeta. */
+.kw-controls label.kw-grow { min-width: 140px; }
+.kw-controls label.kw-grow input { width: 100%; min-width: 0; box-sizing: border-box; }

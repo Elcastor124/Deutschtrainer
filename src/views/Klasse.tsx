@@ -40,6 +40,16 @@ export function Klasse() {
     if (!loggedIn) return;
     klasseLessons().then((r) => { setLessons(r.lessons); setSessions(r.sessions); }).catch((e: Error) => setErr(e.message));
   }, [loggedIn]);
+  // Acceso directo desde la teoría o la presentación: /unterricht?leccion=<id> abre esa clase (o la retoma si ya estaba empezada).
+  const wanted = useRef(new URLSearchParams(location.search).get('leccion'));
+  useEffect(() => {
+    const id = wanted.current; if (!id || !lessons) return;
+    wanted.current = null; history.replaceState(history.state, '', '/unterricht');
+    if (!lessons.some((l) => l.id === id)) { setErr('Esa clase no existe.'); return; }
+    const open_ = sessions.find((s) => s.lessonId === id && !s.finished);
+    void (open_ ? resume(open_.sessionId) : open(id));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lessons]);
 
   const run = useCallback(async (fn: () => Promise<void>) => {
     setBusy(true); setErr(null);
@@ -64,7 +74,7 @@ export function Klasse() {
   if (!loggedIn) return (
     <main className="dt-page kx-page">
       <header className="kx-head"><p className="dt-eyebrow">Unterricht mit Klaus</p><h1>Clase con Klaus<b className="dt-punkt">.</b></h1></header>
-      <KlausGate kind="clase" className="kx-gate" back="/unterricht" look={look}
+      <KlausGate kind="clase" className="kx-gate" back={encodeURIComponent(location.pathname + location.search)} look={look}
         title="Entra para empezar una clase con Klaus."
         lead="Gramática de A1 y A2 paso a paso: explicación, tabla animada, ejercicios y un diálogo real. Si algo no queda claro, se lo preguntas."
         perks={[['15 lecciones', 'Presente, Akkusativ, Dativ, Perfekt, subordinadas…'], ['Ejercicios con corrección', 'Huecos, ordenar frases, emparejar y elegir.'], ['Guarda tu progreso', 'Cada lección sigue en el paso donde la dejaste.']]} />
@@ -158,7 +168,8 @@ function Rail({ view }: { view: KlasseView }) {
   );
 }
 
-function Activity({ a, busy, locked, onAnswer }: { a: PublicActivity; busy: boolean; locked: boolean; onAnswer: (p: AnswerPayload) => void }) {
+/** Renderiza una actividad de clase. La página /teoria reutiliza las de teoría (explicación, tabla, comparación). */
+export function Activity({ a, busy, locked, onAnswer }: { a: PublicActivity; busy: boolean; locked: boolean; onAnswer: (p: AnswerPayload) => void }) {
   switch (a.kind) {
     case 'theory': return (
       <div className="kx-theory">

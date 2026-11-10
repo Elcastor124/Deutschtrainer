@@ -44,3 +44,18 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
 
 - `tests/klaus-figure.test.ts` fijaba la ruta exacta del brazo antiguo (`M-3.3 1C-3.5 -8 -3 -18 -2.4 -28`), que dibujaba la pata en x=124 % del marco de la cara: flotaba separada de Klaus. El usuario pidió acercarla y rehacerla. La prueba conserva la intención (pata cerrada, 4 dedos `data-klaus-toe`, almohadilla `data-klaus-pad`) y ahora comprueba el contorno nuevo que nace bajo la mejilla (`translate(90.5 73.5)`). El motor Canvas (`public/klaus/klaus-renderer.js`, `_paint_behavior_overlay`) usa la misma geometría.
 - Las pantallas sin sesión de `/hablar`, `/escribir` y `/unterricht` usan `src/klaus/KlausGate.tsx`; conservan las clases `.rd-gate`, `.kw-gate` y `.kx-gate` que buscan las pruebas.
+
+## Modo libre, teoría, nav «… mit Klaus» y Tablón
+
+- `tests/redet-browser.mjs`: antes esperaba «lista de 7 situaciones». La conversación libre ahora tiene su propio bloque
+  (temas + «En blanco») y no se repite en la lista, para que cada botón lleve a un sitio distinto. La prueba pasa a pedir
+  ≥ 6 situaciones guiadas, comprueba que «Conversación libre» no está en la lista y añade el recorrido del modo libre.
+  El escenario `libre` del servidor no cambia.
+- Navegación: «Hablar» → «Redet mit Klaus», «Escribir» → «Schreibt mit Klaus» (mismas rutas `/hablar` y `/escribir`) y
+  nueva entrada «Tablón» (`/tablon`). Con 10 entradas la barra no cabe a 1366–1440 px: el menú desplegable pasa de
+  ≤ 1360 px a ≤ 1440 px (brand.css y account.css). Ninguna prueba dependía del corte anterior.
+- Tablón: `server/tablon.ts` + `tests/tablon.test.ts` + `tests/tablon-browser.mjs`. Solo cuentas de alumno con al menos una
+  actividad (progreso, misiones, juegos o algo con Klaus: un borrador guardado o una conversación con mensajes) pueden abrir
+  peticiones y apoyar. El autor nunca se muestra a otros alumnos. Retirar una petición no devuelve el cupo diario.
+- Teoría: `GET /api/klaus/teoria` es pública y solo devuelve actividades de teoría, tabla y comparación (prueba en
+  `tests/klaus-free.test.ts`). El resto de `/api/klaus/*` sigue exigiendo cuenta.

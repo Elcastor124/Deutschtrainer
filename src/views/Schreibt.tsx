@@ -26,6 +26,12 @@ function Marked({ text, items, resolved, active, onPick }: { text: string; items
   return <p className="kw-marked" lang="de">{parts}</p>;
 }
 
+/** Arranques para la escritura libre: solo ponen la primera frase; el resto es del alumno. */
+const FREE_IDEAS = [
+  { title: 'Mein Wochenende', de: 'Am Wochenende habe ich' }, { title: 'Mein Traumurlaub', de: 'Mein Traumurlaub ist in' },
+  { title: 'Ein Brief an einen Freund', de: 'Lieber Max, wie geht es dir?' }, { title: 'Mein Lieblingsessen', de: 'Mein Lieblingsessen ist' },
+];
+
 export function Schreibt() {
   const loggedIn = !!studentSession();
   const look = useKlausSkin();
@@ -42,6 +48,7 @@ export function Schreibt() {
   const [resolved, setResolved] = useState<Set<string>>(new Set());
   const [active, setActive] = useState<string | null>(null);
   const [guided, setGuided] = useState(false);
+  const [mode, setMode] = useState<'libre' | 'tarea'>('libre');
   const [shown, setShown] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<'review' | 'save' | null>(null);
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
@@ -73,11 +80,11 @@ export function Schreibt() {
   const taskTasks = useMemo(() => tasks.filter((t) => t.level === level), [tasks, level]);
 
   const load = (d: DraftView) => {
-    setDraftId(d.id); setTitle(d.title); setText(d.text); setLevel(d.level); setTaskId(d.taskId); setDirty(false); setMsg(null);
+    setDraftId(d.id); setTitle(d.title); setText(d.text); setLevel(d.level); setTaskId(d.taskId); setMode(d.taskId ? 'tarea' : 'libre'); setDirty(false); setMsg(null);
     const last = d.reviews[d.reviews.length - 1] ?? null;
     setReview(last); setLocalReview(last?.review ?? null); setResolved(new Set(last?.resolved ?? [])); setActive(null); setShown(new Set());
   };
-  const fresh = () => { setDraftId(null); setTitle(''); setText(''); setTaskId(null); setReview(null); setLocalReview(null); setResolved(new Set()); setActive(null); setDirty(false); setMsg(null); };
+  const fresh = () => { setDraftId(null); setTitle(''); setText(''); setTaskId(null); setMode('libre'); setReview(null); setLocalReview(null); setResolved(new Set()); setActive(null); setDirty(false); setMsg(null); };
 
   const save = async (): Promise<string | null> => {
     setBusy('save');
@@ -148,11 +155,21 @@ export function Schreibt() {
       <div className="kw-grid">
         <section className="kw-card kw-edit" aria-label="Tu texto">
           <div className="kw-row kw-controls">
-            <label>Nivel <select value={level} onChange={(e) => { setLevel(e.target.value as AiLevel); setTaskId(null); setDirty(true); }}><option>A1</option><option>A2</option></select></label>
-            <label>Tarea <select value={taskId ?? ''} onChange={(e) => { setTaskId(e.target.value || null); setDirty(true); }}>
-              <option value="">Texto libre</option>{taskTasks.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}</select></label>
+            <div className="kw-mode" role="radiogroup" aria-label="Modo de escritura" data-writing-mode={mode}>
+              {([['libre', 'Escritura libre', 'Tu tema, sin límite'], ['tarea', 'Tarea guiada', 'Con puntos y palabras']] as const).map(([id, label, sub]) => (
+                <button key={id} type="button" role="radio" aria-checked={mode === id} className={mode === id ? 'is-on' : ''}
+                  onClick={() => { setMode(id); setTaskId(id === 'tarea' ? taskId ?? taskTasks[0]?.id ?? null : null); setDirty(true); }}><b>{label}</b><small>{sub}</small></button>
+              ))}
+            </div>
+            <label>Nivel <select value={level} onChange={(e) => { const lv = e.target.value as AiLevel; setLevel(lv); setTaskId(mode === 'tarea' ? tasks.find((t) => t.level === lv)?.id ?? null : null); setDirty(true); }}><option>A1</option><option>A2</option></select></label>
+            {mode === 'tarea' && <label>Tarea <select value={taskId ?? ''} onChange={(e) => { setTaskId(e.target.value || null); setDirty(true); }}>
+              {taskTasks.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}</select></label>}
             <label className="kw-grow">Título <input value={title} maxLength={80} onChange={(e) => { setTitle(e.target.value); setDirty(true); }} placeholder={task?.title ?? 'Sin título'} /></label>
           </div>
+          {mode === 'libre' && !text.trim() && <div className="kw-ideas" aria-label="Ideas para empezar">
+            <span className="kw-dim">¿Sin idea? Empieza por:</span>
+            {FREE_IDEAS.map((i) => <button key={i.de} type="button" className="kw-idea" lang="de" onClick={() => { setText(`${i.de} `); if (!title.trim()) setTitle(i.title); setDirty(true); area.current?.focus(); }}>{i.de}…</button>)}
+          </div>}
           {task && <aside className="kw-task"><b>{task.title}.</b> {task.prompt} <span className="kw-dim">({task.minWords}–{task.maxWords} palabras)</span>
             <ul>{task.points.map((p) => <li key={p}>{p}</li>)}</ul></aside>}
           <label className="sr" htmlFor="kw-text">Tu texto en alemán</label>

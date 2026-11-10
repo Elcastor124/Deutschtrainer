@@ -4,7 +4,7 @@ import { readEffectsEnabled } from './effects.ts';
 import { useBooted } from './boot.ts';
 
 /** Orden del menú: avanzar hacia la derecha en la navegación hace que la página entre desde la derecha (y al revés). */
-const routeOrder = ['/', '/curso', '/unterricht', '/tema/1', '/tema/1/taller', '/practica', '/hablar', '/escribir', '/juegos', '/jugar', '/jenga', '/boxeo', '/libre', '/ranking', '/examenes', '/mi', '/cuenta', '/klaus', '/profesor'];
+const routeOrder = ['/', '/curso', '/unterricht', '/tema/1', '/tema/1/taller', '/practica', '/hablar', '/escribir', '/juegos', '/jugar', '/jenga', '/boxeo', '/libre', '/ranking', '/examenes', '/tablon', '/mi', '/cuenta', '/klaus', '/profesor'];
 const orderOf = (p: string) => { const i = routeOrder.indexOf(p.replace(/\/$/, '') || '/'); return i < 0 ? routeOrder.length : i; };
 /** Pantallas con coreografía propia (portada editorial) o donde el movimiento estorbaría (partidas, profesor). */
 const NO_CHOREO = /^\/($|jugar|jenga|boxeo|libre\/jugar|t\/|p\/|j\/|profesor|teacher)/;

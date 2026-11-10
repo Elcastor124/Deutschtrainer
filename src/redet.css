@@ -121,3 +121,25 @@ html[data-dt-effects='on'] .rd-summary > :nth-child(2) { animation-delay: 60ms; 
   .rd-compose { grid-template-columns: minmax(0, 1fr); } .rd-compose-act { justify-content: end; }
 }
 @media (prefers-reduced-motion: reduce) { .rd-scene, .rd-msg, .rd-summary > *, .rd-typing span { animation: none !important; } }
+
+/* Nivel (común a modo libre y situaciones) */
+.rd-level { display: flex; align-items: center; gap: 12px; }
+/* Modo libre: bloque propio, temas como fichas */
+.rd-free { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr); gap: 24px 40px; padding: 26px; border-radius: var(--dt-r-lg, 24px); border: 1px solid var(--dt-hair-2); background: var(--dt-ink-2); }
+.rd-free-head { display: grid; gap: 8px; align-content: start; }
+.rd-free-head h2 { margin: 0; font: 700 clamp(1.5rem, 2.6vw, 2.1rem)/1.05 var(--dt-display, var(--display)); letter-spacing: -0.02em; }
+.rd-free-head .rd-dim { margin: 0; max-width: 40ch; }
+.rd-topics { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.rd-topic { display: grid; gap: 4px; align-content: start; min-height: 84px; padding: 14px; border-radius: 14px; border: 1px solid var(--dt-hair-2); background: var(--dt-ink-1); color: var(--dt-paper); text-align: left; cursor: pointer; font: inherit;
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; }
+.rd-topic b { font-size: 1rem; }
+.rd-topic small { font: 400 0.78rem/1.35 var(--dt-mono, var(--mono)); color: var(--dt-muted); }
+.rd-topic:hover:not(:disabled) { border-color: var(--dt-paper-2); transform: translateY(-2px); }
+.rd-topic:focus-visible { outline: 2px solid var(--dt-gold); outline-offset: 2px; }
+.rd-topic:disabled { opacity: 0.5; cursor: default; }
+.rd-topic.is-blank { border-style: dashed; background: transparent; }
+.rd-topic-tag { color: var(--dt-muted); font-weight: 500; }
+.rd-pick-top .rd-dim { margin: 0; }
+@media (max-width: 860px) { .rd-free { grid-template-columns: minmax(0, 1fr); padding: 20px; } }
+@media (max-width: 420px) { .rd-topics { grid-template-columns: 1fr 1fr; } .rd-topic { min-height: 72px; padding: 12px; } }
+@media (prefers-reduced-motion: reduce) { .rd-topic { transition: none; } }

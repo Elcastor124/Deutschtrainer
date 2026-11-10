@@ -25,7 +25,10 @@ try {
   check(await P.eval(`document.querySelector('.dt-nav-links a[aria-current=page]')?.getAttribute('href')`) === '/hablar', 'el menú marca «Hablar»');
   const st = await register(P, 'Rd'); check(st === 200 || st === 201, `alta de alumno (${st})`);
   await P.go('/hablar?intro=0');
-  check(await waitFor(P, `document.querySelectorAll('.rd-scene').length >= 7`), 'lista de 7 situaciones');
+  // 6 situaciones guiadas; la conversación libre tiene su propio bloque (no se repite en la lista).
+  check(await waitFor(P, `document.querySelectorAll('.rd-scene').length >= 6`), 'lista de 6 situaciones guiadas');
+  check(await P.eval(`![...document.querySelectorAll('.rd-scene')].some(li => li.textContent.includes('Conversación libre'))`), 'la libre no se repite en la lista');
+  check(await P.eval(`document.querySelectorAll('[data-redet-free] .rd-topic').length >= 5`), 'modo libre: temas + «En blanco»');
   check(await P.eval(`document.querySelector('.rd-status')?.textContent.includes('Modo práctica')`), 'sin IA lo dice («Modo práctica»)');
   // A2 desbloquea «vacaciones»; A1 la marca solo A2
   check(await P.eval(`[...document.querySelectorAll('.rd-scene')].some(li => li.classList.contains('is-off') && li.textContent.includes('vacaciones'))`), 'vacaciones es solo A2 en el nivel A1');
@@ -55,6 +58,15 @@ try {
   // Volver: aparece en «Terminadas» y se puede reabrir
   await P.eval(`[...document.querySelectorAll('.rd-summary .btn')].at(-1).click(); true`);
   check(await waitFor(P, has('.rd-past li')), 'la conversación aparece en «Terminadas»');
+  // Modo libre: tema «El instituto» → apertura del tema, respuesta del guion del tema y etiqueta en la cabecera
+  await P.eval(`[...document.querySelectorAll('[data-redet-free] .rd-topic')].find(b => b.textContent.includes('instituto')).click(); true`);
+  check(await waitFor(P, has('.rd-room .rd-msg.is-klaus')), 'modo libre: empieza la conversación');
+  check(await P.eval(`document.querySelector('.rd-msg.is-klaus p').textContent`) === 'Hallo! Was ist dein Lieblingsfach in der Schule?', 'modo libre: apertura del tema');
+  check(await P.eval(`document.querySelector('.rd-bar h1').textContent.includes('El instituto')`), 'modo libre: el tema se ve en la cabecera');
+  await type(P, 'Mein Lieblingsfach ist Mathe.'); await P.eval(`document.querySelector('.rd-compose button[type=submit]').click(); true`);
+  check(await waitFor(P, `document.querySelectorAll('.rd-msg.is-klaus').length === 2`), 'modo libre: Klaus responde');
+  check(await P.eval(`document.querySelectorAll('.rd-msg.is-klaus')[1].textContent.includes('Warum magst du dieses Fach?')`), 'modo libre: sigue el tema elegido');
+  await P.shot('free');
   // Móvil
   const M = await L.newPage('rdm', 390, 844, true);
   await L.send('Page.bringToFront', {}, M.sid);

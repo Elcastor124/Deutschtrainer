@@ -1,0 +1,28 @@
+/* /teoria/<lektion>: lectura de la gramática. Columna de texto cómoda; cada lección termina con su acceso a la clase de Klaus. */
+.th-page { width: min(980px, 100%); margin: 0 auto; padding: 28px var(--dt-pad, 16px) 96px; display: grid; gap: 40px; align-content: start; position: relative; z-index: 1; }
+.th-head { display: grid; gap: 10px; }
+.th-head h1 { font: 700 clamp(2.2rem, 5vw, 3.6rem)/0.98 var(--dt-display, var(--display)); letter-spacing: -0.03em; margin: 0; }
+.th-lede { margin: 0; color: var(--dt-paper-2); max-width: 60ch; }
+.th-back { justify-self: start; color: var(--dt-muted); text-decoration: none; font: 500 0.85rem var(--dt-mono); }
+.th-back:hover { color: var(--dt-paper); }
+.th-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.th-muted { color: var(--dt-muted); margin: 0; }
+.th-toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.th-toc a { display: inline-flex; gap: 8px; align-items: center; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--dt-hair-2); color: var(--dt-paper); text-decoration: none; font-size: 0.9rem; }
+.th-toc a .dotnum { color: var(--dt-red); }
+.th-toc a:hover { border-color: var(--dt-paper-2); }
+.th-lesson { display: grid; gap: 18px; padding-top: 28px; border-top: 1px solid var(--dt-hair-2); scroll-margin-top: calc(var(--dt-nav-height, 72px) + 16px); }
+.th-lesson-head h2 { margin: 6px 0 8px; font: 700 clamp(1.5rem, 3vw, 2.1rem)/1.05 var(--dt-display, var(--display)); letter-spacing: -0.02em; }
+.th-goals { margin: 0; padding-left: 18px; color: var(--dt-paper-2); font-size: 0.92rem; display: grid; gap: 2px; }
+.th-items { display: grid; gap: 14px; }
+.th-item { padding: 22px; border-radius: var(--dt-r-lg, 24px); background: var(--dt-ink-2); border: 1px solid var(--dt-hair-2); }
+.th-item .kx-title { margin-top: 0; }
+.th-cta { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; align-items: center; padding: 18px 22px; border-radius: 18px; background: var(--dt-paper); color: var(--dt-ink-1); text-decoration: none;
+  transition: transform 160ms ease; }
+.th-cta .kx-mono { color: #5b5a55; }
+.th-cta b { font-size: 1.05rem; grid-column: 1; }
+.th-cta i { grid-row: 1 / 3; grid-column: 2; font-style: normal; font-size: 1.4rem; color: var(--dt-red); }
+.th-cta:hover { transform: translateY(-2px); }
+.th-cta:focus-visible { outline: 2px solid var(--dt-gold); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .th-cta { transition: none; } }
+.th-actions .btn { text-decoration: none; }

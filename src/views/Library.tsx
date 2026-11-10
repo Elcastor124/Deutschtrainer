@@ -2,7 +2,7 @@
 // Al pasar el ratón (o tocar) un libro sale de la balda y aparece su ficha; clic abre la presentación.
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from 'react';
 import { loadCatalog, type Presentation } from '../catalog.ts';
-import { COURSE, courseOrder } from '../course.ts';
+import { COURSE, courseOrder, klausLessonHref, theoryHref } from '../course.ts';
 import { followLearningLink } from '../components/LearningNav.tsx';
 import '../library.css';
 
@@ -125,6 +125,11 @@ function Shelf({ books }: { books: Presentation[] }) {
             <a className="dt-btn dt-btn-primary sm" href={p.file} target="_blank" rel="noopener noreferrer"><span className="dt-btn-label">Abrir presentación →</span></a>
             {p.pdf && <a className="dt-link" href={p.pdf} target="_blank" rel="noopener noreferrer">PDF</a>}
           </div>
+          {(() => { const u = COURSE.find((x) => x.n === p.unit); return u?.klaus?.length ? (
+            <div className="bs-card-study" data-study-links="">
+              <a href={theoryHref(u.id)} onClick={followLearningLink}><b>Ver la teoría</b><small>Explicación y tablas</small></a>
+              <a href={klausLessonHref(u.klaus[0])} onClick={followLearningLink}><b>Clase con Klaus</b><small>Explica y practica contigo</small></a>
+            </div>) : null; })()}
         </div>
       )}
     </div>

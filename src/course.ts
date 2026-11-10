@@ -35,6 +35,8 @@ export interface CourseUnit {
   /** Presentación extra de repaso (p. ej. el remaster 3D). */
   review?: { id: string; label: string };
   games: ('jenga' | 'jugar' | 'boxeo')[];
+  /** Lecciones de «Clase con Klaus» (server/ai/lesson-bank-*) que explican la gramática de esta Lektion. */
+  klaus?: string[];
   workshop?: boolean;
   exam?: boolean;
   steps: CourseStep[];
@@ -56,6 +58,10 @@ export const GAME_INFO = {
 
 export const topicQuery = (topics: readonly Topic[]) => (topics.length ? `?temas=${topics.join(',')}` : '');
 export const presentationHref = (id: string) => `/presentaciones/${id}.html`;
+/** Teoría de la Lektion (explicaciones y tablas de las clases de Klaus, pública). */
+export const theoryHref = (unitId: string) => `/teoria/${unitId}`;
+/** Clase con Klaus de una lección concreta (si no hay sesión, pide entrar y vuelve aquí). */
+export const klausLessonHref = (lessonId: string) => `/unterricht?leccion=${lessonId}`;
 export const pdfHref = (id: string) => `/presentaciones/${id}.pdf`;
 
 type UnitSeed = Omit<CourseUnit, 'steps' | 'n'>;
@@ -64,33 +70,33 @@ const SEEDS: UnitSeed[] = [
     summary: 'Saludos, presentarte, números, preguntas personales e idiomas: la base para todo lo demás.',
     goals: ['Saludar y presentarme (Ich heiße…, Ich komme aus…)', 'Contar y decir números y la hora', 'Hacer y responder preguntas personales', 'Conjugar verbos en presente'],
     topics: ['vorstellen', 'praesens', 'alltag'], presentation: 'mission-01', presentationNote: 'Traducción web de la presentación original «DEUTSCHTRAINER · Mission 01» que nos pasaste.',
-    review: { id: 'bruecke-a1', label: 'Brücke A1 (repaso)' }, games: ['jenga', 'jugar'] },
+    review: { id: 'bruecke-a1', label: 'Brücke A1 (repaso)' }, games: ['jenga', 'jugar'], klaus: ['vor-01', 'praes-01', 'satz-01'] },
   { id: 'bank', title: 'Auf der Bank', de: 'Ich möchte ein Konto eröffnen.', level: 'A2',
     summary: 'Vocabulario del banco, trato formal con «Sie» y diálogos para situaciones reales.',
     goals: ['Usar Sie y las fórmulas de cortesía', 'Pedir algo con möchte / können', 'Entender un diálogo en el banco', 'Recordar el vocabulario con su artículo'],
-    topics: ['vocab', 'alltag', 'modal'], presentation: 'bank', pdf: true, games: ['jenga', 'jugar'] },
+    topics: ['vocab', 'alltag', 'modal'], presentation: 'bank', pdf: true, games: ['jenga', 'jugar'], klaus: ['modal-01'] },
   { id: 'nebensaetze-perfekt', title: 'Warum? · Nebensätze y Perfekt', de: '…, weil ich Deutsch gelernt habe.', level: 'A1–A2',
     summary: 'weil, obwohl, dass y deshalb; contar el pasado con haben/sein + Partizip II y el verbo al final.',
     goals: ['Unir frases con weil, obwohl y dass (verbo al final)', 'Usar deshalb con inversión', 'Formar el Perfekt con haben o sein', 'Escribir el Partizip II de verbos frecuentes'],
     topics: ['nebensatz', 'perfekt', 'satzbau'], presentation: 'nebensaetze-perfekt', pdf: true,
-    review: { id: 'zusammenfassung-thema-1', label: 'Resumen del Tema 1' }, games: ['jenga', 'jugar'], workshop: true },
+    review: { id: 'zusammenfassung-thema-1', label: 'Resumen del Tema 1' }, games: ['jenga', 'jugar'], workshop: true, klaus: ['neben-01', 'perf-01', 'perf-02'] },
   { id: 'krankenhaus', title: 'Im Krankenhaus', de: 'Mir tut der Kopf weh.', level: 'A1–A2',
     summary: 'El cuerpo y la salud con Nebensätze; repaso de Dativ y Perfekt con la lectura 3D de Leo.',
     goals: ['Nombrar partes del cuerpo con su artículo', 'Explicar qué me pasa (weil, wenn, dass)', 'Entender la lectura de Leo en el hospital', 'Repasar Dativ y Perfekt en contexto'],
     topics: ['vocab', 'nebensatz', 'perfekt', 'lesen'], presentation: 'krankenhaus', pdf: true,
-    review: { id: 'krankenhaus-remaster', label: 'Lectura y repaso 3D' }, games: ['jenga', 'jugar'] },
+    review: { id: 'krankenhaus-remaster', label: 'Lectura y repaso 3D' }, games: ['jenga', 'jugar'], klaus: ['neben-01', 'dat-02', 'perf-01'] },
   { id: 'unterwegs', title: 'Unterwegs · Dativ + Perfekt', de: 'Ich fahre mit dem Zug.', level: 'A1–A2',
     summary: 'Artículos, pronombres y preposiciones de Dativ en viajes; frases combinadas con Perfekt.',
     goals: ['Usar dem / der / den en Dativ', 'Elegir mit, bei, nach, zu, von, aus', 'Usar mir, dir, ihm, ihr', 'Contar un viaje en Perfekt'],
-    topics: ['dativ', 'perfekt', 'praep'], presentation: 'unterwegs', pdf: true, games: ['jenga', 'jugar'] },
+    topics: ['dativ', 'perfekt', 'praep'], presentation: 'unterwegs', pdf: true, games: ['jenga', 'jugar'], klaus: ['dat-01', 'dat-02', 'perf-01'] },
   { id: 'akkusativ', title: 'Mission Stadt · Akkusativ', de: 'Wohin gehst du? In den Park!', level: 'A1–A2',
     summary: 'Akkusativ y Dativ en la ciudad, Wo/Wohin y un combate final en la Boxen Arena.',
     goals: ['Reconocer el complemento directo (den, einen, keinen)', 'Distinguir Wo? (Dativ) y Wohin? (Akkusativ)', 'Usar preposiciones de dos casos', 'Ganar un combate de repaso de casos'],
-    topics: ['akkusativ', 'dativ', 'praep'], presentation: 'akkusativ', pdf: true, games: ['boxeo', 'jenga', 'jugar'] },
+    topics: ['akkusativ', 'dativ', 'praep'], presentation: 'akkusativ', pdf: true, games: ['boxeo', 'jenga', 'jugar'], klaus: ['akk-01', 'wechsel-01', 'dat-01'] },
   { id: 'sprache-in-bewegung', title: 'Sprache in Bewegung', de: 'Alles zusammen!', level: 'A1–A2',
     summary: 'Repaso general interactivo: estructuras, ejercicios y diccionario de todo el curso.',
     goals: ['Combinar Präsens, Perfekt y Nebensätze', 'Elegir el caso correcto (Akkusativ/Dativ)', 'Usar el vocabulario de todas las Lektionen', 'Sentirme listo para el simulacro'],
-    topics: ['vocab', 'perfekt', 'nebensatz', 'dativ', 'akkusativ'], presentation: 'sprache-in-bewegung', games: ['jenga', 'jugar', 'boxeo'], workshop: true },
+    topics: ['vocab', 'perfekt', 'nebensatz', 'dativ', 'akkusativ'], presentation: 'sprache-in-bewegung', games: ['jenga', 'jugar', 'boxeo'], workshop: true, klaus: ['akk-01', 'dat-01', 'perf-01', 'neben-01'] },
   { id: 'road-to-b1', title: 'Die erste Prüfung · Simulacro', de: 'Viel Erfolg!', level: 'A1–A2 → B1',
     summary: 'Simulacro de examen de 105 minutos guiado por el profesor: lectura, dictado y audición.',
     goals: ['Leer un texto y responder con seguridad', 'Escribir un dictado', 'Entender audios cortos', 'Gestionar el tiempo de un examen'],
@@ -108,8 +114,10 @@ function buildSteps(u: UnitSeed): CourseStep[] {
     steps.push(mk('repaso', 'Revisa tus resultados y vuelve a practicar lo que falló.', { label: 'Repasar errores', href: `/practica${q}` }));
   } else {
     const pres = u.presentation!;
+    // Junto a la presentación: la teoría (para leerla con calma) y la clase de Klaus de ese tema, a un clic.
+    const study: StepLink[] = u.klaus?.length ? [{ label: 'Ver la teoría', href: theoryHref(u.id) }, { label: 'Clase con Klaus', href: klausLessonHref(u.klaus[0]) }] : [];
     steps.push(mk('ver', u.presentationNote ?? 'Abre la presentación de clase y recorre los ejemplos.', { label: 'Abrir presentación', href: presentationHref(pres), external: true },
-      u.pdf ? [{ label: 'PDF con soluciones', href: pdfHref(pres), external: true }] : []));
+      [...study, ...(u.pdf ? [{ label: 'PDF con soluciones', href: pdfHref(pres), external: true }] : [])]));
     steps.push(mk('practicar', 'Preguntas sin tiempo de los temas de esta Lektion.', { label: 'Practicar ahora', href: `/practica${q}` }));
     // Los juegos (BlackCard, Jenga, Boxen) viven en /juegos: la ruta se centra en presentación, práctica y repaso.
     const extra: StepLink[] = [];

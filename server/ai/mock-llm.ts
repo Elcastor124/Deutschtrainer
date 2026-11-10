@@ -1,7 +1,7 @@
 // Klaus AI · proveedor DETERMINISTA para desarrollo, pruebas y modo sin claves. NO es IA: detecta un puñado de errores
 // típicos A1–A2 con patrones verificados (los mismos pares correcto/incorrecto de server/tutor.ts) y responde con guiones.
 // Toda salida lleva source:'mock' hasta la interfaz: nunca se presenta como inteligencia real.
-import { REDET_SCENARIOS, scenarioById } from '../../shared/klaus-content.ts';
+import { REDET_SCENARIOS, freeTopicById, scenarioById } from '../../shared/klaus-content.ts';
 import { RULES } from '../tutor.ts';
 import type { LlmProvider, LlmRequest, LlmResult } from './providers.ts';
 
@@ -43,7 +43,8 @@ export class MockLlm implements LlmProvider {
       }
       case 'redet_turn': {
         const sc = scenarioById(String(input.scenarioId)) ?? REDET_SCENARIOS[0], n = Number(input.turn) || 0, text = String(input.text ?? '');
-        json = { reply: sc.script[Math.min(n, sc.script.length - 1)], corrections: mockDetect(text).map(({ hint: _h, ruleId: _r, ...c }) => c), expressions: sc.phrases.slice(0, 2) };
+        const script = freeTopicById(input.topic)?.script ?? sc.script;
+        json = { reply: script[Math.min(n, script.length - 1)], corrections: mockDetect(text).map(({ hint: _h, ruleId: _r, ...c }) => c), expressions: sc.phrases.slice(0, 2) };
         break;
       }
       case 'redet_summary': {
