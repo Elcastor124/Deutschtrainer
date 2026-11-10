@@ -8,8 +8,9 @@ import {
   klausStatus, newRequestId, quotaLeft, redetEnd, redetScenarios, redetSession, redetSessions, redetStart, redetStt, redetTts, redetTurn,
   type KlausStatus, type RedetCorrectionView, type RedetScenarioInfo, type RedetSessionInfo, type RedetSessionView, type RedetSummaryView,
 } from '../klaus-ai-client.ts';
-import { navigate, studentSession } from '../util.ts';
+import { studentSession } from '../util.ts';
 import { KlausFigure } from '../klaus/KlausFigure.tsx';
+import { KlausGate } from '../klaus/KlausGate.tsx';
 import { useKlausSkin } from '../klaus/skin-client.ts';
 import type { KlausReaction } from '../klaus/events.ts';
 import { speak, stopSpeaking, useBrowserVoices } from '../klaus/speech.ts';
@@ -60,12 +61,10 @@ export function Redet() {
   if (!loggedIn) return (
     <main className="dt-page rd-page">
       <header className="rd-head"><p className="dt-eyebrow">Redet mit Klaus</p><h1>Habla con Klaus<b className="dt-punkt">.</b></h1></header>
-      <section className="rd-gate">
-        <div className="rd-gate-klaus"><KlausFigure reaction="waving" look={look} /></div>
-        <div><h2>Entra para empezar una conversación</h2><p>Klaus guarda tus conversaciones y los errores que vas corrigiendo.</p>
-          <p className="rd-row"><a className="btn primary" href="/entrar?volver=/hablar" onClick={(e) => { e.preventDefault(); navigate('/entrar?volver=/hablar'); }}>Iniciar sesión</a>
-            <a className="btn" href="/registro" onClick={(e) => { e.preventDefault(); navigate('/registro'); }}>Crear cuenta</a></p></div>
-      </section>
+      <KlausGate kind="hablar" className="rd-gate" back="/hablar" look={look}
+        title="Entra para empezar una conversación con Klaus."
+        lead="Elige una situación (restaurante, tienda, presentarte…) y contesta en alemán. Klaus te sigue la conversación y te marca cada error con la forma correcta."
+        perks={[['7 situaciones de A1 y A2', 'Del «Wie heißt du?» a pedir en un restaurante.'], ['Corrección en cada mensaje', 'Ves qué falló, por qué y cómo se dice bien.'], ['Escucha a Klaus', 'Cada respuesta se puede oír en alemán.']]} />
     </main>
   );
 

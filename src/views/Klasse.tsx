@@ -4,8 +4,9 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import type { AnswerPayload, AnswerResult, KlasseView, PublicActivity } from '../../shared/lesson.ts';
 import { klasseAnswer, klasseAsk, klasseLessons, klasseNext, klasseSession, klasseStart, newRequestId, type KlasseAskAnswer, type KlasseLessonInfo, type KlasseSessionInfo } from '../klaus-ai-client.ts';
-import { navigate, studentSession } from '../util.ts';
+import { studentSession } from '../util.ts';
 import { KlausFigure } from '../klaus/KlausFigure.tsx';
+import { KlausGate } from '../klaus/KlausGate.tsx';
 import { useKlausSkin } from '../klaus/skin-client.ts';
 import type { KlausReaction } from '../klaus/events.ts';
 import { speak, stopSpeaking, useBrowserVoices, type Spoken } from '../klaus/speech.ts';
@@ -63,12 +64,10 @@ export function Klasse() {
   if (!loggedIn) return (
     <main className="dt-page kx-page">
       <header className="kx-head"><p className="dt-eyebrow">Unterricht mit Klaus</p><h1>Clase con Klaus<b className="dt-punkt">.</b></h1></header>
-      <section className="kx-gate">
-        <div className="kx-gate-klaus"><KlausFigure reaction="waving" look={look} /></div>
-        <div><h2>Entra para empezar una clase</h2><p>Klaus guarda por dónde vas en cada lección.</p>
-          <p className="kx-row"><a className="btn primary" href="/entrar?volver=/unterricht" onClick={(e) => { e.preventDefault(); navigate('/entrar?volver=/unterricht'); }}>Iniciar sesión</a>
-            <a className="btn" href="/registro" onClick={(e) => { e.preventDefault(); navigate('/registro'); }}>Crear cuenta</a></p></div>
-      </section>
+      <KlausGate kind="clase" className="kx-gate" back="/unterricht" look={look}
+        title="Entra para empezar una clase con Klaus."
+        lead="Gramática de A1 y A2 paso a paso: explicación, tabla animada, ejercicios y un diálogo real. Si algo no queda claro, se lo preguntas."
+        perks={[['15 lecciones', 'Presente, Akkusativ, Dativ, Perfekt, subordinadas…'], ['Ejercicios con corrección', 'Huecos, ordenar frases, emparejar y elegir.'], ['Guarda tu progreso', 'Cada lección sigue en el paso donde la dejaste.']]} />
     </main>
   );
 

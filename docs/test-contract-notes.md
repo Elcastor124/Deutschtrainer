@@ -39,3 +39,8 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
 - Las lecciones nuevas (`server/ai/lesson-bank-a1.ts`, `lesson-bank-a2.ts`) llevan `verified: false` y se marcan «Borrador» en la lista hasta que el profesor las revise. Sus ejercicios de escucha se filtran solos mientras no exista el audio (misma regla que `akk-01`).
 - `tests/klasse-lessons.test.ts` valida todo el banco (ids únicos, respuestas dentro de rango, huecos, pares, `ruleId` existentes, sin escucha sin texto, refuerzo).
 - `tests/redet-browser.mjs` (nuevo): `/hablar` en modo práctica (sin IA): menú único, alta, escenario A2 bloqueado en A1, corrección «Ich habe 15 Jahre» → «Ich bin 15 Jahre alt», resumen, móvil sin desborde, consola limpia.
+
+## Pata de Klaus y pantallas de acceso
+
+- `tests/klaus-figure.test.ts` fijaba la ruta exacta del brazo antiguo (`M-3.3 1C-3.5 -8 -3 -18 -2.4 -28`), que dibujaba la pata en x=124 % del marco de la cara: flotaba separada de Klaus. El usuario pidió acercarla y rehacerla. La prueba conserva la intención (pata cerrada, 4 dedos `data-klaus-toe`, almohadilla `data-klaus-pad`) y ahora comprueba el contorno nuevo que nace bajo la mejilla (`translate(90.5 73.5)`). El motor Canvas (`public/klaus/klaus-renderer.js`, `_paint_behavior_overlay`) usa la misma geometría.
+- Las pantallas sin sesión de `/hablar`, `/escribir` y `/unterricht` usan `src/klaus/KlausGate.tsx`; conservan las clases `.rd-gate`, `.kw-gate` y `.kx-gate` que buscan las pruebas.

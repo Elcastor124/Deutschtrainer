@@ -10,9 +10,6 @@
 .kx-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
 /* Gate */
-.kx-gate { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 24px; align-items: center; border-top: 1px solid var(--dt-hair-2); border-bottom: 1px solid var(--dt-hair-2); padding: 24px 0; }
-.kx-gate-klaus { height: 160px; }
-.kx-gate h2 { margin: 0 0 6px; }
 
 /* Lista de lecciones: un índice, no tarjetas */
 .kx-lessons { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--dt-hair-2); }
@@ -156,9 +153,7 @@ html[data-dt-effects='off'] .kx-page *, html[data-dt-effects='off'] .kx-page { a
 @media (max-width: 640px) {
   .kx-lesson { grid-template-columns: 40px minmax(0, 1fr); }
   .kx-lesson-act { grid-column: 2; }
-  .kx-gate { grid-template-columns: minmax(0, 1fr); }
-  .kx-gate-klaus { height: 130px; }
-  .kx-compare { grid-template-columns: minmax(0, 1fr); }
+      .kx-compare { grid-template-columns: minmax(0, 1fr); }
   .kx-side { grid-template-columns: 84px minmax(0, 1fr); }
   .kx-klaus { height: 100px; }
   .kx-table th, .kx-table td { padding: 10px 8px; font-size: 0.9rem; }

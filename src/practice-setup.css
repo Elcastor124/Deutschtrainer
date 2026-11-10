@@ -54,3 +54,38 @@
 }
 @media (prefers-reduced-motion: reduce) { .pr-resume-dot { animation: none; } }
 :root[data-dt-effects='off'] .pr-resume-dot { animation: none; }
+
+/* ── Klaus en el lateral de configuración: tarjeta con escenario (anillos), bocadillo y pie de acciones ── */
+.setup-side { display: grid; gap: 0; border: 1px solid var(--dt-hair-2); border-radius: var(--dt-r-lg, 24px); background: var(--dt-ink-1); overflow: hidden; }
+.setup-side .klaus-companion { gap: 0; padding: 0; }
+.setup-side .klaus-portrait { position: relative; height: 210px; margin: 0; isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 54%, transparent 0 62px, rgba(242, 241, 238, 0.12) 62px 63px, transparent 63px 88px, rgba(242, 241, 238, 0.07) 88px 89px, transparent 89px 116px, rgba(242, 241, 238, 0.05) 116px 117px, transparent 117px),
+    radial-gradient(ellipse 60% 55% at 50% 58%, rgba(233, 185, 73, 0.07), transparent 70%); }
+.setup-side .klaus-portrait::after { content: ''; position: absolute; left: 50%; bottom: 14px; width: 120px; height: 8px; margin-left: -60px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.7), transparent); z-index: -1; }
+.setup-side .klaus-portrait .klaus-figure { padding: 18px 26px 14px; box-sizing: border-box; }
+.setup-side .klaus-copy { position: relative; margin: 0 14px; padding: 14px 16px 15px; border-radius: 16px; background: var(--dt-ink-3); border: 1px solid var(--dt-hair-2); }
+.setup-side .klaus-copy::before { content: ''; position: absolute; top: -7px; left: 50%; width: 12px; height: 12px; margin-left: -6px; background: var(--dt-ink-3); border-left: 1px solid var(--dt-hair-2); border-top: 1px solid var(--dt-hair-2); transform: rotate(45deg); }
+.setup-side .klaus-wordmark { display: flex; align-items: center; gap: 8px; color: var(--dt-gold); }
+.setup-side .klaus-wordmark::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--dt-red); box-shadow: 0 0 0 3px rgba(255, 56, 50, 0.16); }
+.setup-side .klaus-wordmark span { display: inline; color: var(--dt-muted); letter-spacing: .12em; }
+.setup-side .klaus-caption { margin-top: 6px; }
+.setup-side .klaus-caption strong { font-size: 17px; color: var(--dt-paper); }
+.setup-side .klaus-comment { max-width: none; color: var(--dt-paper-2); font-size: 13.5px; }
+.setup-side .klaus-preferences { margin: 10px 14px 0; border-top: 0; }
+.setup-side .klaus-preferences summary { max-width: none; min-height: 44px; padding: 0 2px; letter-spacing: .08em; text-transform: uppercase; }
+.setup-side .klaus-companion.is-hidden .klaus-preferences { margin-top: 14px; }
+.setup-side > .btn { display: flex; justify-content: space-between; align-items: center; width: 100%; min-height: 52px; margin: 0; padding: 0 18px; border: 0; border-top: 1px solid var(--dt-hair-2); border-radius: 0; background: none; box-shadow: none; color: var(--dt-paper); font: 600 .92rem var(--dt-display); text-decoration: none; transition: background var(--dt-fast) var(--dt-ease), color var(--dt-fast) var(--dt-ease); }
+.setup-side > .btn::after { content: '→'; color: var(--dt-gold); transition: transform var(--dt-fast) var(--dt-ease); }
+.setup-side > .btn:hover { background: rgba(242, 241, 238, 0.04); }
+.setup-side > .btn:hover::after { transform: translateX(3px); }
+.setup-side > .btn:focus-visible { outline: 2px solid var(--dt-gold); outline-offset: -4px; }
+@media (max-width: 960px) {
+  .setup-side .klaus-companion { grid-template-columns: 110px minmax(0, 1fr); align-items: center; padding: 12px 14px 0; gap: 0 12px; }
+  .setup-side .klaus-portrait { height: 104px; grid-row: 1 / 3; background: radial-gradient(circle at 50% 54%, transparent 0 40px, rgba(242, 241, 238, 0.1) 40px 41px, transparent 41px); }
+  .setup-side .klaus-portrait::after { display: none; }
+  .setup-side .klaus-portrait .klaus-figure { padding: 10px 12px; }
+  .setup-side .klaus-copy { margin: 0; padding: 10px 12px; }
+  .setup-side .klaus-copy::before { top: 50%; left: -7px; margin: -6px 0 0; transform: rotate(-45deg); }
+  .setup-side .klaus-preferences { grid-column: 2; margin: 4px 0 6px; }
+}

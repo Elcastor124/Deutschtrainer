@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CATEGORY_LABEL, KIND_LABEL, type AiLevel, type WritingCorrection } from '../../shared/klaus-ai.ts';
 import type { WritingTask } from '../../shared/klaus-content.ts';
 import { deleteDraft, klausStatus, newRequestId, quotaLeft, resolveCorrection, reviewWriting, saveDraft, writingDrafts, writingTasks, type DraftView, type DraftReviewView, type KlausStatus } from '../klaus-ai-client.ts';
-import { navigate, studentSession } from '../util.ts';
+import { studentSession } from '../util.ts';
 import { KlausFigure } from '../klaus/KlausFigure.tsx';
+import { KlausGate } from '../klaus/KlausGate.tsx';
 import { useKlausSkin } from '../klaus/skin-client.ts';
 import '../klaus-writing.css';
 
@@ -124,12 +125,10 @@ export function Schreibt() {
   if (!loggedIn) return (
     <main className="dt-page kw-page">
       <header className="kw-head"><p className="dt-eyebrow">Schreibt mit Klaus</p><h1>Escribir<b className="dt-punkt">.</b></h1></header>
-      <section className="kw-card kw-gate">
-        <div className="kw-gate-klaus"><KlausFigure reaction="waving" look={look} /></div>
-        <div><h2>Entra para que Klaus revise tus textos</h2><p>Tus borradores y correcciones se guardan en tu cuenta de alumno.</p>
-          <p className="kw-row"><a className="btn primary" href="/entrar?volver=/escribir" onClick={(e) => { e.preventDefault(); navigate('/entrar?volver=/escribir'); }}>Iniciar sesión</a>
-            <a className="btn" href="/registro" onClick={(e) => { e.preventDefault(); navigate('/registro'); }}>Crear cuenta</a></p></div>
-      </section>
+      <KlausGate kind="escribir" className="kw-gate" back="/escribir" look={look}
+        title="Entra para que Klaus revise tus textos."
+        lead="Correos, presentaciones y textos de examen. Klaus señala los errores en tu texto, te da una pista y, si la pides, la solución. Tu texto nunca se cambia solo."
+        perks={[['5 tareas guiadas', 'Presentarte, tu familia, un correo, las vacaciones…'], ['Pista antes que solución', 'Modo guiado para pensar primero.'], ['Borradores guardados', 'Retoma donde lo dejaste, en cualquier dispositivo.']]} />
     </main>
   );
 

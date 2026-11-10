@@ -1,0 +1,105 @@
+/* Acceso a Hablar / Escribir / Clase sin sesión. Editorial: texto a la izquierda, escena vectorial a la derecha.
+   Paleta del sistema: tinta, papel, rojo solo para el error, dorado solo para el acierto. */
+.kg { position: relative; display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: clamp(20px, 4vw, 56px); align-items: center;
+  padding: clamp(22px, 3vw, 40px) 0 clamp(10px, 2vw, 24px); border-top: 1px solid var(--dt-hair-2); border-bottom: 1px solid var(--dt-hair-2); background: none; border-radius: 0; box-shadow: none; }
+.kg.kw-card { border-left: 0; border-right: 0; }
+.kg-copy { display: grid; gap: 18px; min-width: 0; max-width: 520px; }
+.kg-copy h2 { margin: 0; font: 600 clamp(1.6rem, 1.1rem + 1.6vw, 2.35rem)/1.08 var(--dt-display); letter-spacing: -0.02em; color: var(--dt-paper); text-wrap: balance; }
+.kg-lead { margin: 0; color: var(--dt-paper-2); font-size: 1.05rem; line-height: 1.55; max-width: 44ch; }
+.kg-perks { list-style: none; margin: 4px 0 0; padding: 0; display: grid; border-top: 1px solid var(--dt-hair); }
+.kg-perks li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--dt-hair); }
+.kg-perks b { display: block; font: 600 0.98rem/1.35 var(--dt-display); color: var(--dt-paper); }
+.kg-perks li span:last-child { color: var(--dt-muted); font-size: 0.9rem; line-height: 1.45; }
+.kg-n { font: 500 0.72rem/1 var(--dt-mono); letter-spacing: 0.1em; color: var(--dt-red); }
+.kg-cta { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; margin: 4px 0 0; }
+.kg-free { font: 500 0.72rem/1 var(--dt-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dt-muted); margin-left: 4px; }
+
+.kg-stage { position: relative; min-width: 0; aspect-ratio: 520 / 380; }
+.kg-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+/* Klaus vive dentro de la composición: caja en las mismas coordenadas que el viewBox (520 × 380). */
+.kg-klaus { position: absolute; left: 0; top: 46%; width: 36.5%; height: 44%; }
+
+/* Trazos y tintas */
+.kg-ring circle { fill: none; stroke: var(--dt-hair-2); stroke-width: 1; }
+.kg-ring circle:nth-child(2) { stroke: var(--dt-hair); stroke-dasharray: 2 6; }
+.kg-ring circle:nth-child(3) { stroke: var(--dt-hair); }
+.kg-ink { fill: var(--dt-ink-3); stroke: var(--dt-hair-2); stroke-width: 1.2; }
+.kg-paper { fill: var(--dt-paper); stroke: none; }
+.kg-who { font: 600 10px var(--dt-mono); letter-spacing: 0.16em; fill: var(--dt-muted); }
+.kg-dark { fill: #6b6a66; }
+.kg-de { font: 600 19px var(--dt-display); fill: var(--dt-paper); }
+.kg-de.kg-dark { fill: var(--dt-black); }
+.kg-tag { font: 600 10px var(--dt-mono); letter-spacing: 0.16em; fill: var(--dt-red); }
+.kg-rule { stroke: var(--dt-red); stroke-width: 2; stroke-linecap: round; }
+.kg-wrong { font: 500 16px var(--dt-display); fill: var(--dt-muted); }
+.kg-right { font: 600 17px var(--dt-display); fill: var(--dt-gold); }
+.kg-strike { stroke: var(--dt-red); stroke-width: 2.2; stroke-linecap: round; fill: none; }
+.kg-wave rect { fill: var(--dt-paper-2); opacity: 0.75; transform-box: fill-box; transform-origin: center; }
+.kg-typing circle { fill: var(--dt-muted); }
+
+.kg-margin { stroke: rgba(255, 56, 50, 0.45); stroke-width: 1.2; }
+.kg-ruled { stroke: rgba(10, 10, 10, 0.1); stroke-width: 1; }
+.kg-hand { font: 500 17px var(--dt-display); fill: #1a1a19; }
+.kg-hand-wrong { fill: #8a8984; }
+.kg-insert { font: 700 15px var(--dt-display); fill: var(--dt-red); }
+.kg-caret { stroke: var(--dt-red); stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.kg-line { stroke: #1a1a19; stroke-width: 1.6; stroke-linecap: round; fill: none; }
+.kg-margin-dot { fill: var(--dt-red); }
+.kg-shadow { fill: rgba(0, 0, 0, 0.45); }
+.kg-note rect { fill: var(--dt-ink-1); }
+.kg-note-t { font: 600 15px var(--dt-display); fill: var(--dt-paper); }
+.kg-on-dark { fill: var(--dt-muted); }
+.kg-count { font: 500 11px var(--dt-mono); letter-spacing: 0.08em; fill: #77756f; }
+.kg-pencil-body { fill: var(--dt-ink-3); stroke: var(--dt-paper-2); stroke-width: 1.2; }
+.kg-pencil-tip { fill: var(--dt-gold); stroke: var(--dt-paper-2); stroke-width: 1.2; stroke-linejoin: round; }
+.kg-pencil-band { stroke: var(--dt-paper-2); stroke-width: 1.2; }
+
+.kg-slate { fill: var(--dt-ink-2); stroke: var(--dt-hair-2); stroke-width: 1.2; }
+.kg-paperish { fill: var(--dt-red); }
+.kg-th { font: 600 11px var(--dt-mono); letter-spacing: 0.14em; text-transform: uppercase; fill: var(--dt-muted); }
+.kg-td { font: 500 19px var(--dt-display); fill: var(--dt-paper); }
+.kg-hot { fill: var(--dt-gold); font-weight: 700; }
+.kg-chalk { stroke: rgba(242, 241, 238, 0.4); stroke-width: 1.5; fill: none; stroke-linecap: round; }
+.kg-cell { fill: rgba(233, 185, 73, 0.08); stroke: var(--dt-gold); stroke-width: 1.6; }
+.kg-pointer { stroke: var(--dt-paper-2); stroke-width: 1.4; stroke-dasharray: 3 6; fill: none; stroke-linecap: round; }
+.kg-steps rect { fill: var(--dt-hair-2); }
+.kg-pointer-dot { fill: var(--dt-gold); }
+.kg-row { fill: rgba(242, 241, 238, 0.04); }
+.kg-steps rect.is-done { fill: var(--dt-red); }
+.kg-steps .kg-count { fill: var(--dt-muted); }
+
+/* Entrada: una vez, en cascada; nada se repite salvo la onda de voz, el «escribiendo» y la pata (pocos segundos). */
+.kg-in { animation: kg-in 640ms var(--dt-ease) both; animation-delay: calc(160ms + var(--d, 0) * 260ms); }
+.kg-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: kg-draw 700ms var(--dt-ease) forwards; animation-delay: calc(240ms + var(--d, 0) * 260ms); }
+.kg-perks li { animation: kg-in 520ms var(--dt-ease) both; animation-delay: calc(120ms + var(--d, 0) * 90ms); }
+.kg-wave rect { animation: kg-wave 1.6s ease-in-out calc(var(--d, 0) * 1s) 4 alternate; }
+.kg-typing { animation: kg-fade 400ms ease 1.1s both; }
+.kg-typing circle { animation: kg-dot 1.1s ease-in-out infinite; }
+.kg-typing circle:nth-child(2) { animation-delay: .15s; } .kg-typing circle:nth-child(3) { animation-delay: .3s; }
+.kg-pencil { animation: kg-pencil 1.1s var(--dt-ease) both; animation-delay: calc(240ms + var(--d, 0) * 260ms); }
+.kg-klaus { animation: kg-rise 700ms var(--dt-ease) 80ms both; }
+
+@keyframes kg-in { from { opacity: 0; transform: translate3d(0, 10px, 0); } to { opacity: 1; transform: none; } }
+@keyframes kg-draw { to { stroke-dashoffset: 0; } }
+@keyframes kg-wave { from { transform: scaleY(0.45); } to { transform: scaleY(1); } }
+@keyframes kg-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes kg-dot { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+@keyframes kg-pencil { from { opacity: 0; transform: translate3d(-150px, 0, 0); } to { opacity: 1; transform: none; } }
+@keyframes kg-rise { from { opacity: 0; transform: translate3d(0, 16px, 0) scale(.96); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .kg *, .kg-klaus { animation: none !important; }
+  .kg-draw { stroke-dashoffset: 0; }
+  .kg-typing { opacity: 1; }
+}
+html[data-dt-effects='off'] .kg *, html[data-dt-effects='off'] .kg-klaus { animation: none !important; }
+html[data-dt-effects='off'] .kg-draw { stroke-dashoffset: 0; }
+
+@media (max-width: 860px) {
+  .kg { grid-template-columns: minmax(0, 1fr); }
+  .kg-stage { order: -1; max-width: 520px; width: 100%; }
+}
+@media (max-width: 480px) {
+  .kg-perks li { grid-template-columns: 30px minmax(0, 1fr); }
+  .kg-free { flex-basis: 100%; margin: 0; }
+}
