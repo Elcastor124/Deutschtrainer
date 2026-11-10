@@ -25,7 +25,9 @@ describe('canonical Klaus vector port', () => {
     expect(html).toContain('data-klaus-paw=""');
     expect((html.match(/data-klaus-toe=""/g) ?? []).length).toBe(4);
     expect(html).toContain('data-klaus-pad=""');
-    expect(html).toContain('M-3.3 1C-3.5 -8 -3 -18 -2.4 -28');
+    // Brazo + palma en un contorno que nace bajo la mejilla (rediseño de la pata: antes flotaba separada de la cara).
+    expect(html).toContain('M-2.3 0C-2.5 -4.5 -2.7 -9 -3.2 -13.2');
+    expect(html).toContain('translate(90.5 73.5)');
   });
   it('uses gentle professor / fire / royal reactions without hiding the signature W', () => {
     expect(render('thinking')).toContain('data-klaus-skin="professor"');

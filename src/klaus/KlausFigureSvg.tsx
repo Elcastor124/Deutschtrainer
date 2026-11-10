@@ -57,20 +57,19 @@ export function KlausFigureSvg({ reaction = 'idle', reducedMotion = false, skin 
           <path d="M26 29H74" stroke="#FFD54A" />
           <circle cx="37" cy="25" r="1.1" fill="#36D47A" /><circle cx="50" cy="25" r="1.1" fill="#F2C14E" /><circle cx="63" cy="25" r="1.1" fill="#36D47A" />
         </g>}
-        {waving && <g data-klaus-paw="" className="klaus-paw-position" transform="translate(124 83)">
-          <g className="klaus-paw" strokeWidth=".92">
-            <path d="M-3.3 1C-3.5 -8 -3 -18 -2.4 -28M3.3 1C3.5 -8 3 -18 2.4 -28" />
-            <g transform="translate(0 -33.3)">
-              <path d="M-5.7 4.8C-8.2 1.8 -7.4 -3.8 -3.8 -5.2C-1.8 -7 1.8 -7 3.8 -5.2C7.4 -3.8 8.2 1.8 5.7 4.8C3 7.7 -3 7.7 -5.7 4.8Z" fill="#101112" strokeWidth=".66" />
-              <g strokeWidth=".5">
-                <ellipse data-klaus-toe="" cx="-4.1" cy="-5.6" rx="1.25" ry="1.65" transform="rotate(-22 -4.1 -5.6)" />
-                <ellipse data-klaus-toe="" cx="-1.5" cy="-7.4" rx="1.3" ry="1.72" transform="rotate(-7 -1.5 -7.4)" />
-                <ellipse data-klaus-toe="" cx="1.5" cy="-7.4" rx="1.3" ry="1.72" transform="rotate(7 1.5 -7.4)" />
-                <ellipse data-klaus-toe="" cx="4.1" cy="-5.6" rx="1.25" ry="1.65" transform="rotate(22 4.1 -5.6)" />
-                <path data-klaus-pad="" d="M-3.8 1.2C-4.2 -2.5 -1.8 -4.2 0 -3C1.8 -4.2 4.2 -2.5 3.8 1.2C3 4 -3 4 -3.8 1.2Z" />
-              </g>
-              <path className="klaus-paw-echo" d="M11 -9Q18 -4 12 1M15 -12Q25 -4 17 5" opacity=".3" strokeWidth=".5" />
+        {waving && <g data-klaus-paw="" className="klaus-paw-position" transform="translate(90.5 73.5) scale(1 1.2)">
+          {/* Misma pata que el motor Canvas: nace bajo la mejilla derecha; unidades isótropas (compensa scale(1.2 1)). */}
+          <g className="klaus-paw" strokeWidth=".88">
+            <path d="M-2.3 0C-2.5 -4.5 -2.7 -9 -3.2 -13.2C-6.4 -14.6 -7.2 -19.6 -4.6 -22.2C-2.4 -24.4 2.4 -24.4 4.6 -22.2C7.2 -19.6 6.4 -14.6 3.2 -13.2C2.7 -9 2.5 -4.5 2.3 0Z" fill="#101112" stroke="none" />
+            <path d="M-2.3 0C-2.5 -4.5 -2.7 -9 -3.2 -13.2C-6.4 -14.6 -7.2 -19.6 -4.6 -22.2C-2.4 -24.4 2.4 -24.4 4.6 -22.2C7.2 -19.6 6.4 -14.6 3.2 -13.2C2.7 -9 2.5 -4.5 2.3 0" />
+            <g fill="currentColor" stroke="none">
+              <ellipse data-klaus-toe="" cx="-4" cy="-19.4" rx=".82" ry="1.02" />
+              <ellipse data-klaus-toe="" cx="-1.4" cy="-21.3" rx=".86" ry="1.08" />
+              <ellipse data-klaus-toe="" cx="1.4" cy="-21.3" rx=".86" ry="1.08" />
+              <ellipse data-klaus-toe="" cx="4" cy="-19.4" rx=".82" ry="1.02" />
+              <path data-klaus-pad="" d="M0 -18.3C1.2 -19.2 2.9 -18.5 2.6 -16.8C2.4 -15.5 1.1 -15.1 0 -15.1C-1.1 -15.1 -2.4 -15.5 -2.6 -16.8C-2.9 -18.5 -1.2 -19.2 0 -18.3Z" />
             </g>
+            <path className="klaus-paw-echo" d="M8.5 -21.5A9.2 9.2 0 0 1 8.9 -15.4M11.2 -22.6A12 12 0 0 1 11.7 -14.6" opacity=".45" strokeWidth=".5" />
           </g>
         </g>}
         {reaction === 'thinking' && <g className="klaus-thought" fill="var(--klaus-accent)" stroke="none"><circle cx="91" cy="34" r="1" /><circle cx="97" cy="26" r="1.5" /><circle cx="105" cy="17" r="2" /></g>}

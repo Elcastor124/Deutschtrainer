@@ -10,7 +10,7 @@
 .klaus-gaze { animation: klaus-gaze 10.8s ease-in-out infinite; }
 .klaus-eye-open { animation: klaus-eye-open 4.9s linear infinite; }
 .klaus-eye-shut { opacity: 0; animation: klaus-eye-shut 4.9s linear infinite; }
-.klaus-paw { transform: rotate(-14deg); animation: klaus-wave 1.37s ease-in-out 3; }
+.klaus-paw { transform: rotate(24deg); animation: klaus-wave 1.37s ease-in-out 3; }
 .klaus-paw-echo { animation: klaus-echo 1.37s ease-in-out 3; }
 .klaus-fire { opacity: .22; animation: klaus-fire 1.5s ease-in-out 3; transform-origin: 50px 95px; }
 .klaus-thought { animation: klaus-think 2.8s ease-in-out infinite; }
@@ -29,7 +29,7 @@
 /* Same 4.9 second cadence and 4.10–4.34 blink window as compute_pose. */
 @keyframes klaus-eye-open { 0%, 83.5%, 88.6%, 100% { opacity: 1; } 85%, 87% { opacity: 0; } }
 @keyframes klaus-eye-shut { 0%, 83.5%, 88.6%, 100% { opacity: 0; } 85%, 87% { opacity: 1; } }
-@keyframes klaus-wave { 0%, 100% { transform: rotate(-14deg); } 25% { transform: rotate(-4deg); } 75% { transform: rotate(-24deg); } }
+@keyframes klaus-wave { 0%, 100% { transform: rotate(24deg); } 25% { transform: rotate(32deg); } 75% { transform: rotate(16deg); } }
 @keyframes klaus-echo { 0%, 100% { opacity: .15; } 50% { opacity: .65; } }
 @keyframes klaus-thinking { 0%, 100% { transform: rotate(-2.8deg); } 50% { transform: rotate(-2.45deg) translateY(-.45px); } }
 @keyframes klaus-think { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }

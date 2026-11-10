@@ -5848,64 +5848,65 @@ function _paint_behavior_overlay(painter, rect, style, pose, t) { // Python L955
   stroke = max(1.2, (rect.width() * 0.0075));
   line = new QColor(style.line);
   if (((pose.wave > 0.5))) {
-    angle = (math.sin((t * 4.6)) * 10);
-    pivot = _p(rect, 124, 83);
+    // Pata (Deutschtrainer Plus): nace justo bajo la mejilla derecha, sin hueco con la cara y con el mismo trazo.
+    // Unidad isótropa (u = 1 % del ancho) para que la pata no se deforme con la proporción 1.2 del retrato.
+    const u = (rect.width() / 100);
+    const P = (px, py) => new QPointF((px * u), (py * u));
+    swing = math.sin((t * 4.6));
+    angle = (24 + (swing * 8));
     painter.save();
-    painter.translate(pivot);
-    painter.rotate((_pyneg(14) + angle));
-    sx = (rect.width() / 100);
-    sy = (rect.height() / 100);
-    arm_pen = _pen(line, max(stroke, (rect.width() * 0.0092)), 255, Qt.PenCapStyle.RoundCap);
-    painter.setPen(arm_pen);
-    painter.setBrush(Qt.BrushStyle.NoBrush);
-    length = (28 * sy);
-    left_arm = new QPainterPath();
-    left_arm.moveTo(new QPointF((_pyneg(3.3) * sx), (1.0 * sy)));
-    left_arm.cubicTo(new QPointF((_pyneg(3.5) * sx), (_pyneg(8) * sy)), new QPointF((_pyneg(3.0) * sx), (_pyneg(18) * sy)), new QPointF((_pyneg(2.4) * sx), _pyneg(length)));
-    right_arm = new QPainterPath();
-    right_arm.moveTo(new QPointF((3.3 * sx), (1.0 * sy)));
-    right_arm.cubicTo(new QPointF((3.5 * sx), (_pyneg(8) * sy)), new QPointF((3.0 * sx), (_pyneg(18) * sy)), new QPointF((2.4 * sx), _pyneg(length)));
-    painter.drawPath(left_arm);
-    painter.drawPath(right_arm);
-    paw_center_y = (_pyneg(length) - (5.3 * sy));
-    paw = new QPainterPath();
-    paw.moveTo(new QPointF((_pyneg(5.7) * sx), (paw_center_y + (4.8 * sy))));
-    paw.cubicTo(new QPointF((_pyneg(8.2) * sx), (paw_center_y + (1.8 * sy))), new QPointF((_pyneg(7.4) * sx), (paw_center_y - (3.8 * sy))), new QPointF((_pyneg(3.8) * sx), (paw_center_y - (5.2 * sy))));
-    paw.cubicTo(new QPointF((_pyneg(1.8) * sx), (paw_center_y - (7.0 * sy))), new QPointF((1.8 * sx), (paw_center_y - (7.0 * sy))), new QPointF((3.8 * sx), (paw_center_y - (5.2 * sy))));
-    paw.cubicTo(new QPointF((7.4 * sx), (paw_center_y - (3.8 * sy))), new QPointF((8.2 * sx), (paw_center_y + (1.8 * sy))), new QPointF((5.7 * sx), (paw_center_y + (4.8 * sy))));
-    paw.cubicTo(new QPointF((3.0 * sx), (paw_center_y + (7.7 * sy))), new QPointF((_pyneg(3.0) * sx), (paw_center_y + (7.7 * sy))), new QPointF((_pyneg(5.7) * sx), (paw_center_y + (4.8 * sy))));
-    paw.closeSubpath();
+    painter.translate(_p(rect, 90.5, 73.5));
+    painter.rotate(angle);
     paw_fill = new QColor("#101112");
-    paw_fill.setAlpha(245);
-    painter.setPen(_pen(line, max((stroke * 0.88), (rect.width() * 0.0066)), 255, Qt.PenCapStyle.RoundCap));
+    paw_fill.setAlpha(250);
+    const pen_main = _pen(line, max(stroke, (rect.width() * 0.0088)), 255, Qt.PenCapStyle.RoundCap);
+    // Manopla: brazo y palma en un solo contorno, relleno del color del fondo para que se lea delante de la mejilla.
+    paw = new QPainterPath();
+    paw.moveTo(P(-2.3, 0));
+    paw.cubicTo(P(-2.5, -4.5), P(-2.7, -9.0), P(-3.2, -13.2));
+    paw.cubicTo(P(-6.4, -14.6), P(-7.2, -19.6), P(-4.6, -22.2));
+    paw.cubicTo(P(-2.4, -24.4), P(2.4, -24.4), P(4.6, -22.2));
+    paw.cubicTo(P(7.2, -19.6), P(6.4, -14.6), P(3.2, -13.2));
+    paw.cubicTo(P(2.7, -9.0), P(2.5, -4.5), P(2.3, 0));
+    const body = new QPainterPath();
+    body.moveTo(P(-2.3, 0));
+    body.cubicTo(P(-2.5, -4.5), P(-2.7, -9.0), P(-3.2, -13.2));
+    body.cubicTo(P(-6.4, -14.6), P(-7.2, -19.6), P(-4.6, -22.2));
+    body.cubicTo(P(-2.4, -24.4), P(2.4, -24.4), P(4.6, -22.2));
+    body.cubicTo(P(7.2, -19.6), P(6.4, -14.6), P(3.2, -13.2));
+    body.cubicTo(P(2.7, -9.0), P(2.5, -4.5), P(2.3, 0));
+    body.closeSubpath();
+    painter.setPen(Qt.PenStyle.NoPen);
     painter.setBrush(paw_fill);
-    painter.drawPath(paw);
-    painter.setPen(_pen(line, max(0.75, (stroke * 0.45)), 235, Qt.PenCapStyle.RoundCap));
+    painter.drawPath(body);
+    painter.setPen(pen_main);
     painter.setBrush(Qt.BrushStyle.NoBrush);
-    toe_specs = [[_pyneg(4.1), _pyneg(5.6), 1.25, 1.65, _pyneg(22)], [_pyneg(1.5), _pyneg(7.4), 1.3, 1.72, _pyneg(7)], [1.5, _pyneg(7.4), 1.3, 1.72, 7], [4.1, _pyneg(5.6), 1.25, 1.65, 22]];
-    for ([x, y, rx, ry, rot] of toe_specs) {
-      painter.save();
-      painter.translate(new QPointF((x * sx), (paw_center_y + (y * sy))));
-      painter.rotate(rot);
-      painter.drawEllipse(new QRectF((_pyneg(rx) * sx), (_pyneg(ry) * sy), ((rx * 2) * sx), ((ry * 2) * sy)));
-      painter.restore();
+    painter.drawPath(paw);
+    // Almohadillas macizas, del mismo blanco que la nariz: cuatro dedos y la central.
+    c = new QColor(style.line);
+    c.setAlpha(240);
+    painter.setPen(Qt.PenStyle.NoPen);
+    painter.setBrush(c);
+    for ([x, y, rx, ry] of [[-4.0, -19.4, 0.82, 1.02], [-1.4, -21.3, 0.86, 1.08], [1.4, -21.3, 0.86, 1.08], [4.0, -19.4, 0.82, 1.02]]) {
+      painter.drawEllipse(P(x, y), (rx * u), (ry * u));
     }
     pad = new QPainterPath();
-    pad.moveTo(new QPointF((_pyneg(3.8) * sx), (paw_center_y + (1.2 * sy))));
-    pad.cubicTo(new QPointF((_pyneg(4.2) * sx), (paw_center_y - (2.5 * sy))), new QPointF((_pyneg(1.8) * sx), (paw_center_y - (4.2 * sy))), new QPointF(0, (paw_center_y - (3.0 * sy))));
-    pad.cubicTo(new QPointF((1.8 * sx), (paw_center_y - (4.2 * sy))), new QPointF((4.2 * sx), (paw_center_y - (2.5 * sy))), new QPointF((3.8 * sx), (paw_center_y + (1.2 * sy))));
-    pad.cubicTo(new QPointF((3.0 * sx), (paw_center_y + (4.0 * sy))), new QPointF((_pyneg(3.0) * sx), (paw_center_y + (4.0 * sy))), new QPointF((_pyneg(3.8) * sx), (paw_center_y + (1.2 * sy))));
+    pad.moveTo(P(0, -18.3));
+    pad.cubicTo(P(1.2, -19.2), P(2.9, -18.5), P(2.6, -16.8));
+    pad.cubicTo(P(2.4, -15.5), P(1.1, -15.1), P(0, -15.1));
+    pad.cubicTo(P(-1.1, -15.1), P(-2.4, -15.5), P(-2.6, -16.8));
+    pad.cubicTo(P(-2.9, -18.5), P(-1.2, -19.2), P(0, -18.3));
     pad.closeSubpath();
     painter.drawPath(pad);
+    // Estela del saludo, solo hacia el lado al que va la pata.
     motion = new QColor(style.secondary);
-    motion.setAlpha(80);
-    painter.setPen(_pen(motion, max(0.7, (stroke * 0.42)), motion.alpha(), Qt.PenCapStyle.RoundCap));
-    swing = math.sin((t * 4.6));
+    motion.setAlpha(120);
+    painter.setPen(_pen(motion, max(0.7, (stroke * 0.5)), motion.alpha(), Qt.PenCapStyle.RoundCap));
+    painter.setBrush(Qt.BrushStyle.NoBrush);
     for (i of range(2)) {
-      offset = ((7.0 + (i * 3.4)) * sx);
-      yoff = ((_pyneg(5.0) + (i * 4.0)) * sy);
-      arc_rect = new QRectF(((3.0 * sx) + offset), (paw_center_y + yoff), (8.0 * sx), (11.0 * sy));
-      painter.drawArc(arc_rect, (((swing >= 0)) ? (_pyneg(70) * 16) : (70 * 16)), (((swing >= 0)) ? (88 * 16) : (_pyneg(88) * 16)));
+      rr = (9.2 + (i * 2.8));
+      arc_rect = new QRectF((_pyneg(rr) * u), ((-18.6 - rr) * u), ((2 * rr) * u), ((2 * rr) * u));
+      painter.drawArc(arc_rect, (((swing >= 0)) ? (_pyneg(22) * 16) : (150 * 16)), (48 * 16));
     }
     painter.restore();
   }
