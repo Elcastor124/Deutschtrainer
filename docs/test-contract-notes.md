@@ -32,3 +32,10 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
 - `src/hub.test.ts` exige el texto «Todo el banco» en `/practica`; se mantiene en la cabecera nueva (no se cambió la prueba).
 - `tests/klaus-hidden-browser.mjs` falló de forma intermitente con el rediseño (y nunca en HEAD): el formulario nuevo es más alto, al empezar la página seguía desplazada y el panel de Klaus se movía ~70 px después de medirlo. Era un fallo real (la partida aparecía a media página). Corregido en `Practice.tsx`: al empezar o continuar se vuelve arriba al instante. La prueba no se tocó.
 - `tests/editorial-browser.mjs` no arranca servidor propio: necesita `EDITORIAL_BASE` (por defecto 127.0.0.1:5178). Contra el build de producción (`npm run build` + `server/index.ts` en un puerto y `EDITORIAL_BASE` apuntando a él) pasa 2/2, igual que HEAD. Contra Vite en modo desarrollo falla también en HEAD (línea 69), así que con el servidor de desarrollo no sirve como señal.
+
+## Redet, clases nuevas y motion entre pestañas
+
+- `tests/klasse-browser.mjs` pulsaba la **primera** lección de `/unterricht`. Con el banco nuevo (14 lecciones más, ordenadas A1 → A2) la primera ya no es `akk-01`; la prueba elige ahora `.kx-lesson[data-lesson="akk-01"]` explícitamente. El flujo comprobado es el mismo.
+- Las lecciones nuevas (`server/ai/lesson-bank-a1.ts`, `lesson-bank-a2.ts`) llevan `verified: false` y se marcan «Borrador» en la lista hasta que el profesor las revise. Sus ejercicios de escucha se filtran solos mientras no exista el audio (misma regla que `akk-01`).
+- `tests/klasse-lessons.test.ts` valida todo el banco (ids únicos, respuestas dentro de rango, huecos, pares, `ruleId` existentes, sin escucha sin texto, refuerzo).
+- `tests/redet-browser.mjs` (nuevo): `/hablar` en modo práctica (sin IA): menú único, alta, escenario A2 bloqueado en A1, corrección «Ich habe 15 Jahre» → «Ich bin 15 Jahre alt», resumen, móvil sin desborde, consola limpia.
