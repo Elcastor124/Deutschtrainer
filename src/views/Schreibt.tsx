@@ -165,7 +165,7 @@ export function Schreibt() {
         <p className="kw-lead">Escribe en alemán. Klaus te señala lo que puede mejorar, te explica por qué y tú decides qué cambiar.</p>
         {status && <p className="kw-plan" role="status">
           <span className={`kw-chip ${status.plan}`}>{status.plan === 'plus' ? 'Plus' : 'Free'}</span>
-          <span>{left} revisión(es) hoy de {status.quota.text.limit}</span>
+          {status.providers.llm.real ? <span>{left} revisión(es) con IA hoy de {status.quota.text.limit}</span> : <span>Revisiones sin límite</span>}
           {!status.providers.llm.real && <span className="kw-chip mock" title={status.providers.llm.note ?? ''}>Modo básico sin IA</span>}
         </p>}
       </header>
@@ -196,9 +196,9 @@ export function Schreibt() {
             <span className={`kw-count${task && (wc < task.minWords || wc > task.maxWords) ? ' off' : ''}`}>{wc} palabra(s){task ? ` · objetivo ${task.minWords}–${task.maxWords}` : ''}</span>
             <span className="kw-grow" />
             <button type="button" className="btn" onClick={() => void save()} disabled={!!busy || (!text.trim() && !title.trim())}>{busy === 'save' ? 'Guardando…' : dirty ? 'Guardar borrador' : 'Guardado'}</button>
-            <button type="button" className="btn primary" onClick={() => void requestReview()} disabled={!!busy || !text.trim() || left === 0}>{busy === 'review' ? 'Klaus está leyendo…' : 'Revisar con Klaus'}</button>
+            <button type="button" className="btn primary" onClick={() => void requestReview()} disabled={!!busy || !text.trim()}>{busy === 'review' ? 'Klaus está leyendo…' : left === 0 ? 'Revisar (modo práctica)' : 'Revisar con Klaus'}</button>
           </div>
-          {left === 0 && <p className="kw-note" role="status">Has llegado al límite de revisiones de hoy. Puedes seguir escribiendo y guardando borradores; mañana se renueva.</p>}
+          {left === 0 && <p className="kw-note" role="status">Has usado las revisiones con IA de hoy. Puedes seguir revisando en modo práctica (corrección básica por reglas); mañana vuelve la IA.</p>}
           {msg && <p className={`kw-msg ${msg.kind}`} role={msg.kind === 'err' ? 'alert' : 'status'}>{msg.text}</p>}
         </section>
 

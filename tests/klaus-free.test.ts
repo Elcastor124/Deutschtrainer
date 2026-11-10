@@ -42,6 +42,18 @@ describe('Redet · modo libre', () => {
     for (const t of FREE_TOPICS) { expect(t.opening).toMatch(/\?$/); expect(t.script.length).toBeGreaterThanOrEqual(3); }
     expect(REDET_SCENARIOS.some((s) => s.id === 'libre')).toBe(true);
   });
+  it('la conversación no se queda atascada: 15 mensajes seguidos en modo práctica, sin 402 ni despedida en bucle', async () => {
+    const s = await api();
+    const st = await s.call('/api/klaus/redet/start', { scenarioId: 'libre', level: 'A1' }, s.token);
+    const replies: string[] = [];
+    for (let i = 0; i < 15; i++) {
+      const r = await s.call('/api/klaus/redet/turn', { sessionId: st.body.session.id, text: `Ich spiele gern Fußball ${i}.`, requestId: `req-loop-${String(i).padStart(4, '0')}` }, s.token);
+      expect(r.status, `mensaje ${i + 1}`).toBe(200); replies.push(r.body.reply);
+    }
+    const bye = 'Danke für das schöne Gespräch!';
+    expect(replies.filter((r) => r === bye).length).toBeLessThanOrEqual(0);
+    expect(new Set(replies).size).toBeGreaterThanOrEqual(10);
+  });
   it('se ofrecen los temas (sin guion) y empezar con tema usa su apertura y su guion', async () => {
     const s = await api();
     const sc = await s.call('/api/klaus/redet/scenarios', undefined, s.token);

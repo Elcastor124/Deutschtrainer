@@ -74,3 +74,21 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
     contraseña de profesor aleatoria y `KLAUS_LIMITS_PLUS` pequeño (`tests/helpers/plus-browser.mjs`); Plus se da por
     Teacher OS, el camino real. `klaus-writing` y `klasse` comprueban antes que sin Plus sale la pantalla de Plus.
   - `klaus-writing`: «plan Free con 3 revisiones/día» pasa a «plan Plus (límites de prueba: 3 revisiones/día)».
+
+## Conversación sin bloqueos, modo voz y límites nuevos
+
+- Bug corregido: al agotar la cuota diaria (3 en Free / 25 en Plus) el campo de Redet quedaba «Conversación cerrada» y
+  Schreibt bloqueaba «Revisar». Ahora la cuota cuenta solo mensajes CON IA; al agotarse (o si la IA gratis está
+  saturada) Klaus sigue en modo práctica (motor local: guion + correcciones por reglas), sin límite. Sin IA real no se
+  descuenta nada. En modo práctica el guion ya no repite la despedida: sigue con preguntas abiertas.
+- Límites Plus: text 25→80, voiceSeconds 600→1800, ttsChars 12000→40000, klasseSessions 5→20, klasseAsks 30→40.
+  Turnos por conversación 40→100. El techo real de la IA gratis es de OpenRouter: 50 peticiones/día por clave
+  (2 claves = 100/día en total), comprobado en GET /api/v1/key (`free_model_daily_requests`).
+- Expectativas obsoletas actualizadas:
+  - `tests/klaus-ai.test.ts`: «la 4.ª revisión → 402» pasa a «la 4.ª revisión → 200 en modo práctica (`limited: true`)»
+    con un proveedor marcado como real; y sin IA real no se descuenta cuota.
+  - `tests/klaus-writing-browser.mjs`: «3 revisiones y el botón se desactiva» pasa a «5 revisiones seguidas y el botón
+    sigue activo; modo básico: revisiones sin límite».
+- Modo voz (Redet): `src/klaus/voice.ts` usa SpeechRecognition del navegador (de-DE) + la voz alemana del navegador.
+  `tests/redet-voice-browser.mjs` lo prueba con un reconocedor simulado (Edge headless no tiene micrófono): prueba el
+  bucle de la app, NO el reconocimiento real de voz.

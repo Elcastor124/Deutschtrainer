@@ -314,14 +314,22 @@ describe('API /api/klaus', () => {
     expect((await s.call('/api/klaus/writing/draft/delete', { id }, ben)).status).toBe(404);
     expect((await s.call('/api/klaus/writing/draft/delete', { id }, ana)).status).toBe(200);
   });
-  it('Schreibt: la cuota diaria se agota con 402 y un reintento con el mismo requestId no cobra', async () => {
-    const s = await api(); const t = await s.user('Ana_Lee');
+  // Antes: la 4.ª revisión respondía 402 y el alumno se quedaba bloqueado. Ahora la cuota es de mensajes CON IA: al agotarse,
+  // Klaus sigue en modo práctica (local, gratis). Sin IA real (mock) no se descuenta nada. Ver docs/test-contract-notes.md.
+  it('Schreibt: la cuota de IA se agota, el reintento con el mismo requestId no cobra y después sigue en modo práctica (no 402)', async () => {
+    const mock = new MockLlm(); const realish: LlmProvider = { name: 'openrouter-free', model: 'x:free', real: true, complete: (r) => mock.complete(r) };
+    const s = await api({ llm: realish }); const t = await s.user('Ana_Lee');
     const rev = (n: number, rid?: string) => s.call('/api/klaus/writing/review', { text: `Ich bin Ana ${n}.`, requestId: rid ?? `req-${String(n).padStart(8, '0')}` }, t);
     expect((await rev(1)).status).toBe(200);
     expect((await rev(1)).status).toBe(200); // mismo requestId → resultado guardado
     expect(s.usage.used((await s.accounts.verify(t))!.id, 'text')).toBe(1);
     expect((await rev(2)).status).toBe(200); expect((await rev(3)).status).toBe(200);
-    const over = await rev(4); expect(over.status).toBe(402); expect(over.body.code).toBe('quota'); expect(over.body.error).toMatch(/límite diario/);
+    const over = await rev(4); expect(over.status).toBe(200); expect(over.body.limited).toBe(true); expect(over.body.review.source).toBe('mock');
+    expect(s.usage.used((await s.accounts.verify(t))!.id, 'text')).toBe(3);
+    // Sin IA real (modo práctica permanente) no se gasta cuota
+    const m = await api(); const tm = await m.user('Ben_Box');
+    for (let i = 1; i <= 5; i++) expect((await m.call('/api/klaus/writing/review', { text: `Ich bin Ben ${i}.`, requestId: `req-b${String(i).padStart(7, '0')}` }, tm)).status).toBe(200);
+    expect(m.usage.used((await m.accounts.verify(tm))!.id, 'text')).toBe(0);
   });
   it('un fallo del modelo no cuesta cuota; una salida inválida se rechaza con mensaje claro', async () => {
     const bad: LlmProvider = { name: 'mock', model: 'm', real: false, complete: async () => ({ json: { corrections: 'no' }, usage: { inputTokens: 0, outputTokens: 0 }, model: 'm', latencyMs: 0 }) };

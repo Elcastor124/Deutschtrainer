@@ -14,6 +14,7 @@ import { KlausGate, PLUS_GATE } from '../klaus/KlausGate.tsx';
 import { useKlausSkin } from '../klaus/skin-client.ts';
 import type { KlausReaction } from '../klaus/events.ts';
 import { speak, stopSpeaking, useBrowserVoices } from '../klaus/speech.ts';
+import { useVoiceLoop } from '../klaus/voice.ts';
 import { Segmented } from '../components/Segmented.tsx';
 import '../redet.css';
 
@@ -203,9 +204,9 @@ function Conversation(p: {
 
   useEffect(() => { const el = log.current; if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); }, [lines.length, busy]);
 
-  const send = async (e?: FormEvent) => {
-    e?.preventDefault();
-    const t = text.trim(); if (!t || busy || ended) return;
+  // Envía un turno; devuelve la respuesta de Klaus (o null si falló). Lo usan el teclado y el modo voz.
+  const sendText = async (t: string): Promise<string | null> => {
+    if (!t || ended) return null;
     // El mismo texto reintentado reutiliza el id: el servidor no cobra dos veces.
     if (attempt.current?.key !== t) attempt.current = { key: t, id: newRequestId() };
     p.setBusy('turn'); p.setErr(null); p.setReaction('thinking');
@@ -216,10 +217,24 @@ function Conversation(p: {
       setLines((l) => { const n = [...l]; n[n.length - 1] = { ...n[n.length - 1], corrections: r.corrections }; return [...n, { role: 'klaus', text: r.reply, source: r.source, fresh: true }]; });
       p.setReaction(r.corrections.some((c) => c.kind === 'error') ? 'support' : 'correct');
       klausStatus().then(p.setStatus).catch(() => {});
+      return r.reply;
     } catch (er) {
       setLines((l) => l.slice(0, -1)); setText(t); p.setErr((er as Error).message); p.setReaction('idle');
-    } finally { p.setBusy(null); input.current?.focus(); }
+      return null;
+    } finally { p.setBusy(null); if (!voice.current) input.current?.focus(); }
   };
+  const send = async (e?: FormEvent) => { e?.preventDefault(); const t = text.trim(); if (!t || busy || ended) return; await sendText(t); };
+  // Modo voz: Klaus habla con la voz del servidor si hay TTS real; si no, con la voz alemana del navegador.
+  const speakReply = (line: string, onEnd: () => void) => {
+    if (status?.providers.tts.real) {
+      redetTts(line, newRequestId()).then((r) => { const a = new Audio(`data:${r.mime};base64,${r.audio}`); a.onended = onEnd; a.onerror = onEnd; return a.play(); }).catch(() => onEnd());
+      return;
+    }
+    if (voices.de) speak([{ text: line, lang: 'de' }], undefined, onEnd); else onEnd();
+  };
+  const vl = useVoiceLoop(sendText, { speakReply });
+  const voice = useRef(false); voice.current = vl.phase !== 'off';
+  useEffect(() => { if (ended) vl.stop(); }, [ended]); // eslint-disable-line react-hooks/exhaustive-deps
   const finish = async () => {
     p.setBusy('end'); p.setErr(null); stopSpeaking();
     try { const r = await redetEnd(conv.id); p.setSummary(r.summary); p.setReaction('complete'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -274,8 +289,9 @@ function Conversation(p: {
               {busy === 'turn' && <li className="rd-typing" aria-label="Klaus está escribiendo"><span /><span /><span /></li>}
             </ol>
             {p.err && <p className="rd-err" role="alert">{p.err}</p>}
-            <Composer text={text} setText={setText} onSend={send} busy={busy} disabled={ended || left === 0} input={input} status={status} setBusy={p.setBusy} setErr={p.setErr} />
-            {left === 0 && <p className="rd-note" role="status">Has usado los mensajes de hoy. Puedes terminar la conversación para ver el resumen; mañana se renuevan.</p>}
+            {!ended && <VoiceBar vl={vl} busy={busy} canSpeak={canListen} />}
+            {vl.phase === 'off' && <Composer text={text} setText={setText} onSend={send} busy={busy} disabled={ended} input={input} status={status} setBusy={p.setBusy} setErr={p.setErr} />}
+            {left === 0 && !ended && <p className="rd-note" role="status">Has usado los mensajes con IA de hoy: Klaus sigue contigo en modo práctica (respuestas preparadas y corrección básica). Mañana vuelve la IA.</p>}
           </section>
           <aside className="rd-side" aria-label="Klaus">
             <div className={`rd-klaus r-${p.reaction}`}><KlausFigure reaction={p.reaction} look={p.look} /></div>
@@ -290,6 +306,37 @@ function Conversation(p: {
         </div>
       )}
     </main>
+  );
+}
+
+function VoiceBar({ vl, busy, canSpeak }: { vl: ReturnType<typeof useVoiceLoop>; busy: null | string; canSpeak: boolean }) {
+  const label = { off: '', listening: 'Te escucho…', thinking: 'Klaus está pensando…', speaking: 'Klaus habla', paused: 'En pausa' }[vl.phase];
+  if (!vl.supported) return <p className="rd-hint rd-voice-na">Modo voz: este navegador no reconoce voz. Usa Chrome o Edge (ordenador o Android).</p>;
+  if (vl.phase === 'off') return (
+    <div className="rd-voice-start">
+      <button type="button" className="rd-voice-btn" data-voice-start disabled={!!busy} onClick={vl.start}>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+        Hablar con Klaus
+      </button>
+      <span className="rd-hint">Conversación por voz: hablas, Klaus contesta en voz alta y vuelve a escucharte.{!canSpeak && ' (Tu navegador no tiene voz alemana: verás la respuesta escrita.)'}</span>
+      {vl.error && <p className="rd-err" role="alert">{vl.error}</p>}
+    </div>
+  );
+  return (
+    <div className={`rd-voice is-${vl.phase}`} data-voice-phase={vl.phase} role="group" aria-label="Modo voz">
+      <div className="rd-orb" aria-hidden="true"><span /><span /><span /><span /><span /></div>
+      <div className="rd-voice-t">
+        <p className="rd-mono" role="status" aria-live="polite">{label}</p>
+        <p className="rd-voice-said" lang="de">{vl.interim || (vl.phase === 'listening' ? 'Habla en alemán…' : '\u00a0')}</p>
+      </div>
+      <div className="rd-voice-act">
+        {vl.phase === 'listening' && vl.interim && <button type="button" className="btn" onClick={vl.done}>Enviar ya</button>}
+        {vl.phase === 'speaking' && <button type="button" className="btn" onClick={vl.interrupt}>Interrumpir</button>}
+        {vl.phase === 'paused' && <button type="button" className="btn" onClick={vl.resume}>Seguir</button>}
+        <button type="button" className="btn primary" data-voice-stop onClick={vl.stop}>Teclado</button>
+      </div>
+      {vl.error && <p className="rd-err" role="alert">{vl.error}</p>}
+    </div>
   );
 }
 

@@ -14,8 +14,9 @@ import type { KlausAiConfig, Usage } from './providers.ts';
 export type Limits = Record<KlausFeature, number>;
 export const DEFAULT_LIMITS: Record<KlausPlan, Limits> = {
   // Cifras provisionales (spec §13): editables por entorno sin tocar código.
+  // `text` = mensajes/revisiones CON IA al día. Al agotarse, Klaus sigue en modo práctica (local, sin límite), no se corta.
   free: { text: 3, voiceSeconds: 60, ttsChars: 1500, klasseSessions: 1, klasseAsks: 3 },
-  plus: { text: 25, voiceSeconds: 600, ttsChars: 12000, klasseSessions: 5, klasseAsks: 30 },
+  plus: { text: 80, voiceSeconds: 1800, ttsChars: 40000, klasseSessions: 20, klasseAsks: 40 },
 };
 export function loadLimits(env: NodeJS.ProcessEnv = process.env): Record<KlausPlan, Limits> {
   const out = { free: { ...DEFAULT_LIMITS.free }, plus: { ...DEFAULT_LIMITS.plus } };

@@ -22,8 +22,8 @@ try {
   check(await B.eval(`!document.querySelector('.kw-edit textarea')`), 'Free: sin editor');
   await plusAll(L.base);
   await B.go('/escribir');
-  await B.until(`!!document.querySelector('.kw-edit textarea') && /revisi/.test(document.querySelector('.kw-plan')?.innerText||'')`, 'editor y estado de cuota');
-  check(await B.eval(`/plus/i.test(document.querySelector('.kw-plan').innerText) && /3 revisi/.test(document.querySelector('.kw-plan').innerText)`), 'plan Plus (límites de prueba: 3 revisiones/día)');
+  await B.until(`!!document.querySelector('.kw-edit textarea') && /revisi/i.test(document.querySelector('.kw-plan')?.innerText||'')`, 'editor y estado de cuota');
+  check(await B.eval(`/plus/i.test(document.querySelector('.kw-plan').innerText)`), 'plan Plus');
   check(await B.eval(`/sin ia/i.test(document.querySelector('.kw-plan').innerText)`), 'sin proveedor real: avisa «Modo básico sin IA» (no finge IA)');
 
   await B.type('.kw-edit textarea', 'Ich habe 15 Jahre. Ich wohne in Sevilla.');
@@ -34,7 +34,7 @@ try {
   check(await B.eval(`document.querySelector('.kw-edit textarea').value === 'Ich habe 15 Jahre. Ich wohne in Sevilla.'`), 'el texto del alumno NO se modifica solo');
   check(await B.eval(`!!document.querySelector('.kw-marked mark[data-correction="c1"]')`), 'el fragmento queda señalado en el texto');
   check(await B.eval(`/Revisión básica con reglas fijas, no con IA/.test(document.querySelector('.kw-side').innerText)`), 'la revisión determinista se etiqueta como tal');
-  check(await B.eval(`/2 revisi/.test(document.querySelector('.kw-plan').innerText)`), 'la cuota baja a 2');
+  check(await B.eval(`/sin límite/i.test(document.querySelector('.kw-plan').innerText)`), 'sin IA no se descuenta cuota (revisiones sin límite)'); // antes «la cuota baja a 2»: ver docs/test-contract-notes.md
 
   // Modo guiado: pista primero, solución después.
   await B.click('.kw-switch input');
@@ -59,14 +59,16 @@ try {
   await B.until(`document.querySelector('.kw-edit textarea').value.length > 0`, 'abre el borrador');
   check(await B.eval(`document.querySelectorAll('.kw-list li').length === 1`), 'reabre la revisión guardada');
 
-  // Cuota: 3 revisiones al día (ya se gastó 1).
-  for (const n of [2, 3]) {
+  // Sin IA (modo básico) las revisiones no tienen límite y nunca se bloquea el botón (antes: 3/día y luego bloqueado; ver
+  // docs/test-contract-notes.md). La cuota con IA real y su paso a modo práctica se prueban en tests/klaus-ai.test.ts.
+  for (const n of [2, 3, 4, 5]) {
     await B.eval(`(() => { const t = document.querySelector('.kw-edit textarea'); const set = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set; set.call(t, 'Ich bin Ana ${n}.'); t.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
     await B.click('.kw-foot .btn.primary');
-    await B.until(`/${3 - n} revisi/.test(document.querySelector('.kw-plan')?.innerText||'')`, `revisión ${n} hecha`);
+    await B.until(`!document.querySelector('.kw-foot .btn.primary').disabled && /Revisar/.test(document.querySelector('.kw-foot .btn.primary').innerText)`, `revisión ${n} hecha`);
   }
-  await B.until(`document.querySelector('.kw-foot .btn.primary').disabled`, 'sin cuota: el botón se desactiva');
-  check(await B.eval(`/límite de revisiones de hoy/.test(document.body.innerText)`), 'sin cuota: mensaje claro y se puede seguir escribiendo');
+  check(await B.eval(`/sin límite/i.test(document.querySelector('.kw-plan').innerText)`), 'modo básico: revisiones sin límite');
+  check(await B.eval(`!document.querySelector('.kw-foot .btn.primary').disabled`), 'tras 5 revisiones el botón sigue activo');
+
   check(await B.eval(`document.documentElement.scrollWidth <= innerWidth + 1`), 'sin desbordamiento horizontal (escritorio)');
 
   const M = await L.newPage('schreibt móvil', 390, 800);

@@ -60,6 +60,14 @@ export const FREE_TOPICS: FreeTopic[] = [
 ];
 export const freeTopicById = (id: unknown) => FREE_TOPICS.find((t) => t.id === id) ?? null;
 
+/** Modo práctica (sin IA o con la IA del día agotada): cuando se acaba el guion, Klaus sigue con preguntas abiertas en vez
+ * de repetir la despedida, para que la conversación nunca se quede atascada. Frases cortas de A1–A2. */
+export const PRACTICE_FOLLOW_UPS = [
+  'Ah, interessant! Kannst du mir mehr darüber erzählen?', 'Und warum?', 'Wie findest du das?', 'Seit wann ist das so?',
+  'Was machst du am liebsten?', 'Und was ist für dich wichtig?', 'Wie war das letzte Mal?', 'Und was möchtest du in der Zukunft machen?',
+  'Mit wem sprichst du darüber?', 'Was ist dein Lieblingsort in deiner Stadt?', 'Was hast du heute gemacht?', 'Und morgen? Was machst du morgen?',
+];
+
 export interface WritingTask { id: string; level: AiLevel; title: string; prompt: string; minWords: number; maxWords: number; points: string[] }
 export const WRITING_TASKS: WritingTask[] = [
   { id: 'a1-presentacion', level: 'A1', title: 'Presentación personal', prompt: 'Escribe una presentación sobre ti: cómo te llamas, cuántos años tienes, de dónde eres, dónde vives y qué te gusta.', minWords: 30, maxWords: 60, points: ['nombre', 'edad', 'origen y ciudad', 'una afición'] },

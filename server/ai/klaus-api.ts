@@ -18,6 +18,7 @@ import type { AccountStore, Account } from '../accounts.ts';
 import type { Guard } from '../security.ts';
 import { RULES } from '../tutor.ts';
 import { AiUsage, type Ticket } from './usage.ts';
+import { MockLlm } from './mock-llm.ts';
 import { ProviderError, levelOrDefault, type Providers } from './providers.ts';
 import { KlausStore, newId, type KlasseProgress, type RedetSummary } from './klaus-store.ts';
 import { AUDIO_DIR, LESSONS, theoryOf, afterCheckpoint, audioAvailable, basePlan, findActivity, grade, lessonById, publicActivity, recommendation } from './lessons.ts';
@@ -52,14 +53,27 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
   const ruleText = (id: string) => RULES.find((r) => r.id === id)?.rule ?? null;
 
   /** Ejecuta una operación con cuota: reserva → proveedor → registro → confirma/devuelve. Cancela si el cliente cierra la conexión. */
-  async function metered<T>(req: IncomingMessage, a: Account, o: { feature: KlausFeature; amount: number; requestId: string | null; op: string; real: boolean; session?: string | null }, run: (signal: AbortSignal, t: Ticket) => Promise<{ value: T; rec: Parameters<AiUsage['record']>[0] extends infer R ? Partial<R> : never }>): Promise<T> {
+  // Modo práctica: cuando se acaba la cuota de IA (o el proveedor está saturado) la conversación NO se corta: responde el
+  // motor determinista local (guion + correcciones por reglas), gratis y sin límite diario. Solo lo usan Redet/Schreibt/Clase.
+  const practiceLlm = new MockLlm();
+  async function metered<T>(req: IncomingMessage, a: Account, o: { feature: KlausFeature; amount: number; requestId: string | null; op: string; real: boolean; session?: string | null; practice?: boolean }, run: (signal: AbortSignal, t: Ticket | null, practice: boolean) => Promise<{ value: T; rec: Parameters<AiUsage['record']>[0] extends infer R ? Partial<R> : never }>): Promise<T> {
     const adm = usage.admit({ accountId: a.id, alias: a.alias, feature: o.feature, amount: o.amount, requestId: o.requestId, real: o.real });
+    if (!adm.ok && o.practice && adm.code !== 'busy') {
+      const ctl = new AbortController(); const onClose = () => ctl.abort(); res_onClose(req, onClose);
+      try {
+        const { value, rec } = await run(ctl.signal, null, true);
+        usage.record({ op: o.op, accountId: a.id, feature: o.feature, session: o.session, provider: 'x', model: 'x', real: false, ...rec, aiCall: false, costEur: 0 } as never);
+        return (value && typeof value === 'object' ? { ...value, limited: true } : value) as T;
+      } finally { req.removeListener('close', onClose); }
+    }
     if (!adm.ok) return fail(adm.status, adm.error, adm.code);
     const ticket = adm.ticket as Ticket;
     if (adm.cached !== undefined) { usage.record({ op: o.op, accountId: a.id, feature: o.feature, session: o.session, provider: 'cache', model: 'cache', real: false, cached: true }); return adm.cached as T; }
     const ctl = new AbortController(); const onClose = () => ctl.abort(); res_onClose(req, onClose);
     try {
-      const { value, rec } = await run(ctl.signal, ticket);
+      const { value, rec } = await run(ctl.signal, ticket, false);
+      // Si al final respondió el modo práctica (IA saturada), no gasta cuota de IA.
+      if (o.practice && rec.real === false) usage.adjust(ticket, 0);
       usage.commit(ticket, value);
       usage.record({ op: o.op, accountId: a.id, feature: o.feature, session: o.session, provider: 'x', model: 'x', real: false, ...rec } as never);
       return value;
@@ -74,8 +88,8 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
   function res_onClose(req: IncomingMessage, fn: () => void) { req.once('close', () => { if (!req.complete) fn(); }); }
 
   /** Llama al LLM y mide el coste. Devuelve el JSON sin validar. */
-  async function ask(a: Account, task: Parameters<Providers['llm']['complete']>[0]['task'], system: string, user: string, input: unknown, schemaName: string, schema: Record<string, unknown>, maxTokens: number, signal: AbortSignal) {
-    const llm = providers.llm;
+  async function ask(a: Account, task: Parameters<Providers['llm']['complete']>[0]['task'], system: string, user: string, input: unknown, schemaName: string, schema: Record<string, unknown>, maxTokens: number, signal: AbortSignal, practice = false) {
+    const llm = practice ? practiceLlm : providers.llm;
     const r = await llm.complete({ task, system, user, input, schemaName, schema, maxTokens, signal });
     // IA gratuita: coste 0 siempre. Si respondió el modo determinista (fallback), no es IA.
     const real = llm.real && !r.fallback, free = llm.name === 'openrouter-free';
@@ -91,8 +105,8 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
     if (text.length > AI_LIMITS.writingChars) fail(400, `El texto es demasiado largo (máximo ${AI_LIMITS.writingChars} caracteres).`);
     const lvl = level(b), draftId = typeof b.draftId === 'string' ? b.draftId : null;
     if (draftId && !store.draft(a.id, draftId)) fail(404, 'Borrador no encontrado.');
-    const out = await metered<{ review: WritingReview; reviewId: string | null }>(req, a, { feature: 'text', amount: 1, requestId: rid(b), op: 'writing_review', real: providers.llm.real }, async (signal) => {
-      const { r, rec, src } = await ask(a, 'writing_review', fill(SYSTEM.writing, { level: levelNote(lvl) }), wrap('texto_alumno', text), { text, level: lvl }, 'revision_escritura', SCHEMAS.writing as never, 1800, signal);
+    const out = await metered<{ review: WritingReview; reviewId: string | null }>(req, a, { feature: 'text', amount: 1, requestId: rid(b), op: 'writing_review', real: providers.llm.real, practice: true }, async (signal, _t, practice) => {
+      const { r, rec, src } = await ask(a, 'writing_review', fill(SYSTEM.writing, { level: levelNote(lvl) }), wrap('texto_alumno', text), { text, level: lvl }, 'revision_escritura', SCHEMAS.writing as never, 1800, signal, practice);
       const parsed = parseWritingReview(r.json, text, src, ruleText);
       if (!parsed.ok) throw new ProviderError('bad_output', parsed.error);
       const saved = draftId ? store.addReview(a.id, draftId, text, parsed.value) : null;
@@ -109,15 +123,15 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
     if (s.endedAt) return fail(409, 'Esta conversación ya terminó.');
     const text = clean(b.text, AI_LIMITS.transcriptChars);
     if (!text) return fail(400, 'No se ha recibido nada que transcribir.');
-    if (s.turns.filter((t) => t.role === 'student').length >= 40) return fail(429, 'La conversación es muy larga. Termínala para ver el resumen.');
+    if (s.turns.filter((t) => t.role === 'student').length >= 100) return fail(429, 'La conversación es muy larga. Termínala para ver el resumen y empieza otra.');
     const sc = scenarioById(s.scenarioId)!;
-    return metered(req, a, { feature: 'text', amount: 1, requestId: rid(b), op: 'redet_turn', real: providers.llm.real, session: s.id }, async (signal) => {
+    return metered(req, a, { feature: 'text', amount: 1, requestId: rid(b), op: 'redet_turn', real: providers.llm.real, session: s.id, practice: true }, async (signal, _t, practice) => {
       // Contexto COMPACTO: solo los últimos 6 turnos, no todo el historial.
       const recent = s.turns.slice(-6).map((t) => `${t.role === 'klaus' ? 'Klaus' : 'Alumno'}: ${t.text}`).join('\n');
       // Modo libre: el tema (fijo, de FREE_TOPICS) se añade al rol; nunca texto del alumno en el rol.
       const topic = freeTopicById(s.topic), role = topic ? `${sc.role} Tema elegido por el alumno: ${topic.de} (${topic.label}).` : sc.role;
       const { r, rec, src } = await ask(a, 'redet_turn', fill(SYSTEM.redet, { level: levelNote(s.level), role }), `${wrap('contexto', recent)}\n${wrap('texto_alumno', text)}`,
-        { scenarioId: sc.id, topic: topic?.id ?? null, turn: s.turns.filter((t) => t.role === 'student').length, text }, 'turno_conversacion', SCHEMAS.redet as never, 700, signal);
+        { scenarioId: sc.id, topic: topic?.id ?? null, turn: s.turns.filter((t) => t.role === 'student').length, text }, 'turno_conversacion', SCHEMAS.redet as never, 700, signal, practice);
       const parsed = parseRedetTurn(r.json, text);
       if (!parsed.ok) throw new ProviderError('bad_output', parsed.error);
       s.turns.push({ role: 'student', text, at: now() }, { role: 'klaus', text: parsed.value.reply, at: now() });
@@ -236,12 +250,12 @@ export function createKlausAi({ accounts, guard, providers, usage, store, teache
     const p = mine(a, b.sessionId); const lesson = lessonById(p.lessonId)!;
     const q = clean(b.question, AI_LIMITS.askChars); if (!q) return fail(400, 'Escribe tu pregunta.');
     const act = findActivity(lesson, p.plan[p.step] ?? '');
-    return metered(req, a, { feature: 'klasseAsks', amount: 1, requestId: rid(b), op: 'klasse_ask', real: providers.llm.real, session: p.sessionId }, async (signal) => {
+    return metered(req, a, { feature: 'klasseAsks', amount: 1, requestId: rid(b), op: 'klasse_ask', real: providers.llm.real, session: p.sessionId, practice: true }, async (signal, _t, practice) => {
       // Contexto COMPACTO: id de lección, objetivo, teoría de referencia, actividad actual, último error y la pregunta. Nunca el historial.
       const ruleId = act && 'ruleId' in act ? act.ruleId : undefined, rule = ruleId ? ruleText(ruleId) : null;
       const last = Object.entries(p.answers).at(-1);
       const ctx = [`lección: ${lesson.id} · ${lesson.title}`, `objetivo: ${lesson.objectives[0]}`, rule ? `teoría verificada: ${rule}` : '', act ? `actividad actual: ${act.id} (${act.kind}) «${act.title}»` : '', last ? `último resultado: ${last[0]} ${last[1].ok ? 'correcto' : 'incorrecto'}` : '', p.digest ? `resumen: ${p.digest}` : '', `actividades válidas: ${p.plan.join(', ')}`].filter(Boolean).join('\n');
-      const { r, rec, src } = await ask(a, 'klasse_answer', SYSTEM.klasse, `${wrap('contexto', ctx)}\n${wrap('pregunta_alumno', q)}`, { question: q, ruleId }, 'respuesta_clase', SCHEMAS.klasse as never, 600, signal);
+      const { r, rec, src } = await ask(a, 'klasse_answer', SYSTEM.klasse, `${wrap('contexto', ctx)}\n${wrap('pregunta_alumno', q)}`, { question: q, ruleId }, 'respuesta_clase', SCHEMAS.klasse as never, 600, signal, practice);
       const parsed = parseKlasseAnswer(r.json, p.plan);
       if (!parsed.ok) throw new ProviderError('bad_output', parsed.error);
       p.asks++; p.digest = `${p.digest} P:${q.slice(0, 40)}`.trim().slice(-240); p.updatedAt = now(); store.save();
