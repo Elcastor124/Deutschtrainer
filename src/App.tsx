@@ -29,6 +29,7 @@ import { Games } from './views/Games.tsx';
 import { HomeworkNotice } from './components/HomeworkNotice.tsx';
 import { KlausSkins } from './views/KlausSkins.tsx';
 import { Schreibt } from './views/Schreibt.tsx';
+import { Klasse } from './views/Klasse.tsx';
 import { GameSetup } from './views/GameSetup.tsx';
 import { Teacher } from './views/Teacher.tsx';
 import { LearningNav } from './components/LearningNav.tsx';
@@ -65,6 +66,7 @@ export function App() {
   else if (/^\/ranking\/?$/.test(path)) screen = <Ranking />;
   else if (/^\/klaus\/?$/.test(path)) screen = <KlausSkins />;
   else if (/^\/escribir\/?$/.test(path)) screen = <Schreibt />;
+  else if (/^\/unterricht\/?$/.test(path)) screen = <Klasse />;
   else if (/^\/mision\/?$/.test(path)) screen = <Mission />;
   else if (/^\/libre\/jugar\/?$/.test(path)) screen = <FreeGame key={search} />;
   else if (path === '/preview/klaus') screen = <Suspense fallback={<p className="home">Cargando a Klaus…</p>}><KlausShowcase /></Suspense>;

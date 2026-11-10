@@ -1,5 +1,6 @@
 // Cliente de Klaus AI (infraestructura compartida por Schreibt, Redet y Klasse). Solo habla con /api/klaus/*; nunca ve claves ni proveedores.
 import { playRequest } from './play-client.ts';
+import type { AnswerPayload, AnswerResult, KlasseView } from '../shared/lesson.ts';
 import type { AiLevel, KlausFeature, KlausPlan, WritingReview } from '../shared/klaus-ai.ts';
 import type { WritingTask } from '../shared/klaus-content.ts';
 
@@ -23,4 +24,16 @@ export const reviewWriting = (b: { text: string; level: AiLevel; draftId?: strin
 export const resolveCorrection = (draftId: string, reviewId: string, correctionId: string) =>
   playRequest<{ resolved: string[] }>('/api/klaus/writing/review/resolve', { draftId, reviewId, correctionId });
 
-export const quotaLeft = (s: KlausStatus | null, f: KlausFeature) => (s ? Math.max(0, s.quota[f].limit - s.quota[f].used) : null);
+export const quotaLeft = (s: KlausStatus | null, f: KlausFeature) => (s ? Math.max(0, s.quota[f].limit - s.quota[f].used) : null);
+
+// ── Unterricht mit Klaus: lección determinista; solo /klasse/ask puede usar IA (con cuota). ──
+export interface KlasseLessonInfo { id: string; unit: string; level: AiLevel; title: string; objectives: string[]; verified: boolean; steps: number }
+export interface KlasseSessionInfo { sessionId: string; lessonId: string; finished: boolean; step: number; total: number; updatedAt: number }
+export interface KlasseAskAnswer { answer: { action: string; activityId: string | null; text: string; example: { de: string; es: string } | null }; source: 'ai' | 'mock'; asksLeft: number }
+export const klasseLessons = () => playRequest<{ lessons: KlasseLessonInfo[]; sessions: KlasseSessionInfo[] }>('/api/klaus/klasse/lessons');
+export const klasseSession = (id: string) => playRequest<{ view: KlasseView }>(`/api/klaus/klasse/session?id=${encodeURIComponent(id)}`);
+export const klasseStart = (lessonId: string) => playRequest<{ view: KlasseView; resumed: boolean }>('/api/klaus/klasse/start', { lessonId });
+export const klasseAnswer = (sessionId: string, answer: AnswerPayload) => playRequest<{ result: AnswerResult; view: KlasseView }>('/api/klaus/klasse/answer', { sessionId, answer });
+export const klasseNext = (sessionId: string) => playRequest<{ view: KlasseView }>('/api/klaus/klasse/next', { sessionId });
+export const klasseAsk = (sessionId: string, question: string, requestId: string, signal?: AbortSignal) =>
+  playRequest<KlasseAskAnswer>('/api/klaus/klasse/ask', { sessionId, question, requestId }, signal);

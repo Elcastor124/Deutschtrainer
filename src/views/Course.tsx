@@ -98,6 +98,7 @@ export function Course() {
             </div>
           </div>
           <UnitCard unit={focusUnit} done={done} />
+          <a className="cp-lib cp-klasse" href="/unterricht" onClick={followLearningLink}><span className="dotnum">K</span><span><b>Clase con Klaus</b><small>Lecciones guiadas con explicación y ejercicios</small></span><i aria-hidden="true">→</i></a>
           <a className="cp-lib" href="/biblioteca" onClick={followLearningLink}><span className="dotnum">▤</span><span><b>Biblioteca</b><small>Todas las presentaciones y PDF</small></span><i aria-hidden="true">→</i></a>
         </aside>
       </div>

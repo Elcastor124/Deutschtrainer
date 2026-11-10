@@ -24,7 +24,7 @@ export function navSection(path: string): NavSection {
   if (/^\/(cuenta|mi|registro|entrar)(\/|$)/.test(path)) return 'account';
   if (path.startsWith('/ranking')) return 'ranking';
   if (path.startsWith('/road-to-b1') || path.startsWith('/examenes')) return 'road';
-  if (path.startsWith('/curso') || path.startsWith('/biblioteca') || /^\/tema\/1\/?$/.test(path)) return 'course';
+  if (path.startsWith('/curso') || path.startsWith('/biblioteca') || path.startsWith('/unterricht') || /^\/tema\/1\/?$/.test(path)) return 'course';
   if (path.startsWith('/escribir')) return 'write';
   if (path.startsWith('/practi') || path.startsWith('/tema/1/taller')) return 'practice';
   if (/^\/(juegos|jugar|jenga|boxeo|libre|t|p|j)(\/|$)/.test(path)) return 'games';
