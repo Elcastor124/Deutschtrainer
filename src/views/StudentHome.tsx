@@ -1,6 +1,7 @@
 // /mi — espacio personal del alumno tras iniciar sesión. Todo sale de datos reales del servidor (progreso, retos derivados
 // de su actividad, repasos y clases que le asigna su profesor); los estados vacíos lo dicen sin inventar nada.
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { CountUp } from '../components/CountUp.tsx';
 import { GAMES, LEVEL_LABEL } from '../../shared/play.ts';
 import { TOPICS } from '../../shared/rules.ts';
 import { getDashboard, getAchievements, playRequest, refreshAccount, setHomeworkDone, type Dashboard } from '../play-client.ts';
@@ -50,20 +51,27 @@ export function StudentHome() {
   const resume = (() => { try { const v = JSON.parse(store.get('bc:practice') ?? 'null'); return v?.account ? v : null; } catch { return null; } })();
   const live = d.classes.filter((c) => c.status === 'live' && c.room);
   const weak = [...new Set([...d.reviews.flatMap((r) => r.topics), ...s.recommended])].slice(0, 6);
+  // «¿Qué estudio ahora?»: una sola respuesta destacada. Práctica a medias > misión pendiente > repaso recomendado.
+  const missionOpen = !!mission && !mission.completedAt;
+  const lead: 'continue' | 'mission' = resume || !missionOpen ? 'continue' : 'mission';
   return (
     <main className="sh" data-student-home="">
-      <header className="sh-hero">
+      <header className="sh-hero" data-m="rise">
         <span className="acc-avatar" aria-hidden="true">{d.account.alias.slice(0, 1).toUpperCase()}</span>
         <div>
-          <p className="dt-eyebrow">Mein Bereich</p>
-          <h1>Hallo, {d.account.alias}!</h1>
+          <p className="m-label"><i>Mein Bereich</i>{new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <h1>Hallo, {d.account.alias}<b className="dt-punkt">!</b></h1>
           <p className="sh-tags">
             {d.level ? <span className="sh-chip">Nivel {LEVEL_LABEL[d.level]}</span> : <span className="sh-chip dim">Sin nivel asignado</span>}
             {d.groups.map((g) => <span key={g} className="sh-chip">{g}</span>)}
-            <span className="sh-chip gold">{s.weekPoints} pts esta semana</span>
           </p>
         </div>
-        <a className="btn" href="/cuenta" onClick={go('/cuenta')}>Mi cuenta</a>
+        <dl className="sh-stats" aria-label="Tu semana">
+          <div><dt>Puntos esta semana</dt><dd className="gold"><CountUp value={s.weekPoints} /></dd></div>
+          <div><dt>Racha</dt><dd><CountUp value={s.streak} /><small>{s.streak === 1 ? 'día' : 'días'}</small></dd></div>
+          <div><dt>Logros</dt><dd>{done === null ? '—' : <CountUp value={done} />}</dd></div>
+        </dl>
+        <a className="btn ghost sm sh-account" href="/cuenta" onClick={go('/cuenta')}>Mi cuenta</a>
       </header>
 
       {live.length > 0 && (
@@ -74,16 +82,31 @@ export function StudentHome() {
         </section>
       )}
 
+      <section className={`sh-now lead-${lead}`} aria-labelledby="sh-now-t">
+        <h2 id="sh-now-t" className="m-label"><i>01</i>Hoy</h2>
+        <div className="sh-now-grid">
       {mission && (() => {
         const n = mission.items.filter((x) => x.final).length, all = mission.items.length;
         return (
-          <section className="ms-home" aria-label="Misión de hoy">
+          <section className="ms-home" aria-label="Misión de hoy" data-m="rise" style={{ '--m-i': lead === 'mission' ? 1 : 2 } as CSSProperties}>
             <div className="ms-home-fig" aria-hidden="true"><KlausFigure reaction={mission.completedAt ? 'correct' : 'idle'} look={look} /></div>
             <div><p className="dt-eyebrow">Tägliche Mission · 5 min</p><h2>{mission.completedAt ? 'Misión de hoy completada' : n ? `Misión a medias: ${n}/${all}` : 'Tu misión de hoy está lista'}</h2><p>{mission.completedAt ? 'Mañana tendrás una nueva, adaptada a lo que hayas fallado.' : `${all} ejercicios: ${mission.topics.join(' · ')}`}</p><WeekDots days={mission.weekDays} /></div>
             <a className="btn primary lg" href="/mision" onClick={go('/mision')}>{mission.completedAt ? 'Ver resumen' : n ? 'Continuar' : 'Empezar'} →</a>
           </section>
         );
       })()}
+
+          <section className="sh-continue" aria-label="Continuar estudiando" data-m="rise" style={{ '--m-i': lead === 'continue' ? 1 : 2 } as CSSProperties}>
+        <div>
+          <p className="dt-eyebrow">Continuar estudiando</p>
+          <h2>{resume ? 'Tienes una práctica a medias' : weak[0] ? `Hoy toca: ${topicName(weak[0])}` : 'Empieza tu primera práctica'}</h2>
+          <p className="libre-note">{resume ? 'Retómala donde la dejaste.' : weak[0] ? 'Es el tema que más te conviene repasar ahora mismo.' : '10 preguntas con corrección y explicación. Tus resultados se guardan solos.'}</p>
+        </div>
+        <a className="btn primary lg" href="/practica" onClick={go(weak[0] && !resume ? `/practica?temas=${weak[0]}` : '/practica')}>{resume ? 'Continuar' : 'Practicar'} →</a>
+      </section>
+
+        </div>
+      </section>
 
       {(d.homework?.length ?? 0) > 0 && (
         <section className="sh-hw" id="deberes" aria-labelledby="sh-hw-t">
@@ -113,24 +136,7 @@ export function StudentHome() {
         </section>
       )}
 
-      <section className="sh-continue" aria-label="Continuar estudiando">
-        <div>
-          <p className="dt-eyebrow">Continuar estudiando</p>
-          <h2>{resume ? 'Tienes una práctica a medias' : weak[0] ? `Hoy toca: ${topicName(weak[0])}` : 'Empieza tu primera práctica'}</h2>
-          <p className="libre-note">{resume ? 'Retómala donde la dejaste.' : weak[0] ? 'Es el tema que más te conviene repasar ahora mismo.' : '10 preguntas con corrección y explicación. Tus resultados se guardan solos.'}</p>
-        </div>
-        <a className="btn primary lg" href="/practica" onClick={go(weak[0] && !resume ? `/practica?temas=${weak[0]}` : '/practica')}>{resume ? 'Continuar' : 'Practicar'} →</a>
-      </section>
-
-      <section aria-label="Juegos" className="sh-block">
-        <h2>Juegos</h2>
-        <div className="sh-games">
-          {GAMES.map((g) => g.available
-            ? <a key={g.id} className="sh-game" href={`/libre?juego=${g.id}`} onClick={go(`/libre?juego=${g.id}`)}><i aria-hidden="true">{GAME_ICON[g.id]}</i><b>{g.name}</b><span>{g.modes.includes('private') ? 'Solo o con amigos' : 'Solo'}</span></a>
-            : <div key={g.id} className="sh-game off" aria-disabled="true"><i aria-hidden="true">{GAME_ICON[g.id]}</i><b>{g.name}</b><span>Próximamente</span></div>)}
-        </div>
-      </section>
-
+      <h2 className="m-label sh-sec"><i>02</i>Tu semana</h2>
       <div className="sh-grid">
         <section className="libre-card" aria-label="Temas para practicar">
           <h2>Temas que te conviene practicar</h2>
@@ -155,11 +161,7 @@ export function StudentHome() {
 
         <section className="libre-card" aria-label="Tu progreso">
           <h2>Tu progreso</h2>
-          <div className="libre-stats">
-            <div className="libre-stat"><span>Esta semana</span><b>{s.weekPoints}</b></div>
-            <div className="libre-stat"><span>Racha</span><b>{s.streak}</b></div>
-            <div className="libre-stat"><span>Logros</span><b>{done ?? '—'}</b></div>
-          </div>
+          <p className="sh-note">Puntos por semana</p>
           <Spark values={s.history.map((h) => h.points)} />
           <div className="libre-row"><a className="btn sm" href="/cuenta" onClick={go('/cuenta')}>Ver todo mi progreso</a><a className="btn sm" href="/ranking" onClick={go('/ranking')}>Ranking</a></div>
         </section>
@@ -178,6 +180,14 @@ export function StudentHome() {
           ))}</ul> : <p className="sh-empty">Todavía no has completado ninguna actividad. Una práctica de 8 preguntas o más cuenta como la primera.</p>}
         </section>
       </div>
+      <section aria-label="Juegos" className="sh-block sh-play">
+        <h2 className="m-label"><i>03</i>Jugar</h2>
+        <div className="sh-games">
+          {GAMES.map((g) => g.available
+            ? <a key={g.id} className="sh-game" href={`/libre?juego=${g.id}`} onClick={go(`/libre?juego=${g.id}`)}><i aria-hidden="true">{GAME_ICON[g.id]}</i><b>{g.name}</b><span>{g.modes.includes('private') ? 'Solo o con amigos' : 'Solo'}</span></a>
+            : <div key={g.id} className="sh-game off" aria-disabled="true"><i aria-hidden="true">{GAME_ICON[g.id]}</i><b>{g.name}</b><span>Próximamente</span></div>)}
+        </div>
+      </section>
     </main>
   );
 }

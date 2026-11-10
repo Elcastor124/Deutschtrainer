@@ -64,7 +64,7 @@ try {
     if (s === 0) {
       ok(await B.eval(`[...document.querySelectorAll('.tp-tile[aria-pressed=true] b')].map(b=>b.textContent).join()==='Dativ'`), '?temas=dativ preselecciona Dativ (tarjeta marcada)');
       await B.type('form input.field', 'Probe');
-      await B.click('[role=radio]', 0); // 10 preguntas
+      await B.click('[role=radiogroup][aria-label="Preguntas por sesión"] [role=radio]', 0); // 10 preguntas (el primer radiogroup de la página es ahora el Nivel)
     }
     await B.click('form .btn.primary.lg');
     const { ids, v } = await playSession(B, { reloadAt: s === 0 ? 3 : -1, label: `sesión ${s + 1}` });

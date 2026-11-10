@@ -1,0 +1,71 @@
+
+/* ── Portada · «Cada clase, el mismo camino»: de cuatro cajas iguales a una secuencia editorial con demostraciones. ── */
+.dt-flow-v2 { gap: 0; border-top: 1px solid var(--dt-hair-2); border-bottom: 1px solid var(--dt-hair-2); }
+.dt-flow-v2::before { display: none; }
+.dt-flow-v2 .dt-flow-step { background: none; box-shadow: none; border: 0; border-radius: 0; padding: 28px 26px 30px; gap: 10px; align-content: start; }
+.dt-flow-v2 .dt-flow-step + .dt-flow-step { border-left: 1px solid var(--dt-hair-2); }
+.dt-flow-v2 .dt-flow-step:hover { transform: none; }
+.dt-flow-v2 .dt-flow-n { width: auto; height: auto; background: none !important; color: var(--dt-muted) !important; border-radius: 0; font-size: 0.9rem; margin: 0; justify-self: start; }
+.dt-flow-v2 .k-practicar .dt-flow-n, .dt-flow-v2 .k-jugar .dt-flow-n { color: var(--dt-red) !important; }
+.dt-flow-v2 .k-repaso .dt-flow-n { color: var(--dt-gold) !important; }
+
+/* Escenario de cada demostración */
+.fd { height: 112px; margin: 6px 0 14px; display: grid; place-items: center start; position: relative; }
+/* 01 Ver: diapositiva con líneas que se escriben y una que se subraya */
+.fd-slide { width: 132px; height: 88px; border-radius: 10px; border: 1px solid var(--dt-hair-2); background: var(--dt-ink-1); display: grid; align-content: center; gap: 8px; padding: 0 14px; }
+.fd-slide i { display: block; height: 4px; border-radius: 4px; background: var(--dt-paper-3, #555); transform-origin: 0 50%; }
+.fd-slide i:nth-child(2) { width: 85%; } .fd-slide i:nth-child(3) { width: 70%; } .fd-slide i:nth-child(4) { width: 55%; }
+.fd-slide .fd-t { height: 7px; width: 60%; background: var(--dt-paper); }
+.fd-slide .fd-hl { background: var(--dt-red); }
+/* 02 Practicar: el hueco cambia de «den» (tachado) a «dem» */
+.fd-practicar { display: flex; flex-wrap: wrap; align-items: baseline; align-content: center; gap: 6px; font: 500 1.02rem/1.6 var(--dt-mono, var(--mono)); color: var(--dt-paper-2); }
+.fd-slot { position: relative; display: inline-grid; min-width: 3.4ch; padding: 0 6px; border-bottom: 2px solid var(--dt-red); }
+.fd-slot s, .fd-slot b { grid-area: 1 / 1; text-align: center; }
+.fd-slot s { color: var(--dt-muted); text-decoration-color: var(--dt-red); }
+.fd-slot b { color: var(--dt-paper); opacity: 0; }
+.fd-practicar em { flex-basis: 100%; font: 500 0.62rem/1 var(--dt-mono, var(--mono)); font-style: normal; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dt-red); }
+/* 03 Jugar: torre de bloques; uno sale */
+.fd-jugar { display: grid; grid-auto-rows: 14px; gap: 3px; width: 96px; place-items: stretch; align-content: center; }
+.fd-jugar i { display: block; border-radius: 3px; background: var(--dt-ink-3); border: 1px solid var(--dt-hair-2); }
+.fd-jugar i:nth-child(2n) { margin: 0 8px; }
+.fd-jugar i:nth-child(3) { background: var(--dt-red); border-color: var(--dt-red); }
+/* 04 Repaso: «Ich kann…» que se marcan */
+.fd-repaso { display: grid; gap: 9px; align-content: center; font-size: 0.86rem; color: var(--dt-paper-2); }
+.fd-repaso span { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.fd-repaso i { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--dt-hair-2); position: relative; flex: none; }
+.fd-repaso i::after { content: ''; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px; border: solid #0A0A0A; border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); }
+
+/* Coreografía: solo cuando el paso ya está en pantalla (.is-in) y con efectos activos. Una vez, sin bucles. */
+html[data-dt-effects='on'] .is-in .fd-slide i { animation: fd-write var(--m-panel) var(--m-out) both; animation-delay: calc(var(--d, 0ms) + 200ms); }
+html[data-dt-effects='on'] .is-in .fd-slide i:nth-child(2) { animation-delay: calc(var(--d, 0ms) + 300ms); }
+html[data-dt-effects='on'] .is-in .fd-slide i:nth-child(3) { animation-delay: calc(var(--d, 0ms) + 400ms); }
+html[data-dt-effects='on'] .is-in .fd-slide i:nth-child(4) { animation-delay: calc(var(--d, 0ms) + 520ms); }
+@keyframes fd-write { from { transform: scaleX(0); } }
+.is-in .fd-slot s { animation: fd-out var(--m-base) var(--m-in) forwards; animation-delay: calc(var(--d, 0ms) + 900ms); }
+.is-in .fd-slot b { animation: fd-in var(--m-panel) var(--m-spring) forwards; animation-delay: calc(var(--d, 0ms) + 1100ms); }
+@keyframes fd-out { to { opacity: 0; transform: translateY(-8px); } }
+@keyframes fd-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+html[data-dt-effects='on'] .is-in .fd-jugar i:nth-child(3) { animation: fd-pull var(--m-scene) var(--m-inout) both; animation-delay: calc(var(--d, 0ms) + 600ms); }
+@keyframes fd-pull { 0% { transform: none; } 60%, 100% { transform: translateX(42px); opacity: 0.85; } }
+.is-in .fd-repaso i { animation: fd-check var(--m-base) var(--m-out) forwards; animation-delay: calc(var(--d, 0ms) + 500ms + var(--b) * 260ms); }
+.is-in .fd-repaso i::after { animation: fd-tick var(--m-base) var(--m-spring) forwards; animation-delay: calc(var(--d, 0ms) + 560ms + var(--b) * 260ms); }
+@keyframes fd-check { to { background: var(--dt-gold); border-color: var(--dt-gold); } }
+@keyframes fd-tick { to { transform: rotate(45deg) scale(1); } }
+/* Sin efectos o con «reducir movimiento»: el estado final, directamente. */
+html[data-dt-effects='off'] .fd-slot s { opacity: 0; } html[data-dt-effects='off'] .fd-slot b { opacity: 1; }
+html[data-dt-effects='off'] .fd-repaso i { background: var(--dt-gold); border-color: var(--dt-gold); } html[data-dt-effects='off'] .fd-repaso i::after { transform: rotate(45deg) scale(1); }
+html[data-dt-effects='off'] .fd *, html[data-dt-effects='off'] .fd *::after { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .fd *, .fd *::after { animation: none !important; }
+  .fd-slot s { opacity: 0; } .fd-slot b { opacity: 1; }
+  .fd-repaso i { background: var(--dt-gold); border-color: var(--dt-gold); } .fd-repaso i::after { transform: rotate(45deg) scale(1); }
+}
+@media (max-width: 1100px) {
+  .dt-flow-v2 .dt-flow-step:nth-child(3) { border-left: 0; }
+  .dt-flow-v2 .dt-flow-step:nth-child(n + 3) { border-top: 1px solid var(--dt-hair-2); }
+}
+@media (max-width: 640px) {
+  .dt-flow-v2 .dt-flow-step { border-left: 0 !important; padding: 24px 4px; }
+  .dt-flow-v2 .dt-flow-step + .dt-flow-step { border-top: 1px solid var(--dt-hair-2); }
+  .fd { height: 96px; }
+}

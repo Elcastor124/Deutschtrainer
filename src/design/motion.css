@@ -1,0 +1,73 @@
+/* ── Sistema de movimiento de Deutschtrainer ──────────────────────────────────────────────
+   Una sola gramática. Cada animación tiene un propósito: navegación, continuidad, respuesta, progreso,
+   atención, personalidad o descubrimiento.
+   · instant  90 ms  pulsación (botón hundido)
+   · quick   160 ms  controles (hover, color, check)
+   · base    240 ms  selección (indicadores, pestañas, chips)
+   · panel   380 ms  paneles, entradas de contenido, navegación
+   · scene   720 ms  hitos (logro, fin de lección, revelado)
+   Solo transform y opacity. Se apaga con prefers-reduced-motion y con la pausa global
+   (html[data-dt-effects="off"]). */
+:root {
+  --m-instant: 90ms;
+  --m-quick: 160ms;
+  --m-base: 240ms;
+  --m-panel: 380ms;
+  --m-scene: 720ms;
+  --m-out: cubic-bezier(0.22, 1, 0.36, 1);      /* llegada: rápida y se posa */
+  --m-in: cubic-bezier(0.7, 0, 0.84, 0);        /* salida: arranca lenta y se va */
+  --m-inout: cubic-bezier(0.65, 0, 0.35, 1);    /* desplazamiento entre dos sitios */
+  --m-spring: cubic-bezier(0.3, 1.3, 0.5, 1);   /* física puntual: un solo rebote corto */
+  --m-stagger: 40ms;
+}
+
+/* Entradas: el contenido sube 10 px y aparece. --m-i escalona hermanos (máx. ~8). */
+@keyframes m-rise { from { opacity: 0; transform: translate3d(0, 10px, 0); } to { opacity: 1; transform: none; } }
+@keyframes m-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes m-pop { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: none; } }
+@keyframes m-slide-l { from { opacity: 0; transform: translate3d(14px, 0, 0); } to { opacity: 1; transform: none; } }
+[data-m='rise'] { animation: m-rise var(--m-panel) var(--m-out) both; animation-delay: calc(var(--m-i, 0) * var(--m-stagger)); }
+[data-m='fade'] { animation: m-fade var(--m-base) var(--m-out) both; }
+[data-m='pop'] { animation: m-pop var(--m-base) var(--m-spring) both; animation-delay: calc(var(--m-i, 0) * var(--m-stagger)); }
+[data-m='slide'] { animation: m-slide-l var(--m-panel) var(--m-out) both; }
+
+/* Etiqueta editorial: índice rojo + nombre, en mono. Ordena una pantalla sin cajas. */
+.m-label { display: flex; align-items: baseline; gap: 10px; margin: 0; font: 500 0.7rem/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--steel); }
+.m-label i { font-style: normal; color: var(--signal); }
+
+/* Control segmentado: un indicador se desliza entre opciones (continuidad espacial). */
+.seg { display: inline-block; max-width: 100%; padding: 3px; border-radius: 12px; border: 1px solid var(--line-2); background: color-mix(in srgb, var(--paper) 3%, transparent); }
+.seg.wide { display: block; }
+.seg-track { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+.seg-ind { position: absolute; top: 0; bottom: 0; left: 0; width: calc(100% / var(--seg-n)); border-radius: 9px; background: var(--paper);
+  transform: translate3d(calc(var(--seg-i) * 100%), 0, 0); transition: transform var(--m-panel) var(--m-out); pointer-events: none; }
+.seg-opt { position: relative; z-index: 1; display: grid; justify-items: center; align-content: center; gap: 3px; min-height: 44px; min-width: 52px; padding: 5px 12px;
+  border: 0; background: none; color: var(--paper-2); font: 600 0.95rem/1 var(--sans); cursor: pointer; border-radius: 9px;
+  transition: color var(--m-base) var(--m-out); -webkit-tap-highlight-color: transparent; }
+.seg-opt:hover:not(:disabled):not([aria-checked='true']) { color: var(--paper); }
+.seg-opt[aria-checked='true'] { color: #0a0a0a; }
+.seg-opt:disabled { cursor: not-allowed; color: var(--steel-2); }
+.seg-opt small { font: 500 0.56rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; color: inherit; opacity: 0.85; }
+.seg-opt:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.seg-opt:active:not(:disabled) span { transform: scale(0.96); }
+.seg-opt span { transition: transform var(--m-instant) var(--m-out); }
+
+/* Interruptor (checkbox nativo, accesible). */
+.m-switch { display: inline-flex; align-items: center; gap: 12px; cursor: pointer; min-height: 44px; }
+.m-switch input { appearance: none; -webkit-appearance: none; flex: none; width: 42px; height: 24px; margin: 0; border-radius: 99px; border: 1px solid var(--line-2);
+  background: color-mix(in srgb, var(--paper) 6%, transparent); position: relative; cursor: pointer; transition: background var(--m-base) var(--m-out), border-color var(--m-base) var(--m-out); }
+.m-switch input::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--steel);
+  transition: transform var(--m-base) var(--m-spring), background var(--m-base) var(--m-out); }
+.m-switch input:checked { background: var(--signal); border-color: var(--signal); }
+.m-switch input:checked::after { transform: translateX(18px); background: #fff; }
+.m-switch input:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+
+/* Número que cuenta (ver CountUp.tsx): cifras tabulares para que no baile. */
+.m-num { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-m] { animation: none !important; }
+  .seg-ind, .m-switch input::after { transition: none; }
+}
+:root[data-dt-effects='off'] [data-m] { animation: none !important; }
+:root[data-dt-effects='off'] .seg-ind { transition: none; }

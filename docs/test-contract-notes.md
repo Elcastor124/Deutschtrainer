@@ -25,3 +25,10 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
 
 - `scripts/hub-ui.mjs` y `scripts/road-ui.mjs` siguen desfasados (ver diagnóstico previo: 8 enlaces frente a 10 del catálogo; la sala está en `/road-to-b1/level-1`).
 - Cuando se aplique el rediseño del selector de temas, los selectores `.tp-tile` deberán actualizarse de nuevo; `data-practice-form` no debe cambiar.
+
+## Rediseño visual (rama visual-overhaul)
+
+- `scripts/practice-ui.mjs` pulsaba el primer `[role=radio]` de la página para elegir «10 preguntas». El nuevo selector de `/practica` pone antes el control de **Nivel** (A1/A2/Todos, B1–C2 «Próximamente»), así que ese clic elegía «Todos» y la sesión salía con 15 preguntas (el tamaño guardado). La función no cambió: «10» sigue existiendo y funciona. La prueba ahora pulsa dentro del grupo con nombre accesible «Preguntas por sesión».
+- `src/hub.test.ts` exige el texto «Todo el banco» en `/practica`; se mantiene en la cabecera nueva (no se cambió la prueba).
+- `tests/klaus-hidden-browser.mjs` falló de forma intermitente con el rediseño (y nunca en HEAD): el formulario nuevo es más alto, al empezar la página seguía desplazada y el panel de Klaus se movía ~70 px después de medirlo. Era un fallo real (la partida aparecía a media página). Corregido en `Practice.tsx`: al empezar o continuar se vuelve arriba al instante. La prueba no se tocó.
+- `tests/editorial-browser.mjs` no arranca servidor propio: necesita `EDITORIAL_BASE` (por defecto 127.0.0.1:5178). Con `EDITORIAL_BASE=http://localhost:5173` (entorno `npm run plus`) pasa.

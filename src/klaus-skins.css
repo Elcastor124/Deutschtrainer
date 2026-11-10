@@ -1,24 +1,74 @@
-.ks-page { width: min(1240px, 100%); margin: 0 auto; padding: 24px var(--gut, 16px) 48px; display: grid; gap: 18px; position: relative; z-index: 1; }
-.ks-head { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: center; }
-.ks-head h1, .ks-page > h1 { font-family: var(--dot); font-weight: 900; font-size: clamp(1.8rem, 1.2rem + 2vw, 2.8rem); margin: 0; }
-.ks-head h1 b { color: var(--signal); }
-.ks-sub { color: var(--steel); margin: 8px 0 0; max-width: 64ch; }
-.ks-box { display: grid; justify-items: center; gap: 8px; padding: 18px; border-radius: 18px; border: 1px solid var(--line, #2c2c33); background: radial-gradient(circle at 50% 30%, #ffd54a18, transparent 70%); text-align: center; min-height: 230px; align-content: center; }
-.ks-box small { color: var(--steel); }
-.ks-crate { font-size: 4.5rem; line-height: 1; filter: drop-shadow(0 6px 18px #ffd54a55); }
+/* /klaus — Colección: escaparate con la skin elegida (una sola figura animada) + colección por rareza (lienzos fijos). */
+.ks-page { width: min(1240px, 100%); margin: 0 auto; padding: 28px var(--gut, 16px) 64px; display: grid; gap: 38px; position: relative; z-index: 1; }
+.ks-page > h1 { font: 700 clamp(2rem, 1.4rem + 2vw, 3rem)/1 var(--sans); margin: 0; }
+.ks-top { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) 210px; gap: 22px; align-items: stretch; }
+.ks-intro { display: grid; align-content: center; gap: 14px; }
+.ks-intro h1 { margin: 0; font: 700 clamp(2.4rem, 1.6rem + 3vw, 4.2rem)/0.95 var(--sans); letter-spacing: -0.04em; }
+.ks-sub { color: var(--steel); margin: 0; max-width: 46ch; line-height: 1.5; }
+.ks-sub b { color: var(--paper); }
+.ks-sub.small { font-size: 0.85rem; }
+.ks-meter { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 14px; max-width: 360px; }
+.ks-meter-n { font: 500 0.9rem/1 var(--mono); color: var(--steel); }
+.ks-meter-n b { font: 700 1.6rem/1 var(--dot); color: var(--gold); }
+.ks-meter-bar { height: 4px; border-radius: 99px; background: var(--line-2); overflow: hidden; }
+.ks-meter-bar i { display: block; height: 100%; background: var(--gold); border-radius: inherit; transform-origin: 0 50%; animation: ks-grow var(--m-scene) var(--m-out) both; }
+@keyframes ks-grow { from { transform: scaleX(0); } }
+
+/* Escaparate */
+.ks-stage { --tier: var(--paper-2); position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 280px; border-radius: 24px; border: 1px solid var(--line-2); overflow: hidden;
+  background: radial-gradient(70% 70% at 50% 45%, color-mix(in srgb, var(--tier) 12%, transparent), transparent 70%), color-mix(in srgb, var(--paper) 2%, transparent); }
+.ks-stage-fig { min-height: 200px; display: grid; place-items: center; padding: 18px 18px 0; animation: m-pop var(--m-panel) var(--m-spring) both; }
+.ks-stage-fig > * { width: 100%; height: 100%; max-height: 220px; }
+.ks-stage-cap { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; column-gap: 12px; padding: 14px 18px; border-top: 1px solid var(--line-2); }
+.ks-stage-cap b { grid-row: 2; font: 700 1.15rem/1.1 var(--sans); letter-spacing: 0.02em; }
+.ks-stage-cap > :last-child { grid-row: 1 / 3; grid-column: 2; margin: 0; }
+.ks-tier { font: 500 0.64rem/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--tier); }
+.ks-on-tag { font: 500 0.7rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--signal); padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--signal) 50%, transparent); border-radius: 99px; }
+
+/* Lootbox */
+.ks-box { display: grid; align-content: center; justify-items: center; gap: 10px; padding: 18px; border-radius: 24px; border: 1px solid var(--line-2); text-align: center;
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--gold) 10%, transparent), transparent 70%); }
+.ks-box b { font-weight: 600; }
+.ks-box small { color: var(--steel); font-size: 0.78rem; line-height: 1.4; }
+.ks-box .btn { margin-bottom: 4px; }
+.ks-crate { width: 64px; height: 64px; fill: none; stroke: var(--gold); stroke-width: 2.2; stroke-linejoin: round; }
 .ks-shake .ks-crate { animation: ks-shake .35s ease-in-out infinite; }
-@keyframes ks-shake { 0%, 100% { transform: rotate(0) scale(1); } 25% { transform: rotate(-9deg) scale(1.06); } 75% { transform: rotate(9deg) scale(1.06); } }
-.ks-reveal { display: grid; justify-items: center; gap: 4px; animation: ks-pop .6s cubic-bezier(.2,1.4,.4,1) both; }
-@keyframes ks-pop { from { opacity: 0; transform: scale(.4) rotate(-8deg); } to { opacity: 1; transform: none; } }
-.ks-reveal .ks-fig { width: 170px; height: 130px; }
-.ks-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-.ks-card { display: grid; justify-items: center; gap: 4px; padding: 10px 8px 12px; border-radius: 14px; border: 1px solid var(--line, #2c2c33); background: rgba(255,255,255,.025); text-align: center; }
-.ks-card .ks-fig { width: 120px; height: 92px; display: grid; place-items: center; }
-.ks-card b { font-size: .85rem; letter-spacing: .04em; }
-.ks-card span, .ks-reveal span { font-size: .72rem; color: var(--steel); text-transform: uppercase; letter-spacing: .1em; }
-.ks-card.on { border-color: var(--signal, #e2231a); box-shadow: 0 0 0 1px var(--signal, #e2231a) inset; }
-.ks-card.locked { opacity: .55; }
-.ks-card .ks-lock { font: 900 2.4rem/1 var(--dot); color: var(--steel-2, #555); letter-spacing: 0; }
-.r-rare span { color: #64d2ff; } .r-epic span { color: #bf5af2; } .r-legendary span { color: #ffd54a; } .r-mythic span { color: #ff375f; }
-.ks-card.r-legendary:not(.locked) { border-color: #ffd54a66; } .ks-card.r-mythic:not(.locked) { border-color: #ff375f88; box-shadow: 0 0 18px #ff375f33; }
-@media (max-width: 760px) { .ks-head { grid-template-columns: 1fr; } }
+@keyframes ks-shake { 0%, 100% { transform: rotate(0) scale(1); } 25% { transform: rotate(-8deg) scale(1.05); } 75% { transform: rotate(8deg) scale(1.05); } }
+.ks-reveal { display: grid; justify-items: center; gap: 4px; animation: ks-pop var(--m-scene) var(--m-spring) both; }
+@keyframes ks-pop { from { opacity: 0; transform: scale(.5); } to { opacity: 1; transform: none; } }
+.ks-reveal .ks-fig { width: 150px; height: 120px; }
+.ks-reveal span { font: 500 0.66rem/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--steel); }
+
+/* Colección por rareza */
+.ks-tier-sec { --tier: var(--steel); display: grid; gap: 14px; }
+.ks-tier-h { display: flex; align-items: baseline; gap: 14px; margin: 0; padding-bottom: 10px; border-bottom: 1px solid var(--line-2); }
+.ks-tier-h span { font: 500 0.72rem/1 var(--mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--tier); }
+.ks-tier-h small { margin-left: auto; font: 500 0.75rem/1 var(--mono); color: var(--steel); }
+.ks-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 8px; }
+.ks-card { min-width: 0; }
+.ks-pick { position: relative; width: 100%; display: grid; justify-items: center; gap: 6px; padding: 10px 6px 12px; border-radius: 14px; border: 1px solid transparent; background: none; color: inherit; font: inherit; text-align: center;
+  transition: border-color var(--m-quick) var(--m-out), background var(--m-quick) var(--m-out); }
+button.ks-pick { cursor: pointer; }
+button.ks-pick:hover { background: color-mix(in srgb, var(--paper) 4%, transparent); border-color: var(--line-2); }
+button.ks-pick:hover .ks-fig { transform: translateY(-3px); }
+button.ks-pick:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.ks-card.sel .ks-pick { border-color: var(--tier); background: color-mix(in srgb, var(--tier) 8%, transparent); }
+.ks-card .ks-fig { width: 100%; max-width: 112px; height: 84px; display: grid; place-items: center; transition: transform var(--m-base) var(--m-out); }
+.ks-card b { font: 600 0.74rem/1.1 var(--sans); letter-spacing: 0.06em; color: var(--paper-2); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ks-card.locked b { color: var(--steel-2); }
+.ks-dot { position: absolute; top: 10px; right: 10px; width: 7px; height: 7px; border-radius: 50%; background: var(--signal); }
+/* Hueco sin desbloquear: silueta de orejas en el color de la skin, muy tenue. Insinúa sin desvelar. */
+.ks-lock { width: 46px; height: 40px; opacity: 0.22; background: var(--a, var(--steel));
+  clip-path: polygon(8% 100%, 0 30%, 12% 0, 32% 26%, 68% 26%, 88% 0, 100% 30%, 92% 100%); }
+.r-common { --tier: var(--paper-2); } .r-rare { --tier: #64d2ff; } .r-epic { --tier: #bf5af2; } .r-legendary { --tier: var(--gold); } .r-mythic { --tier: var(--signal); }
+
+@media (max-width: 1080px) { .ks-top { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .ks-intro { grid-column: 1 / -1; } }
+@media (max-width: 620px) {
+  .ks-page { gap: 30px; }
+  .ks-top { grid-template-columns: 1fr; }
+  .ks-stage { min-height: 240px; }
+  .ks-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+  .ks-card .ks-fig { height: 70px; }
+}
+@media (prefers-reduced-motion: reduce) { .ks-meter-bar i, .ks-stage-fig, .ks-reveal, .ks-shake .ks-crate { animation: none; } .ks-card .ks-fig { transition: none; } }
+:root[data-dt-effects='off'] .ks-meter-bar i, :root[data-dt-effects='off'] .ks-stage-fig, :root[data-dt-effects='off'] .ks-shake .ks-crate { animation: none; }

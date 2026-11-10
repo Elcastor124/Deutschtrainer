@@ -6,6 +6,7 @@ import '@fontsource-variable/jetbrains-mono';
 import '@fontsource/barlow-condensed/latin-600.css';
 import '@fontsource/barlow-condensed/latin-700.css';
 import './design/tokens.css';
+import './design/motion.css';
 import './styles.css';
 import { App } from './App.tsx';
 import { runBoot } from './brand/boot.ts';

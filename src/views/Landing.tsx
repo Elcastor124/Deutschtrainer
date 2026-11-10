@@ -12,6 +12,7 @@ import { useCourseProgress } from '../brand/progress.ts';
 import { useReveal, useScrollVar } from '../brand/motion.ts';
 import { useEffectsEnabled } from '../brand/effects.ts';
 import '../brand/editorial.css';
+import '../brand/landing-flow.css';
 
 const FLOW = (['ver', 'practicar', 'jugar', 'repaso'] as const).map((k, i) => ({ k, n: i + 1, ...STEP_META[k] }));
 const FLOW_TEXT: Record<(typeof FLOW)[number]['k'], string> = {
@@ -102,6 +103,29 @@ export function bindEditorialPress(root: HTMLElement, effectsEnabled: boolean): 
   };
 }
 
+/** Demostración mínima de cada paso (dibujada en CSS, sin imágenes): se anima una vez cuando el paso entra en pantalla. */
+function FlowDemo({ k }: { k: (typeof FLOW)[number]['k'] }) {
+  if (k === 'ver') return (
+    <div className="fd fd-ver" aria-hidden="true">
+      <span className="fd-slide"><i className="fd-t" /><i /><i /><i className="fd-hl" /></span>
+    </div>
+  );
+  if (k === 'practicar') return (
+    <div className="fd fd-practicar" aria-hidden="true" lang="de">
+      <span>Ich gebe</span> <span className="fd-slot"><s>den</s><b>dem</b></span> <span>Mann das Buch.</span>
+      <em>Dativ</em>
+    </div>
+  );
+  if (k === 'jugar') return (
+    <div className="fd fd-jugar" aria-hidden="true">{[0, 1, 2, 3, 4].map((i) => <i key={i} style={{ '--b': i } as CSSProperties} />)}</div>
+  );
+  return (
+    <div className="fd fd-repaso" aria-hidden="true">
+      {['Ich kann mich vorstellen.', 'Ich kann Dativ benutzen.', 'Ich kann Perfekt bilden.'].map((t, i) => <span key={t} style={{ '--b': i } as CSSProperties} lang="de"><i />{t}</span>)}
+    </div>
+  );
+}
+
 export function Landing() {
   const root = useRef<HTMLElement>(null);
   const effectsEnabled = useEffectsEnabled();
@@ -188,10 +212,11 @@ export function Landing() {
           <h2 id="flow-title">Cada clase, el mismo camino<b className="dt-punkt">.</b></h2>
           <p>Sin perderte entre presentaciones: abre la Lektion que toca y sigue los cuatro pasos.</p>
         </header>
-        <ol className="dt-flow">
+        <ol className="dt-flow dt-flow-v2">
           {FLOW.map((s) => (
             <li key={s.k} className={`dt-flow-step k-${s.k}`} data-reveal style={{ '--d': `${s.n * 90}ms` } as CSSProperties}>
               <span className="dt-flow-n dotnum">0{s.n}</span>
+              <FlowDemo k={s.k} />
               <h3>{s.title}</h3>
               <p className="dt-flow-de" lang="de">{s.de}</p>
               <p>{FLOW_TEXT[s.k]}</p>

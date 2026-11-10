@@ -1,0 +1,56 @@
+/* /practica — configuración en tres pasos (nivel, temas, sesión) y barra de inicio. */
+.pr-head { display: grid; gap: 10px; }
+.pr-head h1 { margin: 0; font: 700 clamp(2.1rem, 1.4rem + 2.6vw, 3.4rem)/0.98 var(--sans); letter-spacing: -0.035em; }
+.pr-head p:last-child { margin: 0; color: var(--steel); max-width: 52ch; }
+
+.pr-resume { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--signal) 40%, var(--line-2)); background: color-mix(in srgb, var(--signal) 7%, transparent); }
+.pr-resume b { display: block; font-weight: 600; }
+.pr-resume small { color: var(--steel); font-size: 0.82rem; }
+.pr-resume .btn { margin-bottom: 0; }
+.pr-resume-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 0 0 color-mix(in srgb, var(--signal) 60%, transparent); animation: pr-ping 2.4s var(--m-out) infinite; }
+@keyframes pr-ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--signal) 55%, transparent); } 70%, 100% { box-shadow: 0 0 0 10px transparent; } }
+
+.pr-form { display: grid; gap: 30px; padding-top: 8px; }
+.pr-step { display: grid; gap: 14px; min-width: 0; }
+.pr-step-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; }
+.pr-step-head small { color: var(--steel); font-size: 0.82rem; }
+.pr-levels { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.pr-levels .seg-opt { min-width: 72px; }
+.pr-levels .seg-opt:disabled small { color: var(--gold); opacity: 0.75; }
+
+.pr-session-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 32px; }
+.pr-field { display: flex; align-items: center; gap: 14px; }
+.pr-field-k { color: var(--paper-2); font-size: 0.92rem; }
+.pr-focus span { color: var(--paper-2); font-size: 0.92rem; }
+.pr-who { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 200px); gap: 10px; max-width: 560px; }
+.pr-who .field.dot { letter-spacing: 0.15em; }
+.pr-who .field.dot::placeholder { letter-spacing: 0.04em; }
+
+/* Barra de inicio: resumen honesto de lo que va a pasar + acción principal. */
+.pr-go { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px;
+  padding: 14px 14px 14px 20px; border-radius: 16px; border: 1px solid var(--line-2);
+  background: color-mix(in srgb, var(--paper) 3%, transparent); }
+.pr-go-sum { display: grid; gap: 4px; min-width: 0; }
+.pr-go-k { font: 500 0.66rem/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--steel); }
+.pr-go-sum > b { font-weight: 600; font-size: 1rem; overflow-wrap: anywhere; }
+.pr-go-sum small { font-size: 0.8rem; }
+.pr-warn { color: var(--gold); }
+.pr-go .btn.lg { margin-bottom: 4px; white-space: nowrap; }
+.pr-start span { display: inline-block; transition: transform var(--m-base) var(--m-out); }
+.pr-start:hover:not(:disabled) span { transform: translateX(4px); }
+
+/* En móvil Klaus acompaña debajo del formulario: el primer vistazo es la tarea, no la mascota. */
+@media (max-width: 960px) { .practice-setup .setup-side { order: 1; } }
+@media (max-width: 720px) {
+  .pr-form { gap: 26px; }
+  .pr-resume { grid-template-columns: auto minmax(0, 1fr); }
+  .pr-resume .btn { grid-column: span 1; }
+  .pr-resume .btn.primary { grid-column: 1 / -1; }
+  .pr-resume .btn.ghost { grid-column: 1 / -1; justify-self: start; }
+  .pr-who { grid-template-columns: 1fr; }
+  .pr-go { grid-template-columns: 1fr; padding: 14px; }
+  .pr-go .btn.lg { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .pr-resume-dot { animation: none; } }
+:root[data-dt-effects='off'] .pr-resume-dot { animation: none; }
