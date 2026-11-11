@@ -35,3 +35,8 @@
 @media (prefers-reduced-motion: no-preference) { .po-modal .po { animation: po-in .32s cubic-bezier(.2, .8, .2, 1); } }
 [data-dt-effects='off'] .po-modal .po { animation: none; }
 @keyframes po-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+.po-trial { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 14px 0 4px; }
+.po-trial span { font-size: .85rem; opacity: .75; }
+.po-trial-note { margin: 12px 0 0; font-size: .9rem; }
+.po-trial-note a { color: var(--dt-gold, #E9B949); }

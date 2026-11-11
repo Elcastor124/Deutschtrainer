@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type
 import { TOPICS } from '../../shared/rules.ts';
 import { navigate, store, usePath } from '../util.ts';
 import { AccuracyBars, DiffStack, TrendChart } from './charts.tsx';
-import { tapi, TeacherApiError, type Analytics, type Detail, type Group, type Homework, type LibraryItem, type Overview, type PlannedSession, type StudentRow } from './api.ts';
+import { tapi, TeacherApiError, type Analytics, type Detail, type Group, type Homework, type LibraryItem, type Overview, type PlannedSession, type PlusInfo, type PlusSummary, type StudentRow } from './api.ts';
 import '../libre.css';
 import './teacher.css';
 
@@ -51,6 +51,62 @@ function Stat({ label, value, hint, accent }: { label: string; value: ReactNode;
 }
 function Card({ title, children, actions, className = '' }: { title: string; children: ReactNode; actions?: ReactNode; className?: string }) {
   return <section className={`tos-card ${className}`}><header><h2>{title}</h2>{actions}</header>{children}</section>;
+}
+
+const eur = (n: number) => n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+const dmy = (at: number) => new Date(at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+const daysLeft = (at: number) => Math.ceil((at - Date.now()) / 86_400_000);
+
+/** Übersicht: Plus en una tarjeta — suscriptores, ingresos, caducidades y quién chocó hoy con el límite Free. */
+function PlusCard() {
+  const { data: p, error } = useLoad(() => tapi<PlusSummary>('plus'), []);
+  return (
+    <Card title="Plus · suscripciones" className="span2 tos-plus" actions={<a className="btn sm" href="/teacher/schueler" onClick={go('/teacher/schueler')}>Alumnos</a>}>
+      {error ? <p className="libre-err">{error}</p> : !p ? <div className="tos-skel" aria-busy="true" /> : <div data-plus-summary>
+        <div className="tos-plus-stats">
+          <div><small>Plus ahora</small><b className="gold">{p.plus}</b><span>{p.paying} de pago · {p.trials} en prueba{p.noDate ? ` · ${p.noDate} sin fecha` : ''}</span></div>
+          <div><small>Ingreso mensual</small><b>{eur(p.mrrEur)}</b><span>{p.paying} × {eur(p.price)}</span></div>
+          <div><small>Cobrado en {p.month}</small><b>{eur(p.incomeMonthEur)}</b><span>{eur(p.incomeTotalEur)} en total</span></div>
+          <div><small>Free</small><b>{p.free}</b><span>cuentas sin Plus</span></div>
+        </div>
+        <div className="tos-plus-cols">
+          <div>
+            <h4>Caducan pronto (5 días)</h4>
+            {p.expiringSoon.length ? <ul className="tos-list" data-plus-expiring>{p.expiringSoon.map((x) => <li key={x.id}><a href={`/teacher/schueler/${x.id}`} onClick={go(`/teacher/schueler/${x.id}`)}><b>{x.alias}</b><span>{x.trial ? 'Prueba' : 'Plus'} · {daysLeft(x.until) <= 0 ? 'hoy' : `en ${daysLeft(x.until)} d`} ({dmy(x.until)})</span></a></li>)}</ul>
+              : <p className="libre-note">Nadie caduca en los próximos 5 días.</p>}
+          </div>
+          <div>
+            <h4>Chocaron hoy con el límite Free</h4>
+            {p.blockedToday.length ? <ul className="tos-list" data-plus-blocked>{p.blockedToday.map((x) => <li key={x.id}><a href={`/teacher/schueler/${x.id}`} onClick={go(`/teacher/schueler/${x.id}`)}><b>{x.alias}</b><span>{[x.lektion ? `Lektionen ×${x.lektion}` : '', x.practice ? `práctica ×${x.practice}` : ''].filter(Boolean).join(' · ')}</span></a></li>)}</ul>
+              : <p className="libre-note">Nadie hoy. Aquí salen los mejores candidatos para ofrecerles Plus.</p>}
+          </div>
+        </div>
+      </div>}
+    </Card>
+  );
+}
+
+/** Ficha del alumno: plan, fecha de fin, «Pago recibido» (Bizum = +1 mes) e historial de pagos. */
+function PlanCard({ alias, plan, info, onPatch }: { id: string; alias: string; plan: 'free' | 'plus'; info: PlusInfo | null; onPatch: (b: Record<string, unknown>) => Promise<void> }) {
+  const until = info?.until ?? null;
+  const state = plan !== 'plus' ? (until !== null ? `Free · su Plus caducó el ${dmy(until)}` : 'Free · sin Klaus, curso y práctica con límite diario')
+    : until === null ? 'Plus sin fecha (activado a mano, no caduca)'
+    : `${info?.trial ? 'Prueba gratis' : 'Plus'} hasta el ${dmy(until)} · ${daysLeft(until) <= 0 ? 'acaba hoy' : `quedan ${daysLeft(until)} días`}`;
+  return (
+    <Card title="Plan · Plus" className="span2">
+      <div className="libre-row" data-plan={plan}>
+        <span className={`tos-pill${plan === 'plus' ? ' gold' : ''}`}>{plan === 'plus' ? (info?.trial ? 'Prueba' : 'Plus') : 'Free'}</span>
+        <span className="libre-note" data-plan-until>{state}</span>
+      </div>
+      <div className="libre-row">
+        <button className="btn primary" data-plan-pay onClick={() => { if (confirm(`¿Has recibido el Bizum de ${alias}? Se suma 1 mes de Plus (${until !== null && until > Date.now() ? `desde el ${dmy(until)}` : 'desde hoy'}).`)) void onPatch({ payment: 'received' }); }}>Pago recibido · +1 mes</button>
+        {info && info.payments.length > 0 && <button className="btn ghost" data-plan-undo onClick={() => { if (confirm('¿Deshacer el último pago? Se resta su mes.')) void onPatch({ payment: 'undo' }); }}>Deshacer último pago</button>}
+        <button className={`btn${plan === 'plus' ? '' : ' ghost'}`} data-plan-toggle onClick={() => { if (plan !== 'plus' || confirm(`¿Quitar Plus a ${alias} ya? Perderá el acceso a Klaus; sus borradores y clases se conservan.`)) void onPatch({ plan: plan === 'plus' ? 'free' : 'plus' }); }}>{plan === 'plus' ? 'Quitar Plus' : 'Activar Plus sin fecha'}</button>
+      </div>
+      <p className="libre-note">El alumno paga por Bizum {eur(12.5)}/mes con su alias como concepto. «Pago recibido» suma un mes; al llegar la fecha vuelve a Free solo. {info?.trialUsed ? 'Ya usó su prueba gratis.' : 'Aún no ha usado su prueba gratis de 3 días.'}</p>
+      {info && info.payments.length > 0 && <ul className="tos-list" data-plan-payments>{info.payments.slice(0, 12).map((p, i) => <li key={i}><div className="tos-row"><b>{dmy(p.at)}</b><span className="tos-pill">{eur(p.eur)} · Bizum</span></div><small>+{p.months} mes</small></li>)}</ul>}
+    </Card>
+  );
 }
 
 /** Pestañas accesibles: flechas izquierda/derecha, Inicio/Fin. */
@@ -111,6 +167,7 @@ function Overview_() {
         <Stat label="Clases" value={o.sessions.done} hint={`${o.sessions.planned} planificadas · ${o.sessions.classRooms30} salas en 30 días`} />
       </div>
       <div className="tos-cols">
+        <PlusCard />
         <Card title="Evolución del grupo" className="span2"><TrendChart points={o.trend} minN={o.minN} label="Respuestas y precisión del grupo por semana" /></Card>
         <Card title="Necesita atención">
           {o.attention.length ? <ul className="tos-list">{o.attention.map((a, i) => <li key={i}><a href={`/teacher/schueler/${a.id}`} onClick={go(`/teacher/schueler/${a.id}`)}><b>{a.alias}</b><span>{a.reason}</span></a></li>)}</ul>
@@ -338,13 +395,7 @@ function StudentDetail({ id }: { id: string }) {
               {d.learning.mastery.length ? <div className="tos-table-wrap"><table className="tos-table compact"><thead><tr><th>Tema</th><th>Preguntas</th><th>Dominio</th><th>Errores 30 d</th><th>Estado</th></tr></thead><tbody>{d.learning.mastery.map((t) => <tr key={t.topic}><td><b>{t.name}</b></td><td>{t.seen}</td><td>{Math.round(t.mastery * 100)} %</td><td>{t.errors30}{t.recurring ? ' · recurrente' : ''}</td><td><span className={`tos-pill${t.status === 'a reforzar' ? ' warn' : ''}`}>{t.status}</span></td></tr>)}</tbody></table></div> : <Empty title="Sin datos todavía" />}
             </Card>}
             <GradesCard id={id} alias={s.alias} grades={d.grades} homework={d.homework} onChange={(grades) => setData({ ...d, grades })} />
-            <Card title="Plan · Klaus" className="span2">
-              <div className="libre-row" data-plan={s.plan}>
-                <span className={`tos-pill${s.plan === 'plus' ? ' gold' : ''}`}>{s.plan === 'plus' ? 'Plus' : 'Free'}</span>
-                <span className="libre-note">{s.plan === 'plus' ? 'Tiene Klaus: Schreibt, Redet y Unterricht.' : 'Sin Klaus. La teoría y el resto de la web siguen abiertos.'}</span>
-                <button className={`btn${s.plan === 'plus' ? '' : ' primary'}`} data-plan-toggle onClick={() => { if (s.plan !== 'plus' || confirm(`¿Quitar Plus a ${s.alias}? Perderá el acceso a Klaus; sus borradores y clases se conservan.`)) void patch({ plan: s.plan === 'plus' ? 'free' : 'plus' }); }}>{s.plan === 'plus' ? 'Quitar Plus' : 'Activar Plus'}</button>
-              </div>
-            </Card>
+            <PlanCard id={id} alias={s.alias} plan={s.plan} info={d.plus} onPatch={(b) => patch(b)} />
             <Card title="Cuenta" className="span2">
               <div className="libre-row">
                 <button className="btn" onClick={async () => { const r = await tapi<{ password: string }>(`students/${id}/reset-password`, {}); setMsg(null); alert(`Nueva contraseña temporal para ${s.alias}:\n\n${r.password}\n\nSe muestra solo ahora. Sus sesiones abiertas se han cerrado.`); }}>Restablecer contraseña</button>

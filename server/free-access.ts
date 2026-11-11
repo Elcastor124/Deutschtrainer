@@ -10,7 +10,8 @@ import { join } from 'node:path';
 export const FREE_LIMITS = { lektionenPerDay: 2, practicePerDay: 2 } as const;
 export type Plan = 'free' | 'plus';
 
-interface AccountAccess { lektionen: Record<string, string>; days: Record<string, { lektionen: string[]; practice: number }> }
+interface Day { lektionen: string[]; practice: number; /** Veces que chocó con el límite Free hoy (para Teacher OS). */ blocked?: { lektion?: number; practice?: number } }
+interface AccountAccess { lektionen: Record<string, string>; days: Record<string, Day> }
 interface Data { version: 1; accounts: Record<string, AccountAccess> }
 
 export type Verdict =
@@ -47,7 +48,7 @@ export class FreeAccess {
     const a = this.#acc(who.accountId);
     if (a.lektionen[lektion]) return { ok: true, plan: 'free', counted: false };
     const t = this.#today(who.accountId);
-    if (t.lektionen.length >= FREE_LIMITS.lektionenPerDay) return { ok: false, status: 402, code: 'plus', error: `Con el plan Free puedes empezar ${FREE_LIMITS.lektionenPerDay} Lektionen nuevas al día. Mañana se abren dos más, o pásate a Plus.` };
+    if (t.lektionen.length >= FREE_LIMITS.lektionenPerDay) return this.#blocked(t, 'lektion'), { ok: false, status: 402, code: 'plus', error: `Con el plan Free puedes empezar ${FREE_LIMITS.lektionenPerDay} Lektionen nuevas al día. Mañana se abren dos más, o pásate a Plus.` };
     a.lektionen[lektion] = this.day(this.now()); t.lektionen.push(lektion); this.#save();
     return { ok: true, plan: 'free', counted: true };
   }
@@ -58,9 +59,18 @@ export class FreeAccess {
     if (!who) return { ok: false, status: 401, code: 'account', error: 'Crea tu cuenta gratis (o inicia sesión) para practicar.' };
     if (who.plan === 'plus') return { ok: true, plan: 'plus', counted: false };
     const t = this.#today(who.accountId);
-    if (t.practice >= FREE_LIMITS.practicePerDay) return { ok: false, status: 402, code: 'plus', error: `Con el plan Free tienes ${FREE_LIMITS.practicePerDay} prácticas al día y ya las has hecho. Mañana tienes dos más, o pásate a Plus.` };
+    if (t.practice >= FREE_LIMITS.practicePerDay) return this.#blocked(t, 'practice'), { ok: false, status: 402, code: 'plus', error: `Con el plan Free tienes ${FREE_LIMITS.practicePerDay} prácticas al día y ya las has hecho. Mañana tienes dos más, o pásate a Plus.` };
     t.practice++; this.#save();
     return { ok: true, plan: 'free', counted: true };
+  }
+
+  #blocked(t: Day, k: 'lektion' | 'practice') { t.blocked ??= {}; t.blocked[k] = (t.blocked[k] ?? 0) + 1; this.#save(); }
+
+  /** Cuentas Free que hoy chocaron con un límite: los mejores candidatos a Plus (Teacher OS). */
+  blockedToday(): { id: string; lektion: number; practice: number }[] {
+    const d = this.day(this.now()), out: { id: string; lektion: number; practice: number }[] = [];
+    for (const [id, a] of Object.entries(this.data.accounts)) { const b = a.days[d]?.blocked; if (b) out.push({ id, lektion: b.lektion ?? 0, practice: b.practice ?? 0 }); }
+    return out;
   }
 
   status(accountId: string, plan: Plan) {

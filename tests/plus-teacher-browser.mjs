@@ -40,7 +40,8 @@ try {
   check(await waitFor(T, `[...document.querySelectorAll('.tos-table tr')].some(tr => tr.textContent.includes('${alias}'))`), 'la lista de alumnos muestra la cuenta');
   check(await T.eval(`![...document.querySelectorAll('.tos-table tr')].find(tr => tr.textContent.includes('${alias}'))?.querySelector('[data-plan-pill]')`), 'en la lista aún sin la marca Plus');
   await T.eval(`[...document.querySelectorAll('.tos-table tr')].find(tr => tr.textContent.includes('${alias}')).click(); true`);
-  check(await waitFor(T, has('[data-plan="free"] [data-plan-toggle]')), 'ficha: tarjeta «Plan · Klaus» en Free');
+  // La tarjeta pasó a «Plan · Plus» (con «Pago recibido»): el botón ya no está dentro de la fila [data-plan]. Ver docs/test-contract-notes.md.
+  check(await waitFor(T, `${has('[data-plan="free"]')} && ${has('[data-plan-toggle]')}`), 'ficha: tarjeta del plan en Free');
   await T.eval(`document.querySelector('[data-plan-toggle]').click(); true`);
   check(await waitFor(T, has('[data-plan="plus"]')), 'ficha: «Activar Plus» lo deja en Plus');
   await snap(T, 'teacher-plus', '[data-plan]');

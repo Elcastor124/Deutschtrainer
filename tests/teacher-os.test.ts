@@ -115,6 +115,52 @@ describe('gestión de alumnos', () => {
     expect(o.weakTopics).toEqual([]); expect(o.attention).toEqual([]); expect(o.upcoming).toEqual([]);
     expect(o.trend.every((w: Msg) => w.n === 0 && w.accuracy === null)).toBe(true);
   });
+  it('Plus mes a mes: prueba de 3 días (una vez), «Pago recibido» = +1 mes, panel de ingresos y aviso diario (servidor real)', async () => {
+    const { s, t } = await teacherServer();
+    const ana = await student(s, 'Ana_Mes');
+    const ids = async () => (await req(s, '/api/teacher/students', { cookie: t })).body.students as Msg[];
+    const id = (await ids()).find((x) => x.alias === 'Ana_Mes')!.id as string;
+    // Sin cuenta: ni prueba ni estado
+    expect((await req(s, '/api/plus/trial', { body: {} })).status).toBe(401);
+    // Free al empezar; aviso diario con su cupo Free
+    expect((await req(s, '/api/plus/me', { cookie: ana })).body).toMatchObject({ plan: 'free', until: null, trialUsed: false, trialDays: 3, price: 12.5 });
+    const daily0 = (await req(s, '/api/daily', { cookie: ana })).body;
+    expect(daily0).toMatchObject({ alias: 'Ana_Mes', plan: 'free', missionDone: false, lektionenLeft: 2, practiceLeft: 2, trialUsed: false });
+    // Prueba gratis: la activa ella, 3 días, abre Klaus; segunda vez → 409
+    const tr = await req(s, '/api/plus/trial', { body: {}, cookie: ana });
+    expect(tr.status).toBe(200); expect(tr.body).toMatchObject({ plan: 'plus', trial: true, trialUsed: true });
+    expect(tr.body.until - Date.now()).toBeGreaterThan(3 * 86_400_000 - 60_000); expect(tr.body.until - Date.now()).toBeLessThanOrEqual(3 * 86_400_000);
+    expect((await req(s, '/api/klaus/status', { cookie: ana })).body.plan).toBe('plus');
+    expect((await req(s, '/api/plus/trial', { body: {}, cookie: ana })).status).toBe(409);
+    // Teacher OS: la ficha muestra la fecha; «Pago recibido» suma 1 mes DESDE el final de la prueba
+    const d1 = (await req(s, `/api/teacher/students/${id}`, { cookie: t })).body;
+    expect(d1.student).toMatchObject({ plan: 'plus', plusTrial: true }); expect(d1.plus.until).toBe(tr.body.until);
+    const pay = await req(s, `/api/teacher/students/${id}`, { body: { payment: 'received' }, cookie: t });
+    expect(pay.status).toBe(200); expect(pay.body).toMatchObject({ plan: 'plus', plusTrial: false });
+    const after = new Date(tr.body.until); after.setMonth(after.getMonth() + 1);
+    expect(Math.abs(pay.body.plusUntil - after.getTime())).toBeLessThan(2 * 3_600_000);
+    // Panel: 1 de pago, 12,50 € este mes, ingreso mensual 12,50 €
+    const sum = (await req(s, '/api/teacher/plus', { cookie: t })).body;
+    expect(sum).toMatchObject({ plus: 1, paying: 1, trials: 0, mrrEur: 12.5, incomeMonthEur: 12.5, incomeTotalEur: 12.5, price: 12.5 });
+    expect(sum.subscribers[0]).toMatchObject({ alias: 'Ana_Mes', paidEur: 12.5 });
+    // Deshacer el último pago: vuelve a la fecha de la prueba y el ingreso a 0
+    const undo = (await req(s, `/api/teacher/students/${id}`, { body: { payment: 'undo' }, cookie: t })).body;
+    expect(Math.abs(undo.plusUntil - tr.body.until)).toBeLessThan(2 * 3_600_000);
+    expect((await req(s, '/api/teacher/plus', { cookie: t })).body).toMatchObject({ incomeTotalEur: 0, trials: 1 });
+    // «Quitar Plus» lo corta ya (aunque tuviera fecha) y vuelve a Free; la prueba no se puede repetir
+    await req(s, `/api/teacher/students/${id}`, { body: { plan: 'free' }, cookie: t });
+    expect((await req(s, '/api/plus/me', { cookie: ana })).body).toMatchObject({ plan: 'free', until: null, trialUsed: true });
+    expect((await req(s, '/api/plus/trial', { body: {}, cookie: ana })).status).toBe(409);
+    // Candidatos a Plus: Free que choca hoy con el límite de Lektionen sale en el panel
+    const get = (path: string) => fetch(s.url(path), { redirect: 'manual', headers: { cookie: ana } });
+    for (const f of ['mission-01', 'bank', 'krankenhaus']) await get(`/presentaciones/${f}.html`);
+    const blocked = (await req(s, '/api/teacher/plus', { cookie: t })).body.blockedToday;
+    expect(blocked).toEqual([expect.objectContaining({ alias: 'Ana_Mes', lektion: 1, practice: 0 })]);
+    // Solo profesor
+    expect((await req(s, '/api/teacher/plus', { cookie: ana })).status).toBe(401);
+    expect((await req(s, `/api/teacher/students/${id}`, { body: { payment: 'nope' }, cookie: t })).status).toBe(400);
+  });
+
   it('plan Free fuera de Klaus: 2 Lektionen nuevas y 2 prácticas al día; sin cuenta, nada; Plus y profesor sin límite (servidor real)', async () => {
     const { s, t } = await teacherServer();
     const get = (path: string, cookie?: string) => fetch(s.url(path), { redirect: 'manual', headers: cookie ? { cookie } : {} });

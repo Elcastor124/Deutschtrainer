@@ -12,7 +12,7 @@ export async function tapi<T>(path: string, body?: unknown): Promise<T> {
   return data as T;
 }
 export type Agg = { key: string; n: number; correct: number; accuracy: number | null };
-export interface StudentRow { id: string; alias: string; level: 'A1' | 'A2' | 'B1' | null; groups: string[]; disabled: boolean; plan: 'free' | 'plus'; createdAt: number; createdByTeacher: boolean; lastActive: number | null; answers7: number; answers30: number; accuracy30: number | null; activities: number; streak: number }
+export interface StudentRow { id: string; alias: string; level: 'A1' | 'A2' | 'B1' | null; groups: string[]; disabled: boolean; plan: 'free' | 'plus'; plusUntil?: number | null; plusTrial?: boolean; createdAt: number; createdByTeacher: boolean; lastActive: number | null; answers7: number; answers30: number; accuracy30: number | null; activities: number; streak: number }
 export interface Group { id: string; name: string }
 export interface PlannedSession { id: string; title: string; date: string; groupId?: string; studentIds?: string[]; game: string; topics: string[]; level?: string; presentation?: string; status: 'planned' | 'live' | 'done'; room?: string; startedAt?: number; endedAt?: number }
 export interface Live { code: string; phase: string; players: number; connected: number; review: number; block: string | null }
@@ -31,7 +31,15 @@ export interface Detail {
   notes: { id: string; at: number; by: string; text: string }[]; attendance: { date: string; status: 'present' | 'absent' | 'late'; by: string }[];
   reviews: { id: string; at: number; by: string; topics: string[]; note?: string }[]; minN: number;
   learning: LearningSummary | null;
+  plus: PlusInfo | null;
   grades: Grade[]; homework: { id: string; title: string; due: string | null; at: number; done: number | null }[];
+}
+export interface PlusInfo { until: number | null; trial: boolean; trialUsed: boolean; payments: { at: number; months: number; eur: number; method: 'bizum' }[]; paidEur: number }
+export interface PlusSummary {
+  price: number; month: string; plus: number; paying: number; trials: number; noDate: number; free: number; mrrEur: number; incomeMonthEur: number; incomeTotalEur: number;
+  expiringSoon: { id: string; alias: string; until: number; trial: boolean }[];
+  subscribers: { id: string; alias: string; until: number | null; trial: boolean; paidEur: number; since: number | null }[];
+  blockedToday: { id: string; alias: string; lektion: number; practice: number }[];
 }
 export interface LearningSummary { completed: number; due: number; mastery: { topic: string; name: string; seen: number; mastery: number; errors30: number; recurring: boolean; status: string }[]; missions: { day: string; independent: number; assisted: number; wrong: number; total: number }[] }
 export interface Grade { id: string; at: number; by: string; title: string; score: number; comment?: string }

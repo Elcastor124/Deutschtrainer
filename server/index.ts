@@ -37,6 +37,7 @@ import { createTablon, TablonStore } from './tablon.ts';
 import { KlausStore } from './ai/klaus-store.ts';
 import { AiUsage } from './ai/usage.ts';
 import { FreeAccess, lektionOfPresentation } from './free-access.ts';
+import { PlusBilling, PLUS_PRICE_EUR, TRIAL_DAYS } from './plus-billing.ts';
 import { MockLlm } from './ai/mock-llm.ts';
 import { buildProviders, loadAiConfig } from './ai/providers.ts';
 
@@ -360,6 +361,10 @@ const aiConfig = loadAiConfig();
 const aiUsage = new AiUsage(aiConfig, { dataDir: DATA_DIR });
 // Límites del plan Free (diapositivas del curso y /practica). DT_FREE_LIMITS=0 los apaga (solo para pruebas antiguas).
 const freeAccess = new FreeAccess({ dataDir: DATA_DIR, day: madridDay, enabled: process.env.DT_FREE_LIMITS !== '0' });
+// Plus mes a mes: el profesor confirma el Bizum («Pago recibido» = +1 mes) y la prueba de 3 días la activa el alumno.
+// Con fecha manda la fecha (caduca sola → Free); sin fecha, el plan guardado (Plus activado a mano antes de esto).
+const plusBilling = new PlusBilling({ dataDir: DATA_DIR });
+aiUsage.resolvePlan = (id, stored) => { const u = plusBilling.untilOf(id); return u === null ? stored : u > Date.now() ? 'plus' : 'free'; };
 const planOfAccount = (a: { id: string; alias: string }) => aiUsage.planOf(a.id, a.alias);
 let presCatalog: { id: string; unit?: number }[] = [];
 try { presCatalog = JSON.parse(readFileSync(join(ROOT, 'public', 'presentaciones', 'catalogo.json'), 'utf8')); } catch { /* sin catálogo: nada que limitar */ }
@@ -373,11 +378,19 @@ const tablon = createTablon({
   accounts, store: new TablonStore(DATA_DIR), teacherOk: (req) => !!guard.teacherFromRequest(req),
   hasActivity: (id) => progressHandler.log.events.some((e) => e.profile === id) || klausAi.active(id),
 });
-const forgetAccount = (id: string) => { delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); klausAi.forget(id); tablon.forget(id); freeAccess.forget(id); };
+const forgetAccount = (id: string) => { delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); klausAi.forget(id); tablon.forget(id); freeAccess.forget(id); plusBilling.forget(id); };
 playApi.setOnRemoved(forgetAccount);
 const teacherOs = createTeacherOs({
   accounts, guard, log: () => progressHandler.log, bank, data: teacherData, publicDir: join(ROOT, 'public'), onRemoved: forgetAccount, learning: (id) => learning.history(id),
-  plans: { of: (id, alias) => aiUsage.planOf(id, alias), set: (id, plan) => aiUsage.setPlan(id, plan) },
+  // Activar/Quitar Plus a mano deja Plus SIN fecha (o lo quita ya); los pagos quedan en el historial.
+  plans: { of: (id, alias) => aiUsage.planOf(id, alias), set: (id, plan) => { plusBilling.stop(id); aiUsage.setPlan(id, plan); } },
+  billing: {
+    info: (id) => plusBilling.info(id),
+    pay: (id) => { const i = plusBilling.pay(id, 1); aiUsage.setPlan(id, 'plus'); return i; },
+    undo: (id) => plusBilling.undoPayment(id),
+    summary: (list) => plusBilling.summary(list, (at) => madridDay(at).slice(0, 7)),
+    blockedToday: () => freeAccess.blockedToday(),
+  },
   liveRooms: () => [...rooms.values()].filter((r) => r.s.mode === 'class').map((r) => ({
     code: r.s.code, owner: r.s.owner, phase: r.s.phase, block: r.s.block, players: r.s.players.length, connected: r.s.players.filter((p) => p.connected).length,
     review: Object.values(r.s.answers).filter((x) => x.status === 'review').length, private: !!r.s.private,
@@ -471,6 +484,36 @@ function serve(req: IncomingMessage, res: ServerResponse) {
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ ok: true, rooms: rooms.size, bank: bank.size, teacherAuth: guard.stats() }));
   }
+  // Mi Plus: plan efectivo, fecha de fin, prueba gratis (una vez por cuenta, la activa el alumno).
+  if (url.pathname === '/api/plus/me' || url.pathname === '/api/plus/trial') {
+    const who = identify(accounts, req);
+    res.setHeader('content-type', 'application/json; charset=utf-8'); res.setHeader('cache-control', 'no-store');
+    if (who.kind !== 'account') { res.statusCode = 401; return res.end(JSON.stringify({ error: 'Inicia sesión.' })); }
+    const a = who.account;
+    if (url.pathname === '/api/plus/trial') {
+      if (req.method !== 'POST') { res.statusCode = 405; return res.end(JSON.stringify({ error: 'Método no permitido.' })); }
+      const r = plusBilling.startTrial(a.id, planOfAccount(a) === 'plus');
+      if (!r.ok) { res.statusCode = 409; return res.end(JSON.stringify({ error: r.error })); }
+    }
+    const i = plusBilling.info(a.id);
+    return res.end(JSON.stringify({ plan: planOfAccount(a), until: i.until, trial: i.trial, trialUsed: i.trialUsed, trialDays: TRIAL_DAYS, price: PLUS_PRICE_EUR }));
+  }
+  // Aviso diario al entrar (solo dentro de la web): racha, misión, repasos pendientes, cupo Free y Plus que caduca.
+  if (url.pathname === '/api/daily') {
+    const who = identify(accounts, req);
+    res.setHeader('content-type', 'application/json; charset=utf-8'); res.setHeader('cache-control', 'no-store');
+    if (who.kind !== 'account') { res.statusCode = 401; return res.end(JSON.stringify({ error: 'Inicia sesión.' })); }
+    const a = who.account, t = Date.now(), day = madridDay(t), log = progressHandler.log;
+    const activeToday = log.events.some((e) => e.profile === a.id && madridDay(e.at) === day);
+    const missionDone = (learningStore.data.missions[a.id] ?? []).some((m) => m.day === day && !!m.completedAt);
+    let due = 0; try { due = learning.history(a.id).due; } catch { /* sin historial */ }
+    const plan = planOfAccount(a), fs = freeAccess.status(a.id, plan), pi = plusBilling.info(a.id);
+    return res.end(JSON.stringify({
+      day, alias: a.alias, streak: log.streak(a.id), activeToday, missionDone, due, plan,
+      lektionenLeft: fs.lektionen.left, practiceLeft: fs.practice.left,
+      plusUntil: pi.until, trial: pi.trial, trialUsed: pi.trialUsed,
+    }));
+  }
   if (url.pathname === '/api/free/status') {
     const who = identify(accounts, req);
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
@@ -546,7 +589,7 @@ let closing = false;
 const shutdown = async () => {
   if (closing) return; closing = true;
   store.data.rooms = Object.fromEntries([...rooms].map(([k, r]) => [k, r.s]));
-  store.flush(); progressHandler.log.flush(); klausAi.flush(); tablon.flush();
+  store.flush(); progressHandler.log.flush(); klausAi.flush(); tablon.flush(); freeAccess.flush(); plusBilling.flush();
   // Última subida antes de apagar (un deploy en Render manda SIGTERM): como mucho 8 s.
   await Promise.race([cloud.flush(), new Promise((r) => setTimeout(r, 8000))]);
   instanceLock.release(); process.exit(0);

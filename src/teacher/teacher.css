@@ -182,3 +182,13 @@
 .tos-grade-form .tos-score { width: 80px; flex: 0 0 auto; }
 .btn.danger { border-color: color-mix(in srgb, var(--dt-red) 70%, transparent); color: var(--dt-red); }
 .btn.danger:hover { background: var(--dt-red); color: #0a0a0a; }
+
+/* Plus · suscripciones (Übersicht). Dorado solo para Plus. */
+.tos-plus-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--dt-space-4, 16px); margin-bottom: var(--dt-space-5, 20px); }
+.tos-plus-stats > div { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(242, 241, 238, .1); background: rgba(242, 241, 238, .02); }
+.tos-plus-stats small { font-size: .8rem; opacity: .7; }
+.tos-plus-stats b { font-size: 1.6rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tos-plus-stats b.gold { color: var(--dt-gold); }
+.tos-plus-stats span { font-size: .8rem; opacity: .65; }
+.tos-plus-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--dt-space-5, 20px); }
+.tos-plus-cols h4 { margin: 0 0 10px; font-size: .95rem; }

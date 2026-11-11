@@ -37,6 +37,13 @@ export interface TeacherOsDeps {
   learning?: (id: string) => unknown;
   /** Plan de cada cuenta (Free/Plus). Plus abre Klaus: Schreibt, Redet y Unterricht. Sin pagos: lo asigna el profesor. */
   plans?: { of: (id: string, alias?: string) => 'free' | 'plus'; set: (id: string, plan: 'free' | 'plus') => void };
+  /** Suscripción mes a mes (Bizum confirmado a mano) y prueba de 3 días. Ver server/plus-billing.ts. */
+  billing?: {
+    info: (id: string) => import('./plus-billing.ts').PlusInfo;
+    pay: (id: string) => unknown; undo: (id: string) => unknown;
+    summary: (list: { id: string; alias: string; plus: boolean }[]) => ReturnType<import('./plus-billing.ts').PlusBilling['summary']>;
+    blockedToday: () => { id: string; lektion: number; practice: number }[];
+  };
 }
 
 /** Agregado descriptivo: n y precisión (null si n = 0). Nunca una predicción. */
@@ -74,6 +81,7 @@ export function createTeacherOs(d: TeacherOsDeps) {
     return {
       id: a.id, alias: a.alias, level: meta?.level ?? null, groups: meta?.groups ?? [], disabled: !!a.disabled, createdAt: a.createdAt, createdByTeacher: a.createdBy === 'teacher',
       plan: d.plans?.of(a.id, a.alias) ?? 'free',
+      plusUntil: d.billing?.info(a.id).until ?? null, plusTrial: d.billing?.info(a.id).trial ?? false,
       lastActive: last || null, answers7: answers.filter((e) => e.at > t - 7 * DAY).length, answers30: recent.length,
       accuracy30: recent.length ? Math.round((recent.filter((e) => e.ok).length / recent.length) * 100) / 100 : null,
       activities: evs.filter((e) => e.kind === 'game' && e.game).length, streak: d.log().streak(a.id),
@@ -152,6 +160,7 @@ export function createTeacherOs(d: TeacherOsDeps) {
       activities: evs.filter((e) => e.kind === 'game' && e.game).slice(-50).reverse().map((e) => ({ at: e.at, game: e.game, level: e.level ?? null, total: e.total ?? 0, correct: e.correct ?? 0, points: e.points, room: e.room ?? null })),
       notes: meta?.notes ?? [], attendance: meta?.attendance ?? [], reviews: meta?.reviews ?? [], grades: meta?.grades ?? [],
       learning: d.learning?.(a.id) ?? null,
+      plus: d.billing?.info(a.id) ?? null,
       homework: d.data.homeworkFor(a.id).map((h) => ({ id: h.id, title: h.title, due: h.due ?? null, at: h.at, done: meta?.hwDone?.[h.id] ?? null })),
       minN: MIN_N,
     };
@@ -242,6 +251,14 @@ export function createTeacherOs(d: TeacherOsDeps) {
     if (r0 === 'overview' && method === 'GET') return json(res, 200, overview());
     if (r0 === 'analytics' && method === 'GET') return json(res, 200, analytics(url.searchParams));
     if (r0 === 'library' && method === 'GET') return json(res, 200, library());
+    // Plus: suscriptores, caducidades, ingresos y quién chocó hoy con el límite Free (candidatos a Plus).
+    if (r0 === 'plus' && method === 'GET') {
+      if (!d.billing || !d.plans) fail(503, 'Los planes no están disponibles.');
+      const all = d.accounts.all().filter((a) => !a.disabled);
+      const s = d.billing!.summary(all.map((a) => ({ id: a.id, alias: a.alias, plus: d.plans!.of(a.id, a.alias) === 'plus' })));
+      const blocked = d.billing!.blockedToday().map((b) => ({ ...b, alias: d.accounts.byId(b.id)?.alias ?? null })).filter((b) => b.alias && d.plans!.of(b.id, b.alias) !== 'plus');
+      return json(res, 200, { ...s, free: all.length - s.plus, blockedToday: blocked });
+    }
     if (r0 === 'settings' && method === 'POST') {
       const input = await body(req);
       if (typeof input.academy !== 'string' || !input.academy.trim() || input.academy.length > 60) fail(400, 'Nombre de academia no válido (1–60 caracteres).');
@@ -272,6 +289,10 @@ export function createTeacherOs(d: TeacherOsDeps) {
         if (input.level !== undefined) { if (input.level !== null && !(LEVELS_OK as readonly unknown[]).includes(input.level)) fail(400, 'Nivel no válido.'); m.level = (input.level ?? undefined) as StudentLevel | undefined; }
         if (input.groups !== undefined) { if (!Array.isArray(input.groups)) fail(400, 'Grupos no válidos.'); m.groups = (input.groups as unknown[]).filter((g): g is string => typeof g === 'string' && d.data.data.groups.some((x) => x.id === g)); }
         if (input.disabled !== undefined) { if (typeof input.disabled !== 'boolean') fail(400, 'Valor no válido.'); d.accounts.setDisabled(a, input.disabled as boolean); }
+        if (input.payment !== undefined) {
+          if (!d.billing) fail(503, 'Los pagos no están disponibles.');
+          if (input.payment === 'received') d.billing!.pay(a.id); else if (input.payment === 'undo') d.billing!.undo(a.id); else fail(400, 'Pago no válido.');
+        }
         if (input.plan !== undefined) { if (input.plan !== 'free' && input.plan !== 'plus') fail(400, 'Plan no válido.'); if (!d.plans) fail(503, 'Los planes no están disponibles.'); d.plans!.set(a.id, input.plan as 'free' | 'plus'); }
         d.data.save();
         return json(res, 200, detail(a).student);

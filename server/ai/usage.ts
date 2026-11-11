@@ -69,7 +69,12 @@ export class AiUsage {
   now: () => number; maxInflight: number; plusAliases: Set<string>;
 
   // ── Planes: SOLO el servidor decide. Sin pagos reales: alias en KLAUS_PLUS_ALIASES o setPlan() desde código/administración.
-  planOf(accountId: string, alias?: string): KlausPlan { return this.data.plans[accountId] ?? (alias && this.plusAliases.has(alias.toLowerCase()) ? 'plus' : 'free'); }
+  planOf(accountId: string, alias?: string): KlausPlan {
+    const stored: KlausPlan = this.data.plans[accountId] ?? (alias && this.plusAliases.has(alias.toLowerCase()) ? 'plus' : 'free');
+    return this.resolvePlan ? this.resolvePlan(accountId, stored) : stored;
+  }
+  /** Plan efectivo con fecha (suscripción mes a mes / prueba de 3 días): ver server/plus-billing.ts. */
+  resolvePlan: ((accountId: string, stored: KlausPlan) => KlausPlan) | null = null;
   setPlan(accountId: string, plan: KlausPlan) { this.data.plans[accountId] = plan; this.#save(); }
 
   used(accountId: string, feature: KlausFeature): number { return this.data.counters[accountId]?.[madridDay(this.now())]?.[feature] ?? 0; }

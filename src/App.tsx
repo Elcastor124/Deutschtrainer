@@ -37,6 +37,7 @@ import { PlusPage } from './views/PlusPage.tsx';
 import { GameSetup } from './views/GameSetup.tsx';
 import { Teacher } from './views/Teacher.tsx';
 import { LearningNav } from './components/LearningNav.tsx';
+import { DailyNudge } from './components/DailyNudge.tsx';
 import { usePath } from './util.ts';
 
 export function App() {
@@ -86,5 +87,5 @@ export function App() {
   else if (/^\/jenga\/?$/.test(path)) screen = <GameSetup mode="jenga" />;
   else if (/^\/jugar\/?$/.test(path) || invited) screen = <GameSetup mode="blackcard" />;
   else screen = <Landing />;
-  return <><AmbientField path={path} search={search} /><Intro path={path} search={search} />{!teacherOs && <LearningNav path={invited ? '/jugar' : path} />}<PageTransition path={path}>{screen}</PageTransition><ScrollReveal path={path} /><AchievementWatcher path={path} />{!teacherOs && <HomeworkNotice path={path} />}</>;
+  return <><AmbientField path={path} search={search} /><Intro path={path} search={search} />{!teacherOs && <LearningNav path={invited ? '/jugar' : path} />}{!teacherOs && <DailyNudge path={path} />}<PageTransition path={path}>{screen}</PageTransition><ScrollReveal path={path} /><AchievementWatcher path={path} />{!teacherOs && <HomeworkNotice path={path} />}</>;
 }

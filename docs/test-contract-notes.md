@@ -115,3 +115,22 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
     de DOM/foco con el interruptor «Repasar sobre todo mis fallos» en vez del campo de nombre; `progress-ui` lee los
     puntos de `/api/account/progress` (con cuenta, el progreso es de la cuenta); `klaus-browser` espera a que se vaya
     el aviso de logro «primera respuesta» (solo sale con cuenta) antes de pulsar «Ocultar a Klaus».
+
+## Plus mes a mes (Bizum manual), prueba de 3 días y aviso diario
+
+- `server/plus-billing.ts` (fichero nuevo `plus-billing.json`, sincronizado como el resto de `*.json`): fecha de fin de Plus,
+  pagos y prueba. Con fecha manda la fecha (al llegar vuelve a Free solo); sin fecha, el plan guardado de antes
+  (las cuentas a las que ya se activó Plus a mano siguen igual, sin caducar).
+- Teacher OS: «Pago recibido · +1 mes» (`POST /api/teacher/students/:id { payment: 'received' | 'undo' }`) suma 1 mes
+  desde hoy o desde el fin actual; «Quitar Plus» lo corta ya; «Activar Plus sin fecha» = comportamiento anterior.
+  `GET /api/teacher/plus`: suscriptores, ingreso mensual (pagando × 12,50 €), cobrado en el mes, caducan en 5 días
+  y cuentas Free que chocaron hoy con el límite (candidatos a Plus).
+- Alumno: `GET /api/plus/me`, `POST /api/plus/trial` (3 días, una vez por cuenta, 409 si se repite o ya tiene Plus).
+- Aviso diario solo dentro de la web (`GET /api/daily` + `src/components/DailyNudge.tsx`): racha, misión, repasos
+  pendientes, cupo Free y Plus que caduca. «Cerrar» lo oculta hasta el día siguiente. Sin push ni email.
+- La tarjeta Plus ya no dice «Solicitar Plus»: botón «Escribir por WhatsApp» + instrucciones de Bizum (concepto = alias).
+- Pruebas: `tests/plus-billing.test.ts`, caso nuevo en `tests/teacher-os.test.ts`, `tests/plus-month-browser.mjs`.
+- `plus-teacher-browser`: la tarjeta se llama ahora «Plan · Plus» y el botón Activar/Quitar está en su propia fila;
+  la prueba comprueba `[data-plan]` y `[data-plan-toggle]` por separado (mismo contrato: activar y quitar Plus).
+- El aviso diario solo sale en portadas (`/`, `/mi`, `/curso`, `/juegos`, `/examenes`, `/ranking`, `/tablon`): en la
+  práctica tapaba los controles de Klaus (lo detectó `klaus-embedded-browser`).

@@ -1,0 +1,15 @@
+/* Aviso diario: una línea fija abajo, sin animaciones de entrada agresivas. Dorado solo para Plus. */
+.dn { position: fixed; z-index: 60; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(720px, calc(100vw - 28px));
+  display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 16px;
+  background: #141414; color: var(--dt-paper, #F2F1EE); border: 1px solid rgba(242, 241, 238, .14); box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }
+.dn p { margin: 0; flex: 1; font-size: .92rem; line-height: 1.35; }
+.dn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dt-red, #FF3832); flex: none; }
+.dn-gold { border-color: rgba(233, 185, 73, .45); }
+.dn-gold .dn-dot { background: var(--dt-gold, #E9B949); }
+.dn-warn .dn-dot { box-shadow: 0 0 0 4px rgba(255, 56, 50, .18); }
+.dn .btn { white-space: nowrap; text-decoration: none; }
+.dn-x { background: none; border: 0; color: inherit; opacity: .6; font-size: 1.3rem; line-height: 1; padding: 4px 8px; cursor: pointer; border-radius: 8px; }
+.dn-x:hover, .dn-x:focus-visible { opacity: 1; }
+@media (max-width: 560px) { .dn { flex-wrap: wrap; bottom: 10px; } .dn p { flex-basis: calc(100% - 60px); } }
+@media (prefers-reduced-motion: no-preference) { :root:not([data-dt-effects='off']) .dn { animation: dn-in .32s cubic-bezier(.2, .8, .2, 1) both; } }
+@keyframes dn-in { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
