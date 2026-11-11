@@ -109,3 +109,7 @@
 .cp-lib.cp-free .dotnum { color: #E9B949; }
 .cp-free-note { margin: 10px 0 0; font-size: .74rem; color: rgba(242, 241, 238, .62); }
 .cp-free-note[data-lek-note='blocked'] { color: #E9B949; }
+
+/* Progreso de antes (un solo progreso por navegador): el alumno decide si era suyo. */
+.cp-legacy p { margin: 0 0 10px; font-size: 14px; line-height: 1.45; }
+.cp-legacy-row { display: flex; flex-wrap: wrap; gap: 8px; }

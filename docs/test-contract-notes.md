@@ -159,3 +159,17 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
 - Arreglo: en práctica la vista pública manda `unlock: false` (no se promete cofre); la nota «Casi» señala la palabra
   exacta («das» → «dass» + recordatorio de la conjunción). Cofres de clase, BlackCard y puntos sin tocar.
   Prueba: `tests/practice-cofre.test.ts`.
+
+## Tablón en Teacher OS, progreso del curso por cuenta y pestañas con versión vieja
+
+- Teacher OS → «Tablón» (`src/teacher/TablonAdmin.tsx`): todas las peticiones con su autor, filtros
+  Pendientes/Hechas/Descartadas/Todas, «Marcar como solucionada», «En marcha», «Reabrir», «Descartar», respuesta
+  pública y «Quitar del tablón» (nuevo `POST /api/tablon/admin/delete`, solo profesor). Prueba en `tests/tablon.test.ts`.
+- Progreso del curso: antes se guardaba en `localStorage` con una sola clave por navegador (`dt:course:v1`), así que en
+  un ordenador compartido todos veían el mismo porcentaje. Ahora con cuenta se guarda en el servidor
+  (`server/course-progress.ts`, `DATA_DIR/course-progress.json`, fichero nuevo) y la caché local va por alias. Sin
+  cuenta sigue local. Lo marcado antes en el navegador NO se asigna a nadie solo: el alumno ve «Eran míos: guardarlos /
+  No eran míos». Pruebas: `tests/course-progress.test.ts`, `tests/tablon-progress-browser.mjs`.
+- El Bizum que aún se veía venía de una pestaña abierta desde antes del despliegue (el JS del servidor ya no lo tenía).
+  `src/version-watch.ts`: cada 5 min y al volver a la pestaña mira qué bundle sirve el servidor; si cambió, recarga en la
+  siguiente navegación interna (nunca en medio de un ejercicio).

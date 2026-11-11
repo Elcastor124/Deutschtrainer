@@ -34,6 +34,7 @@ import { cleanTopics } from './practice-session.ts';
 import { LEVEL_DIFFS, isLevel } from '../shared/play.ts';
 import { createKlausAi } from './ai/klaus-api.ts';
 import { createTablon, TablonStore } from './tablon.ts';
+import { CourseProgressStore, createCourseProgress } from './course-progress.ts';
 import { KlausStore } from './ai/klaus-store.ts';
 import { AiUsage } from './ai/usage.ts';
 import { FreeAccess, lektionOfPresentation } from './free-access.ts';
@@ -385,7 +386,8 @@ const tablon = createTablon({
   accounts, store: new TablonStore(DATA_DIR), teacherOk: (req) => !!guard.teacherFromRequest(req),
   hasActivity: (id) => progressHandler.log.events.some((e) => e.profile === id) || klausAi.active(id),
 });
-const forgetAccount = (id: string) => { delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); klausAi.forget(id); tablon.forget(id); freeAccess.forget(id); plusBilling.forget(id); };
+const courseProgress = createCourseProgress({ accounts, store: new CourseProgressStore(DATA_DIR) });
+const forgetAccount = (id: string) => { courseProgress.forget(id); delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); klausAi.forget(id); tablon.forget(id); freeAccess.forget(id); plusBilling.forget(id); };
 playApi.setOnRemoved(forgetAccount);
 const teacherOs = createTeacherOs({
   accounts, guard, log: () => progressHandler.log, bank, data: teacherData, publicDir: join(ROOT, 'public'), onRemoved: forgetAccount, learning: (id) => learning.history(id),
@@ -475,6 +477,7 @@ function serve(req: IncomingMessage, res: ServerResponse) {
   if (req.url?.split('?')[0] === '/api/play/room') return void createPrivateRoom(req, res).catch((e: unknown) => httpJson(res, 500, { error: 'No se pudo crear la sala.' }, e));
   if (klausAi(req, res)) return;
   if (tablon(req, res)) return;
+  if (courseProgress(req, res)) return;
   if (teacherOs(req, res)) return;
   if (playApi(req, res)) return;
   if (progressHandler(req, res)) return;
@@ -597,7 +600,7 @@ let closing = false;
 const shutdown = async () => {
   if (closing) return; closing = true;
   store.data.rooms = Object.fromEntries([...rooms].map(([k, r]) => [k, r.s]));
-  store.flush(); progressHandler.log.flush(); klausAi.flush(); tablon.flush(); freeAccess.flush(); plusBilling.flush();
+  store.flush(); progressHandler.log.flush(); klausAi.flush(); tablon.flush(); courseProgress.flush(); freeAccess.flush(); plusBilling.flush();
   // Última subida antes de apagar (un deploy en Render manda SIGTERM): como mucho 8 s.
   await Promise.race([cloud.flush(), new Promise((r) => setTimeout(r, 8000))]);
   instanceLock.release(); process.exit(0);

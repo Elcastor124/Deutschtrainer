@@ -41,7 +41,7 @@ const PATH = layout();
 const STEPS = PATH.nodes.filter((n): n is Extract<Node, { kind: 'step' }> => n.kind === 'step');
 
 export function Course() {
-  const { done, toggle } = useCourseProgress();
+  const { done, toggle, legacy, importLegacy, dismissLegacy } = useCourseProgress();
   const next = nextStep(done);
   const overall = overallProgress(done);
   const [sel, setSel] = useState<string | null>(() => next?.step.id ?? null);
@@ -102,6 +102,12 @@ export function Course() {
         </section>
 
         <aside className="cp-side" aria-label="Tu progreso">
+          {legacy > 0 && (
+            <div className="cp-card cp-legacy" role="status">
+              <p>En este navegador hay {legacy} {legacy === 1 ? 'paso marcado' : 'pasos marcados'} de antes de que el progreso fuera por cuenta. Si eran tuyos, pásalos a tu cuenta.</p>
+              <div className="cp-legacy-row"><button type="button" className="btn sm" onClick={() => void importLegacy()}>Eran míos: guardarlos</button><button type="button" className="btn sm ghost" onClick={dismissLegacy}>No eran míos</button></div>
+            </div>
+          )}
           <div className="cp-card">
             <div className="cp-progress">
               <ProgressRing pct={overall.pct} size={84} stroke={7} label={`Curso completado al ${overall.pct}%`}><b className="dotnum">{overall.pct}</b><small>%</small></ProgressRing>

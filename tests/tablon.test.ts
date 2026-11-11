@@ -125,6 +125,18 @@ describe('Tablón', () => {
     expect((await s.call('/api/tablon', undefined, ana.token)).body.tickets).toHaveLength(1);
   });
 
+  it('profesor: quita un ticket del tablón (desaparece para todos); un alumno no puede', async () => {
+    const s = await setup(); const ana = await s.user('Ana_Lee');
+    const id = (await s.call('/api/tablon/ticket', ok, ana.token)).body.ticket.id;
+    expect((await s.call('/api/tablon/admin/delete', { id }, ana.token)).status).toBe(401);
+    s.setTeacher(true);
+    expect((await s.call('/api/tablon/admin/delete', { id: 'tk_nada' })).status).toBe(404);
+    expect((await s.call('/api/tablon/admin/delete', { id })).body).toEqual({ ok: true });
+    expect((await s.call('/api/tablon')).body.tickets).toEqual([]);
+    expect((await s.call('/api/tablon', undefined, ana.token)).body.tickets).toEqual([]);
+    expect((await s.call('/api/tablon/admin')).body.tickets).toEqual([]);
+  });
+
   it('al borrar una cuenta desaparecen sus peticiones y sus apoyos', async () => {
     const s = await setup(); const ana = await s.user('Ana_Lee'), ben = await s.user('Ben_Box');
     const id = (await s.call('/api/tablon/ticket', ok, ana.token)).body.ticket.id;

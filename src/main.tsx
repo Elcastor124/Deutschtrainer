@@ -10,6 +10,8 @@ import './design/motion.css';
 import './styles.css';
 import { App } from './App.tsx';
 import { runBoot } from './brand/boot.ts';
+import { watchVersion } from './version-watch.ts';
+watchVersion();
 
 createRoot(document.getElementById('root') as HTMLElement).render(<App />);
 // The preloader in index.html stays up until fonts, the window load and every registered

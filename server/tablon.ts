@@ -6,6 +6,7 @@
 //   POST /api/tablon/withdraw            { id } → el autor retira su ticket abierto
 //   GET  /api/tablon/admin               (profesor) tickets con alias
 //   POST /api/tablon/admin/update        (profesor) { id, status?, reply? }
+//   POST /api/tablon/admin/delete        (profesor) { id } → quita el ticket del tablón (definitivo)
 // SEGURIDAD: identidad por cookie verificada en el servidor; JSON acotado; mismo origen; límites por cuenta; filtro de palabras.
 // Persistencia: DATA_DIR/tablon.json (escritura atómica, 0600).
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
@@ -162,6 +163,11 @@ export function createTablon({ accounts, store, hasActivity, teacherOk, now = Da
         if (b.reply !== undefined) { const r = cleanText(b.reply, TABLON_LIMITS.replyMax, true); t.reply = r || null; t.repliedAt = r ? now() : null; }
         t.updatedAt = now(); store.save();
         return json(res, 200, { ticket: { ...view(t, null), alias: t.alias } });
+      }
+      if (path === '/admin/delete' && post) {
+        const b = await body(req, 500), t = store.find(String(b.id ?? '')); if (!t) return fail(404, 'Petición no encontrada.');
+        store.data.tickets = store.data.tickets.filter((x) => x !== t); store.save();
+        return json(res, 200, { ok: true });
       }
     }
     return fail(404, 'Ruta desconocida.');

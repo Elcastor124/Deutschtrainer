@@ -5,6 +5,7 @@ import { TOPICS } from '../../shared/rules.ts';
 import { navigate, store, usePath } from '../util.ts';
 import { AccuracyBars, DiffStack, TrendChart } from './charts.tsx';
 import { tapi, TeacherApiError, type Analytics, type Detail, type Group, type Homework, type LibraryItem, type Overview, type PlannedSession, type PlusInfo, type PlusSummary, type StudentRow } from './api.ts';
+import { TablonAdmin } from './TablonAdmin.tsx';
 import '../libre.css';
 import './teacher.css';
 
@@ -31,6 +32,7 @@ const NAV = [
   { id: 'hausaufgaben', label: 'Hausaufgaben', es: 'Deberes', icon: 'M9 4h6l1 2h3v15H5V6h3zM9 4v3h6V4M8 12l2.5 2.5L16 9' },
   { id: 'unterricht', label: 'Unterricht', es: 'Clases', icon: 'M3 5h18v12H3zM8 21h8M12 17v4' },
   { id: 'analyse', label: 'Analyse', es: 'Análisis', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' },
+  { id: 'tablon', label: 'Tablón', es: 'Peticiones', icon: 'M4 4h16v12H8l-4 4zM8 9h8M8 12h5' },
   { id: 'bibliothek', label: 'Bibliothek', es: 'Biblioteca', icon: 'M4 4h5v16H4zM10 4h5v16h-5zM16 5l4 1-3 14-4-1z' },
   { id: 'einstellungen', label: 'Einstellungen', es: 'Ajustes', icon: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z' },
 ] as const;
@@ -627,6 +629,7 @@ export function TeacherOS() {
         {section === 'unterricht' && <Lessons />}
         {section === 'hausaufgaben' && <HomeworkPage />}
         {section === 'analyse' && <AnalysePage />}
+        {section === 'tablon' && <TablonAdmin />}
         {section === 'bibliothek' && <Library />}
         {section === 'einstellungen' && <Settings me={me} onOut={() => void out()} onChange={check} />}
       </main>
