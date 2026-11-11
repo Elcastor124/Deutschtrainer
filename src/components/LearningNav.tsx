@@ -21,7 +21,7 @@ export function followLearningLink(event: MouseEvent<HTMLAnchorElement>) {
 
 export type NavSection = 'home' | 'course' | 'practice' | 'speak' | 'write' | 'games' | 'ranking' | 'road' | 'board' | 'teacher' | 'account';
 export function navSection(path: string): NavSection {
-  if (/^\/(cuenta|mi|registro|entrar)(\/|$)/.test(path)) return 'account';
+  if (/^\/(cuenta|mi|registro|entrar|invitar|i)(\/|$)/.test(path)) return 'account';
   if (path.startsWith('/ranking')) return 'ranking';
   if (path.startsWith('/tablon')) return 'board';
   if (path.startsWith('/road-to-b1') || path.startsWith('/examenes')) return 'road';

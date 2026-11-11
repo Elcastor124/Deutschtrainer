@@ -17,6 +17,12 @@ export function webglAvailable(): boolean {
   } catch { return false; }
 }
 
+/** Móviles y pantallas estrechas: three.js costaba ~7 s de CPU en un móvil medio (Lighthouse: inicio a 8 s interactivo).
+ * Ahí se pinta la placa estática (mismo símbolo) y three.js ni se descarga. Escritorio con ratón: 3D como siempre. */
+export function lightHero(): boolean {
+  try { return matchMedia('(max-width: 760px), (pointer: coarse) and (max-width: 1100px)').matches; } catch { return false; }
+}
+
 /** Fallback estático (sin WebGL): la placa con el símbolo y sus órbitas en SVG/CSS. */
 export function HeroStatic() {
   return (
@@ -35,7 +41,7 @@ export function Hero3D() {
   const [state, setState] = useState<'loading' | 'ready' | 'static'>('loading');
   const effectsEnabled = useEffectsEnabled();
   useEffect(() => {
-    if (!webglAvailable()) { setState('static'); return; }
+    if (lightHero() || !webglAvailable()) { setState('static'); return; }
     const abort = new AbortController();
     let handle: HeroHandle | null = null, io: IntersectionObserver | null = null, mo: MutationObserver | null = null;
     let onScreen = true, settleTimer = 0, settled = false;

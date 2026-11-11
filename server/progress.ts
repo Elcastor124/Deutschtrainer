@@ -94,6 +94,8 @@ export interface TopicStat { topic: string; attempts: number; correct: number; a
 
 export class ProgressLog {
   events: ProgressEvent[] = [];
+  /** Aviso tras cada evento guardado (p. ej. activar una invitación con la primera actividad). Errores aislados. */
+  onRecord: ((ev: ProgressEvent) => void) | null = null;
   readonly now: () => number;
   readonly file: string | null;
   private readonly saveDelay: number;
@@ -172,6 +174,7 @@ export class ProgressLog {
       if (ev.bonus !== undefined && ev.bonus > ev.points) ev.bonus = ev.points;
     }
     this.events.push(ev);
+    if (this.onRecord) { try { this.onRecord(ev); } catch (e) { console.error('[progress] onRecord:', (e as Error).message); } }
     this.saveSoon();
     return ev;
   }

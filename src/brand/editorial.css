@@ -184,6 +184,8 @@ html[data-dt-effects='off'] .dt-editorial[data-editorial-enter] .dt-editorial-un
   transform: none !important;
 }
 html[data-dt-effects='off'] .dt-editorial .dt-editorial-mask { transition: none !important; }
+/* La regla global de reduced-motion deja `transition: all 0.01ms`: con efectos apagados el titular no transiciona nada. */
+html[data-dt-effects='off'] .dt-editorial :is(.dt-hero-title, .dt-hero-title *) { transition: none !important; }
 html[data-dt-effects='off'] .dt-editorial :is(.dt-btn, .dt-card, .dt-game, .dt-flow-step, .dt-rail-item a, .dt-card-go, .dt-game-cta > span, .dt-btn-label > span) {
   transition: none !important;
   translate: none !important;

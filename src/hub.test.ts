@@ -41,7 +41,8 @@ describe('Student learning hub', () => {
     expect(html).toContain('Marcar hecho');
     expect(html).toContain('Siguiente');
     expect(html).not.toContain('BlackCard');
-    expect(html).toContain('Traducción web de la presentación original');
+    // Texto interno «…que nos pasaste» quitado en la auditoría: ver docs/test-contract-notes.md.
+    expect(html).toContain('Presentación «DEUTSCHTRAINER · Mission 01»');
     const teacher = renderRoute('/profesor');
     // /profesor (= /teacher) es Teacher OS: se carga aparte y su HTML inicial no lleva ningún dato (todo exige sesión de profesor).
     expect(teacher).not.toContain('Próximamente: modo profesor protegido');

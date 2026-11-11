@@ -25,6 +25,8 @@ export function nudgeFor(d: Daily, now = Date.now()): { text: string; href: stri
 const HIDE = (day: string) => `dt:nudge-hidden:${day}`;
 // Solo en portadas (inicio, mi espacio, curso, juegos, exámenes): nunca en medio de una práctica, examen, juego o Klaus.
 const SHOWN_ON = /^\/(mi|curso|juegos|examenes|road-to-b1|ranking|tablon)?\/?$/;
+// En /mi la tarjeta «Misión de hoy» ya dice lo mismo: allí el aviso solo sale si trae algo distinto (Plus que caduca, cupo…).
+const SAME_AS_HOME = (href: string) => href === '/mision';
 
 export function DailyNudge({ path }: { path: string }) {
   const [d, setD] = useState<Daily | null>(null);
@@ -38,6 +40,7 @@ export function DailyNudge({ path }: { path: string }) {
   }, [path, off]);
   if (!d || hidden || off) return null;
   const n = nudgeFor(d);
+  if (/^\/mi\/?$/.test(path) && SAME_AS_HOME(n.href)) return null;
   const go = (e: MouseEvent<HTMLAnchorElement>) => { e.preventDefault(); navigate(n.href); };
   const close = () => { store.set(HIDE(d.day), '1'); setHidden(true); };
   return (

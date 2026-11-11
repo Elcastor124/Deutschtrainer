@@ -14,7 +14,7 @@ import { KlausGate, PLUS_GATE } from '../klaus/KlausGate.tsx';
 import { useKlausSkin } from '../klaus/skin-client.ts';
 import type { KlausReaction } from '../klaus/events.ts';
 import { speak, stopSpeaking, useBrowserVoices } from '../klaus/speech.ts';
-import { useVoiceLoop } from '../klaus/voice.ts';
+import { browserSttSupported, useVoiceLoop } from '../klaus/voice.ts';
 import { Segmented } from '../components/Segmented.tsx';
 import '../redet.css';
 
@@ -179,7 +179,7 @@ function Status({ status, left }: { status: KlausStatus | null; left: number | n
       <span>{left} de {status.quota.text.limit} mensajes hoy</span>
       {!status.providers.llm.real && <span className="kw-chip mock" title="Sin IA configurada: Klaus sigue un guion de práctica.">Modo práctica</span>}
       <span className="rd-dim">{voice}</span>
-      <span className="rd-dim">{status.providers.stt.real ? 'Dictado: disponible' : 'Dictado: no configurado'}</span>
+      <span className="rd-dim">{status.providers.stt.real || browserSttSupported() ? 'Dictado: disponible' : 'Dictado: escribe tu respuesta'}</span>
     </p>
   );
 }

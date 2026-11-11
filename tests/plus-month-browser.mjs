@@ -29,9 +29,13 @@ try {
   check(st === 200, `alta de alumno (${st})`);
   await S.eval(`localStorage.setItem('dt:student-session','cookie'); localStorage.setItem('dt:student-alias','${alias}'); true`);
 
-  // 1) aviso diario
+  // 1) aviso diario. En /mi ya no se repite cuando dice lo mismo que la tarjeta «Misión de hoy» (auditoría):
+  //    allí NO debe salir, y sí en las demás portadas (curso, juegos…).
   await S.go('/mi?intro=0');
-  check(await waitFor(S, has('[data-daily-nudge]')), 'aviso diario al entrar');
+  await waitFor(S, has('[data-student-home]'), 10000); await sleep(1200);
+  check(await S.eval(`!document.querySelector('[data-daily-nudge]')`), '/mi: sin aviso duplicado de la misión');
+  await S.go('/juegos?intro=0');
+  check(await waitFor(S, has('[data-daily-nudge]')), 'aviso diario al entrar (portada de juegos)');
   check(await S.eval(`/misión de hoy/i.test(document.querySelector('[data-daily-nudge]').innerText)`), 'el aviso propone la misión de hoy');
   await snap(S, 'nudge');
   await S.eval(`document.querySelector('.dn-x').click(); true`);
@@ -80,7 +84,7 @@ try {
   await M.go('/?intro=0'); await sleep(300);
   const st2 = await M.eval(`fetch('/api/account/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({alias:'${alias}m',password:'zorro-azul-mesa-72-lluvia'})}).then(r=>r.status)`);
   await M.eval(`localStorage.setItem('dt:student-session','cookie'); localStorage.setItem('dt:student-alias','${alias}m'); true`);
-  await M.go('/mi?intro=0');
+  await M.go('/juegos?intro=0');
   check(st2 === 200 && await waitFor(M, has('[data-daily-nudge]')), 'móvil: aviso diario');
   check(await M.eval(`(() => { const r = document.querySelector('[data-daily-nudge]').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; })()`), 'móvil: el aviso cabe en pantalla');
   await snap(M, 'nudge-mobile');

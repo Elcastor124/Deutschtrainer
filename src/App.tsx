@@ -37,6 +37,9 @@ import { PlusPage } from './views/PlusPage.tsx';
 import { GameSetup } from './views/GameSetup.tsx';
 import { Teacher } from './views/Teacher.tsx';
 import { LearningNav } from './components/LearningNav.tsx';
+import { Invite, InviteLanding } from './views/Invite.tsx';
+import { NotFound } from './views/NotFound.tsx';
+import { isKnownRoute, routeTitle } from '../shared/routes.ts';
 import { DailyNudge } from './components/DailyNudge.tsx';
 import { usePath } from './util.ts';
 
@@ -54,6 +57,9 @@ export function App() {
   const teacherOs = /^\/(teacher|profesor)(\/|$)/.test(path);
   const m = /^\/(t|p|j)\/([A-Za-z0-9]{3,8})\/?$/.exec(path);
   const invited = path === '/' && !!new URLSearchParams(search).get('sala');
+  // Título propio por página (pestaña, historial y Google). Teacher OS y salas lo gestionan igual por la tabla común.
+  useEffect(() => { const t = routeTitle(path); document.title = t ?? 'Página no encontrada · Deutschtrainer'; }, [path]);
+  const ref = /^\/i\/([A-Za-z0-9]{4,12})\/?$/.exec(path);
   let screen;
   if (boxing) screen = <Boxing />;
   else if (m && m[1] === 't') screen = <Teacher key={m[2]} code={m[2] === 'new' ? 'new' : m[2].toUpperCase()} />;
@@ -75,6 +81,8 @@ export function App() {
   else if (/^\/hablar\/?$/.test(path)) screen = <Redet />;
   else if (/^\/tablon\/?$/.test(path)) screen = <Tablon />;
   else if (/^\/plus\/?$/.test(path)) screen = <PlusPage />;
+  else if (/^\/invitar\/?$/.test(path)) screen = <Invite />;
+  else if (ref) screen = <InviteLanding key={ref[1]} code={ref[1]} />;
   else if (/^\/teoria\/[\w-]+\/?$/.test(path)) screen = <Teoria key={path} unitId={path.split('/')[2]} />;
   else if (/^\/mision\/?$/.test(path)) screen = <Mission />;
   else if (/^\/libre\/jugar\/?$/.test(path)) screen = <FreeGame key={search} />;
@@ -86,6 +94,7 @@ export function App() {
   else if (/^\/practi[cz]a\/?$/.test(path)) screen = <Practice />;
   else if (/^\/jenga\/?$/.test(path)) screen = <GameSetup mode="jenga" />;
   else if (/^\/jugar\/?$/.test(path) || invited) screen = <GameSetup mode="blackcard" />;
-  else screen = <Landing />;
+  else if (path === '/' || path === '') screen = <Landing />;
+  else screen = isKnownRoute(path) ? <Landing /> : <NotFound />;
   return <><AmbientField path={path} search={search} /><Intro path={path} search={search} />{!teacherOs && <LearningNav path={invited ? '/jugar' : path} />}{!teacherOs && <DailyNudge path={path} />}<PageTransition path={path}>{screen}</PageTransition><ScrollReveal path={path} /><AchievementWatcher path={path} />{!teacherOs && <HomeworkNotice path={path} />}</>;
 }

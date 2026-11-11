@@ -7,7 +7,7 @@ import { launch, sleep } from './cdp.mjs';
 
 const env = await launch({ shots: 'shots/hero-logo', base: process.env.BASE });
 const report = {};
-async function prepare(p, reduced = false, fallback = false) {
+async function prepare(p, reduced = false, fallback = false, expectStatic = fallback) {
   await env.send('Page.bringToFront', {}, p.sid);
   await env.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: reduced ? 'reduce' : 'no-preference' }] }, p.sid);
   await env.send('Page.addScriptToEvaluateOnNewDocument', { source: `
@@ -23,7 +23,7 @@ async function prepare(p, reduced = false, fallback = false) {
     ${fallback ? `const get=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...rest){return /webgl/.test(kind)?null:get.call(this,kind,...rest)}` : ''}
   ` }, p.sid);
   await p.go('/?intro=0');
-  try { await p.until(`!!document.querySelector('.dt-hero-3d.is-${fallback ? 'static' : 'ready'}')`, 'hero ready', 30000); }
+  try { await p.until(`!!document.querySelector('.dt-hero-3d.is-${expectStatic ? 'static' : 'ready'}')`, 'hero ready', 30000); }
   catch (error) { console.error(p.label, p.errors(), await p.eval(`({warnings:window.__heroWarnings,state:document.querySelector('.dt-hero-3d')?.className,text:document.body.innerText.slice(0,200)})`)); throw error; }
   await sleep(2400);
 }
@@ -62,8 +62,11 @@ try {
   // Release each GPU-backed document before creating the next isolated case.
   await env.send('Page.navigate', {url:'about:blank'},desktop.sid);
   await sleep(500);
+  // Móvil: logo estático a propósito (three.js costaba ~7 s de CPU en un móvil medio; ver docs/test-contract-notes.md).
   const mobile = await env.newPage('hero mobile', 390, 844, true);
-  await prepare(mobile);
+  await prepare(mobile, false, false, true); // WebGL real disponible: el estático lo elige el ancho
+  report.mobileHero3dDownloaded = await mobile.eval(`performance.getEntriesByType('resource').some((r) => /hero3d/.test(r.name))`);
+  assert.equal(report.mobileHero3dDownloaded, false, 'móvil: three.js no se descarga');
   await mobile.eval(`document.querySelector('.dt-hero-visual').scrollIntoView({block:'center',behavior:'instant'})`);
   await sleep(500);
   await mobile.shot('mobile-390');

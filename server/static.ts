@@ -16,8 +16,27 @@ export function resolveStatic(root: string, pathname: string): string | null {
   return file;
 }
 
-/** Cabeceras de endurecimiento sin efecto sobre el contenido (no hay CSP: las presentaciones llevan scripts en línea). */
+/** Cabeceras de endurecimiento. La CSP admite scripts en línea porque las presentaciones los llevan, pero cierra todo lo
+ * demás: solo recursos propios + Google Fonts, las dos APIs de traducción que usa el diccionario, sin <object>, sin que otra
+ * web meta Deutschtrainer en un iframe (clickjacking) y sin formularios hacia fuera. HSTS: solo HTTPS durante 1 año. */
 export const SECURITY_HEADERS = {
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'strict-origin-when-cross-origin',
+  'x-frame-options': 'SAMEORIGIN',
+  'strict-transport-security': 'max-age=31536000; includeSubDomains',
+  'permissions-policy': 'camera=(), geolocation=(), payment=(), usb=(), microphone=(self)',
+  'content-security-policy': [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "img-src 'self' data: blob:",
+    "media-src 'self' data: blob:",
+    "connect-src 'self' ws: wss: https://api.mymemory.translated.net https://translate.googleapis.com",
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+  ].join('; '),
 } as const;

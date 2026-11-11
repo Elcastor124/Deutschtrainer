@@ -39,6 +39,8 @@ import { KlausStore } from './ai/klaus-store.ts';
 import { AiUsage } from './ai/usage.ts';
 import { FreeAccess, lektionOfPresentation } from './free-access.ts';
 import { PlusBilling, PLUS_PRICE_EUR, TRIAL_DAYS } from './plus-billing.ts';
+import { Referrals, REFERRAL_DAYS } from './referrals.ts';
+import { isKnownRoute, SITEMAP_PATHS } from '../shared/routes.ts';
 import { MockLlm } from './ai/mock-llm.ts';
 import { buildProviders, loadAiConfig, OpenRouterFreeLlm } from './ai/providers.ts';
 
@@ -374,6 +376,16 @@ const freeAccess = new FreeAccess({ dataDir: DATA_DIR, day: madridDay, enabled: 
 const plusBilling = new PlusBilling({ dataDir: DATA_DIR });
 aiUsage.resolvePlan = (id, stored) => { const u = plusBilling.untilOf(id); return u === null ? stored : u > Date.now() ? 'plus' : 'free'; };
 const planOfAccount = (a: { id: string; alias: string }) => aiUsage.planOf(a.id, a.alias);
+// Invita a un amigo: ambos ganan 7 días de Plus cuando el amigo hace su primera actividad real (ver server/referrals.ts).
+const referrals = new Referrals({ dataDir: DATA_DIR });
+const hasUndatedPlus = (id: string) => { const a = accounts.byId(id); return !!a && plusBilling.untilOf(id) === null && planOfAccount(a) === 'plus'; };
+function activateReferral(inviteeId: string) {
+  const r = referrals.activate(inviteeId); if (!r) return;
+  plusBilling.grantDays(r.invitee, REFERRAL_DAYS, 'referral', `in:${r.invitee}`, hasUndatedPlus(r.invitee));
+  if (r.inviter && accounts.byId(r.inviter)) plusBilling.grantDays(r.inviter, REFERRAL_DAYS, 'referral', `by:${r.invitee}`, hasUndatedPlus(r.inviter));
+  console.log(`[referral] activada: +${REFERRAL_DAYS} días a ambos`);
+}
+progressHandler.log.onRecord = (ev) => { if (isAccountProfile(ev.profile) && referrals.data.byInvitee[ev.profile]?.status === 'pending') activateReferral(ev.profile); };
 let presCatalog: { id: string; unit?: number }[] = [];
 try { presCatalog = JSON.parse(readFileSync(join(ROOT, 'public', 'presentaciones', 'catalogo.json'), 'utf8')); } catch { /* sin catálogo: nada que limitar */ }
 const klausAi = createKlausAi({
@@ -387,7 +399,7 @@ const tablon = createTablon({
   hasActivity: (id) => progressHandler.log.events.some((e) => e.profile === id) || klausAi.active(id),
 });
 const courseProgress = createCourseProgress({ accounts, store: new CourseProgressStore(DATA_DIR) });
-const forgetAccount = (id: string) => { courseProgress.forget(id); delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); klausAi.forget(id); tablon.forget(id); freeAccess.forget(id); plusBilling.forget(id); };
+const forgetAccount = (id: string) => { courseProgress.forget(id); delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); klausAi.forget(id); tablon.forget(id); freeAccess.forget(id); plusBilling.forget(id); referrals.forget(id); };
 playApi.setOnRemoved(forgetAccount);
 const teacherOs = createTeacherOs({
   accounts, guard, log: () => progressHandler.log, bank, data: teacherData, publicDir: join(ROOT, 'public'), onRemoved: forgetAccount, learning: (id) => learning.history(id),
@@ -399,6 +411,14 @@ const teacherOs = createTeacherOs({
     undo: (id) => plusBilling.undoPayment(id),
     summary: (list) => plusBilling.summary(list, (at) => madridDay(at).slice(0, 7)),
     blockedToday: () => freeAccess.blockedToday(),
+  },
+  referrals: {
+    list: () => referrals.all().map((r) => ({ ...r, inviterAlias: accounts.byId(r.inviter)?.alias ?? null, inviteeAlias: accounts.byId(r.invitee)?.alias ?? null })),
+    cancel: (inviteeId) => {
+      const was = referrals.cancel(inviteeId); if (!was) return false;
+      if (was.status === 'rewarded') { plusBilling.revokeDays(was.invitee, `in:${was.invitee}`); plusBilling.revokeDays(was.inviter, `by:${was.invitee}`); }
+      return true;
+    },
   },
   liveRooms: () => [...rooms.values()].filter((r) => r.s.mode === 'class').map((r) => ({
     code: r.s.code, owner: r.s.owner, phase: r.s.phase, block: r.s.block, players: r.s.players.length, connected: r.s.players.filter((p) => p.connected).length,
@@ -428,6 +448,37 @@ function httpJson(res: ServerResponse, status: number, body: unknown, err?: unkn
   if (res.headersSent) return void res.end();
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
   res.end(JSON.stringify(body));
+}
+
+/** Invita a un amigo: GET /api/referral/me · GET /api/referral/check?code= (público) · POST /api/referral/claim { code }. */
+async function referralApi(req: IncomingMessage, res: ServerResponse, url: URL) {
+  res.setHeader('content-type', 'application/json; charset=utf-8'); res.setHeader('cache-control', 'no-store');
+  const route = url.pathname.slice('/api/referral/'.length);
+  if (route === 'check' && req.method === 'GET') {
+    const owner = referrals.ownerOf(url.searchParams.get('code'));
+    const alias = owner ? accounts.byId(owner)?.alias ?? null : null;
+    return res.end(JSON.stringify(alias ? { ok: true, alias, days: REFERRAL_DAYS } : { ok: false }));
+  }
+  const who = identify(accounts, req);
+  if (who.kind !== 'account') { res.statusCode = 401; return res.end(JSON.stringify({ error: 'Inicia sesión.' })); }
+  const a = who.account;
+  if (route === 'me' && req.method === 'GET') {
+    // La primera actividad pudo ser con Klaus (no pasa por el registro de progreso): se comprueba aquí también.
+    if (referrals.data.byInvitee[a.id]?.status === 'pending' && klausAi.active(a.id)) activateReferral(a.id);
+    return res.end(JSON.stringify({ ...referrals.mine(a.id, (id) => accounts.byId(id)?.alias ?? null), plan: planOfAccount(a), plusUntil: plusBilling.untilOf(a.id) }));
+  }
+  if (route === 'claim' && req.method === 'POST') {
+    let raw = '';
+    for await (const chunk of req) { raw += chunk; if (raw.length > 512) { res.statusCode = 413; return res.end(JSON.stringify({ error: 'Petición demasiado grande.' })); } }
+    let input: Record<string, unknown> = {};
+    try { input = JSON.parse(raw || '{}'); } catch { res.statusCode = 400; return res.end(JSON.stringify({ error: 'JSON no válido.' })); }
+    const r = referrals.claim(a, input.code, guard.ip(req), madridDay(Date.now()));
+    if (!r.ok) { res.statusCode = r.code === 'code' ? 404 : 409; return res.end(JSON.stringify({ error: r.error, code: r.code })); }
+    // Si ya tenía actividad (raro en una cuenta nueva), se premia al momento.
+    if (progressHandler.log.events.some((e) => e.profile === a.id) || klausAi.active(a.id)) activateReferral(a.id);
+    return res.end(JSON.stringify(referrals.mine(a.id, (id) => accounts.byId(id)?.alias ?? null)));
+  }
+  res.statusCode = 404; return res.end(JSON.stringify({ error: 'No existe.' }));
 }
 
 /**
@@ -509,6 +560,7 @@ function serve(req: IncomingMessage, res: ServerResponse) {
     const i = plusBilling.info(a.id);
     return res.end(JSON.stringify({ plan: planOfAccount(a), until: i.until, trial: i.trial, trialUsed: i.trialUsed, trialDays: TRIAL_DAYS, price: PLUS_PRICE_EUR }));
   }
+  if (url.pathname.startsWith('/api/referral/')) return void referralApi(req, res, url).catch((e: unknown) => httpJson(res, 500, { error: 'Error con la invitación.' }, e));
   // Aviso diario al entrar (solo dentro de la web): racha, misión, repasos pendientes, cupo Free y Plus que caduca.
   if (url.pathname === '/api/daily') {
     const who = identify(accounts, req);
@@ -550,9 +602,25 @@ function serve(req: IncomingMessage, res: ServerResponse) {
   }
   let file = resolveStatic(DIST, url.pathname);
   if (!file) { res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' }); return res.end('Petición no válida.'); }
-  if (!existsSync(file) || statSync(file).isDirectory()) file = join(DIST, 'index.html');
+  // robots.txt y sitemap.xml se generan aquí (antes caían en la app y devolvían HTML).
+  if (url.pathname === '/robots.txt' || url.pathname === '/sitemap.xml') {
+    const origin = `${req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http'}://${req.headers.host ?? 'localhost'}`;
+    const text = url.pathname === '/robots.txt'
+      ? `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /teacher\nDisallow: /profesor\nDisallow: /t/\nDisallow: /p/\nDisallow: /j/\nSitemap: ${origin}/sitemap.xml\n`
+      : `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${SITEMAP_PATHS.map((p) => `  <url><loc>${origin}${p}</loc></url>`).join('\n')}\n</urlset>\n`;
+    res.writeHead(200, { 'content-type': url.pathname.endsWith('.txt') ? 'text/plain; charset=utf-8' : 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' });
+    return res.end(text);
+  }
+  let status = 200;
+  if (!existsSync(file) || statSync(file).isDirectory()) {
+    // Un archivo que no existe (con extensión) es 404 de verdad; una ruta de la app desconocida, la app con código 404
+    // (la propia app pinta «Página no encontrada»); las rutas conocidas, la app con 200.
+    if (extname(url.pathname)) { res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' }); return res.end('No encontrado.'); }
+    if (!isKnownRoute(url.pathname)) status = 404;
+    file = join(DIST, 'index.html');
+  }
   const ext = extname(file);
-  res.writeHead(200, {
+  res.writeHead(status, {
     'content-type': MIME[ext] ?? 'application/octet-stream',
     'cache-control': file.includes(`${join(DIST, 'assets')}`) ? 'public, max-age=31536000, immutable' : 'no-cache',
   });
@@ -600,7 +668,7 @@ let closing = false;
 const shutdown = async () => {
   if (closing) return; closing = true;
   store.data.rooms = Object.fromEntries([...rooms].map(([k, r]) => [k, r.s]));
-  store.flush(); progressHandler.log.flush(); klausAi.flush(); tablon.flush(); courseProgress.flush(); freeAccess.flush(); plusBilling.flush();
+  store.flush(); progressHandler.log.flush(); klausAi.flush(); tablon.flush(); courseProgress.flush(); freeAccess.flush(); plusBilling.flush(); referrals.flush();
   // Última subida antes de apagar (un deploy en Render manda SIGTERM): como mucho 8 s.
   await Promise.race([cloud.flush(), new Promise((r) => setTimeout(r, 8000))]);
   instanceLock.release(); process.exit(0);

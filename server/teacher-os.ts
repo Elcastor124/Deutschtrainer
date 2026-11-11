@@ -37,6 +37,11 @@ export interface TeacherOsDeps {
   learning?: (id: string) => unknown;
   /** Plan de cada cuenta (Free/Plus). Plus abre Klaus: Schreibt, Redet y Unterricht. Sin pagos: lo asigna el profesor. */
   plans?: { of: (id: string, alias?: string) => 'free' | 'plus'; set: (id: string, plan: 'free' | 'plus') => void };
+  /** Invita a un amigo (ver server/referrals.ts): lista y anular una invitación (si estaba premiada, se restan los días). */
+  referrals?: {
+    list: () => (import('./referrals.ts').Referral & { inviterAlias: string | null; inviteeAlias: string | null })[];
+    cancel: (inviteeId: string) => boolean;
+  };
   /** Suscripción mes a mes (pago confirmado a mano) y prueba de 3 días. Ver server/plus-billing.ts. */
   billing?: {
     info: (id: string) => import('./plus-billing.ts').PlusInfo;
@@ -258,6 +263,23 @@ export function createTeacherOs(d: TeacherOsDeps) {
       const s = d.billing!.summary(all.map((a) => ({ id: a.id, alias: a.alias, plus: d.plans!.of(a.id, a.alias) === 'plus' })));
       const blocked = d.billing!.blockedToday().map((b) => ({ ...b, alias: d.accounts.byId(b.id)?.alias ?? null })).filter((b) => b.alias && d.plans!.of(b.id, b.alias) !== 'plus');
       return json(res, 200, { ...s, free: all.length - s.plus, blockedToday: blocked });
+    }
+    // Invitaciones: quién invitó a quién, estado (pendiente / premiada / anulada) y anular abusos.
+    if (r0 === 'referrals') {
+      if (!d.referrals) fail(503, 'Las invitaciones no están disponibles.');
+      if (!r1 && method === 'GET') {
+        const list = d.referrals!.list().map(({ ipKey: _ip, ...r }) => r);
+        const byInviter = new Map<string, { alias: string | null; rewarded: number; pending: number }>();
+        for (const r of list) {
+          if (r.status === 'cancelled') continue;
+          const x = byInviter.get(r.inviter) ?? { alias: r.inviterAlias, rewarded: 0, pending: 0 };
+          if (r.status === 'rewarded') x.rewarded++; else x.pending++;
+          byInviter.set(r.inviter, x);
+        }
+        const top = [...byInviter.entries()].map(([id, x]) => ({ id, ...x })).sort((a, b) => b.rewarded - a.rewarded || b.pending - a.pending).slice(0, 10);
+        return json(res, 200, { referrals: list.slice(0, 200), top, rewarded: list.filter((r) => r.status === 'rewarded').length, pending: list.filter((r) => r.status === 'pending').length });
+      }
+      if (r1 && r2 === 'cancel' && method === 'POST') { if (!d.referrals!.cancel(r1)) fail(404, 'Esa invitación no existe o ya está anulada.'); return json(res, 200, { ok: true }); }
     }
     if (r0 === 'settings' && method === 'POST') {
       const input = await body(req);

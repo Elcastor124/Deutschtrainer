@@ -173,3 +173,14 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
 - El Bizum que aún se veía venía de una pestaña abierta desde antes del despliegue (el JS del servidor ya no lo tenía).
   `src/version-watch.ts`: cada 5 min y al volver a la pestaña mira qué bundle sirve el servidor; si cambió, recarga en la
   siguiente navegación interna (nunca en medio de un ejercicio).
+
+## Base técnica (auditoría) e «Invita a un amigo»
+
+- **Invita a un amigo** (`server/referrals.ts`, `/invitar`, `/i/CODIGO`): cada cuenta tiene un código de 6 caracteres. El amigo lo aplica al crear la cuenta (o en las 48 h siguientes desde /invitar). Los **7 días de Plus para los dos se dan con la primera actividad real del amigo** (evento de progreso o uso de Klaus), no al registrarse. Antiabuso: no vale el propio código, uno por cuenta, solo cuentas nuevas (48 h), 3 altas con código por IP y día, quien invita gana como mucho 10 semanas, y el profesor puede **anular** desde Teacher OS → Resumen → «Invitaciones · amigos» (si estaba premiada, se restan los 7 días a los dos). Los días regalados se guardan como `bonuses` en `plus-billing.json`, no cuentan como ingresos; a una cuenta con Plus «sin fecha» no se le toca la fecha. Datos en `DATA_DIR/referrals.json` (fichero nuevo; nada existente cambia). Prueba: `tests/referrals.test.ts` y `tests/referral-browser.mjs`.
+- **404 real**: rutas desconocidas responden 404 (con la app, que pinta «Página no encontrada»); archivos inexistentes, 404 sin HTML. La lista de rutas vive en `shared/routes.ts` (cliente y servidor): **cada ruta nueva se añade ahí**.
+- **Título por página** desde `shared/routes.ts`. **robots.txt** y **sitemap.xml** los genera el servidor. **Manifest** + iconos PNG (`scripts/make-icons.mjs` los genera desde `public/favicon.svg`): la web se puede instalar.
+- **Cabeceras**: CSP (scripts en línea permitidos por las presentaciones; Google Fonts y las dos APIs del diccionario como únicos orígenes externos), X-Frame-Options, HSTS, Permissions-Policy.
+- **Inicio en móvil**: en pantallas ≤ 760 px (o táctiles ≤ 1100 px) el logo 3D se sustituye por la placa estática y three.js no se descarga (Lighthouse: ~7 s de CPU en un móvil medio). En escritorio, 3D como antes. Expectativa nueva de `lightHero()`; las pruebas del 3D usan escritorio.
+- **/curso sin saltos**: el estado del plan Free del primer pintado sale de la caché de esa cuenta (o «sin cuenta»), así la tarjeta no empuja el camino al llegar la respuesta.
+- **Aviso diario**: en /mi no se repite si dice lo mismo que la tarjeta «Misión de hoy»; en móvil la página reserva su hueco abajo. «×» de 44 px.
+- Textos internos fuera («que nos pasaste», «Dictado: no configurado»), contraste del rojo sobre papel en /plus (AA), `role="img"` en el marcador de puntos, alumno nuevo sin «0 · 0 días · 0» ni «Sin nivel asignado».

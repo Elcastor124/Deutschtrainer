@@ -34,7 +34,9 @@ export interface Detail {
   plus: PlusInfo | null;
   grades: Grade[]; homework: { id: string; title: string; due: string | null; at: number; done: number | null }[];
 }
-export interface PlusInfo { until: number | null; trial: boolean; trialUsed: boolean; payments: { at: number; months: number; eur: number; method: string }[]; paidEur: number }
+export interface PlusInfo { until: number | null; trial: boolean; trialUsed: boolean; payments: { at: number; months: number; eur: number; method: string }[]; paidEur: number; bonusDays?: number }
+export interface ReferralRow { invitee: string; inviter: string; code: string; at: number; status: 'pending' | 'rewarded' | 'cancelled'; rewardedAt?: number; inviterAlias: string | null; inviteeAlias: string | null }
+export interface ReferralsView { referrals: ReferralRow[]; top: { id: string; alias: string | null; rewarded: number; pending: number }[]; rewarded: number; pending: number }
 export interface PlusSummary {
   price: number; month: string; plus: number; paying: number; trials: number; noDate: number; free: number; mrrEur: number; incomeMonthEur: number; incomeTotalEur: number;
   expiringSoon: { id: string; alias: string; until: number; trial: boolean }[];

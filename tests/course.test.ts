@@ -34,7 +34,8 @@ describe('Ruta del curso', () => {
       for (const s of u.steps) for (const l of [s.primary, ...s.extra]) expect(l.href, u.id).not.toMatch(/^\/(jenga|jugar|boxeo)/);
       for (const t of u.topics) expect(Object.keys(TOPICS)).toContain(t);
     }
-    expect(COURSE[0].steps[0].desc).toContain('Traducción web de la presentación original');
+    // Antes «Traducción web de la presentación original … que nos pasaste» (texto interno visible al alumno; quitado en la auditoría).
+    expect(COURSE[0].steps[0].desc).toContain('Presentación «DEUTSCHTRAINER · Mission 01»');
     expect(COURSE.filter((u) => u.noReviewStep).map((u) => u.id)).toEqual(['bruecke-a1']);
     expect(COURSE[0].steps[0].extra.map((l) => l.href)).toContain('/presentaciones/bruecke-a1.html'); // el repaso no se pierde
     expect(COURSE.find((u) => u.id === 'krankenhaus')!.steps[2].primary.href).toBe('/presentaciones/krankenhaus-remaster.html');

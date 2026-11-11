@@ -62,15 +62,17 @@ export function StudentHome() {
           <p className="m-label"><i>Mein Bereich</i>{new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
           <h1>Hallo, {d.account.alias}<b className="dt-punkt">!</b></h1>
           <p className="sh-tags">
-            {d.level ? <span className="sh-chip">Nivel {LEVEL_LABEL[d.level]}</span> : <span className="sh-chip dim">Sin nivel asignado</span>}
+            {d.level ? <span className="sh-chip">Nivel {LEVEL_LABEL[d.level]}</span> : <a className="sh-chip dim" href="/curso" onClick={go('/curso')}>Empieza por la Lektion 1</a>}
             {d.groups.map((g) => <span key={g} className="sh-chip">{g}</span>)}
           </p>
         </div>
-        <dl className="sh-stats" aria-label="Tu semana">
+        {s.weekPoints === 0 && s.streak === 0 && !done ? (
+          <p className="sh-stats sh-stats-empty" data-first-day>Tu primera práctica enciende la racha y suma tus primeros puntos.</p>
+        ) : <dl className="sh-stats" aria-label="Tu semana">
           <div><dt>Puntos esta semana</dt><dd className="gold"><CountUp value={s.weekPoints} /></dd></div>
           <div><dt>Racha</dt><dd><CountUp value={s.streak} /><small>{s.streak === 1 ? 'día' : 'días'}</small></dd></div>
           <div><dt>Logros</dt><dd>{done === null ? '—' : <CountUp value={done} />}</dd></div>
-        </dl>
+        </dl>}
         <a className="btn ghost sm sh-account" href="/cuenta" onClick={go('/cuenta')}>Mi cuenta</a>
       </header>
 
@@ -164,6 +166,12 @@ export function StudentHome() {
           <p className="sh-note">Puntos por semana</p>
           <Spark values={s.history.map((h) => h.points)} />
           <div className="libre-row"><a className="btn sm" href="/cuenta" onClick={go('/cuenta')}>Ver todo mi progreso</a><a className="btn sm" href="/ranking" onClick={go('/ranking')}>Ranking</a></div>
+        </section>
+
+        <section className="libre-card sh-invite" aria-label="Invita a un amigo" data-home-invite>
+          <h2>Invita a un amigo</h2>
+          <p className="sh-note">Cuando tu amigo cree su cuenta con tu enlace y haga su primera práctica, <b className="gold">los dos ganáis 7 días de Plus</b>.</p>
+          <div className="libre-row"><a className="btn sm primary" href="/invitar" onClick={go('/invitar')}>Conseguir mi enlace</a></div>
         </section>
 
         <section className="libre-card" aria-label="Mis clases">

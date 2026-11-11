@@ -10,7 +10,7 @@ import { KlausFigure } from '../klaus/KlausFigure.tsx';
 import { useKlausSkin } from '../klaus/skin-client.ts';
 import '../course-path.css';
 import { PlusOffer } from '../components/PlusOffer.tsx';
-import { freeStatus, lektionState, type FreeStatus } from '../free-client.ts';
+import { freeStatus, initialFreeStatus, lektionState, type FreeStatus } from '../free-client.ts';
 import { cachedAlias } from '../play-client.ts';
 import { navigate } from '../util.ts';
 
@@ -46,7 +46,7 @@ export function Course() {
   const overall = overallProgress(done);
   const [sel, setSel] = useState<string | null>(() => next?.step.id ?? null);
   // Plan Free: 2 Lektionen nuevas al día (lo decide el servidor al servir las diapositivas). Aquí solo se avisa antes.
-  const [free, setFree] = useState<FreeStatus | null>(null);
+  const [free, setFree] = useState<FreeStatus | null>(() => initialFreeStatus(cachedAlias()));
   const [offer, setOffer] = useState(false);
   const refreshFree = () => { void freeStatus().then(setFree).catch(() => setFree(null)); };
   useEffect(() => { refreshFree(); addEventListener('focus', refreshFree); return () => removeEventListener('focus', refreshFree); }, []);

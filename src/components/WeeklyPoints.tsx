@@ -45,7 +45,7 @@ function Flame({ lit }: { lit: boolean }) {
 function Counter({ points }: { points: number }) {
   const shown = useCountUp(points);
   return (
-    <div className="wp-score" data-points={points} aria-label={`${points} puntos esta semana`}>
+    <div className="wp-score" data-points={points} role="img" aria-label={`${points} puntos esta semana`}>
       <span className="wp-score-num" aria-hidden="true">{shown}</span>
       <span className="wp-score-unit" aria-hidden="true">pts</span>
     </div>

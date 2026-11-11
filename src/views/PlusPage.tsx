@@ -5,6 +5,7 @@ import { PlusOffer, type PlusReason } from '../components/PlusOffer.tsx';
 import { cachedAlias } from '../play-client.ts';
 import { freeStatus, type FreeStatus } from '../free-client.ts';
 import { playRequest } from '../play-client.ts';
+import { navigate } from '../util.ts';
 import type { PlusMe } from '../components/PlusOffer.tsx';
 
 export function PlusPage() {
@@ -36,6 +37,7 @@ export function PlusPage() {
           </table>
         </div>
         {!isPlus && <PlusOffer reason={reason} alias={cachedAlias()} />}
+        <p className="po-invite" data-plus-invite>¿Prefieres no pagar? <a href="/invitar" onClick={(e) => { e.preventDefault(); navigate('/invitar'); }}>Invita a un amigo</a>: cuando haga su primera práctica, los dos ganáis 7 días de Plus.</p>
       </div>
     </main>
   );

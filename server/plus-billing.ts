@@ -10,10 +10,12 @@ export const TRIAL_DAYS = 3;
 const DAY = 86_400_000;
 
 export interface Payment { at: number; months: number; eur: number; /** «manual»: confirmado por el profesor. «bizum» = registros antiguos. */ method: 'manual' | 'bizum' }
-export interface Sub { until: number | null; trialAt?: number; trialUntil?: number; payments: Payment[] }
+/** Días regalados (invitar a un amigo). No son pagos: no cuentan como ingresos. */
+export interface Bonus { at: number; days: number; reason: 'referral'; ref?: string }
+export interface Sub { until: number | null; trialAt?: number; trialUntil?: number; payments: Payment[]; bonuses?: Bonus[] }
 interface Data { version: 1; subs: Record<string, Sub> }
 
-export interface PlusInfo { until: number | null; trial: boolean; trialUsed: boolean; payments: Payment[]; paidEur: number }
+export interface PlusInfo { until: number | null; trial: boolean; trialUsed: boolean; payments: Payment[]; paidEur: number; bonusDays: number }
 
 /** Suma meses de calendario (31 ene + 1 mes = último día de febrero). */
 export function addMonths(at: number, months: number): number {
@@ -49,6 +51,7 @@ export class PlusBilling {
     return {
       until, trial: !!(s?.trialUntil && until !== null && until === s.trialUntil && until > t), trialUsed: !!s?.trialAt,
       payments: [...(s?.payments ?? [])].sort((a, b) => b.at - a.at), paidEur: (s?.payments ?? []).reduce((n, p) => n + p.eur, 0),
+      bonusDays: (s?.bonuses ?? []).reduce((n, b) => n + b.days, 0),
     };
   }
 
@@ -67,6 +70,27 @@ export class PlusBilling {
     if (s && p && s.until !== null) s.until = Math.max(this.now(), addMonths(s.until, -p.months));
     this.#save();
     return this.info(id);
+  }
+
+  /** Regala días de Plus (invitar a un amigo): se suman desde hoy o desde el final actual si aún no ha caducado.
+   * Quien tiene Plus «sin fecha» (activado a mano, no caduca) no lo necesita: no se toca (si no, empezaría a caducar). */
+  grantDays(id: string, days: number, reason: Bonus['reason'], ref?: string, hasUndatedPlus = false): { granted: boolean; until: number | null } {
+    const s = (this.data.subs[id] ??= { until: null, payments: [] }), t = this.now();
+    if (hasUndatedPlus && s.until === null) return { granted: false, until: null };
+    const base = s.until !== null && s.until > t ? s.until : t;
+    s.until = base + days * DAY;
+    (s.bonuses ??= []).push({ at: t, days, reason, ...(ref ? { ref } : {}) });
+    this.#save();
+    return { granted: true, until: s.until };
+  }
+  /** Quita días regalados (el profesor anula una invitación premiada). Nunca deja la fecha antes de hoy. */
+  revokeDays(id: string, ref: string): number {
+    const s = this.data.subs[id]; const i = s?.bonuses?.findIndex((b) => b.ref === ref) ?? -1;
+    if (!s || i < 0) return 0;
+    const [b] = s.bonuses!.splice(i, 1);
+    if (s.until !== null) s.until = Math.max(this.now(), s.until - b.days * DAY);
+    this.#save();
+    return b.days;
   }
 
   /** Prueba gratis de 3 días: una vez por cuenta y solo si ahora no tiene Plus. */

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type
 import { TOPICS } from '../../shared/rules.ts';
 import { navigate, store, usePath } from '../util.ts';
 import { AccuracyBars, DiffStack, TrendChart } from './charts.tsx';
-import { tapi, TeacherApiError, type Analytics, type Detail, type Group, type Homework, type LibraryItem, type Overview, type PlannedSession, type PlusInfo, type PlusSummary, type StudentRow } from './api.ts';
+import { tapi, TeacherApiError, type Analytics, type Detail, type Group, type Homework, type LibraryItem, type Overview, type PlannedSession, type PlusInfo, type ReferralsView, type PlusSummary, type StudentRow } from './api.ts';
 import { TablonAdmin } from './TablonAdmin.tsx';
 import '../libre.css';
 import './teacher.css';
@@ -88,6 +88,32 @@ function PlusCard() {
   );
 }
 
+/** Übersicht: invitaciones («invita a un amigo, 7 días de Plus para los dos»): quién trae alumnos y anular abusos. */
+function ReferralsCard() {
+  const [n, setN] = useState(0);
+  const { data: r, error } = useLoad(() => tapi<ReferralsView>('referrals'), [n]);
+  const cancel = async (id: string, who: string) => {
+    if (!confirm(`¿Anular la invitación de ${who}? Si ya estaba premiada, se restan los 7 días a los dos.`)) return;
+    try { await tapi(`referrals/${id}/cancel`, {}); setN((x) => x + 1); } catch (e) { alert((e as Error).message); }
+  };
+  const label = { pending: 'Pendiente', rewarded: '+7 días', cancelled: 'Anulada' } as const;
+  return (
+    <Card title="Invitaciones · amigos" className="span2" actions={<span className="libre-note">{r ? `${r.rewarded} premiadas · ${r.pending} pendientes` : ''}</span>}>
+      {error ? <p className="libre-err">{error}</p> : !r ? <div className="tos-skel" aria-busy="true" /> : <div data-referrals>
+        {r.referrals.length === 0 ? <p className="libre-note">Aún no hay invitaciones. Los alumnos tienen su enlace en «Mi espacio → Invita a un amigo».</p> : <>
+          {r.top.length > 0 && <p className="libre-note">Quien más invita: {r.top.slice(0, 3).map((t) => `${t.alias ?? '—'} (${t.rewarded})`).join(' · ')}</p>}
+          <ul className="tos-list" data-referral-list>{r.referrals.slice(0, 30).map((x) => (
+            <li key={x.invitee} data-referral={x.status}>
+              <div className="tos-row"><b>{x.inviterAlias ?? 'Cuenta borrada'} → {x.inviteeAlias ?? 'Cuenta borrada'}</b><span className={`tos-pill${x.status === 'rewarded' ? ' gold' : ''}`}>{label[x.status]}</span></div>
+              <small>{dmy(x.at)} · código {x.code}{x.status === 'pending' ? ' · falta su primera práctica' : ''}</small>
+              {x.status !== 'cancelled' && <button type="button" className="btn sm ghost" style={{ justifySelf: 'start' }} data-referral-cancel onClick={() => void cancel(x.invitee, x.inviteeAlias ?? 'esta cuenta')}>Anular</button>}
+            </li>))}</ul>
+        </>}
+      </div>}
+    </Card>
+  );
+}
+
 /** Ficha del alumno: plan, fecha de fin, «Pago recibido» (+1 mes) e historial de pagos. */
 function PlanCard({ alias, plan, info, onPatch }: { id: string; alias: string; plan: 'free' | 'plus'; info: PlusInfo | null; onPatch: (b: Record<string, unknown>) => Promise<void> }) {
   const until = info?.until ?? null;
@@ -105,7 +131,7 @@ function PlanCard({ alias, plan, info, onPatch }: { id: string; alias: string; p
         {info && info.payments.length > 0 && <button className="btn ghost" data-plan-undo onClick={() => { if (confirm('¿Deshacer el último pago? Se resta su mes.')) void onPatch({ payment: 'undo' }); }}>Deshacer último pago</button>}
         <button className={`btn${plan === 'plus' ? '' : ' ghost'}`} data-plan-toggle onClick={() => { if (plan !== 'plus' || confirm(`¿Quitar Plus a ${alias} ya? Perderá el acceso a Klaus; sus borradores y clases se conservan.`)) void onPatch({ plan: plan === 'plus' ? 'free' : 'plus' }); }}>{plan === 'plus' ? 'Quitar Plus' : 'Activar Plus sin fecha'}</button>
       </div>
-      <p className="libre-note">Plus cuesta {eur(12.5)}/mes. Cuando te pague, «Pago recibido» suma un mes; al llegar la fecha vuelve a Free solo. {info?.trialUsed ? 'Ya usó su prueba gratis.' : 'Aún no ha usado su prueba gratis de 3 días.'}</p>
+      <p className="libre-note">Plus cuesta {eur(12.5)}/mes. Cuando te pague, «Pago recibido» suma un mes; al llegar la fecha vuelve a Free solo. {info?.trialUsed ? 'Ya usó su prueba gratis.' : 'Aún no ha usado su prueba gratis de 3 días.'}{info?.bonusDays ? ` Lleva ${info.bonusDays} días regalados por invitar amigos (no son pagos).` : ''}</p>
       {info && info.payments.length > 0 && <ul className="tos-list" data-plan-payments>{info.payments.slice(0, 12).map((p, i) => <li key={i}><div className="tos-row"><b>{dmy(p.at)}</b><span className="tos-pill">{eur(p.eur)}</span></div><small>+{p.months} mes</small></li>)}</ul>}
     </Card>
   );
@@ -170,6 +196,7 @@ function Overview_() {
       </div>
       <div className="tos-cols">
         <PlusCard />
+        <ReferralsCard />
         <Card title="Evolución del grupo" className="span2"><TrendChart points={o.trend} minN={o.minN} label="Respuestas y precisión del grupo por semana" /></Card>
         <Card title="Necesita atención">
           {o.attention.length ? <ul className="tos-list">{o.attention.map((a, i) => <li key={i}><a href={`/teacher/schueler/${a.id}`} onClick={go(`/teacher/schueler/${a.id}`)}><b>{a.alias}</b><span>{a.reason}</span></a></li>)}</ul>

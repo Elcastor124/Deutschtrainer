@@ -3,6 +3,7 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { PASSWORD_MIN } from '../../shared/play.ts';
 import { signIn } from '../play-client.ts';
+import { claimPendingReferral, pendingReferral } from './Invite.tsx';
 import { navigate, store } from '../util.ts';
 import { Check, PasswordField, suggestAlias } from './Account.tsx';
 import '../libre.css';
@@ -46,6 +47,7 @@ export function RegisterPage() {
   const [optIn, setOptIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const invite = pendingReferral();
   const a = alias.normalize('NFKC').trim();
   const c = useMemo(() => ({
     length: a.length >= 3 && a.length <= 16, chars: a.length > 0 && ALIAS_OK.test(a),
@@ -55,7 +57,12 @@ export function RegisterPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault(); if (!ready) return;
     setBusy(true); setError(null);
-    try { await signIn('register', a, pw, optIn, pw2); store.set('dt:has-account', '1'); navigate(afterAuth()); }
+    try {
+      await signIn('register', a, pw, optIn, pw2); store.set('dt:has-account', '1');
+      // Invitación de un amigo (/i/CODIGO): se aplica sola al crear la cuenta. Si falla, la cuenta sigue creada.
+      const refError = await claimPendingReferral();
+      navigate(refError ? `/invitar?aviso=${encodeURIComponent(refError)}` : afterAuth());
+    }
     catch (cause) { setError((cause as Error).message); } finally { setBusy(false); }
   };
   return (
@@ -70,6 +77,7 @@ export function RegisterPage() {
       </>}>
       <form className="auth-form" onSubmit={submit} noValidate aria-describedby={error ? 'auth-error' : undefined}>
         <h2>Crear cuenta</h2>
+        {invite && <p className="auth-invite" data-register-invite>Te invita un amigo (código <b>{invite}</b>): al hacer tu primera práctica, los dos ganáis una semana de Plus.</p>}
         <label className="acc-field">
           <span>Alias</span>
           <span className="acc-pw">

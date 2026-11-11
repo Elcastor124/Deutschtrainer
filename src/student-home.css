@@ -128,3 +128,6 @@
   .sh-stats dd { font-size: 1.6rem; }
   .sh-now .sh-continue { padding: 20px; }
 }
+
+/* Primer día: en vez de «0 · 0 días · 0», una frase que dice qué hacer. */
+.sh-stats-empty { max-width: 300px; padding: 14px 20px; color: var(--muted, #b9b6ae); font-size: .92rem; line-height: 1.4; }
