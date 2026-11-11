@@ -34,7 +34,7 @@ export interface Detail {
   plus: PlusInfo | null;
   grades: Grade[]; homework: { id: string; title: string; due: string | null; at: number; done: number | null }[];
 }
-export interface PlusInfo { until: number | null; trial: boolean; trialUsed: boolean; payments: { at: number; months: number; eur: number; method: 'bizum' }[]; paidEur: number }
+export interface PlusInfo { until: number | null; trial: boolean; trialUsed: boolean; payments: { at: number; months: number; eur: number; method: string }[]; paidEur: number }
 export interface PlusSummary {
   price: number; month: string; plus: number; paying: number; trials: number; noDate: number; free: number; mrrEur: number; incomeMonthEur: number; incomeTotalEur: number;
   expiringSoon: { id: string; alias: string; until: number; trial: boolean }[];

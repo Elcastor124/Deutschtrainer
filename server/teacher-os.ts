@@ -37,7 +37,7 @@ export interface TeacherOsDeps {
   learning?: (id: string) => unknown;
   /** Plan de cada cuenta (Free/Plus). Plus abre Klaus: Schreibt, Redet y Unterricht. Sin pagos: lo asigna el profesor. */
   plans?: { of: (id: string, alias?: string) => 'free' | 'plus'; set: (id: string, plan: 'free' | 'plus') => void };
-  /** Suscripción mes a mes (Bizum confirmado a mano) y prueba de 3 días. Ver server/plus-billing.ts. */
+  /** Suscripción mes a mes (pago confirmado a mano) y prueba de 3 días. Ver server/plus-billing.ts. */
   billing?: {
     info: (id: string) => import('./plus-billing.ts').PlusInfo;
     pay: (id: string) => unknown; undo: (id: string) => unknown;

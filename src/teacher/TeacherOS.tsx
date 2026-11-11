@@ -86,7 +86,7 @@ function PlusCard() {
   );
 }
 
-/** Ficha del alumno: plan, fecha de fin, «Pago recibido» (Bizum = +1 mes) e historial de pagos. */
+/** Ficha del alumno: plan, fecha de fin, «Pago recibido» (+1 mes) e historial de pagos. */
 function PlanCard({ alias, plan, info, onPatch }: { id: string; alias: string; plan: 'free' | 'plus'; info: PlusInfo | null; onPatch: (b: Record<string, unknown>) => Promise<void> }) {
   const until = info?.until ?? null;
   const state = plan !== 'plus' ? (until !== null ? `Free · su Plus caducó el ${dmy(until)}` : 'Free · sin Klaus, curso y práctica con límite diario')
@@ -99,12 +99,12 @@ function PlanCard({ alias, plan, info, onPatch }: { id: string; alias: string; p
         <span className="libre-note" data-plan-until>{state}</span>
       </div>
       <div className="libre-row">
-        <button className="btn primary" data-plan-pay onClick={() => { if (confirm(`¿Has recibido el Bizum de ${alias}? Se suma 1 mes de Plus (${until !== null && until > Date.now() ? `desde el ${dmy(until)}` : 'desde hoy'}).`)) void onPatch({ payment: 'received' }); }}>Pago recibido · +1 mes</button>
+        <button className="btn primary" data-plan-pay onClick={() => { if (confirm(`¿Has recibido el pago de ${alias}? Se suma 1 mes de Plus (${until !== null && until > Date.now() ? `desde el ${dmy(until)}` : 'desde hoy'}).`)) void onPatch({ payment: 'received' }); }}>Pago recibido · +1 mes</button>
         {info && info.payments.length > 0 && <button className="btn ghost" data-plan-undo onClick={() => { if (confirm('¿Deshacer el último pago? Se resta su mes.')) void onPatch({ payment: 'undo' }); }}>Deshacer último pago</button>}
         <button className={`btn${plan === 'plus' ? '' : ' ghost'}`} data-plan-toggle onClick={() => { if (plan !== 'plus' || confirm(`¿Quitar Plus a ${alias} ya? Perderá el acceso a Klaus; sus borradores y clases se conservan.`)) void onPatch({ plan: plan === 'plus' ? 'free' : 'plus' }); }}>{plan === 'plus' ? 'Quitar Plus' : 'Activar Plus sin fecha'}</button>
       </div>
-      <p className="libre-note">El alumno paga por Bizum {eur(12.5)}/mes con su alias como concepto. «Pago recibido» suma un mes; al llegar la fecha vuelve a Free solo. {info?.trialUsed ? 'Ya usó su prueba gratis.' : 'Aún no ha usado su prueba gratis de 3 días.'}</p>
-      {info && info.payments.length > 0 && <ul className="tos-list" data-plan-payments>{info.payments.slice(0, 12).map((p, i) => <li key={i}><div className="tos-row"><b>{dmy(p.at)}</b><span className="tos-pill">{eur(p.eur)} · Bizum</span></div><small>+{p.months} mes</small></li>)}</ul>}
+      <p className="libre-note">Plus cuesta {eur(12.5)}/mes. Cuando te pague, «Pago recibido» suma un mes; al llegar la fecha vuelve a Free solo. {info?.trialUsed ? 'Ya usó su prueba gratis.' : 'Aún no ha usado su prueba gratis de 3 días.'}</p>
+      {info && info.payments.length > 0 && <ul className="tos-list" data-plan-payments>{info.payments.slice(0, 12).map((p, i) => <li key={i}><div className="tos-row"><b>{dmy(p.at)}</b><span className="tos-pill">{eur(p.eur)}</span></div><small>+{p.months} mes</small></li>)}</ul>}
     </Card>
   );
 }

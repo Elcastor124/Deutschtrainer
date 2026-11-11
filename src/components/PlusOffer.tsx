@@ -1,6 +1,6 @@
 // «Solicita tu suscripción Plus»: tarjeta única que se enseña donde el plan Free llega a su límite
-// (Klaus, diapositivas del curso, práctica) y en /plus. No hay pagos en la web: Bizum al número con el alias como
-// concepto (o WhatsApp/llamada) y el profesor pulsa «Pago recibido» en Teacher OS (+1 mes). Prueba gratis de 3 días
+// (Klaus, diapositivas del curso, práctica) y en /plus. No hay pagos en la web: se pide por WhatsApp o
+// llamada y el profesor pulsa «Pago recibido» en Teacher OS (+1 mes). Prueba gratis de 3 días
 // que el alumno activa él mismo, una vez por cuenta (POST /api/plus/trial; lo decide el servidor).
 import { useEffect, useState, type MouseEvent } from 'react';
 import { playRequest } from '../play-client.ts';
@@ -69,7 +69,7 @@ export function PlusOffer({ reason = 'general', alias, compact = false, onClose 
         </ul>
       )}
       <TrialButton alias={alias} />
-      <p className="po-how" data-plus-bizum>Paga <b>{PLUS_PRICE}</b> por <b>Bizum</b> a ese número{alias ? <> con el concepto <b>«{alias}»</b></> : ' con tu alias como concepto'}. En cuanto llegue, tu profesor confirma el pago y se abre todo al momento durante un mes. Cada mes, otro Bizum.</p>
+      <p className="po-how" data-plus-how>Escríbenos por WhatsApp{alias ? <> con tu cuenta <b>«{alias}»</b></> : null} y te decimos cómo pagar <b>{PLUS_PRICE}</b>. En cuanto lo confirmemos, tu profesor activa Plus en tu cuenta durante un mes y se abre todo al momento.</p>
       <p className="po-act">
         <a className="btn primary" href={waLink(alias)} target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>
         <a className="btn" href={`tel:+${PHONE_DIGITS}`}>Llamar</a>

@@ -994,7 +994,9 @@ export class Room {
   view(viewer: { teacher: true } | { pid: string }): RoomView {
     const s = this.s;
     const q = this.question;
-    const pq = q && s.q ? { ...publicView(q, s.q.inst), ...(s.q.review ? { review: true } : {}), ...(s.chestQs.includes(s.q.id) ? { chest: true } : {}) } : null;
+    // «Prüfungsfrage · cofre negro» solo donde de verdad se dan cofres (bloques de clase con objetos). En práctica no hay
+    // cofres: antes la etiqueta salía igual y el alumno se sentía estafado al acertar y no recibir nada.
+    const pq = q && s.q ? { ...publicView(q, s.q.inst), ...(q.unlock && !this.blockItems ? { unlock: false } : {}), ...(s.q.review ? { review: true } : {}), ...(s.chestQs.includes(s.q.id) ? { chest: true } : {}) } : null;
     const players = [...s.players].sort((a, b) => b.score - a.score).map((p) => ({
       id: p.id, name: p.name, score: p.score, streak: p.streak, connected: p.connected, shield: p.shield, sabotaged: !!p.sabot,
       items: p.inv.length, answered: !!s.answers[p.id]?.final, chests: p.chests.length, stars: p.stars + pendingStars(s.task, p.id),

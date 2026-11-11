@@ -1,4 +1,4 @@
-// Suscripción Plus mes a mes (sin pasarela de pago): el alumno paga por Bizum y el profesor confirma «Pago recibido»
+// Suscripción Plus mes a mes (sin pasarela de pago): el alumno paga (se acuerda por WhatsApp) y el profesor confirma «Pago recibido»
 // en Teacher OS, que suma 1 mes de Plus. Prueba gratis de 3 días que el alumno activa él mismo, una vez por cuenta.
 // Plus con fecha caduca solo (vuelve a Free); Plus «sin fecha» (activado a mano antes de esto) no caduca.
 // Se guarda en DATA_DIR/plus-billing.json (cloud-sync lo sube como el resto de *.json). El servidor decide.
@@ -9,7 +9,7 @@ export const PLUS_PRICE_EUR = 12.5;
 export const TRIAL_DAYS = 3;
 const DAY = 86_400_000;
 
-export interface Payment { at: number; months: number; eur: number; method: 'bizum' }
+export interface Payment { at: number; months: number; eur: number; /** «manual»: confirmado por el profesor. «bizum» = registros antiguos. */ method: 'manual' | 'bizum' }
 export interface Sub { until: number | null; trialAt?: number; trialUntil?: number; payments: Payment[] }
 interface Data { version: 1; subs: Record<string, Sub> }
 
@@ -53,7 +53,7 @@ export class PlusBilling {
   }
 
   /** «Pago recibido»: +N meses desde hoy o desde el final actual si aún no ha caducado. */
-  pay(id: string, months = 1, method: Payment['method'] = 'bizum'): PlusInfo {
+  pay(id: string, months = 1, method: Payment['method'] = 'manual'): PlusInfo {
     const s = (this.data.subs[id] ??= { until: null, payments: [] }), t = this.now();
     const base = s.until !== null && s.until > t ? s.until : t;
     s.until = addMonths(base, months);

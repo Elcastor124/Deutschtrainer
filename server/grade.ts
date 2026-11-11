@@ -107,6 +107,20 @@ export function compare(given: string, accept: string[], fuzzy: boolean): Match 
 
 const OK_LEVELS: Level[] = ['exact', 'loose', 'fold'];
 
+/** «Casi»: señala la palabra exacta que falla (antes solo decía «compárala con…» y el alumno no veía el das/dass). */
+export function nearNote(given: string, target: string): string {
+  const gw = clean(given).split(' '), tw = clean(target).split(' ');
+  const strip = (w: string) => w.replace(/[.,!?;:¿¡]/g, '');
+  if (gw.length === tw.length) {
+    const diff = tw.map((w, i) => [strip(gw[i]), strip(w)] as const).filter(([g, t]) => g !== t);
+    if (diff.length && diff.length <= 2) {
+      const extra = diff.some(([g, t]) => g.toLowerCase() === 'das' && t.toLowerCase() === 'dass') ? ' Conjunción = dass (con doble s); das es artículo o pronombre.' : '';
+      return `Casi: ${diff.map(([g, t]) => `«${g}» → «${t}»`).join(', ')}.${extra} Correcta: «${target}».`;
+    }
+  }
+  return `Casi: compárala con «${target}».`;
+}
+
 export interface Graded { status: Status; given: string; note?: string }
 
 /** Corrige una respuesta. «review» = dudosa → la decide el profesor (en práctica cuenta como fallo con pista). */
@@ -126,7 +140,7 @@ export function grade(q: Question, inst: Instance, a: Answer, practice: boolean)
     case 'build': {
       const m = compare(a.text ?? '', q.accept, !q.strict);
       if (OK_LEVELS.includes(m.level)) return { status: 'correct', given, note: m.note };
-      if (m.level === 'near') return review(`Casi: compárala con «${m.target}».`);
+      if (m.level === 'near') return review(nearNote(a.text ?? '', m.target));
       if (m.level === 'reorder') return review('Mismas palabras en otro orden: ¿es una variante válida?');
       return { status: 'wrong', given, note: m.note };
     }

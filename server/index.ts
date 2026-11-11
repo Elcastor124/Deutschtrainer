@@ -39,7 +39,7 @@ import { AiUsage } from './ai/usage.ts';
 import { FreeAccess, lektionOfPresentation } from './free-access.ts';
 import { PlusBilling, PLUS_PRICE_EUR, TRIAL_DAYS } from './plus-billing.ts';
 import { MockLlm } from './ai/mock-llm.ts';
-import { buildProviders, loadAiConfig } from './ai/providers.ts';
+import { buildProviders, loadAiConfig, OpenRouterFreeLlm } from './ai/providers.ts';
 
 const PORT = Number(process.env.PORT) || 4747;
 const ROOT = resolve(import.meta.dirname, '..');
@@ -359,9 +359,16 @@ const learning = createLearning({ accounts, log: () => progressHandler.log, bank
 // Klaus AI: sin claves ni KLAUS_ALLOW_PAID=1 todo corre en modo determinista (sin gasto). Ver server/ai/providers.ts.
 const aiConfig = loadAiConfig();
 const aiUsage = new AiUsage(aiConfig, { dataDir: DATA_DIR });
+const aiProviders = buildProviders(aiConfig, new MockLlm());
+// OpenRouter cambia los modelos gratis: al arrancar y cada 6 h se refresca la lista (solo :free; nunca cobra).
+if (aiProviders.llm instanceof OpenRouterFreeLlm && process.env.KLAUS_REFRESH_MODELS !== '0') {
+  const orLlm = aiProviders.llm;
+  const refresh = () => void orLlm.refreshFreeModels().then((m) => console.log(`[klaus-ai] modelos gratis: ${m.length} (${m.slice(0, 3).join(', ')}…)`));
+  refresh(); setInterval(refresh, 6 * 3_600_000).unref();
+}
 // Límites del plan Free (diapositivas del curso y /practica). DT_FREE_LIMITS=0 los apaga (solo para pruebas antiguas).
 const freeAccess = new FreeAccess({ dataDir: DATA_DIR, day: madridDay, enabled: process.env.DT_FREE_LIMITS !== '0' });
-// Plus mes a mes: el profesor confirma el Bizum («Pago recibido» = +1 mes) y la prueba de 3 días la activa el alumno.
+// Plus mes a mes: el profesor confirma el pago («Pago recibido» = +1 mes) y la prueba de 3 días la activa el alumno.
 // Con fecha manda la fecha (caduca sola → Free); sin fecha, el plan guardado (Plus activado a mano antes de esto).
 const plusBilling = new PlusBilling({ dataDir: DATA_DIR });
 aiUsage.resolvePlan = (id, stored) => { const u = plusBilling.untilOf(id); return u === null ? stored : u > Date.now() ? 'plus' : 'free'; };
@@ -369,7 +376,7 @@ const planOfAccount = (a: { id: string; alias: string }) => aiUsage.planOf(a.id,
 let presCatalog: { id: string; unit?: number }[] = [];
 try { presCatalog = JSON.parse(readFileSync(join(ROOT, 'public', 'presentaciones', 'catalogo.json'), 'utf8')); } catch { /* sin catálogo: nada que limitar */ }
 const klausAi = createKlausAi({
-  accounts, guard, providers: buildProviders(aiConfig, new MockLlm()), usage: aiUsage, store: new KlausStore(DATA_DIR),
+  accounts, guard, providers: aiProviders, usage: aiUsage, store: new KlausStore(DATA_DIR),
   teacherOk: (req) => !!guard.teacherFromRequest(req),
 });
 console.log(`[klaus-ai] LLM=${aiConfig.llm.provider} STT=${aiConfig.stt.provider} TTS=${aiConfig.tts.provider}${aiConfig.llm.reason ? ` (${aiConfig.llm.reason})` : ''}`);
@@ -482,7 +489,8 @@ function serve(req: IncomingMessage, res: ServerResponse) {
   }
   if (url.pathname === '/api/health') {
     res.writeHead(200, { 'content-type': 'application/json' });
-    return res.end(JSON.stringify({ ok: true, rooms: rooms.size, bank: bank.size, teacherAuth: guard.stats() }));
+    // Diagnóstico de Klaus sin secretos: qué proveedor está activo y, si es el modo sin IA, por qué.
+    return res.end(JSON.stringify({ ok: true, rooms: rooms.size, bank: bank.size, teacherAuth: guard.stats(), klausAi: { llm: aiConfig.llm.provider, keys: aiConfig.llm.keys?.length ?? 0, reason: aiConfig.llm.reason ?? null } }));
   }
   // Mi Plus: plan efectivo, fecha de fin, prueba gratis (una vez por cuenta, la activa el alumno).
   if (url.pathname === '/api/plus/me' || url.pathname === '/api/plus/trial') {

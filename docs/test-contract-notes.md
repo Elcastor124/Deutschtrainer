@@ -134,3 +134,28 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
   la prueba comprueba `[data-plan]` y `[data-plan-toggle]` por separado (mismo contrato: activar y quitar Plus).
 - El aviso diario solo sale en portadas (`/`, `/mi`, `/curso`, `/juegos`, `/examenes`, `/ranking`, `/tablon`): en la
   práctica tapaba los controles de Klaus (lo detectó `klaus-embedded-browser`).
+
+## Klaus con OpenRouter gratis de verdad (Schreibt, Redet, Unterricht) y fuera Bizum
+
+- Diagnóstico real (`scripts/klaus-ai-live.mjs`, claves de `.env.openrouter`): con la lista de modelos anterior, a menudo
+  NINGUNO respondía (2 con 429 de Google, uno colgado hasta el corte, otros con razonamiento obligatorio y respuesta
+  vacía) y solo se probaban 3 → caía al modo práctica. Uno además devolvía texto basura que pasaba por «IA».
+- Cambios en `OpenRouterFreeLlm`: se prueban todos los modelos disponibles (50 s de presupuesto, 22 s por intento),
+  el último que funcionó va primero, respuesta vacía → reintento con razonamiento mínimo, 403/404 (región) → fuera 24 h,
+  respuestas basura (`looksGarbled`) descartadas y el modelo castigado 30 min, motivo de cada fallo en el log (sin claves).
+  Lista nueva medida con `scripts/free-models-bench.mjs` y refresco de modelos `:free` al arrancar y cada 6 h.
+- `loadAiConfig`: una clave `sk-or-` basta para activar OpenRouter GRATIS aunque falte `KLAUS_LLM_PROVIDER`; se limpian
+  comillas/espacios/«Bearer». `KLAUS_LLM_PROVIDER=mock` lo apaga. Expectativa cambiada en `tests/openrouter-free.test.ts`
+  (antes: clave sola = mock). `/api/health` dice `klausAi.llm` y el motivo si está en modo sin IA.
+- Bizum fuera de la web: la tarjeta Plus dice «escríbenos por WhatsApp y te decimos cómo pagar». Teacher OS: «Pago
+  recibido» sin método. `plus-month-browser` comprueba que no aparece «Bizum».
+
+## Reporte de alumno: «cofre negro» en práctica de Nebensätze
+
+- Lo que pasó: en práctica salía la etiqueta «Prüfungsfrage · cofre negro», pero en práctica nunca se dan cofres
+  (solo en bloques de clase con objetos, `room.blockItems`). El alumno escribió «das» en vez de «dass» → «Falsch» con
+  un «Casi: compárala con…» donde no se veía la diferencia; luego la pregunta volvió como repaso (comportamiento
+  previsto: los fallos se repiten una vez) y con «dass» se la dio por buena.
+- Arreglo: en práctica la vista pública manda `unlock: false` (no se promete cofre); la nota «Casi» señala la palabra
+  exacta («das» → «dass» + recordatorio de la conjunción). Cofres de clase, BlackCard y puntos sin tocar.
+  Prueba: `tests/practice-cofre.test.ts`.

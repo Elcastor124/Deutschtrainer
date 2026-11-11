@@ -62,11 +62,17 @@ export function loadAiConfig(env: NodeJS.ProcessEnv = process.env): KlausAiConfi
   };
   // OpenRouter SOLO GRATUITO: no necesita KLAUS_ALLOW_PAID porque nunca puede cobrar (ver OpenRouterFreeLlm). Se activa con
   // KLAUS_LLM_PROVIDER=openrouter-free + OPENROUTER_API_KEY (y opcionalmente OPENROUTER_API_KEY_2 como reserva).
-  const orKeys = [env.OPENROUTER_API_KEY, env.OPENROUTER_API_KEY_2].filter((k): k is string => !!k && k.startsWith('sk-or-'));
+  // Tolerante con lo que se pega en Render: espacios, comillas, «Bearer », saltos de línea.
+  const clean = (v: string | undefined) => (v ?? '').trim().replace(/^["']|["']$/g, '').replace(/^Bearer\s+/i, '').trim();
+  const orKeys = [env.OPENROUTER_API_KEY, env.OPENROUTER_API_KEY_2].map(clean).filter((k) => k.startsWith('sk-or-'));
   const orModels = (env.KLAUS_FREE_MODELS || FREE_MODELS.join(',')).split(',').map((m) => m.trim()).filter((m) => m.endsWith(':free'));
-  const llm = env.KLAUS_LLM_PROVIDER === 'openrouter-free'
-    ? orKeys.length && orModels.length ? { provider: 'openrouter-free' as const, keys: orKeys, models: orModels } : { provider: 'mock' as const, reason: 'LLM gratuito: falta OPENROUTER_API_KEY o modelos :free' }
-    : pick(env.KLAUS_LLM_PROVIDER, 'anthropic', env.ANTHROPIC_API_KEY, prices.llmInPerM !== null && prices.llmOutPerM !== null, 'LLM');
+  // Con una clave sk-or- presente se usa OpenRouter GRATIS aunque falte KLAUS_LLM_PROVIDER (o venga como «openrouter»).
+  // Solo KLAUS_LLM_PROVIDER=mock lo apaga a propósito; «anthropic» sigue su propio camino (de pago, con candados).
+  const want = clean(env.KLAUS_LLM_PROVIDER).toLowerCase();
+  const useFree = want === 'openrouter-free' || want === 'openrouter' || (!want && orKeys.length > 0);
+  const llm = useFree
+    ? orKeys.length && orModels.length ? { provider: 'openrouter-free' as const, keys: orKeys, models: orModels } : { provider: 'mock' as const, reason: env.OPENROUTER_API_KEY ? 'LLM gratuito: OPENROUTER_API_KEY no parece una clave de OpenRouter (debe empezar por sk-or-)' : 'LLM gratuito: falta OPENROUTER_API_KEY en el servidor' }
+    : pick(want || undefined, 'anthropic', env.ANTHROPIC_API_KEY, prices.llmInPerM !== null && prices.llmOutPerM !== null, 'LLM');
   const stt = pick(env.KLAUS_STT_PROVIDER, 'openai', env.OPENAI_API_KEY, true, 'STT');
   const tts = pick(env.KLAUS_TTS_PROVIDER, 'openai', env.OPENAI_API_KEY, prices.ttsPer1kChars !== null, 'TTS');
   return {
@@ -125,7 +131,9 @@ export class AnthropicLlm implements LlmProvider {
 }
 
 /** Modelos gratuitos de OpenRouter probados con salida JSON por esquema (en orden de preferencia). Solo se admiten ids «:free». */
-export const FREE_MODELS = ['dots-studio/dots-3-note-preview:free', 'nvidia/nemotron-3.5-super-vl:free', 'google/gemma-4-31b-it:free', 'google/gemma-4-26b-a4b-it:free', 'recursive/flint-v1.0:free'];
+// Medidos con una tarea real de Klaus (JSON) el 2026-11-11 (scripts/free-models-bench.mjs), de más rápido a más lento.
+// La lista de OpenRouter cambia: además el servidor refresca los modelos :free disponibles (ver refreshFreeModels).
+export const FREE_MODELS = ['nvidia/nemotron-3.5-lightning:free', 'baidu/ernie-5.5-flash-preview:free', 'nvidia/nemotron-3-ultra-550b-a55b:free', 'recursive/flint-v1.0:free', 'liquid/lfm-3-1.7b:free', 'dots-studio/dots-3-note-preview:free', 'nvidia/nemotron-3.5-super-vl:free', 'google/gemma-4-31b-it:free', 'google/gemma-4-26b-a4b-it:free'];
 
 /**
  * OpenRouter, EXCLUSIVAMENTE gratis. Candados (cualquiera basta para no pagar):
@@ -141,26 +149,49 @@ export class OpenRouterFreeLlm implements LlmProvider {
   #keys: string[]; #models: string[]; #fetch: FetchLike; #fallback: LlmProvider; #base: string; #off = false;
   /** Modelo → instante hasta el que se evita (tras 429/fallo), para no insistir sobre uno saturado. */
   #cool = new Map<string, number>(); #next = 0;
+  /** Último modelo que respondió bien: se prueba primero (los gratis cambian de humor cada pocos minutos). */
+  #good: string | null = null;
   /** Modelos que no permiten desactivar el razonamiento (aprendido tras un 400). */
   #mustReason = new Set<string>();
   constructor(o: { keys: string[]; models: string[]; fallback: LlmProvider; fetch?: FetchLike; baseUrl?: string }) {
     this.#keys = o.keys; this.#models = o.models.filter((m) => m.endsWith(':free')); this.#fallback = o.fallback; this.#fetch = o.fetch ?? fetch; this.#base = o.baseUrl ?? 'https://openrouter.ai/api/v1';
   }
-  get model() { return this.#models[0] ?? 'none'; }
+  get model() { return this.#good ?? this.#models[0] ?? 'none'; }
+  /** Añade los modelos :free que OpenRouter lista ahora y quita los que ya no existen (mantiene el orden medido). */
+  async refreshFreeModels(): Promise<string[]> {
+    try {
+      const r = await this.#fetch(`${this.#base}/models`, { signal: AbortSignal.timeout(15_000) } as never);
+      if (!r.ok) return this.#models;
+      const live = new Set(((await r.json()) as { data?: { id: string }[] }).data?.map((m) => m.id).filter((id) => id.endsWith(':free')) ?? []);
+      if (!live.size) return this.#models;
+      const kept = this.#models.filter((m) => live.has(m));
+      const extra = [...live].filter((m) => !kept.includes(m) && !/code|coder|omni|vl$/i.test(m.replace(/:free$/, '')));
+      this.#models = [...kept, ...extra];
+      return this.#models;
+    } catch { return this.#models; }
+  }
   get disabled() { return this.#off; }
+  /** Motivo del fallo por modelo en el log del servidor (sin claves ni texto del alumno). */
+  #why(req: LlmRequest, model: string, msg: string) { console.warn(`[klaus-ai] ${req.task} · ${model}: ${msg.replace(/sk-or-[\w-]+/g, 'sk-or-***')}`); }
   async complete(req: LlmRequest): Promise<LlmResult> {
     const t0 = Date.now(), now = Date.now();
-    const order = this.#models.filter((m) => (this.#cool.get(m) ?? 0) <= now);
-    const queue = this.#off ? [] : order.slice(0, 3);
+    // Todos los modelos disponibles (antes solo 3), con el último que funcionó delante. Presupuesto total 50 s y
+    // como mucho ~22 s por intento: un modelo colgado ya no se come todo el tiempo del alumno.
+    let order = this.#models.filter((m) => (this.#cool.get(m) ?? 0) <= now);
+    if (!order.length) order = [...this.#models].sort((a, b) => (this.#cool.get(a) ?? 0) - (this.#cool.get(b) ?? 0)).slice(0, 2);
+    if (this.#good && order.includes(this.#good)) order = [this.#good, ...order.filter((m) => m !== this.#good)];
+    const queue = this.#off ? [] : order;
+    const BUDGET = 50_000;
     for (let i = 0; i < queue.length; i++) {
       const model = queue[i];
-      if (Date.now() - t0 > 40_000) break; // el alumno no espera más: responde el modo determinista
+      const left = BUDGET - (Date.now() - t0);
+      if (left < 4_000) break; // el alumno no espera más: responde el modo determinista
       if (!model.endsWith(':free')) continue;
       const key = this.#keys[this.#next++ % this.#keys.length];
       let res: Response;
       try {
         res = await this.#fetch(`${this.#base}/chat/completions`, {
-          method: 'POST', signal: signalFor(req.signal),
+          method: 'POST', signal: AbortSignal.any([AbortSignal.timeout(Math.min(22_000, left)), ...(req.signal ? [req.signal] : [])]),
           headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json', 'x-title': 'Deutschtrainer' },
           body: JSON.stringify({
             // Muchos modelos gratis «piensan» antes de responder: sin razonamiento (o mínimo si es obligatorio) y margen de tokens.
@@ -169,19 +200,37 @@ export class OpenRouterFreeLlm implements LlmProvider {
             response_format: { type: 'json_schema', json_schema: { name: req.schemaName, strict: true, schema: req.schema } },
           }),
         });
-      } catch (e) { if (req.signal?.aborted) throw mapFetchError(e, req.signal); this.#cool.set(model, Date.now() + 60_000); continue; }
+      } catch (e) { if (req.signal?.aborted) throw mapFetchError(e, req.signal); this.#why(req, model, `red: ${(e as Error).name}`); this.#cool.set(model, Date.now() + 60_000); continue; }
       if (res.status === 400 && !this.#mustReason.has(model)) { this.#mustReason.add(model); i--; continue; } // mismo modelo, con razonamiento mínimo
-      if (!res.ok) { this.#cool.set(model, Date.now() + (res.status === 429 ? 90_000 : 300_000)); if (res.status === 401 || res.status === 402) this.#keys = this.#keys.filter((k) => k !== key); if (!this.#keys.length) this.#off = true; continue; }
+      if (!res.ok) { this.#why(req, model, `HTTP ${res.status} ${(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 160)}`); this.#cool.set(model, Date.now() + (res.status === 429 ? 90_000 : res.status === 403 || res.status === 404 ? 86_400_000 : 300_000)); if (res.status === 401 || res.status === 402) this.#keys = this.#keys.filter((k) => k !== key); if (!this.#keys.length) this.#off = true; continue; }
       let body: { choices?: { message?: { content?: string | null } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number; cost?: number } };
-      try { body = await res.json() as typeof body; } catch { this.#cool.set(model, Date.now() + 60_000); continue; }
+      try { body = await res.json() as typeof body; } catch { this.#why(req, model, 'cuerpo ilegible'); this.#cool.set(model, Date.now() + 60_000); continue; }
       if ((body.usage?.cost ?? 0) > 0) { this.#off = true; console.error('[klaus-ai] OpenRouter devolvió un coste > 0: IA desactivada (solo se permite gratis).'); break; }
       const json = parseJsonLoose(body.choices?.[0]?.message?.content);
-      if (json === undefined) { this.#cool.set(model, Date.now() + 30_000); continue; }
+      // Respuesta vacía: suele ser que el razonamiento se comió los tokens → mismo modelo con razonamiento mínimo, una vez.
+      if (json === undefined && !String(body.choices?.[0]?.message?.content ?? '').trim() && !this.#mustReason.has(model)) { this.#mustReason.add(model); this.#why(req, model, 'respuesta vacía → reintento con razonamiento mínimo'); i--; continue; }
+      if (json === undefined) { this.#why(req, model, `sin JSON: ${String(body.choices?.[0]?.message?.content ?? '').replace(/\s+/g, ' ').slice(0, 120)}`); this.#cool.set(model, Date.now() + 30_000); continue; }
+      // Basura (texto aleatorio en varios alfabetos): se descarta y el modelo queda castigado un buen rato.
+      if (looksGarbled(json)) { this.#why(req, model, 'respuesta sin sentido (mezcla de alfabetos) → descartada'); this.#cool.set(model, Date.now() + 1_800_000); if (this.#good === model) this.#good = null; continue; }
+      this.#good = model;
       return { json, usage: { inputTokens: body.usage?.prompt_tokens ?? 0, outputTokens: body.usage?.completion_tokens ?? 0 }, model, latencyMs: Date.now() - t0 };
     }
+    console.warn(`[klaus-ai] ${req.task}: ningún modelo gratis respondió (${queue.length} probados, ${Date.now() - t0} ms) → modo práctica`);
     const r = await this.#fallback.complete(req);
     return { ...r, fallback: true, latencyMs: Date.now() - t0 };
   }
+}
+/** ¿Texto basura? Klaus solo escribe en español/alemán (latín). Mucho texto en otros alfabetos (cirílico, CJK, árabe,
+ *  devanagari, birmano…) o símbolos raros = el modelo ha descarrilado. Mira todas las cadenas del JSON. */
+export function looksGarbled(json: unknown): boolean {
+  const strings: string[] = [];
+  const walk = (v: unknown) => { if (typeof v === 'string') strings.push(v); else if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === 'object') Object.values(v).forEach(walk); };
+  walk(json);
+  const s = strings.join(' ');
+  const letters = s.match(/\p{L}/gu)?.length ?? 0;
+  if (letters < 12) return false;
+  const foreign = s.match(/[\p{Script=Cyrillic}\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Arabic}\p{Script=Devanagari}\p{Script=Myanmar}\p{Script=Greek}\p{Script=Thai}\p{Script=Hebrew}]/gu)?.length ?? 0;
+  return foreign / letters > 0.08;
 }
 /** Acepta JSON puro o envuelto en ```json … ```. */
 export function parseJsonLoose(s: unknown): unknown {

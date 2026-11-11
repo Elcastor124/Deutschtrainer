@@ -1,6 +1,6 @@
 // Prueba de navegador: Plus mes a mes, con clics reales.
 //  1) alumno Free entra en /mi → aparece el aviso diario (misión/racha); «Cerrar» lo oculta hasta mañana
-//  2) /plus → instrucciones de Bizum con su alias como concepto → «Probar Plus 3 días gratis» → Redet se abre
+//  2) /plus → cómo pedirlo por WhatsApp con su alias → «Probar Plus 3 días gratis» → Redet se abre
 //  3) el botón de prueba ya no aparece (una vez por cuenta)
 //  4) profesor → Teacher OS: tarjeta «Plus · suscripciones» (1 en prueba) → ficha → «Pago recibido · +1 mes»
 //     → la ficha dice «Plus hasta el …», historial con 12,50 €; Übersicht: ingreso del mes 12,50 €
@@ -39,10 +39,11 @@ try {
   await S.go('/curso?intro=0'); await sleep(1500);
   check(await S.eval(`!document.querySelector('[data-daily-nudge]')`), 'cerrado sigue oculto el resto del día');
 
-  // 2) /plus: Bizum + prueba
+  // 2) /plus: cómo pedirlo + prueba
   await S.go('/plus?intro=0');
-  check(await waitFor(S, has('[data-plus-bizum]')), '/plus: instrucciones de Bizum');
-  check(await S.eval(`document.querySelector('[data-plus-bizum]').innerText.includes('«${alias}»') && document.querySelector('[data-plus-bizum]').innerText.includes('12,50')`), 'Bizum: concepto = su alias y 12,50 €/mes');
+  check(await waitFor(S, has('[data-plus-how]')), '/plus: cómo pedir Plus');
+  check(await S.eval(`!/bizum/i.test(document.body.innerText)`), '/plus: sin Bizum (el profesor no lo tiene)');
+  check(await S.eval(`document.querySelector('[data-plus-how]').innerText.includes('«${alias}»') && document.querySelector('[data-plus-how]').innerText.includes('12,50')`), 'cómo pedirlo: con su alias y 12,50 €/mes');
   check(await waitFor(S, has('[data-plus-trial] button')), '/plus: botón «Probar Plus 3 días gratis»');
   await snap(S, 'plus-trial', '[data-plus-trial]');
   await S.eval(`document.querySelector('[data-plus-trial] button').click(); true`);

@@ -23,7 +23,7 @@ export function PlusPage() {
           <p className="dt-eyebrow">Deutschtrainer Plus</p>
           <h1>Free o Plus<b className="dt-punkt">.</b></h1>
           {isPlus
-            ? <p data-plus-active>Tu cuenta ya tiene <b>{me?.trial ? 'la prueba de Plus' : 'Plus'}</b>{untilTxt ? <> hasta el <b>{untilTxt}</b></> : null}: Klaus, todo el curso y la práctica sin límite.{untilTxt ? ' Para seguir, haz el Bizum del mes siguiente antes de esa fecha.' : ''}</p>
+            ? <p data-plus-active>Tu cuenta ya tiene <b>{me?.trial ? 'la prueba de Plus' : 'Plus'}</b>{untilTxt ? <> hasta el <b>{untilTxt}</b></> : null}: Klaus, todo el curso y la práctica sin límite.{untilTxt ? ' Para seguir, escríbenos antes de esa fecha para renovar el mes.' : ''}</p>
             : <p>Con el plan Free tienes cada día 2 Lektionen nuevas del curso y 2 prácticas. Exámenes, juegos y teoría, siempre abiertos.</p>}
           <table className="po-table">
             <thead><tr><th scope="col" /><th scope="col">Free</th><th scope="col">Plus</th></tr></thead>

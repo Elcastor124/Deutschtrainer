@@ -1,7 +1,7 @@
 // OpenRouter SOLO GRATIS: nunca envía modelos de pago, siempre pide max_price 0, se apaga si ve un coste y cae al modo
 // determinista si los modelos gratis están saturados. Sin red: fetch simulado.
 import { describe, expect, it } from 'vitest';
-import { FREE_MODELS, OpenRouterFreeLlm, buildProviders, loadAiConfig, parseJsonLoose, type LlmProvider, type LlmRequest } from '../server/ai/providers.ts';
+import { FREE_MODELS, OpenRouterFreeLlm, buildProviders, loadAiConfig, looksGarbled, parseJsonLoose, type LlmProvider, type LlmRequest } from '../server/ai/providers.ts';
 import { MockLlm } from '../server/ai/mock-llm.ts';
 
 const req: LlmRequest = { task: 'redet_turn', system: 'sys', user: '<texto_alumno>Hallo</texto_alumno>', input: { scenarioId: 'libre', turn: 0, text: 'Hallo' }, schemaName: 's', schema: { type: 'object' }, maxTokens: 100 };
@@ -21,7 +21,12 @@ describe('configuración', () => {
     const c = loadAiConfig({ KLAUS_LLM_PROVIDER: 'openrouter-free', OPENROUTER_API_KEY: 'sk-or-v1-a', OPENROUTER_API_KEY_2: 'sk-or-v1-b', KLAUS_FREE_MODELS: 'openai/gpt-5,x/y:free' } as NodeJS.ProcessEnv);
     expect(c.llm).toMatchObject({ provider: 'openrouter-free', keys: ['sk-or-v1-a', 'sk-or-v1-b'], models: ['x/y:free'] });
     expect(loadAiConfig({ KLAUS_LLM_PROVIDER: 'openrouter-free' } as NodeJS.ProcessEnv).llm.provider).toBe('mock');
-    expect(loadAiConfig({ OPENROUTER_API_KEY: 'sk-or-v1-a' } as NodeJS.ProcessEnv).llm.provider).toBe('mock');
+    // Antes: sin KLAUS_LLM_PROVIDER la clave sola NO activaba nada (y en producción Klaus se quedaba sin IA por olvidar esa variable).
+    // Ahora: una clave sk-or- basta para OpenRouter GRATIS; KLAUS_LLM_PROVIDER=mock lo apaga a propósito. Ver docs/test-contract-notes.md.
+    expect(loadAiConfig({ OPENROUTER_API_KEY: 'sk-or-v1-a' } as NodeJS.ProcessEnv).llm.provider).toBe('openrouter-free');
+    expect(loadAiConfig({ OPENROUTER_API_KEY: ' "Bearer sk-or-v1-a" ', KLAUS_LLM_PROVIDER: 'OpenRouter' } as NodeJS.ProcessEnv).llm).toMatchObject({ provider: 'openrouter-free', keys: ['sk-or-v1-a'] });
+    expect(loadAiConfig({ OPENROUTER_API_KEY: 'sk-or-v1-a', KLAUS_LLM_PROVIDER: 'mock' } as NodeJS.ProcessEnv).llm.provider).toBe('mock');
+    expect(loadAiConfig({ OPENROUTER_API_KEY: 'abc' } as NodeJS.ProcessEnv).llm.provider).toBe('mock');
     expect(FREE_MODELS.every((m) => m.endsWith(':free'))).toBe(true);
     // Voz sigue apagada: no hay STT/TTS gratis aquí.
     const p = buildProviders(c, new MockLlm());
@@ -30,6 +35,26 @@ describe('configuración', () => {
 });
 
 describe('peticiones', () => {
+  it('respuesta basura (mezcla de alfabetos) → se descarta y responde el siguiente modelo; el bueno pasa delante la próxima vez', async () => {
+    const junk = JSON.stringify({ reply: 'Ι subsidi functionPxMAX function, Thisльныеno,精将Н and and激∞ဒ.（,,极分 aquellas होते arrangements' });
+    expect(looksGarbled(JSON.parse(junk))).toBe(true);
+    expect(looksGarbled({ text: 'En alemán la edad va con «sein»: Ich bin 14 Jahre alt. Müßig, schön, Straße.' })).toBe(false);
+    const { f, calls } = spy([ok(junk), ok('{"reply":"Hallo!"}'), ok('{"reply":"Wieder"}')]);
+    const llm = new OpenRouterFreeLlm({ keys: ['sk-or-v1-a'], models: ['junk:free', 'good:free'], fallback, fetch: f });
+    expect((await llm.complete(req)).json).toEqual({ reply: 'Hallo!' });
+    expect((await llm.complete(req)).json).toEqual({ reply: 'Wieder' });
+    expect(calls.map((c) => c.body.model)).toEqual(['junk:free', 'good:free', 'good:free']);
+  });
+  it('prueba TODOS los modelos disponibles (antes solo 3) antes de pasar al modo práctica', async () => {
+    const { f, calls } = spy([new Response('{}', { status: 429 }), new Response('{}', { status: 429 }), new Response('{}', { status: 429 }), ok('{"reply":"Vier"}')]);
+    const r = await new OpenRouterFreeLlm({ keys: ['sk-or-v1-a'], models: ['a:free', 'b:free', 'c:free', 'd:free'], fallback, fetch: f }).complete(req);
+    expect(r.json).toEqual({ reply: 'Vier' }); expect(calls).toHaveLength(4);
+  });
+  it('respuesta vacía (el razonamiento se comió los tokens) → mismo modelo con razonamiento mínimo', async () => {
+    const { f, calls } = spy([ok(''), ok('{"reply":"Jetzt"}')]);
+    const r = await new OpenRouterFreeLlm({ keys: ['sk-or-v1-a'], models: ['a:free'], fallback, fetch: f }).complete(req);
+    expect(r.json).toEqual({ reply: 'Jetzt' }); expect(calls[1].body.reasoning).toEqual({ effort: 'low', exclude: true });
+  });
   it('cada petición: modelo :free, max_price 0, sin fallbacks de pago y JSON por esquema', async () => {
     const { f, calls } = spy([ok('{"reply":"Hallo!"}')]);
     const llm = new OpenRouterFreeLlm({ keys: ['sk-or-v1-a'], models: ['a/b:free', 'paid/model'], fallback, fetch: f });
