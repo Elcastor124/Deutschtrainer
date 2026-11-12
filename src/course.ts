@@ -41,10 +41,6 @@ export interface CourseUnit {
   exam?: boolean;
   /** Sin paso de Repaso propio (la presentación de repaso pasa a «Ver»). Lektion 1: se pidió quitar esa etapa. */
   noReviewStep?: boolean;
-  /** Texto del botón de práctica (por defecto «Practicar ahora»). */
-  practiceLabel?: string;
-  /** Duración de la clase en minutos (se muestra junto al nivel). */
-  minutes?: number;
   steps: CourseStep[];
 }
 
@@ -103,11 +99,10 @@ const SEEDS: UnitSeed[] = [
     summary: 'Repaso general interactivo: estructuras, ejercicios y diccionario de todo el curso.',
     goals: ['Combinar Präsens, Perfekt y Nebensätze', 'Elegir el caso correcto (Akkusativ/Dativ)', 'Usar el vocabulario de todas las Lektionen', 'Sentirme listo para el simulacro'],
     topics: ['vocab', 'perfekt', 'nebensatz', 'dativ', 'akkusativ'], presentation: 'sprache-in-bewegung', games: ['jenga', 'jugar', 'boxeo'], workshop: true, klaus: ['akk-01', 'dat-01', 'perf-01', 'neben-01'] },
-  { id: 'drei-regeln', title: 'Drei Regeln, ein Satz · Mein Alltag auf Deutsch', de: 'Ich muss meinen Bruder anrufen.', level: 'A1–A2', minutes: 75,
-    summary: 'Una clase de 75 minutos que junta tres reglas en una sola frase: posesivos (repaso), verbos modales y verbos separables.',
-    goals: ['Elegir mein/dein/sein/ihr/unser… y su terminación en Akkusativ (meinen Bruder)', 'Conjugar können, müssen, wollen, dürfen y möchten, con el modal en 2.ª posición', 'Colocar el prefijo de un verbo separable al final (Ich rufe meinen Bruder an)', 'Combinar las tres reglas y explicar por qué: Ich muss meinen Bruder anrufen'],
-    topics: ['possessiv', 'modal', 'trennbar', 'satzbau'], presentation: 'drei-regeln', presentationNote: 'Clase de 75 minutos con ejercicios: posesivos (repaso), verbos modales, verbos separables, reto final y Mini-Prüfung.',
-    practiceLabel: 'Practicar estos temas', games: [], klaus: ['poss-01', 'modal-01', 'trenn-01'] },
+  { id: 'mein-alltag', title: 'Mein Alltag · Modalverben y verbos separables', de: 'Ich muss meinen Bruder anrufen.', level: 'A1–A2',
+    summary: 'Posesivos en Akkusativ (repaso), verbos modales y verbos separables en frases del día a día.',
+    goals: ['Usar mein/dein/sein/ihr… en Akkusativ (meinen Bruder)', 'Conjugar können, müssen, wollen, dürfen y möchten', 'Poner el prefijo separable al final (Ich rufe … an)', 'Combinarlo: Ich muss meinen Bruder anrufen'],
+    topics: ['possessiv', 'modal', 'trennbar', 'satzbau'], presentation: 'mein-alltag', games: ['jenga', 'jugar'], klaus: ['poss-01', 'modal-01', 'trenn-01'] },
   { id: 'road-to-b1', title: 'Die erste Prüfung · Simulacro', de: 'Viel Erfolg!', level: 'A1–A2 → B1',
     summary: 'Simulacro de examen de 105 minutos guiado por el profesor: lectura, dictado y audición.',
     goals: ['Leer un texto y responder con seguridad', 'Escribir un dictado', 'Entender audios cortos', 'Gestionar el tiempo de un examen'],
@@ -130,7 +125,7 @@ function buildSteps(u: UnitSeed): CourseStep[] {
     const reviewInVer: StepLink[] = u.noReviewStep && u.review ? [{ label: u.review.label, href: presentationHref(u.review.id), external: true }] : [];
     steps.push(mk('ver', u.presentationNote ?? 'Abre la presentación de clase y recorre los ejemplos.', { label: 'Abrir presentación', href: presentationHref(pres), external: true },
       [...study, ...(u.pdf ? [{ label: 'PDF con soluciones', href: pdfHref(pres), external: true }] : []), ...reviewInVer]));
-    steps.push(mk('practicar', 'Preguntas sin tiempo de los temas de esta Lektion.', { label: u.practiceLabel ?? 'Practicar ahora', href: `/practica${q}` }));
+    steps.push(mk('practicar', 'Preguntas sin tiempo de los temas de esta Lektion.', { label: 'Practicar ahora', href: `/practica${q}` }));
     // Los juegos (BlackCard, Jenga, Boxen) viven en /juegos: la ruta se centra en presentación, práctica y repaso.
     if (u.noReviewStep) return steps.map((s, i) => ({ ...s, n: i + 1 }));
     const extra: StepLink[] = [];

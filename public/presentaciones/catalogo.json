@@ -156,20 +156,18 @@
     "sha256": "f5612efa16684547fedac306680d719e16f171ecb4ebab9a11fce2323e3a8d64"
   },
   {
-    "id": "drei-regeln",
+    "id": "mein-alltag",
     "unit": 8,
-    "title": "Drei Regeln, ein Satz",
-    "description": "Possessivartikel, Modalverben und trennbare Verben.",
-    "file": "/presentaciones/drei-regeln.html",
+    "title": "Mein Alltag · Possessivartikel, Modalverben y verbos separables",
+    "description": "Posesivos en Akkusativ, können/müssen/wollen/dürfen/möchten y verbos separables; frases como «Ich muss meinen Bruder anrufen».",
+    "file": "/presentaciones/mein-alltag.html",
     "topics": [
       "Possessivartikel",
       "Modalverben",
-      "Trennbare Verben",
-      "Satzbau"
+      "Trennbare Verben"
     ],
     "level": "A1–A2",
-    "minutes": 75,
-    "source": "drei-regeln.html (escrita en el repositorio)",
-    "sha256": "fdf0a39ba8c9a38ce63dad056134d7a6983e1d43f29b5b4dd46363df397991f3"
+    "source": "mein-alltag.html (escrita en el repositorio)",
+    "sha256": "aa5fe01059e32f6a26cf1b853d79bde2df6165898b199d1dc3ece29179f35e73"
   }
 ]

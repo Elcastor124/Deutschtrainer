@@ -185,18 +185,11 @@ Comprobado con una sonda en navegador real: `?temas=` preselecciona, iniciar pr�
 - **Aviso diario**: en /mi no se repite si dice lo mismo que la tarjeta «Misión de hoy»; en móvil la página reserva su hueco abajo. «×» de 44 px.
 - Textos internos fuera («que nos pasaste», «Dictado: no configurado»), contraste del rojo sobre papel en /plus (AA), `role="img"` en el marcador de puntos, alumno nuevo sin «0 · 0 días · 0» ni «Sin nivel asignado».
 
-## «Drei Regeln, ein Satz» (Lektion 8, rama `feat/drei-regeln-ein-satz`)
+## «Mein Alltag» (Lektion 8)
 
-Presentación nativa de 75 min (`public/presentaciones/drei-regeln.html`, 20 diapositivas, datos en un `<script type="application/json">` que lee `tests/drei-regeln.test.ts`).
-Entra en el catálogo con `node scripts/catalog-native.mjs` (calcula la huella SHA-256 y no toca las diez importadas; `import-presentations.mjs` sigue sin regenerar esta).
+Presentación de clase escrita en el repositorio (`public/presentaciones/mein-alltag.html`, 20 diapositivas) con el mismo motor, estilos y controles que `unterwegs.html` (flip, reveal, step, quiz `mkQuiz`, builder, temporizador, notas, teclado). Entra en el catálogo con `node scripts/catalog-native.mjs`, que calcula su SHA-256 sin tocar las diez importadas.
 
-Expectativas que cambian a propósito (no se relajó ninguna prueba: solo reflejan que hay una Lektion más):
-- `tests/course.test.ts` · orden del curso: ahora `…, sprache-in-bewegung, drei-regeln, road-to-b1` y las unidades son 1–9. La nueva es la **8** y el simulacro pasa a ser la 9; **las Lektionen 1–7 conservan su número** (el plan Free guarda por número qué Lektionen abrió cada cuenta, y esas no se mueven).
-- `tests/course.test.ts` · `courseOrder`: el catálogo ordenado termina en `drei-regeln`.
-- `tests/presentations.test.ts` y `tests/teacher-os.test.ts` · «diez» presentaciones pasa a **once** (diez importadas + la nativa). Los cinco PDF no cambian: esta no tiene PDF y no se enlaza ninguno.
-
-Decisiones:
-- Se añade a la ruta existente (unidad con presentación, práctica con los 4 temas y repaso, objetivos y progreso por pasos); no se crea página ni biblioteca nuevas. Aparece en el Tema 1 de `/biblioteca` por el campo `unit` (el Tema 1 agrupa todas las Lektionen salvo el simulacro).
-- Abrir la presentación no marca nada: el progreso sigue siendo el de los pasos que marca el alumno.
-- Sin sala ni sincronización: como el resto de presentaciones del catálogo es autónoma (sin servidor); el profesor la controla con el teclado desde el proyector y los alumnos la abren en su equipo. La Mini-Prüfung guarda el intento en `sessionStorage` del propio navegador y **no envía nada al servidor**.
-- `minutes` (opcional) en `catalogo.json`/`Presentation` para mostrar «75 min» en el curso y en la ficha de la biblioteca.
+Expectativas que cambian a propósito (hay una Lektion más; no se relajó ninguna prueba):
+- `tests/course.test.ts`: orden `…, sprache-in-bewegung, mein-alltag, road-to-b1`; la nueva es la 8 y el simulacro la 9. Las Lektionen 1–7 conservan su número (el plan Free guarda por número las Lektionen abiertas).
+- `tests/course.test.ts` · `courseOrder`: el catálogo ordenado termina en `mein-alltag`.
+- `tests/presentations.test.ts` y `tests/teacher-os.test.ts`: «diez» presentaciones pasa a once. Los cinco PDF no cambian.

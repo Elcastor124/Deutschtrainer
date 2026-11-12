@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mein Alltag · Possessivartikel, Modalverben y verbos separables</title>
+<link rel="stylesheet" href="/design-tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:var(--dt-ink-0); --ink:var(--dt-paper); --line:var(--dt-hair-2); --dim:var(--dt-muted);
+  --teal:#14b8a6; --teal2:#0f766e; --coral:var(--dt-red); --sky:#0ea5e9; --orange:#f97316;
+  --purple:#a855f7; --pink:#ec4899; --gold:var(--dt-gold); --mint:#10b981; --blue:#2563eb;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--dt-display);background:var(--navy);color:var(--ink)}
+
+/* ===== DECK + TRANSICIONES ===== */
+#deck{position:absolute;inset:0}
+section.slide{position:absolute;inset:0;padding:5vh 6vw 9vh;display:flex;flex-direction:column;justify-content:center;
+  overflow-y:auto;overflow-x:hidden;z-index:1;pointer-events:none;opacity:0;
+  clip-path:circle(0% at var(--cx,50%) 50%);transition:clip-path .75s cubic-bezier(.7,0,.2,1),opacity .4s ease}
+section.slide.on{z-index:2;pointer-events:auto;opacity:1;clip-path:circle(160% at var(--cx,50%) 50%)}
+section.slide::-webkit-scrollbar{width:6px}section.slide::-webkit-scrollbar-thumb{background:rgba(127,127,127,.4);border-radius:9px}
+section.slide>*:not(.orbs){position:relative;z-index:1}
+.slide.on .a{animation:rise .75s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 70ms + 260ms)}
+@keyframes rise{from{opacity:0;transform:translateY(34px) scale(.97);filter:blur(6px)}}
+.slide.on .pop-in{animation:popIn .7s cubic-bezier(.2,1.6,.4,1) backwards;animation-delay:calc(var(--i,0) * 70ms + 260ms)}
+@keyframes popIn{from{opacity:0;transform:scale(.4) rotate(-8deg)}}
+.orbs{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.orbs span{position:absolute;font-weight:900;line-height:1;opacity:.07;animation:drift linear infinite}
+@keyframes drift{0%{transform:translateY(0) rotate(0)}50%{transform:translateY(-50px) rotate(20deg)}100%{transform:translateY(0) rotate(0)}}
+
+/* ===== FONDOS ===== */
+.bg-navy{background:radial-gradient(900px 600px at 80% 0%,color-mix(in srgb,var(--dt-red) 9%,transparent),transparent 70%),var(--dt-ink-1)}
+.bg-light{background:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/44px 44px,radial-gradient(900px 600px at 80% 0%,color-mix(in srgb,var(--dt-red) 9%,transparent),transparent 70%),var(--dt-ink-1)}
+.bg-blue{background:linear-gradient(140deg,color-mix(in srgb,#3b82f6 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-teal{background:linear-gradient(140deg,color-mix(in srgb,#14b8a6 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-coral{background:linear-gradient(140deg,color-mix(in srgb,var(--dt-red) 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-purple{background:linear-gradient(140deg,color-mix(in srgb,#8b5cf6 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-gold{background:linear-gradient(140deg,color-mix(in srgb,#fcd34d 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-mint{background:linear-gradient(140deg,color-mix(in srgb,#10b981 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+.bg-pink{background:linear-gradient(140deg,color-mix(in srgb,#ec4899 30%,var(--dt-ink-1)) 0%,var(--dt-ink-0) 100%);color:var(--dt-paper)}
+
+/* ===== TIPOGRAFÍA ===== */
+.eyebrow{font-size:clamp(11px,1.1vw,15px);letter-spacing:.42em;text-transform:uppercase;font-weight:800;opacity:.65;margin-bottom:1.6vh}
+h1{font-size:clamp(50px,9.5vw,150px);line-height:.86;letter-spacing:-.05em;font-weight:900}
+h2{font-size:clamp(30px,4.4vw,66px);line-height:.95;letter-spacing:-.035em;font-weight:900}
+.lead{font-size:clamp(16px,1.9vw,28px);line-height:1.38;font-weight:600}
+.tiny{font-size:clamp(12px,1.1vw,16px);opacity:.7;font-weight:600}
+.row{display:flex;gap:1.1vw;flex-wrap:wrap;align-items:center}
+.grid{display:grid;gap:1.2vw}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:4vw;align-items:center}
+.mt1{margin-top:1.1vh}.mt2{margin-top:2.1vh}.mt3{margin-top:3.2vh}
+.k{font-weight:900;padding:.02em .38em;border-radius:.32em;color:#fff;white-space:nowrap;display:inline-block}
+.k.weil{background:var(--sky)}.k.obwohl{background:var(--orange)}.k.dass{background:var(--teal)}.k.dat{background:var(--blue)}
+.dk{color:var(--blue);font-weight:900}
+.dark .dk,.bg-blue .dk{color:var(--gold)}
+.vb{font-weight:900;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:5px;color:var(--coral)}
+.dark .vb{color:var(--gold)}
+.der{color:#2563eb}.die{color:var(--dt-red)}.das{color:#059669}.pl{color:#7c3aed}
+
+/* ===== FICHAS DE FRASE ===== */
+.sent{display:flex;flex-wrap:wrap;gap:.55vw;align-items:center;font-size:clamp(18px,2.5vw,40px);font-weight:800;letter-spacing:-.02em}
+.tok{background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.26);border-radius:14px;padding:.5vh .9vw;display:inline-block}
+.bg-light .tok{background:var(--dt-ink-2);border-color:var(--line)}
+.tok.v{background:var(--gold);border-color:var(--gold);color:#3d2500;box-shadow:0 6px 0 rgba(0,0,0,.16)}
+.tok.p{background:var(--mint);border-color:var(--mint);color:#fff}
+.tok.c-weil{background:var(--sky);border-color:var(--sky);color:#fff}
+.tok.c-dass{background:var(--teal);border-color:var(--teal);color:#fff}
+.tok.c-obwohl{background:var(--orange);border-color:var(--orange);color:#fff}
+.tok.d{background:var(--blue);border-color:var(--blue);color:#fff}
+.lbl{font-size:clamp(11px,1vw,14px);font-weight:900;letter-spacing:.18em;text-transform:uppercase;opacity:.7;margin-bottom:.8vh}
+.step{opacity:.06;filter:blur(5px);transform:translateY(12px);cursor:pointer;transition:opacity .5s,filter .5s,transform .5s}
+.step.show{opacity:1;filter:none;transform:none;cursor:default}
+.step.show .tok{animation:tokIn .55s cubic-bezier(.2,1.4,.4,1) backwards;animation-delay:calc(var(--t,0) * 80ms)}
+@keyframes tokIn{from{opacity:0;transform:translateY(-26px) scale(.7)}}
+.step.show .tok.fly{animation:fly 1.15s cubic-bezier(.3,.9,.3,1) backwards;animation-delay:calc(var(--t,0) * 80ms + 200ms)}
+@keyframes fly{0%{opacity:0;transform:translate(-38vw,-9vh) rotate(-25deg) scale(1.3)}55%{opacity:1;transform:translate(-4vw,-7vh) rotate(8deg) scale(1.15)}78%{transform:translate(0,1vh) rotate(-2deg)}100%{transform:none}}
+
+/* ===== REVEAL ===== */
+.rv{background:var(--dt-ink-2);border:2px solid var(--line);border-radius:20px;padding:1.8vh 1.3vw;cursor:pointer;
+  transition:transform .25s cubic-bezier(.2,.8,.3,1),box-shadow .25s,border-color .25s,background .25s;box-shadow:0 3px 0 rgba(15,23,41,.05)}
+.rv:hover{transform:translateY(-5px);border-color:var(--blue);box-shadow:0 16px 30px rgba(37,99,235,.18)}
+.rv .front{font-size:clamp(14px,1.5vw,24px);font-weight:800;line-height:1.28}
+.rv .back{max-height:0;opacity:0;overflow:hidden;transition:max-height .45s,opacity .45s,margin .45s;
+  font-size:clamp(14px,1.45vw,22px);color:var(--teal);font-weight:800;line-height:1.35}
+.rv.open{border-color:var(--mint);background:linear-gradient(160deg,#ecfdf5,#fff);color:#0a0a0a}
+.rv.open *{color:#0a0a0a}
+.rv.open .back{max-height:30vh;opacity:1;margin-top:1vh}
+.rv .em{font-size:clamp(26px,3vw,46px);line-height:1;display:block;margin-bottom:.8vh;transition:transform .4s}
+.rv:hover .em{transform:scale(1.2) rotate(-8deg)}
+.dark .rv{background:var(--dt-ink-2);border-color:rgba(255,255,255,.24);color:#fff;box-shadow:none}
+.dark .rv:hover{border-color:#fff;background:rgba(255,255,255,.16)}
+.dark .rv.open{background:rgba(255,255,255,.2);border-color:var(--gold)}
+.dark .rv .back{color:var(--gold)}
+.bg-gold .rv{background:rgba(255,255,255,.55);border-color:rgba(61,37,0,.2)}
+.bg-gold .rv.open{background:var(--dt-ink-2);border-color:#3d2500}
+.bg-gold .rv .back{color:var(--dt-paper)}
+.wrong{text-decoration:line-through;text-decoration-color:var(--coral);text-decoration-thickness:3px}
+.rv:not(.open) .wrong{text-decoration:none}
+.prompt{font-size:clamp(12px,1.2vw,18px);font-weight:700;opacity:.8;line-height:1.5}
+.prompt i{font-style:normal;background:rgba(127,127,127,.16);border-radius:6px;padding:0 .35em;white-space:nowrap}
+
+/* ===== FLIP 3D ===== */
+.flip{perspective:900px;cursor:pointer;min-height:13vh}
+.flip .in{position:relative;width:100%;height:100%;min-height:inherit;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.3,1.4,.4,1)}
+.flip.open .in{transform:rotateY(180deg)}
+.flip .f,.flip .b{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1vh .8vw}
+.flip .f{background:var(--dt-ink-2);border:2px solid var(--line);box-shadow:0 8px 20px rgba(15,23,41,.07)}
+.flip .b{transform:rotateY(180deg);background:linear-gradient(150deg,var(--blue),#1e3a8a);color:#fff}
+.flip:hover .f{border-color:var(--blue)}
+.flip .w{font-size:clamp(15px,1.7vw,27px);font-weight:900;letter-spacing:-.02em}
+.flip .t{font-size:clamp(11px,1.1vw,16px);font-weight:700;opacity:.8;line-height:1.3;margin-top:.4vh}
+.flip .b .w b{color:var(--gold);text-decoration:underline;text-underline-offset:4px}
+.dark .flip .f{background:var(--dt-ink-2);border-color:rgba(255,255,255,.25);color:#fff;box-shadow:none}
+.dark .flip .b{background:var(--dt-ink-2);color:var(--ink)}
+.dark .flip .b .w b{color:var(--coral)}
+.flip.sm{min-height:10.5vh}
+.flip .hv{color:var(--coral)}.flip .sv{color:var(--teal)}
+.dark .flip .f .sv{color:#5eead4}.dark .flip .f .hv{color:#fda4af}
+
+/* tabla artículos */
+.atab{display:grid;grid-template-columns:auto repeat(4,1fr);gap:1vh 1vw;align-items:stretch}
+.atab .hd{font-weight:900;text-align:center;font-size:clamp(13px,1.35vw,20px);padding:.6vh 0;border-radius:12px;background:var(--dt-ink-2);border:2px solid var(--line)}
+.atab .rl{font-weight:900;font-size:clamp(11px,1.1vw,16px);letter-spacing:.12em;text-transform:uppercase;opacity:.65;display:flex;align-items:center}
+.mrmn{display:flex;gap:1.5vw;justify-content:center;font-size:clamp(28px,4.4vw,66px);font-weight:900;letter-spacing:-.02em}
+.mrmn span{background:var(--blue);color:#fff;border-radius:18px;padding:.4vh 1.6vw;box-shadow:0 8px 0 #1e3a8a}
+
+/* ===== BOTONES ===== */
+.b{border:none;font-family:inherit;font-weight:800;cursor:pointer;border-radius:99px;padding:1.3vh 2vw;
+  font-size:clamp(13px,1.35vw,20px);transition:.2s;background:var(--ink);color:#fff;position:relative;overflow:hidden}
+.b:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(15,23,41,.28)}
+.b:active{transform:scale(.96)}
+.b.g{background:var(--gold);color:#3d2500}.b.w{background:var(--dt-ink-2);color:var(--ink);border:2px solid var(--line)}
+.b.t{background:var(--blue);color:#fff}
+.b.o{background:transparent;border:2px solid currentColor;color:inherit}
+.b.sm{padding:.9vh 1.3vw;font-size:clamp(12px,1.15vw,16px)}
+.b .rip{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:rip .6s ease-out;pointer-events:none}
+@keyframes rip{to{transform:scale(4);opacity:0}}
+.chip{display:inline-block;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.26);border-radius:99px;
+  padding:.6vh 1vw;font-size:clamp(12px,1.2vw,18px);font-weight:700;margin:.3vh .2vw}
+.bg-light .chip{background:var(--dt-ink-2);border-color:var(--line)}
+
+/* ===== METRO ===== */
+.metro{position:relative;height:13vh;margin:1vh 2vw}
+.metro .line{position:absolute;left:0;right:0;top:50%;height:12px;border-radius:9px;transform:translateY(-50%);
+  background:linear-gradient(90deg,var(--sky),var(--teal),var(--gold),var(--coral),var(--purple))}
+.metro .stops{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center}
+.stop{position:relative;width:clamp(24px,2.5vw,38px);aspect-ratio:1;border-radius:50%;background:var(--dt-ink-2);border:6px solid var(--navy);
+  cursor:pointer;transition:transform .3s cubic-bezier(.2,1.6,.4,1),background .3s,box-shadow .3s;padding:0;font-family:inherit}
+.stop span{position:absolute;top:135%;left:50%;transform:translateX(-50%);font-weight:900;white-space:nowrap;font-size:clamp(13px,1.45vw,22px);color:#fff}
+.stop:hover{transform:scale(1.3)}
+.stop.seen{background:var(--gold)}
+.stop.cur{transform:scale(1.45);background:var(--gold);box-shadow:0 0 0 8px rgba(251,191,36,.3),0 0 30px var(--gold)}
+.train{position:absolute;top:50%;left:0;transform:translate(-50%,-118%);font-size:clamp(30px,4.2vw,62px);line-height:1;
+  transition:left 1s cubic-bezier(.5,0,.2,1);filter:drop-shadow(0 6px 10px rgba(0,0,0,.4));pointer-events:none}
+.metro.auto .train{animation:ride 8s cubic-bezier(.6,0,.4,1) infinite alternate}
+@keyframes ride{0%{left:0}100%{left:100%}}
+.metro.auto .stop{animation:ping 8s infinite alternate;animation-delay:calc(var(--k) * .85s)}
+@keyframes ping{0%,8%{background:var(--dt-ink-2)}4%{background:var(--gold);transform:scale(1.35)}}
+.stage{background:var(--dt-ink-2);border:3px solid rgba(255,255,255,.25);border-radius:28px;padding:2.6vh 2.4vw;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1vh;min-height:26vh;text-align:center}
+.stage .big{font-size:clamp(46px,7.5vw,110px);line-height:1}
+.stage .ttl{font-size:clamp(22px,3.1vw,48px);font-weight:900;letter-spacing:-.03em;line-height:1.1}
+.stage .sol{font-size:clamp(15px,1.8vw,27px);font-weight:800;color:var(--gold);min-height:1.3em;line-height:1.4}
+.bg-light .stage{background:var(--dt-ink-2);border-color:var(--line)}
+.bg-light .stage .sol{color:var(--teal)}
+.enter{animation:cardIn .7s cubic-bezier(.2,1.3,.4,1)}
+@keyframes cardIn{0%{opacity:0;transform:perspective(900px) rotateY(80deg) scale(.8)}100%{opacity:1;transform:none}}
+.stdet{display:grid;grid-template-columns:auto 1fr;gap:2.5vw;align-items:center;text-align:left;width:100%}
+.stdet .pp{font-size:clamp(40px,6.5vw,100px);font-weight:900;letter-spacing:-.04em;line-height:1;color:var(--gold)}
+.stdet .es{font-size:clamp(15px,1.7vw,26px);font-weight:800;opacity:.85}
+.stdet .ex{font-size:clamp(17px,2.2vw,34px);font-weight:800;margin-top:.8vh;line-height:1.3}
+.stdet .ex b{color:var(--gold)}
+#stAll{display:none;grid-template-columns:repeat(3,1fr);gap:.8vh 1vw}
+#stAll div{background:var(--dt-ink-2);border-radius:12px;padding:.8vh .8vw;font-size:clamp(12px,1.15vw,17px);font-weight:700}
+#stAll b{color:var(--gold)}
+
+/* ===== CONTRACCIONES ===== */
+.merge{display:flex;align-items:center;gap:.8vw;font-size:clamp(18px,2.3vw,36px);font-weight:900}
+.merge .op{opacity:.5}
+.merge .ex{font-size:.6em;opacity:.8;font-weight:700;margin-left:.6vw}
+.step.show .res{animation:popIn .7s cubic-bezier(.2,1.6,.4,1) .45s backwards}
+.step.show .m1{animation:mL .6s ease backwards}.step.show .m2{animation:mR .6s ease backwards}
+@keyframes mL{from{transform:translateX(-4vw);opacity:0}}@keyframes mR{from{transform:translateX(4vw);opacity:0}}
+
+/* ===== QUIZ ===== */
+.q{background:var(--dt-ink-2);border:2px solid var(--line);border-radius:18px;padding:1.2vh 1.1vw;transition:border-color .25s,background .25s}
+.q .txt{font-size:clamp(14px,1.5vw,23px);font-weight:700;line-height:1.3}
+.q .gap{display:inline-block;min-width:3.6em;border-bottom:3px dashed #94a3b8;text-align:center;font-weight:900;transition:.3s}
+.q .opts{display:flex;gap:.4vw;margin-top:.9vh;flex-wrap:wrap}
+.pick{border:2px solid var(--line);background:var(--dt-ink-2);border-radius:10px;padding:.5vh .8vw;font-weight:900;
+  font-size:clamp(11px,1.1vw,16px);cursor:pointer;font-family:inherit;color:var(--dim);transition:.15s}
+.pick:hover{border-color:var(--blue);color:var(--blue);transform:translateY(-2px)}
+.q.right{border-color:var(--mint);background:#ecfdf5}
+.q.right .gap{border-color:transparent;transform:scale(1.08)}
+.q.bad{border-color:var(--coral);background:#fff1f2;animation:shake .45s}
+.pick.hit{background:var(--mint);border-color:var(--mint);color:#fff}
+.pick.miss{background:var(--coral);border-color:var(--coral);color:#fff}
+@keyframes shake{20%{transform:translateX(-10px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+.score{font-size:clamp(16px,1.8vw,28px);font-weight:900;background:var(--ink);color:#fff;border-radius:14px;padding:.6vh 1.1vw;transition:transform .3s}
+.score.bump{transform:scale(1.25)}
+.rulebar{display:flex;gap:1vw;flex-wrap:wrap}
+.rulebar div{background:var(--dt-ink-2);border:2px solid var(--line);border-radius:14px;padding:.8vh 1vw;font-size:clamp(12px,1.25vw,19px);font-weight:700}
+.rulebar b{color:var(--blue)}
+
+/* ===== HABITACIÓN / KATZE ===== */
+.room{position:relative;width:100%;max-height:44vh;aspect-ratio:2/1;border-radius:26px;overflow:hidden;border:3px solid rgba(255,255,255,.3);
+  container-type:size;background:linear-gradient(#fde68a 0 68%,#b45309 68% 69%,#d6a76b 69%)}
+.room .it{position:absolute;line-height:1;transform:translateX(-50%);user-select:none}
+.sofa{position:absolute;left:35%;width:28%;bottom:8%;height:34%;z-index:3}
+.sofa i{position:absolute;display:block;border-radius:2.2cqh}
+.sofa .bk{left:9%;right:9%;top:0;height:58%;background:linear-gradient(#3b82f6,#2563eb)}
+.sofa .st{left:0;right:0;bottom:13%;height:38%;background:linear-gradient(#60a5fa,#2563eb);box-shadow:0 -.6cqh 0 rgba(255,255,255,.25) inset}
+.sofa .al,.sofa .ar{width:13%;bottom:13%;height:66%;background:#1d4ed8}.sofa .al{left:-2%}.sofa .ar{right:-2%}
+.sofa .l1,.sofa .l2{bottom:0;width:5%;height:15%;background:#78350f;border-radius:.6cqh}.sofa .l1{left:8%}.sofa .l2{right:8%}
+.rug{position:absolute;left:30%;width:38%;bottom:1%;height:7%;border-radius:50%;background:rgba(190,24,93,.25)}
+#cat{position:absolute;line-height:1;font-size:22cqh;left:50%;bottom:2%;z-index:4;
+  transform:translateX(-50%) scale(var(--s,1)) rotate(var(--r,0deg));
+  transition:left .8s cubic-bezier(.3,1.3,.4,1),bottom .8s cubic-bezier(.3,1.3,.4,1),transform .8s cubic-bezier(.3,1.3,.4,1)}
+.cbtns{display:flex;gap:.5vw;flex-wrap:wrap}
+.cbtns .b.on{background:var(--gold);color:#3d2500}
+#catSent{font-size:clamp(18px,2.4vw,38px);font-weight:900;min-height:1.4em;cursor:pointer}
+#catSent.hid{color:transparent;text-shadow:0 0 18px rgba(255,255,255,.7)}
+
+/* ===== BUILDER ===== */
+.builder .tabs{display:flex;gap:.5vw;flex-wrap:wrap;margin-bottom:1.4vh}
+.builder .tabs .b.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.tiles{display:flex;gap:.6vw;flex-wrap:wrap;min-height:7vh;align-items:center;margin-top:1.4vh}
+.tile{background:var(--dt-ink-2);border:2px solid var(--line);border-radius:12px;padding:1vh 1vw;font-size:clamp(14px,1.6vw,25px);
+  font-weight:800;cursor:pointer;transition:.18s;font-family:inherit;color:var(--ink);box-shadow:0 4px 0 rgba(15,23,41,.06)}
+.tile:hover{border-color:var(--blue);transform:translateY(-4px) rotate(-2deg)}
+.tile.used{opacity:.18;pointer-events:none;transform:scale(.9)}
+.tiles .tile{animation:tokIn .45s cubic-bezier(.2,1.4,.4,1) backwards;animation-delay:calc(var(--t,0) * 50ms)}
+.drop{min-height:8.5vh;border:3px dashed #94a3b8;border-radius:18px;padding:1.2vh 1.2vw;display:flex;gap:.5vw;
+  flex-wrap:wrap;align-items:center;background:rgba(255,255,255,.8);cursor:pointer;transition:.3s}
+.drop .tile{background:var(--blue);color:#fff;border-color:var(--blue);pointer-events:none;animation:tokIn .35s cubic-bezier(.2,1.6,.4,1)}
+.drop.ok{border-color:var(--mint);border-style:solid;background:#ecfdf5;box-shadow:0 0 0 6px rgba(16,185,129,.18)}
+.drop.ok .tile{background:var(--mint);border-color:var(--mint)}
+.drop.no{border-color:var(--coral);animation:shake .45s}
+.bmsg{font-size:clamp(15px,1.7vw,26px);font-weight:900}
+
+/* ===== CHECKLIST / CAJAS ===== */
+.ck{display:flex;align-items:center;gap:1vw;font-size:clamp(14px,1.6vw,25px);font-weight:800;padding:1vh 1.2vw;border-radius:16px;
+  background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:.3s;opacity:.62}
+.ck .box{width:clamp(22px,2.2vw,34px);height:clamp(22px,2.2vw,34px);border-radius:9px;border:3px solid rgba(255,255,255,.55);
+  display:grid;place-items:center;flex:none;color:transparent;font-size:clamp(13px,1.4vw,21px);transition:.3s}
+.ck.on{opacity:1;background:rgba(16,185,129,.26);border-color:var(--mint)}
+.ck.on .box{background:var(--mint);border-color:var(--mint);color:#fff;animation:tick .45s cubic-bezier(.2,1.8,.4,1)}
+@keyframes tick{0%{transform:scale(.3) rotate(-30deg)}}
+.bg-light .ck{background:var(--dt-ink-2);border-color:var(--line);color:var(--ink)}
+.bg-light .ck .box{border-color:#cbd5e1}
+.bg-light .ck.on{background:#ecfdf5;border-color:var(--mint)}
+.box2{background:var(--dt-ink-2);border:2px solid rgba(255,255,255,.22);border-radius:20px;padding:1.6vh 1.4vw}
+.bg-light .box2{background:var(--dt-ink-2);border-color:var(--line)}
+.warnbox{border-left:6px solid var(--gold);background:rgba(251,191,36,.16);border-radius:0 16px 16px 0;padding:1.2vh 1.2vw;
+  font-size:clamp(13px,1.45vw,22px);font-weight:700;line-height:1.4}
+.bg-light .warnbox{background:#fffbeb;color:#78350f}
+.topic{border-radius:18px;padding:1.4vh 1.1vw;background:var(--dt-ink-2);border:3px solid var(--line);cursor:pointer;transition:.3s;font-weight:800;font-size:clamp(13px,1.4vw,21px)}
+.topic .em{font-size:clamp(24px,2.8vw,42px);display:block}
+.topic.on{border-color:var(--blue);background:#eff6ff;transform:scale(1.04);box-shadow:0 10px 24px rgba(37,99,235,.2)}
+.model{font-size:clamp(12px,1.25vw,19px);font-weight:600;line-height:1.55}
+.model .dk{background:#dbeafe;border-radius:6px;padding:0 .2em}
+.pause{font-size:clamp(90px,16vw,240px);line-height:1;animation:wob 3s ease-in-out infinite}
+@keyframes wob{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg) translateY(-10px)}}
+
+/* ===== HUD ===== */
+#bar{position:fixed;top:0;left:0;height:5px;background:linear-gradient(90deg,var(--sky),var(--teal),var(--gold),var(--coral));z-index:40;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+#bar::after{content:"🚇";position:absolute;right:-14px;top:-4px;font-size:20px}
+#nav{position:fixed;bottom:2vh;left:2.4vw;display:flex;gap:.6vw;z-index:40}
+.nb{width:clamp(36px,3.2vw,48px);height:clamp(36px,3.2vw,48px);border-radius:50%;border:none;cursor:pointer;
+  background:rgba(127,127,127,.22);backdrop-filter:blur(6px);font-size:clamp(14px,1.4vw,20px);font-weight:900;color:#fff;font-family:inherit;transition:.2s}
+.nb:hover{background:rgba(127,127,127,.45);transform:scale(1.12)}
+#num{position:fixed;bottom:2.6vh;right:2.4vw;font-size:clamp(11px,1.1vw,15px);font-weight:900;letter-spacing:.2em;z-index:40;
+  pointer-events:none;background:rgba(15,23,42,.55);color:#fff;padding:.5vh .8vw;border-radius:99px}
+#timer{position:fixed;top:1.6vh;right:1.6vw;z-index:40;font-variant-numeric:tabular-nums;font-weight:900;
+  font-size:clamp(16px,1.8vw,26px);background:rgba(15,23,41,.82);color:#fff;border-radius:14px;padding:.6vh 1vw;cursor:pointer;
+  border:2px solid transparent;user-select:none;transition:.3s}
+#timer.run{border-color:var(--mint);box-shadow:0 0 18px rgba(16,185,129,.5)}
+#timer.low{border-color:var(--coral);animation:blink .8s infinite}
+@keyframes blink{50%{opacity:.35}}
+#notes{position:fixed;left:0;right:0;bottom:0;z-index:35;background:rgba(15,23,41,.95);color:#fde68a;
+  padding:1.4vh 12vw;font-size:clamp(13px,1.3vw,18px);font-weight:600;transform:translateY(105%);transition:.35s}
+#notes.on{transform:none}#notes b{color:#fff}
+#hint{position:fixed;bottom:2.9vh;left:50%;transform:translateX(-50%);font-size:clamp(10px,.9vw,12px);font-weight:800;
+  letter-spacing:.12em;opacity:.35;z-index:40;pointer-events:none;text-transform:uppercase;white-space:nowrap;color:#94a3b8}
+#cf{position:fixed;inset:0;z-index:60;pointer-events:none}
+@media(max-height:780px){
+  section.slide{padding:3.4vh 5vw 8vh}
+  h2{font-size:clamp(26px,3.9vw,56px)}
+  .mt3{margin-top:2.2vh}.mt2{margin-top:1.4vh}
+  .q{padding:.8vh 1vw}.q .opts{margin-top:.5vh}
+  .ck{padding:.7vh 1vw}
+  .rv{padding:1.3vh 1.1vw}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ===== MEIN ALLTAG: colores de las tres reglas (mismas fichas .tok que el resto) ===== */
+.tok.m{background:var(--gold);border-color:var(--gold);color:#3d2500;box-shadow:0 6px 0 rgba(0,0,0,.16)}
+.tok.po{background:var(--blue);border-color:var(--blue);color:#fff}
+.tok.inf{background:var(--mint);border-color:var(--mint);color:#fff}
+.tok.pre{background:var(--coral);border-color:var(--coral);color:#fff}
+.k.mod{background:#b7791f}.k.pos{background:var(--blue)}.k.tre{background:var(--coral)}
+.cj{display:grid;grid-template-columns:repeat(3,1fr);gap:1vh 1vw;width:100%}
+.cj div{background:var(--dt-ink-2);border:2px solid var(--line);border-radius:14px;padding:1vh 1vw;font-size:clamp(15px,1.8vw,28px);font-weight:800;text-align:left}
+.cj div span{opacity:.6;font-weight:700;margin-right:.5em}
+.cj div.hl{border-color:var(--gold)}
+.cj div.hl b{color:var(--gold)}
+.cjb .b.on{background:var(--gold);color:#3d2500}
+/* legibilidad (mismos componentes; el texto claro no puede ir sobre fondo claro) */
+.score{background:var(--dt-paper);color:var(--dt-ink-0)}
+.q.right,.q.bad{color:#0a0a0a}
+.q.right .pick:not(.hit),.q.bad .pick:not(.miss){background:#fff;color:#334155;border-color:#cbd5e1}
+.bg-gold .rv{background:var(--dt-ink-2);border-color:rgba(255,255,255,.24)}
+.bg-gold .rv.open{background:var(--dt-ink-2);border-color:var(--gold)}
+.bg-gold .rv .back{color:var(--gold)}
+.bg-gold .rv .wrong{color:inherit}
+.dark .rv.open,.bg-gold .rv.open{background:var(--dt-ink-2)}
+.dark .rv.open *,.bg-gold .rv.open *{color:var(--dt-paper)}
+.dark .rv.open .back,.bg-gold .rv.open .back,.dark .rv.open .back *,.bg-gold .rv.open .back *{color:var(--gold)}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="timer" onclick="tgT()" title="Clic o T = iniciar/pausar">05:00</div>
+<canvas id="cf"></canvas>
+<div id="deck">
+
+<!-- 1 · PORTADA -->
+<section class="slide bg-navy dark" data-min="0–1" data-note="Portada. Pregunta de entrada: «Was musst du heute noch machen?» — escucha sin corregir; al final de la clase lo sabrán decir bien.">
+  <div class="eyebrow a">Deutsch · Lektion 8 · ca. 75 min · A1–A2</div>
+  <h1 class="a">MEIN ALLTAG</h1>
+  <div class="sent mt3 a"><span class="tok">Ich</span><span class="tok m">muss</span><span class="tok po">meinen</span><span class="tok">Bruder</span><span class="tok inf">anrufen</span><span class="tok">.</span></div>
+  <p class="lead a mt3"><span class="k pos">Possessivartikel</span> · <span class="k mod">Modalverben</span> · <span class="k tre">trennbare Verben</span></p>
+  <div class="row mt2 a">
+    <span class="chip">👤 mein · dein · sein · ihr · unser · euer · Ihr</span><span class="chip">🎯 können · müssen · wollen · dürfen · möchten</span>
+    <span class="chip">✂️ aufstehen · einkaufen · anrufen · fernsehen · mitkommen</span>
+  </div>
+</section>
+
+<!-- 2 · WEM GEHÖRT DAS? -->
+<section class="slide bg-light" data-min="1–3" data-note="Repaso rápido (ya lo saben): dicen el posesivo ANTES de girar. Luego Espacio abre las preguntas: responden en voz alta con frase completa.">
+  <div class="eyebrow a">Wiederholung · Possessivartikel</div>
+  <div class="row a" style="justify-content:space-between"><h2>Wem gehört das? 👜</h2><div class="tiny">Di el posesivo → clic para girar</div></div>
+  <div class="grid g4 mt2">
+    <div class="flip sm a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">ich</div></div><div class="b"><div class="w"><b>mein</b></div></div></div></div>
+    <div class="flip sm a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">du</div></div><div class="b"><div class="w"><b>dein</b></div></div></div></div>
+    <div class="flip sm a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">er / es</div></div><div class="b"><div class="w"><b>sein</b></div></div></div></div>
+    <div class="flip sm a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">sie</div><div class="t">ella</div></div><div class="b"><div class="w"><b>ihr</b></div></div></div></div>
+    <div class="flip sm a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">wir</div></div><div class="b"><div class="w"><b>unser</b></div></div></div></div>
+    <div class="flip sm a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">ihr</div><div class="t">vosotros</div></div><div class="b"><div class="w"><b>euer</b></div></div></div></div>
+    <div class="flip sm a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">sie</div><div class="t">ellos</div></div><div class="b"><div class="w"><b>ihr</b></div></div></div></div>
+    <div class="flip sm a" onclick="rv(this)"><div class="in"><div class="f"><div class="w">Sie</div><div class="t">usted(es)</div></div><div class="b"><div class="w"><b>Ihr</b></div></div></div></div>
+  </div>
+  <div class="grid g4 mt2">
+    <div class="rv a" onclick="rv(this)"><div class="front">👩 Das ist Anna. Ist das ihr Buch?</div><div class="back">Ja, das ist ihr Buch. (Anna → sie → ihr)</div></div>
+    <div class="rv a" onclick="rv(this)"><div class="front">👦 Das ist Paul. Ist das sein Handy?</div><div class="back">Ja, das ist sein Handy. (Paul → er → sein)</div></div>
+    <div class="rv a" onclick="rv(this)"><div class="front">👫 Das sind Ben und Mia. Ist das ihr Hund?</div><div class="back">Ja, das ist ihr Hund. (sie, Plural → ihr)</div></div>
+    <div class="rv a" onclick="rv(this)"><div class="front">🎩 Herr Weber, ist das Ihr Auto?</div><div class="back">Ja, das ist mein Auto. (Sie → Ihr, con mayúscula)</div></div>
+  </div>
+</section>
+
+<!-- 3 · AKKUSATIV -->
+<section class="slide bg-light" data-min="3–5" data-note="Giran por FILAS. Al final Espacio muestra el truco: en Akkusativ SOLO cambia el masculino: -en. Feminin y Plural llevan -e (igual que en Nominativ), Neutrum sin terminación.">
+  <div class="eyebrow a">Die Regel · Nominativ → Akkusativ</div>
+  <h2 class="a">Possessivartikel im Akkusativ 🔵</h2>
+  <div class="atab mt2 a">
+    <div></div><div class="hd der">Maskulin</div><div class="hd die">Feminin</div><div class="hd das">Neutrum</div><div class="hd pl">Plural</div>
+    <div class="rl">mein</div>
+    <div class="flip sm" onclick="rv(this)"><div class="in"><div class="f"><div class="w der">mein Bruder</div></div><div class="b"><div class="w">mein<b>en</b> Bruder</div></div></div></div>
+    <div class="flip sm" onclick="rv(this)"><div class="in"><div class="f"><div class="w die">meine Schwester</div></div><div class="b"><div class="w">mein<b>e</b> Schwester</div></div></div></div>
+    <div class="flip sm" onclick="rv(this)"><div class="in"><div class="f"><div class="w das">mein Auto</div></div><div class="b"><div class="w">mein Auto</div></div></div></div>
+    <div class="flip sm" onclick="rv(this)"><div class="in"><div class="f"><div class="w pl">meine Freunde</div></div><div class="b"><div class="w">mein<b>e</b> Freunde</div></div></div></div>
+    <div class="rl">sein</div>
+    <div class="flip sm" onclick="rv(this)"><div class="in"><div class="f"><div class="w der">sein Vater</div></div><div class="b"><div class="w">sein<b>en</b> Vater</div></div></div></div>
+    <div class="flip sm" onclick="rv(this)"><div class="in"><div class="f"><div class="w die">seine Mutter</div></div><div class="b"><div class="w">sein<b>e</b> Mutter</div></div></div></div>
+    <div class="flip sm" onclick="rv(this)"><div class="in"><div class="f"><div class="w das">sein Handy</div></div><div class="b"><div class="w">sein Handy</div></div></div></div>
+    <div class="flip sm" onclick="rv(this)"><div class="in"><div class="f"><div class="w pl">seine Eltern</div></div><div class="b"><div class="w">sein<b>e</b> Eltern</div></div></div></div>
+    <div class="rl">unser</div>
+    <div class="flip sm" onclick="rv(this)"><div class="in"><div class="f"><div class="w der">unser Lehrer</div></div><div class="b"><div class="w">unser<b>en</b> Lehrer</div></div></div></div>
+    <div class="flip sm" onclick="rv(this)"><div class="in"><div class="f"><div class="w die">unsere Stadt</div></div><div class="b"><div class="w">unser<b>e</b> Stadt</div></div></div></div>
+    <div class="flip sm" onclick="rv(this)"><div class="in"><div class="f"><div class="w das">unser Haus</div></div><div class="b"><div class="w">unser Haus</div></div></div></div>
+    <div class="flip sm" onclick="rv(this)"><div class="in"><div class="f"><div class="w pl">unsere Kinder</div></div><div class="b"><div class="w">unser<b>e</b> Kinder</div></div></div></div>
+  </div>
+  <div class="step mt2"><div class="mrmn"><span>-en</span><span>-e</span><span>–</span><span>-e</span></div>
+    <p class="tiny mt1" style="text-align:center">Solo el masculino cambia en Akkusativ: <b>mein → meinen</b> · ich sehe <b>meinen</b> Bruder</p></div>
+</section>
+
+<!-- 4 · QUIZ AKKUSATIV -->
+<section class="slide bg-light" data-min="5–8" data-note="Cada alumno contesta en su ordenador; en el proyector, uno lee la frase ENTERA con la opción elegida. Si falla: ¿der, die, das o Plural? Solo el masculino → -en.">
+  <div class="eyebrow a">Übung · Possessivartikel im Akkusativ</div>
+  <div class="row a" style="justify-content:space-between"><h2>Welche Form passt?</h2><div class="score" id="q1S">0 / 5</div></div>
+  <div class="grid g2 mt2" id="q1" style="gap:1vh 1.2vw"></div>
+  <div class="row mt2 a"><button class="b w sm" onclick="mkQuiz('q1')">↺ Nochmal</button></div>
+</section>
+
+<!-- 5 · SCHNELLRUNDE -->
+<section class="slide bg-teal dark" data-min="8–10" data-note="Ronda rápida individual (2 min). Después, transición: «Ich besuche MEINEN Vater» — ¿y si TENGO QUE visitarlo? → Modalverben.">
+  <div class="eyebrow a">Schnellrunde ⚡</div>
+  <div class="row a" style="justify-content:space-between"><h2>Schnell, schnell!</h2><div class="score" id="q2S">0 / 5</div></div>
+  <div class="grid g2 mt2" id="q2" style="gap:1vh 1.2vw"></div>
+  <div class="row mt2 a"><button class="b w sm" onclick="mkQuiz('q2')">↺ Nochmal</button></div>
+</section>
+
+<!-- 6 · MODALVERBEN: BEDEUTUNG -->
+<section class="slide bg-blue dark" data-min="10–14" data-note="Antes de abrir cada tarjeta preguntan: ¿qué significa? Insiste en möchten: formalmente es Konjunktiv II de mögen, pero a este nivel lo usamos para pedir con educación («Ich möchte …» en el café).">
+  <div class="eyebrow a">Modalverben · Was bedeuten sie?</div>
+  <h2 class="a">Was kannst du machen? 🎯</h2>
+  <div class="grid g3 mt3" style="grid-template-columns:repeat(5,1fr)">
+    <div class="rv a" onclick="rv(this)"><span class="em">🏊</span><div class="front">können</div><div class="back">poder · saber hacer<br>Ich <b>kann</b> schwimmen.</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">📚</span><div class="front">müssen</div><div class="back">tener que · obligación<br>Ich <b>muss</b> lernen.</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">🏠</span><div class="front">wollen</div><div class="back">querer · intención<br>Ich <b>will</b> nach Hause gehen.</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">🪑</span><div class="front">dürfen</div><div class="back">poder · permiso<br><b>Darf</b> ich hier sitzen?</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">💧</span><div class="front">möchten</div><div class="back">querer (cortés)<br>Ich <b>möchte</b> Wasser trinken.</div></div>
+  </div>
+  <div class="warnbox mt3 a">🤓 <b>möchten</b> viene de <i>mögen</i> (Konjunktiv II). En A1–A2 lo usamos como «me gustaría / quisiera»: es la forma educada de <b>wollen</b>.</div>
+</section>
+
+<!-- 7 · KONJUGATION -->
+<section class="slide bg-light" data-sp="cjSpace" data-min="14–19" data-note="Un verbo cada vez (Espacio = siguiente). Que se fijen en lo raro: ich y er/sie/es son IGUALES y sin -t (ich kann, er kann). Cambia la vocal en singular: können → kann, müssen → muss, wollen → will, dürfen → darf.">
+  <div class="eyebrow a">Die Konjugation</div>
+  <div class="row a" style="justify-content:space-between"><h2>ich kann · er kann 🧩</h2><div class="tiny">Espacio o clic = otro verbo · <b>ich = er/sie/es</b></div></div>
+  <div class="row cjb mt2 a" id="cjB"></div>
+  <div class="stage mt2 a" id="cjBox"><div class="ttl" id="cjT">können</div><div class="cj" id="cjG"></div><div class="sol" id="cjS"></div></div>
+</section>
+
+<!-- 8 · DER MODALVERB-SATZ -->
+<section class="slide bg-navy dark" data-min="19–24" data-note="Espacio = paso a paso. 1) frase sin modal 2) entra muss en la posición 2 y el verbo se va al FINAL en infinitivo 3) con «Heute» delante: el modal sigue en 2.ª posición. Que lo digan con gestos: dos manos = paréntesis.">
+  <div class="eyebrow a">Satzbau · Modalverb</div>
+  <h2 class="a">Das Modalverb auf Position 2 📐</h2>
+  <div class="step mt3"><div class="lbl">Ohne Modalverb</div>
+    <div class="sent"><span class="tok">Ich</span><span class="tok v">lerne</span><span class="tok">heute</span><span class="tok">Deutsch</span><span class="tok">.</span></div></div>
+  <div class="step mt3"><div class="lbl">Mit Modalverb · Position 2 → Infinitiv am Ende</div>
+    <div class="sent"><span class="tok">Ich</span><span class="tok m">muss</span><span class="tok">heute</span><span class="tok">Deutsch</span><span class="tok inf fly">lernen</span><span class="tok">.</span></div></div>
+  <div class="step mt3"><div class="lbl">Andere Reihenfolge · das Modalverb bleibt auf Position 2</div>
+    <div class="sent"><span class="tok">Heute</span><span class="tok m">muss</span><span class="tok">ich</span><span class="tok">Deutsch</span><span class="tok inf">lernen</span><span class="tok">.</span></div></div>
+  <div class="step mt3"><div class="rulebar"><div>Subjekt + <b>Modalverb (konjugiert)</b> + … + <b>Infinitiv</b></div><div>Position 2 = <b>muss</b></div><div>Ende = <b>lernen</b></div></div></div>
+</section>
+
+<!-- 9 · WELCHES MODALVERB? -->
+<section class="slide bg-light" data-min="24–29" data-note="Leen el contexto ANTES de elegir: el contexto decide (examen → müssen, permiso → dürfen…). Leer la frase entera con el verbo.">
+  <div class="eyebrow a">Übung · Modalverben</div>
+  <div class="row a" style="justify-content:space-between"><h2>Welches Modalverb passt?</h2><div class="score" id="q3S">0 / 5</div></div>
+  <div class="grid g2 mt2" id="q3" style="gap:1vh 1.2vw"></div>
+  <div class="row mt2 a"><button class="b w sm" onclick="mkQuiz('q3')">↺ Nochmal</button></div>
+</section>
+
+<!-- 10 · SAG ES AUF DEUTSCH -->
+<section class="slide bg-gold" data-min="29–33" data-note="Primero cada uno escribe su frase en el cuaderno (1 min). Luego dicen la suya y abres la tarjeta. Pregunta clave: ¿dónde está el modal? ¿dónde el infinitivo?">
+  <div class="eyebrow a">Sag es auf Deutsch! 🗣️</div>
+  <h2 class="a">Übersetze!</h2>
+  <div class="grid g3 mt3">
+    <div class="rv a" onclick="rv(this)"><span class="em">📚</span><div class="front">Tengo que estudiar alemán.</div><div class="back">Ich muss Deutsch lernen.</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">🪑</span><div class="front">¿Puedo sentarme aquí?</div><div class="back">Darf ich hier sitzen?</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">📖</span><div class="front">Queremos comprar un libro.</div><div class="back">Wir wollen ein Buch kaufen.</div></div>
+  </div>
+</section>
+
+<!-- 11 · TRENNBARE VERBEN -->
+<section class="slide bg-teal dark" data-min="33–38" data-note="Espacio = un verbo cada vez. El prefijo SE SEPARA cuando el verbo está conjugado en la frase principal y se va al final.">
+  <div class="eyebrow a">Trennbare Verben · Ein Verb, zwei Teile ✂️</div>
+  <h2 class="a">auf + stehen = aufstehen</h2>
+  <div class="grid mt3" style="gap:1.6vh">
+    <div class="step"><div class="merge"><span class="tok pre m1">auf</span><span class="op">+</span><span class="tok m2">stehen</span><span class="op">→</span><span class="res">Ich <b>stehe</b> um sieben Uhr <b class="vb">auf</b>.</span></div></div>
+    <div class="step"><div class="merge"><span class="tok pre m1">ein</span><span class="op">+</span><span class="tok m2">kaufen</span><span class="op">→</span><span class="res">Wir <b>kaufen</b> heute <b class="vb">ein</b>.</span></div></div>
+    <div class="step"><div class="merge"><span class="tok pre m1">an</span><span class="op">+</span><span class="tok m2">rufen</span><span class="op">→</span><span class="res">Er <b>ruft</b> seinen Bruder <b class="vb">an</b>.</span></div></div>
+    <div class="step"><div class="merge"><span class="tok pre m1">fern</span><span class="op">+</span><span class="tok m2">sehen</span><span class="op">→</span><span class="res">Sie <b>sieht</b> abends <b class="vb">fern</b>.</span></div></div>
+    <div class="step"><div class="merge"><span class="tok pre m1">mit</span><span class="op">+</span><span class="tok m2">kommen</span><span class="op">→</span><span class="res"><b>Kommst</b> du <b class="vb">mit</b>?</span></div></div>
+  </div>
+</section>
+
+<!-- 12 · WO STEHT DAS PRÄFIX? -->
+<section class="slide bg-navy dark" data-min="38–43" data-note="Espacio = paso. Que lean y señalen: verbo conjugado en posición 2, prefijo vuela al FINAL. Pregunta: «¿Cuál es el infinitivo?» (aufstehen, einkaufen…).">
+  <div class="eyebrow a">Satzbau · Trennbare Verben</div>
+  <h2 class="a">Wo steht das Präfix? 📍</h2>
+  <div class="step mt3"><div class="sent"><span class="tok">Ich</span><span class="tok v">stehe</span><span class="tok">früh</span><span class="tok pre fly">auf</span><span class="tok">.</span></div></div>
+  <div class="step mt2"><div class="sent"><span class="tok">Wir</span><span class="tok v">kaufen</span><span class="tok">heute</span><span class="tok pre fly">ein</span><span class="tok">.</span></div></div>
+  <div class="step mt2"><div class="sent"><span class="tok">Er</span><span class="tok v">ruft</span><span class="tok po">seinen</span><span class="tok">Bruder</span><span class="tok pre fly">an</span><span class="tok">.</span></div></div>
+  <div class="step mt2"><div class="sent"><span class="tok">Sie</span><span class="tok v">sieht</span><span class="tok">abends</span><span class="tok pre fly">fern</span><span class="tok">.</span></div></div>
+  <div class="step mt3"><div class="rulebar"><div>Position 2 = <b>Verb (konjugiert)</b></div><div>Ende = <b>Präfix</b></div></div></div>
+</section>
+
+<!-- 13 · ERGÄNZE DAS PRÄFIX -->
+<section class="slide bg-light" data-min="43–48" data-note="Leen la frase entera y dicen el infinitivo («stehe … auf» → aufstehen).">
+  <div class="eyebrow a">Übung · Trennbare Verben</div>
+  <div class="row a" style="justify-content:space-between"><h2>Ergänze das Präfix</h2><div class="score" id="q4S">0 / 5</div></div>
+  <div class="grid g2 mt2" id="q4" style="gap:1vh 1.2vw"></div>
+  <div class="row mt2 a"><button class="b w sm" onclick="mkQuiz('q4')">↺ Nochmal</button></div>
+</section>
+
+<!-- 14 · MODALVERB + TRENNBARES VERB -->
+<section class="slide bg-purple dark" data-min="48–55" data-note="DIAPOSITIVA CLAVE. Espacio = paso: 1) separado 2) entra muss → el verbo vuelve JUNTO al final en infinitivo. Con modal NO se separa. Haz que lo repitan: «Ich muss um sieben Uhr aufstehen».">
+  <div class="eyebrow a">Modalverb + trennbares Verb</div>
+  <h2 class="a">Mit Modalverb: wieder zusammen! 🧲</h2>
+  <div class="step mt3"><div class="lbl">Ohne Modalverb · getrennt</div>
+    <div class="sent"><span class="tok">Ich</span><span class="tok v">stehe</span><span class="tok">um sieben Uhr</span><span class="tok pre">auf</span><span class="tok">.</span></div></div>
+  <div class="step mt3"><div class="lbl">Mit müssen · Infinitiv zusammen am Ende</div>
+    <div class="sent"><span class="tok">Ich</span><span class="tok m">muss</span><span class="tok">um sieben Uhr</span><span class="tok inf fly">aufstehen</span><span class="tok">.</span></div></div>
+  <div class="step mt3"><div class="warnbox">Con un <b>Modalverb</b> conjugado, el verbo separable va en <b>infinitivo</b> al final y <b>no se separa</b>.</div></div>
+  <div class="step mt3"><div class="row">
+    <span class="chip">Ich <b>kann</b> heute <b>einkaufen</b>.</span><span class="chip">Sie <b>möchte</b> ihre Mutter <b>anrufen</b>.</span><span class="chip">Wir <b>müssen</b> früh <b>aufstehen</b>.</span></div></div>
+</section>
+
+<!-- 15 · DREI REGELN, EIN SATZ -->
+<section class="slide bg-navy dark" data-min="55–58" data-note="Espacio = cada palabra se explica. Al final que UN alumno explique la frase entera: muss conjugado (ich), meinen = Akkusativ masculino, anrufen junto al final porque hay modal.">
+  <div class="eyebrow a">Alles zusammen · Die große Challenge</div>
+  <h2 class="a">Ein Satz, drei Regeln 🏆</h2>
+  <div class="sent mt3 a"><span class="tok">Ich</span><span class="tok m">muss</span><span class="tok po">meinen</span><span class="tok">Bruder</span><span class="tok inf">anrufen</span><span class="tok">.</span></div>
+  <div class="grid g3 mt3">
+    <div class="step"><div class="box2"><div class="lbl">muss</div><div class="lead">Modalverb <b>konjugiert</b> (ich muss) · Position 2</div></div></div>
+    <div class="step"><div class="box2"><div class="lbl">meinen</div><div class="lead">Possessivartikel im <b>Akkusativ</b> · der Bruder → mein<b>en</b></div></div></div>
+    <div class="step"><div class="box2"><div class="lbl">anrufen</div><div class="lead">trennbares Verb · <b>Infinitiv zusammen</b> am Ende</div></div></div>
+  </div>
+</section>
+
+<!-- 16 · BUILDER -->
+<section class="slide bg-light" data-r="builder" data-min="58–64" data-note="Constructor: clic en las fichas para ordenar; clic en la frase para quitar la última. Las fichas ya están conjugadas: hay que elegir el orden. Se aceptan órdenes alternativos correctos. R = barajar.">
+  <div class="eyebrow a">Spiel · Baue den Satz</div>
+  <h2 class="a">Ordne die Wörter 🧩</h2>
+  <div class="builder mt2 a"></div>
+</section>
+
+<!-- 17 · FEHLERDETEKTIV -->
+<section class="slide bg-gold" data-min="64–67" data-note="Ojo: UNA frase es correcta. Antes del clic dicen si tiene error y lo corrigen. Pregunta siempre por qué.">
+  <div class="eyebrow a">Fehlerdetektiv 🕵️</div>
+  <h2 class="a">Richtig oder falsch?</h2>
+  <div class="grid g2 mt3">
+    <div class="rv a" onclick="rv(this)"><div class="front">Ich muss meinen Bruder <span class="wrong">anrufe</span>.</div><div class="back">Ich muss meinen Bruder anrufen. (después de modal: infinitivo)</div></div>
+    <div class="rv a" onclick="rv(this)"><div class="front">Er kann seine Mutter <span class="wrong">ruft an</span>.</div><div class="back">Er kann seine Mutter anrufen. (el verbo no se conjuga dos veces)</div></div>
+    <div class="rv a" onclick="rv(this)"><div class="front">Wir wollen <span class="wrong">unser</span> Freunde anrufen.</div><div class="back">Wir wollen unsere Freunde anrufen. (Plural → -e)</div></div>
+    <div class="rv a" onclick="rv(this)"><div class="front">Sie möchte ihren Vater anrufen.</div><div class="back">✓ Richtig! Keine Fehler.</div></div>
+  </div>
+</section>
+
+<!-- 18 · ALLTAGSSITUATIONEN -->
+<section class="slide bg-teal dark" data-min="67–70" data-note="En parejas: cada pareja escribe una frase por situación; luego abres. Situación 2 lleva Dativ (mit meinem Freund): si no sale, da la pista «mit + Dativ».">
+  <div class="eyebrow a">Mein Alltag · Situationen</div>
+  <h2 class="a">Was sagst du? 💬</h2>
+  <div class="grid g3 mt3">
+    <div class="rv a" onclick="rv(this)"><span class="em">📞</span><div class="front">Necesitas llamar a tu madre.</div><div class="back">Ich muss meine Mutter anrufen.</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">🛍️</span><div class="front">Quieres ir de compras con tu amigo.</div><div class="prompt mt1">Pista: <i>mit</i> + Dativ → mit mein<b>em</b> Freund</div><div class="back">Ich möchte mit meinem Freund einkaufen gehen.</div></div>
+    <div class="rv a" onclick="rv(this)"><span class="em">📱</span><div class="front">Puedes llamar a tu hermano mañana.</div><div class="back">Ich kann morgen meinen Bruder anrufen.</div></div>
+  </div>
+</section>
+
+<!-- 19 · MINI-PRÜFUNG -->
+<section class="slide bg-light" data-min="70–74" data-note="Individual, en silencio, cada uno en su ordenador. 1 punto por pregunta. No corrijas en voz alta hasta que todos hayan terminado.">
+  <div class="eyebrow a">Mini-Prüfung 📝</div>
+  <div class="row a" style="justify-content:space-between"><h2>Zeig, was du kannst!</h2><div class="score" id="q5S">0 / 4</div></div>
+  <div class="grid g2 mt2" id="q5" style="gap:1vh 1.2vw"></div>
+  <div class="row mt2 a"><button class="b w sm" onclick="mkQuiz('q5')">↺ Nochmal</button></div>
+</section>
+
+<!-- 20 · FIN -->
+<section class="slide bg-mint dark" data-min="74–75" data-note="Cierre: que marquen ELLOS lo que dominan (al completar: confeti). Lo que no marquen = repaso al inicio de la próxima. Deberes abajo.">
+  <div class="eyebrow a">Ende 🏁 · Heute kann ich…</div>
+  <h2 class="a">Super gemacht! 🎉</h2>
+  <div class="grid g2 mt3" style="gap:1vh 1vw">
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>mein · dein · sein · ihr · unser · euer · Ihr</div>
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>Akkusativ: mein Bruder → meinen Bruder</div>
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>können · müssen · wollen · dürfen · möchten</div>
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>Modalverb auf Position 2, Infinitiv am Ende</div>
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>Ich stehe um sieben Uhr auf.</div>
+    <div class="ck a" onclick="ck(this)"><div class="box">✓</div>Ich muss um sieben Uhr aufstehen.</div>
+  </div>
+  <div class="box2 mt3 a"><div class="lbl">Hausaufgabe 📝</div>
+    <div class="lead">Schreib 5 Sätze über deinen Alltag mit <b>Modalverb</b> + <b>trennbarem Verb</b> + <b>Possessivartikel</b>. Beispiel: <i>Ich muss meine Oma anrufen.</i></div></div>
+</section>
+
+</div>
+
+<div id="nav"><button class="nb" onclick="go(i-1)">←</button><button class="nb" onclick="go(i+1)">→</button></div>
+<div id="hint">Espacio paso · R azar · T reloj · N notas · F full</div>
+<div id="num">1 / 20</div>
+<div id="notes"></div>
+<script>
+/* ===== NAVEGACIÓN ===== */
+const S=[...document.querySelectorAll('#deck > section.slide')];let i=0;
+function go(n){
+  if(n<0||n>=S.length)return;
+  S[n].style.setProperty('--cx',n>=i?'92%':'8%');
+  S[i].classList.remove('on');i=n;S[i].classList.add('on');S[i].scrollTop=0;
+  S[i].querySelectorAll('.a,.pop-in').forEach((e,k)=>{if(!e.style.getPropertyValue('--i'))e.style.setProperty('--i',k)});
+  document.getElementById('num').textContent=(i+1)+' / '+S.length;
+  document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+  document.getElementById('notes').innerHTML='<b>⏱ min '+(S[i].dataset.min||'')+'</b> &nbsp;·&nbsp; '+(S[i].dataset.note||'');
+}
+function rv(e){e.classList.toggle('open')}
+document.querySelectorAll('.step').forEach(s=>s.addEventListener('click',()=>s.classList.add('show')));
+document.querySelectorAll('.sent').forEach(s=>s.querySelectorAll('.tok').forEach((t,k)=>t.style.setProperty('--t',k)));
+const pickR=a=>a[Math.floor(Math.random()*a.length)];
+function nextIdx(len,cur){let k;do{k=Math.floor(Math.random()*len)}while(len>1&&k===cur);return k}
+function reanim(el){el.classList.remove('enter');void el.offsetWidth;el.classList.add('enter')}
+S.forEach(s=>{const o=document.createElement('div');o.className='orbs';
+  const W=['mein','muss','kann','auf','an','●','●'];
+  for(let k=0;k<8;k++){const sp=document.createElement('span');sp.textContent=W[k%W.length];
+    sp.style.cssText=`left:${Math.random()*92}%;top:${Math.random()*88}%;font-size:${28+Math.random()*80}px;animation-duration:${10+Math.random()*12}s;animation-delay:-${Math.random()*10}s`;
+    o.appendChild(sp)}
+  s.prepend(o)});
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('.b');if(!b)return;const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height);
+  const s=document.createElement('span');s.className='rip';s.style.cssText=`width:${d}px;height:${d}px;left:${e.clientX-r.left-d/2}px;top:${e.clientY-r.top-d/2}px`;
+  b.appendChild(s);setTimeout(()=>s.remove(),650)});
+
+/* ===== CONFETI ===== */
+const cv=document.getElementById('cf'),cx=cv.getContext('2d');let parts=[],loopOn=false;
+function rs(){cv.width=innerWidth;cv.height=innerHeight}rs();addEventListener('resize',rs);
+function boom(x=innerWidth/2,y=innerHeight/2,n=110){
+  const cols=['#2563eb','var(--dt-red)','#fbbf24','#0ea5e9','#a855f7','#14b8a6','#10b981','#ffffff'];
+  for(let k=0;k<n;k++){const a=Math.random()*Math.PI*2,s=3+Math.random()*10;
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-6,r:5+Math.random()*6,c:cols[k%cols.length],rot:Math.random()*6,vr:(Math.random()-.5)*.35,life:0})}
+  if(!loopOn){loopOn=true;requestAnimationFrame(loop)}}
+function boomAt(el,n){const r=el.getBoundingClientRect();boom(r.left+r.width/2,r.top+r.height/2,n)}
+function loop(){cx.clearRect(0,0,cv.width,cv.height);
+  parts.forEach(p=>{p.vy+=.26;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.life++;
+    cx.save();cx.globalAlpha=Math.max(0,1-p.life/150);cx.translate(p.x,p.y);cx.rotate(p.rot);cx.fillStyle=p.c;cx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);cx.restore()});
+  parts=parts.filter(p=>p.life<150&&p.y<cv.height+60);
+  if(parts.length)requestAnimationFrame(loop);else{loopOn=false;cx.clearRect(0,0,cv.width,cv.height)}}
+function ck(e){e.classList.toggle('on');const all=[...e.parentElement.querySelectorAll('.ck')];
+  if(e.classList.contains('on')&&all.every(x=>x.classList.contains('on')))boom(innerWidth/2,innerHeight/2,180);
+  else if(e.classList.contains('on'))boomAt(e,25)}
+
+/* ===== KONJUGATION ===== */
+const CJ=[
+ ["können",["kann","kannst","kann","können","könnt","können"]],
+ ["müssen",["muss","musst","muss","müssen","müsst","müssen"]],
+ ["wollen",["will","willst","will","wollen","wollt","wollen"]],
+ ["dürfen",["darf","darfst","darf","dürfen","dürft","dürfen"]],
+ ["möchten",["möchte","möchtest","möchte","möchten","möchtet","möchten"]]
+];
+const PER=["ich","du","er/sie/es","wir","ihr","sie/Sie"];
+const CJX={"können":"Ich kann gut schwimmen.","müssen":"Du musst heute lernen.","wollen":"Er will nach Hause gehen.","dürfen":"Wir dürfen hier sitzen.","möchten":"Ich möchte Wasser trinken."};
+let cjI=0;
+(function(){const c=document.getElementById('cjB');CJ.forEach((v,k)=>{const b=document.createElement('button');b.className='b w sm';b.textContent=v[0];b.onclick=()=>cjGo(k);c.appendChild(b)})})();
+function cjGo(k){cjI=k;const v=CJ[k];document.getElementById('cjT').textContent=v[0];
+  document.getElementById('cjG').innerHTML=v[1].map((f,j)=>`<div class="${j===0||j===2?'hl':''}"><span>${PER[j]}</span><b>${f}</b></div>`).join('');
+  document.getElementById('cjS').textContent='💬 '+CJX[v[0]];
+  document.querySelectorAll('#cjB .b').forEach((b,j)=>b.classList.toggle('on',j===k));reanim(document.getElementById('cjBox'))}
+function cjSpace(){if(cjI<CJ.length-1){cjGo(cjI+1);return true}return false}
+
+/* ===== QUIZ ===== */
+const QZ={
+ q1:[
+  {t:"Ich sehe ___ Bruder. (mein)",a:"meinen",o:["mein","meine","meinen"]},
+  {t:"Sie besucht ___ Mutter. (ihr)",a:"ihre",o:["ihr","ihre","ihren"]},
+  {t:"Wir kaufen ___ Auto. (unser)",a:"unser",o:["unser","unsere","unseren"]},
+  {t:"Er ruft ___ Freund an. (sein)",a:"seinen",o:["sein","seine","seinen"]},
+  {t:"Du findest ___ Bücher. (dein)",a:"deine",o:["dein","deine","deinen"]}],
+ q2:[
+  {t:"Das ist Lisa. Das ist ___ Tasche.",a:"ihre",o:["seine","ihre","ihr"]},
+  {t:"Ich besuche ___ Vater.",a:"meinen",o:["mein","meine","meinen"]},
+  {t:"Wir sehen ___ Freunde.",a:"unsere",o:["unser","unsere","unseren"]},
+  {t:"Herr Weber, ist das ___ Handy?",a:"Ihr",o:["ihr","Ihr","Ihre"]},
+  {t:"Tom und Lea, wo ist ___ Hund?",a:"euer",o:["euer","eure","ihr"]}],
+ q3:[
+  {t:"Ich habe morgen eine Prüfung. Ich ___ lernen.",a:"muss",o:["muss","darf","möchte"]},
+  {t:"Ich schwimme sehr gut. Ich ___ gut schwimmen.",a:"kann",o:["kann","muss","darf"]},
+  {t:"Der Lehrer erlaubt es: Wir ___ früher gehen.",a:"dürfen",o:["müssen","dürfen","wollen"]},
+  {t:"Mein Plan für den Sommer: Ich ___ nach Berlin fahren.",a:"will",o:["will","darf","muss"]},
+  {t:"Im Café, höflich: Ich ___ einen Tee, bitte.",a:"möchte",o:["muss","will","möchte"]}],
+ q4:[
+  {t:"Ich stehe um acht Uhr ___.",a:"auf"},
+  {t:"Wir kaufen morgen ___.",a:"ein"},
+  {t:"Er ruft seine Mutter ___.",a:"an"},
+  {t:"Sie sieht am Abend ___.",a:"fern"},
+  {t:"Kommst du morgen ___?",a:"mit"}],
+ q5:[
+  {t:"1 · Ich sehe ___ Bruder. (mein)",a:"meinen",o:["mein","meine","meinen"]},
+  {t:"2 · Du ___ heute lernen. (müssen)",a:"musst",o:["muss","musst","müsst"]},
+  {t:"3 · (aufstehen) Ich ___",a:"stehe jeden Morgen um sieben Uhr auf.",o:["stehe jeden Morgen um sieben Uhr auf.","aufstehe jeden Morgen um sieben Uhr.","stehe auf jeden Morgen um sieben Uhr."]},
+  {t:"4 · sie / wollen / ihr Bruder / anrufen → ___",a:"Sie will ihren Bruder anrufen.",o:["Sie will ihr Bruder anrufen.","Sie will ihren Bruder anrufen.","Sie wollen ihren Bruder rufen an."]}]
+};
+const Q2O=["auf","ein","an","fern","mit"];
+const cap=s=>s[0].toUpperCase()+s.slice(1);
+function mkQuiz(id){const r=document.getElementById(id);r.innerHTML='';
+  QZ[id].forEach((q,k)=>{const d=document.createElement('div');d.className='q';
+    d.innerHTML=`<div class="txt">${q.t.replace('___','<span class="gap">___</span>')}</div><div class="opts">${(q.o||Q2O).map(o=>`<button class="pick" data-o="${o}">${o}</button>`).join('')}</div>`;
+    d.querySelectorAll('.pick').forEach(b=>b.onclick=()=>ans(id,d,q,b));r.appendChild(d)});
+  qScore(id,true)}
+function ans(id,d,q,b,quiet){
+  if(d.classList.contains('right'))return;
+  d.querySelectorAll('.pick').forEach(x=>x.classList.remove('hit','miss'));d.classList.remove('bad');void d.offsetWidth;
+  if(b.dataset.o===q.a){d.classList.add('right');b.classList.add('hit');const g=d.querySelector('.gap');
+    g.textContent=q.t.startsWith('___')?cap(q.a):q.a;g.className='gap k dat';if(!quiet)boomAt(b,30)}
+  else{d.classList.add('bad');b.classList.add('miss')}
+  qScore(id,quiet)}
+function qScore(id,quiet){const n=document.querySelectorAll('#'+id+' .q.right').length,el=document.getElementById(id+'S');
+  el.textContent=n+' / '+QZ[id].length;el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');
+  if(n===QZ[id].length&&!quiet)boom(innerWidth/2,innerHeight/3,200)}
+
+/* ===== BUILDER ===== */
+const SENT=[
+ {a:"Ich muss heute lernen.",alt:["Heute muss ich lernen."]},
+ {a:"Wir können Fußball spielen.",alt:[]},
+ {a:"Sie möchte morgen einkaufen.",alt:["Morgen möchte sie einkaufen."]},
+ {a:"Ich rufe meinen Freund an.",alt:[]},
+ {a:"Wir kaufen am Samstag ein.",alt:["Am Samstag kaufen wir ein."]},
+ {a:"Sie steht jeden Morgen auf.",alt:["Jeden Morgen steht sie auf."]},
+ {a:"Ich muss meinen Bruder anrufen.",alt:[],star:1},
+ {a:"Sie möchte ihre Mutter anrufen.",alt:[],star:1},
+ {a:"Wir wollen unsere Freunde anrufen.",alt:[],star:1}
+];
+const norm=s=>s.toLowerCase().replace(/[.,?!]/g,'').replace(/\s+/g,' ').trim();
+const words=s=>s.replace(/[.,?!]/g,'').split(/\s+/).filter(Boolean);
+function shuffle(a){a=[...a];for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a}
+const BR=document.querySelector('.builder');
+function bInit(){BR._i=0;
+  BR.innerHTML='<div class="tabs"></div><div class="drop"></div><div class="tiles"></div>'+
+   '<div class="row mt2"><button class="b" data-a="check">Prüfen ✓</button><button class="b w" data-a="reset">Nochmal ↺</button>'+
+   '<button class="b g" data-a="show">Lösung</button><span class="bmsg"></span></div>';
+  SENT.forEach((s,k)=>{const b=document.createElement('button');b.className='b w sm';b.textContent=(s.star?'⭐ ':'')+'Satz '+(k+1);
+    b.onclick=()=>{BR._i=k;bReset()};BR.querySelector('.tabs').appendChild(b)});
+  BR.querySelector('.drop').onclick=bPop;BR.querySelector('[data-a=check]').onclick=bCheck;
+  BR.querySelector('[data-a=reset]').onclick=bReset;BR.querySelector('[data-a=show]').onclick=bShow;bReset()}
+function bReset(){BR._picked=[];
+  BR.querySelectorAll('.tabs .b').forEach((b,k)=>b.classList.toggle('on',k===BR._i));
+  const d=BR.querySelector('.drop');d.className='drop';d.innerHTML='';BR.querySelector('.bmsg').textContent='';
+  const t=BR.querySelector('.tiles');t.innerHTML='';
+  const w=words(SENT[BR._i].a);let sh=shuffle(w),n=0;while(sh.join(' ')===w.join(' ')&&n++<10)sh=shuffle(w);
+  sh.forEach((x,k)=>{const b=document.createElement('button');b.className='tile';b.textContent=x;b.style.setProperty('--t',k);
+    b.onclick=()=>{b.classList.add('used');BR._picked.push(b);const s=document.createElement('span');s.className='tile';s.textContent=x;
+      d.appendChild(s);d.className='drop';BR.querySelector('.bmsg').textContent=''};t.appendChild(b)})}
+function bPop(){if(!BR._picked.length)return;BR._picked.pop().classList.remove('used');
+  const d=BR.querySelector('.drop');d.removeChild(d.lastElementChild);d.className='drop';BR.querySelector('.bmsg').textContent=''}
+function bCheck(){const s=SENT[BR._i],got=norm(BR._picked.map(b=>b.textContent).join(' '));
+  const ok=[s.a,...s.alt].some(x=>norm(x)===got),d=BR.querySelector('.drop'),m=BR.querySelector('.bmsg');
+  d.classList.remove('ok','no');void d.offsetWidth;
+  if(ok){d.classList.add('ok');m.textContent='✓ Richtig!';m.style.color='var(--mint)';boomAt(d,120)}
+  else{d.classList.add('no');m.textContent=BR._picked.length<words(s.a).length?'… faltan palabras':'✗ Nochmal!';m.style.color='var(--coral)'}}
+function bShow(){const s=SENT[BR._i],d=BR.querySelector('.drop');d.innerHTML='';
+  words(s.a).forEach(x=>{const e=document.createElement('span');e.className='tile';e.textContent=x;d.appendChild(e)});
+  d.className='drop ok';BR.querySelectorAll('.tiles .tile').forEach(t=>t.classList.add('used'));BR._picked=[];
+  const m=BR.querySelector('.bmsg');m.textContent='→ '+s.a;m.style.color='var(--mint)'}
+
+/* ===== TEMPORIZADOR ===== */
+let tTot=300,tLeft=300,tId=null;
+function paintT(){const e=document.getElementById('timer');
+  e.textContent=String(Math.floor(tLeft/60)).padStart(2,'0')+':'+String(tLeft%60).padStart(2,'0');e.classList.toggle('low',tLeft>0&&tLeft<=10)}
+function setT(n){stopT();tTot=n;tLeft=n;paintT()}
+function startT(){if(tId)return;if(tLeft<=0)tLeft=tTot;document.getElementById('timer').classList.add('run');
+  tId=setInterval(()=>{tLeft--;paintT();if(tLeft<=0){stopT();beep();boom(innerWidth-80,40,80)}},1000)}
+function stopT(){clearInterval(tId);tId=null;document.getElementById('timer').classList.remove('run','low')}
+function tgT(){tId?stopT():startT()}
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator(),g=c.createGain();
+  o.connect(g);g.connect(c.destination);o.frequency.value=660;g.gain.value=.15;o.start();setTimeout(()=>{o.stop();c.close()},500)}catch(e){}}
+
+/* ===== TECLADO ===== */
+document.addEventListener('keydown',e=>{
+  const k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'){go(i+1);e.preventDefault()}
+  else if(k==='ArrowLeft'||k==='PageUp'){go(i-1);e.preventDefault()}
+  else if(k===' '){e.preventDefault();
+    const sp=S[i].dataset.sp;if(sp&&window[sp]&&window[sp]())return;
+    const nx=S[i].querySelector('.step:not(.show), .rv:not(.open), .flip:not(.open)');
+    if(nx)nx.classList.add(nx.classList.contains('step')?'show':'open');else go(i+1)}
+  else if(k==='r'||k==='R'){const r=S[i].dataset.r;if(r==='builder')bReset();else if(r&&window[r])window[r]()}
+  else if(k==='t'||k==='T')tgT();
+  else if(k==='n'||k==='N')document.getElementById('notes').classList.toggle('on');
+  else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  else if(k==='Home')go(0);else if(k==='End')go(S.length-1);
+});
+
+/* ===== MODO PDF ===== */
+function printPrep(){
+  parts=[];cx.clearRect(0,0,cv.width,cv.height);
+  document.querySelectorAll('.rv,.flip').forEach(e=>e.classList.add('open'));
+  document.querySelectorAll('.step').forEach(e=>e.classList.add('show'));
+  Object.keys(QZ).forEach(id=>document.querySelectorAll('#'+id+' .q').forEach((d,k)=>{const q=QZ[id][k];
+    ans(id,d,q,[...d.querySelectorAll('.pick')].find(x=>x.dataset.o===q.a),true)}));
+  BR._i=6;bReset();bShow();cjGo(0);parts=[];
+}
+
+/* ===== INIT ===== */
+Object.keys(QZ).forEach(mkQuiz);bInit();cjGo(0);go(0);paintT();
+</script>
+</body>
+</html>

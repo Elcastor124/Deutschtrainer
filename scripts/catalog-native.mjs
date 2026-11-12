@@ -6,9 +6,9 @@ import { createHash } from 'node:crypto';
 import { resolve, join } from 'node:path';
 const dir = resolve(import.meta.dirname, '../public/presentaciones');
 const NATIVE = [{
-  id: 'drei-regeln', unit: 8, minutes: 75, title: 'Drei Regeln, ein Satz',
-  description: 'Possessivartikel, Modalverben und trennbare Verben.',
-  topics: ['Possessivartikel', 'Modalverben', 'Trennbare Verben', 'Satzbau'], level: 'A1–A2', source: 'drei-regeln.html (escrita en el repositorio)',
+  id: 'mein-alltag', unit: 8, title: 'Mein Alltag · Possessivartikel, Modalverben y verbos separables',
+  description: 'Posesivos en Akkusativ, können/müssen/wollen/dürfen/möchten y verbos separables; frases como «Ich muss meinen Bruder anrufen».',
+  topics: ['Possessivartikel', 'Modalverben', 'Trennbare Verben'], level: 'A1–A2', source: 'mein-alltag.html (escrita en el repositorio)',
 }];
 const file = join(dir, 'catalogo.json');
 const crlf = readFileSync(file, 'utf8').includes('\r\n');
@@ -18,7 +18,7 @@ for (const e of NATIVE) {
   const html = readFileSync(path, 'utf8').replace(/\r\n?/g, '\n');
   if (/(?:ghp_|github_pat_|sk-proj-)[A-Za-z0-9_]{15,}/.test(html)) throw new Error('Posible credencial en ' + e.id);
   writeFileSync(path, html);
-  const item = { id: e.id, unit: e.unit, title: e.title, description: e.description, file: `/presentaciones/${e.id}.html`, topics: e.topics, level: e.level, minutes: e.minutes, source: e.source, sha256: createHash('sha256').update(html).digest('hex') };
+  const item = { id: e.id, unit: e.unit, title: e.title, description: e.description, file: `/presentaciones/${e.id}.html`, topics: e.topics, level: e.level, source: e.source, sha256: createHash('sha256').update(html).digest('hex') };
   const i = catalog.findIndex((c) => c.id === e.id);
   if (i >= 0) catalog[i] = item; else catalog.push(item);
 }

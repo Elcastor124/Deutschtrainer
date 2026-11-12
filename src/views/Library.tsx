@@ -120,7 +120,7 @@ function Shelf({ books }: { books: Presentation[] }) {
           <p className="bs-card-k">Lektion {p.unit} · {unitTitle(p.unit)}{isReview(p.id) ? ' · repaso' : ''}</p>
           <h3>{p.title}</h3>
           <p>{p.description}</p>
-          <p className="bs-card-meta">{p.level && <i>{p.level}</i>}{p.minutes && <i>{p.minutes} min</i>}{p.topics.map((x) => <i key={x}>{x}</i>)}</p>
+          <p className="bs-card-meta">{p.level && <i>{p.level}</i>}{p.topics.map((x) => <i key={x}>{x}</i>)}</p>
           <div className="bs-card-actions">
             <a className="dt-btn dt-btn-primary sm" href={p.file} target="_blank" rel="noopener noreferrer"><span className="dt-btn-label">Abrir presentación →</span></a>
             {p.pdf && <a className="dt-link" href={p.pdf} target="_blank" rel="noopener noreferrer">PDF</a>}

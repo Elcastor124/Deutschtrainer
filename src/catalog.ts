@@ -8,8 +8,6 @@ export interface Presentation {
   pdf?: string;
   /** Lektion de la ruta del curso (src/course.ts). */
   unit?: number;
-  /** Duración de la clase en minutos (si la presentación está pensada para una clase concreta). */
-  minutes?: number;
 }
 
 function isAsset(value: unknown, extension: 'html' | 'pdf'): value is string {
@@ -29,14 +27,12 @@ export function parseCatalog(value: unknown): Presentation[] {
         !p.topics.every((topic) => typeof topic === 'string') ||
         (p.level !== undefined && typeof p.level !== 'string') ||
         (p.pdf !== undefined && !isAsset(p.pdf, 'pdf')) ||
-        (p.unit !== undefined && (typeof p.unit !== 'number' || !Number.isInteger(p.unit) || p.unit < 1)) ||
-        (p.minutes !== undefined && (typeof p.minutes !== 'number' || !Number.isInteger(p.minutes) || p.minutes < 1))) throw new Error('Presentación no válida.');
+        (p.unit !== undefined && (typeof p.unit !== 'number' || !Number.isInteger(p.unit) || p.unit < 1))) throw new Error('Presentación no válida.');
     ids.add(p.id);
     return { id: p.id, title: p.title, description: p.description, file: p.file,
       topics: p.topics as string[], ...(p.level !== undefined ? { level: p.level as string } : {}),
       ...(p.pdf !== undefined ? { pdf: p.pdf as string } : {}),
-      ...(p.unit !== undefined ? { unit: p.unit as number } : {}),
-      ...(p.minutes !== undefined ? { minutes: p.minutes as number } : {}) };
+      ...(p.unit !== undefined ? { unit: p.unit as number } : {}) };
   });
 }
 
