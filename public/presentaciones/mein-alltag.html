@@ -323,6 +323,19 @@ h2{font-size:clamp(30px,4.4vw,66px);line-height:.95;letter-spacing:-.035em;font-
 .dark .rv.open,.bg-gold .rv.open{background:var(--dt-ink-2)}
 .dark .rv.open *,.bg-gold .rv.open *{color:var(--dt-paper)}
 .dark .rv.open .back,.bg-gold .rv.open .back,.dark .rv.open .back *,.bg-gold .rv.open .back *{color:var(--gold)}
+
+/* Actualización de paleta: grafito cálido, papel y rojo de Deutschtrainer. */
+:root{--teal:#c58a70;--teal2:#9e4d46;--sky:#dd9b87;--orange:#db8b5b;--purple:#b57f78;--pink:#d99b94;--mint:#b65b50;--blue:#b6483f}
+.bg-blue,.bg-teal,.bg-purple,.bg-mint,.bg-pink{background:radial-gradient(circle at 82% 8%,#4a2925 0%,#201b1a 36%,#121110 100%);color:#f7f2ec}
+.bg-gold{background:radial-gradient(circle at 82% 8%,#544132 0%,#241e1a 40%,#121110 100%);color:#f7f2ec}
+.bg-light,.bg-navy{background:radial-gradient(circle at 85% 0%,#35201e 0%,#161313 43%,#0e0d0d 100%)}
+[hidden]{display:none!important}
+.q:not(.right):not(.bad) .pick{color:#f5eeea;border-color:#8b7772}
+#teamOpen{position:fixed;right:20px;top:78px;z-index:50;padding:10px 16px;border:1px solid #a44f46;border-radius:999px;background:#201918;color:#fff;font:700 14px var(--dt-display);cursor:pointer}
+#teamsDialog{position:fixed;inset:0;margin:auto;width:min(540px,92vw);max-height:90vh;overflow:auto;padding:24px;border:1px solid #ad5d52;border-radius:22px;background:#211c1a;color:#fff;box-shadow:0 18px 70px #000b}
+#teamsDialog::backdrop{background:#000b} #teamsDialog h2{font-size:clamp(26px,4vw,40px)}
+.team-row{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;margin:12px 0}.team-row input{width:100%;min-width:0;padding:10px;border:1px solid #74605a;border-radius:9px;background:#171313;color:#fff;font:inherit}.team-row output{min-width:40px;text-align:center;font-weight:900;font-size:22px}.team-row button,#teamsDialog .controls button{padding:9px 13px;border:1px solid #876259;border-radius:9px;background:#332522;color:#fff;cursor:pointer;font:700 14px var(--dt-display)}
+#teamsDialog .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}#teamsDialog p{font-size:14px;line-height:1.4;color:#e1cfca;margin:10px 0}
 </style>
 </head>
 <body>
@@ -396,6 +409,8 @@ h2{font-size:clamp(30px,4.4vw,66px);line-height:.95;letter-spacing:-.035em;font-
   <div class="eyebrow a">Übung · Possessivartikel im Akkusativ</div>
   <div class="row a" style="justify-content:space-between"><h2>Welche Form passt?</h2><div class="score" id="q1S">0 / 5</div></div>
   <div class="grid g2 mt2" id="q1" style="gap:1vh 1.2vw"></div>
+  <div class="grid g2 mt2 extra-quiz" id="q6" style="gap:1vh 1.2vw" hidden></div>
+  <div class="row mt1"><button class="b w sm" type="button" onclick="quizPage('q1','q6',false)">Preguntas 1–5</button><button class="b w sm" type="button" onclick="quizPage('q1','q6',true)">Más preguntas 6–9</button><span class="score" id="q6S" hidden>0 / 4</span><button id="q6Reset" class="b w sm" type="button" onclick="mkQuiz('q6')" hidden>↺ Nochmal</button></div>
   <div class="row mt2 a"><button class="b w sm" onclick="mkQuiz('q1')">↺ Nochmal</button></div>
 </section>
 
@@ -447,6 +462,8 @@ h2{font-size:clamp(30px,4.4vw,66px);line-height:.95;letter-spacing:-.035em;font-
   <div class="eyebrow a">Übung · Modalverben</div>
   <div class="row a" style="justify-content:space-between"><h2>Welches Modalverb passt?</h2><div class="score" id="q3S">0 / 5</div></div>
   <div class="grid g2 mt2" id="q3" style="gap:1vh 1.2vw"></div>
+  <div class="grid g2 mt2 extra-quiz" id="q7" style="gap:1vh 1.2vw" hidden></div>
+  <div class="row mt1"><button class="b w sm" type="button" onclick="quizPage('q3','q7',false)">Preguntas 1–5</button><button class="b w sm" type="button" onclick="quizPage('q3','q7',true)">Más preguntas 6–9</button><span class="score" id="q7S" hidden>0 / 4</span><button id="q7Reset" class="b w sm" type="button" onclick="mkQuiz('q7')" hidden>↺ Nochmal</button></div>
   <div class="row mt2 a"><button class="b w sm" onclick="mkQuiz('q3')">↺ Nochmal</button></div>
 </section>
 
@@ -490,6 +507,8 @@ h2{font-size:clamp(30px,4.4vw,66px);line-height:.95;letter-spacing:-.035em;font-
   <div class="eyebrow a">Übung · Trennbare Verben</div>
   <div class="row a" style="justify-content:space-between"><h2>Ergänze das Präfix</h2><div class="score" id="q4S">0 / 5</div></div>
   <div class="grid g2 mt2" id="q4" style="gap:1vh 1.2vw"></div>
+  <div class="grid g2 mt2 extra-quiz" id="q8" style="gap:1vh 1.2vw" hidden></div>
+  <div class="row mt1"><button class="b w sm" type="button" onclick="quizPage('q4','q8',false)">Preguntas 1–5</button><button class="b w sm" type="button" onclick="quizPage('q4','q8',true)">Más preguntas 6–9</button><span class="score" id="q8S" hidden>0 / 4</span><button id="q8Reset" class="b w sm" type="button" onclick="mkQuiz('q8')" hidden>↺ Nochmal</button></div>
   <div class="row mt2 a"><button class="b w sm" onclick="mkQuiz('q4')">↺ Nochmal</button></div>
 </section>
 
@@ -575,7 +594,9 @@ h2{font-size:clamp(30px,4.4vw,66px);line-height:.95;letter-spacing:-.035em;font-
 </div>
 
 <div id="nav"><button class="nb" onclick="go(i-1)">←</button><button class="nb" onclick="go(i+1)">→</button></div>
-<div id="hint">Espacio paso · R azar · T reloj · N notas · F full</div>
+<div id="hint">Espacio paso · R azar · T reloj · N notas · P puntos · F full</div>
+<button id="teamOpen" type="button" onclick="toggleTeamDialog()">Puntos · P</button>
+<dialog id="teamsDialog" aria-labelledby="teamsTitle"><h2 id="teamsTitle">Puntos por equipos</h2><p>Marcador de esta presentación en este dispositivo. Suma los puntos manualmente: no modifica el ranking ni las cuentas.</p><div id="teamRows"></div><div class="controls"><button type="button" onclick="undoTeam()">Deshacer</button><button type="button" onclick="resetTeam()">Poner a cero</button><button type="button" onclick="toggleTeamDialog()">Cerrar</button></div><p id="teamStatus" aria-live="polite"></p></dialog>
 <div id="num">1 / 20</div>
 <div id="notes"></div>
 <script>
@@ -668,6 +689,21 @@ const QZ={
   {t:"Er ruft seine Mutter ___.",a:"an"},
   {t:"Sie sieht am Abend ___.",a:"fern"},
   {t:"Kommst du morgen ___?",a:"mit"}],
+ q6:[
+  {t:"Ich suche ___ Schlüssel. (mein)",a:"meinen",o:["mein","meine","meinen"]},
+  {t:"Wir besuchen ___ Großeltern. (unser)",a:"unsere",o:["unsere","unseren","unser"]},
+  {t:"Paul findet ___ Handy nicht. (sein)",a:"sein",o:["seine","seinen","sein"]},
+  {t:"Du besuchst ___ Mutter. (dein)",a:"deine",o:["dein","deine","deinen"]}],
+ q7:[
+  {t:"Ihr ___ heute früher gehen. (dürfen)",a:"dürft",o:["darf","dürft","dürfen"]},
+  {t:"Meine Eltern ___ gut kochen. (können)",a:"können",o:["kann","könnt","können"]},
+  {t:"Du ___ am Wochenende Oma besuchen. (wollen)",a:"willst",o:["willst","will","wollt"]},
+  {t:"Wir ___ heute viel lernen. (müssen)",a:"müssen",o:["muss","müsst","müssen"]}],
+ q8:[
+  {t:"Ich stehe jeden Tag um sieben Uhr ___.",a:"auf"},
+  {t:"Wir rufen morgen unsere Oma ___.",a:"an"},
+  {t:"Du kommst heute Abend ___.",a:"mit"},
+  {t:"Sie kauft am Samstag ___.",a:"ein"}],
  q5:[
   {t:"1 · Ich sehe ___ Bruder. (mein)",a:"meinen",o:["mein","meine","meinen"]},
   {t:"2 · Du ___ heute lernen. (müssen)",a:"musst",o:["muss","musst","müsst"]},
@@ -748,9 +784,23 @@ function tgT(){tId?stopT():startT()}
 function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator(),g=c.createGain();
   o.connect(g);g.connect(c.destination);o.frequency.value=660;g.gain.value=.15;o.start();setTimeout(()=>{o.stop();c.close()},500)}catch(e){}}
 
+/* ===== MARCADOR DE EQUIPOS (local, separado del ranking) ===== */
+const TEAM_KEY='dt:mein-alltag:teams:v1';
+let teams=[{name:'Equipo Robe',points:0},{name:'Equipo Dani',points:0}],teamHistory=[];
+try{const v=JSON.parse(localStorage.getItem(TEAM_KEY));if(Array.isArray(v)&&v.length===2&&v.every(x=>typeof x.name==='string'&&Number.isSafeInteger(x.points)&&x.points>=0))teams=v}catch(e){}
+function saveTeams(){try{localStorage.setItem(TEAM_KEY,JSON.stringify(teams))}catch(e){document.getElementById('teamStatus').textContent='No se ha podido guardar el marcador en este navegador.'}}
+function paintTeams(){const root=document.getElementById('teamRows');root.replaceChildren();teams.forEach((t,n)=>{const row=document.createElement('div');row.className='team-row';const label=document.createElement('input');label.value=t.name;label.maxLength=40;label.setAttribute('aria-label','Nombre del equipo '+(n+1));label.onchange=()=>{teams[n].name=label.value.trim().slice(0,40)||'Equipo '+(n+1);saveTeams();paintTeams()};const value=document.createElement('output');value.textContent=t.points;value.setAttribute('aria-label','Puntos '+t.name);const minus=document.createElement('button');minus.type='button';minus.textContent='−1';minus.setAttribute('aria-label','Restar punto a '+t.name);minus.onclick=()=>changeTeam(n,-1);const plus=document.createElement('button');plus.type='button';plus.textContent='+1';plus.setAttribute('aria-label','Sumar punto a '+t.name);plus.onclick=()=>changeTeam(n,1);row.append(label,value,minus,plus);root.append(row)})}
+function changeTeam(n,d){if(teams[n].points+d<0)return;teamHistory.push(teams.map(x=>({...x})));teams[n].points+=d;saveTeams();paintTeams()}
+function undoTeam(){if(!teamHistory.length)return;teams=teamHistory.pop();saveTeams();paintTeams()}
+function resetTeam(){if(!confirm('¿Poner a cero los puntos de ambos equipos?'))return;teamHistory.push(teams.map(x=>({...x})));teams.forEach(x=>x.points=0);saveTeams();paintTeams()}
+function toggleTeamDialog(){const d=document.getElementById('teamsDialog');if(d.open){d.close();document.getElementById('teamOpen').focus()}else{paintTeams();d.showModal()}}
+function quizPage(oldId,newId,extra){document.getElementById(oldId).hidden=extra;document.getElementById(oldId+'S').hidden=extra;document.getElementById(newId).hidden=!extra;document.getElementById(newId+'S').hidden=!extra;document.getElementById(newId+'Reset').hidden=!extra;document.querySelector(`[onclick="mkQuiz('${oldId}')"]`).parentElement.hidden=extra}
 /* ===== TECLADO ===== */
 document.addEventListener('keydown',e=>{
   const k=e.key;
+  if(e.target.closest?.('input, textarea, select, [contenteditable="true"]'))return;
+  if(document.getElementById('teamsDialog').open){if(k==='Escape'){e.preventDefault();toggleTeamDialog()}return}
+  if(k==='p'||k==='P'){e.preventDefault();toggleTeamDialog();return}
   if(k==='ArrowRight'||k==='PageDown'){go(i+1);e.preventDefault()}
   else if(k==='ArrowLeft'||k==='PageUp'){go(i-1);e.preventDefault()}
   else if(k===' '){e.preventDefault();
