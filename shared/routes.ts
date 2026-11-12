@@ -12,6 +12,7 @@ const ROUTES: [RegExp, string, string | null][] = [
   [/^\/road-to-b1\/level-1\/?$/, 'Road to B1 · Nivel 1', null],
   [/^\/examenes\/a1-a2\/?$/, 'Simulacro A1–A2', null],
   [/^\/examenes\/horen-001\/?$/, 'Hören · Examen de comprensión', null],
+  [/^\/examenes\/lesen-001\/?$/, 'Leseverstehen · Alltag und Kommunikation', null],
   [/^\/ranking\/?$/, 'Ranking semanal', '/ranking'],
   [/^\/mi\/?$/, 'Mi espacio', null],
   [/^\/cuenta\/?$/, 'Mi cuenta', null],

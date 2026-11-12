@@ -198,7 +198,7 @@ export function ProgressDetails({ p }: { p: ProgressSummary }) {
         <div key={a.week} className="libre-bar"><span>{a.week.slice(5)}</span><i style={{ width: `${Math.round((a.accuracy ?? 0) * 100)}%` }} /><span>{Math.round((a.accuracy ?? 0) * 100)} %</span></div>
       ))}</>}
       {p.frequentErrors.length > 0 && <><h3>Lo que más fallas</h3><ul className="libre-list">{p.frequentErrors.map((e) => <li key={e.qid} lang="de">{e.prompt} <span className="libre-note">({e.wrong} fallos)</span></li>)}</ul></>}
-      {p.activities.length > 0 && <><h3>Últimas actividades</h3><ul className="libre-list">{p.activities.map((a) => <li key={a.at}>{({ blackcard: 'BlackCard', jenga: 'Wort-Jenga', boxing: 'Boxeo', deck: 'Deck' } as const)[a.game]} {a.level ?? ''} · {a.correct}/{a.total} bien · {new Date(a.at).toLocaleDateString()}</li>)}</ul></>}
+      {p.activities.length > 0 && <><h3>Últimas actividades</h3><ul className="libre-list">{p.activities.map((a) => <li key={a.at}>{({ blackcard: 'BlackCard', jenga: 'Wort-Jenga', boxing: 'Boxeo', deck: 'Deck', lesen: 'Leseverstehen' } as Record<string, string>)[a.game] ?? a.game} {a.level ?? ''} · {a.correct}/{a.total} bien · {new Date(a.at).toLocaleDateString()}</li>)}</ul></>}
     </section>
   );
 }

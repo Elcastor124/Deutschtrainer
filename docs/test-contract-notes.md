@@ -193,3 +193,12 @@ Expectativas que cambian a propósito (hay una Lektion más; no se relajó ningu
 - `tests/course.test.ts`: orden `…, sprache-in-bewegung, mein-alltag, road-to-b1`; la nueva es la 8 y el simulacro la 9. Las Lektionen 1–7 conservan su número (el plan Free guarda por número las Lektionen abiertas).
 - `tests/course.test.ts` · `courseOrder`: el catálogo ordenado termina en `mein-alltag`.
 - `tests/presentations.test.ts` y `tests/teacher-os.test.ts`: «diez» presentaciones pasa a once. Los cinco PDF no cambian.
+
+## Leseverstehen 001 · Alltag und Kommunikation (/examenes/lesen-001)
+
+Simulacro de lectura A1–A2 (45 min, 25 Aufgaben, 25 puntos) con el mismo patrón que Hörverstehen 001 (práctica individual + sala de clase, clave solo en el servidor).
+- Contenido: `server/lesen/content-001.ts`, copiado literal del documento del profesor (`server/lesen/spec-001.md`, sha256 comprobado). `tests/lesen.test.ts` verifica textos, preguntas, opciones y que la clave = Lösungsschlüssel y = «Respuesta correcta» de cada pregunta.
+- Servidor: `server/lesen.ts` (`/api/lesen/exam|practice/check|mine|create|join|state|action`). Datos en `DATA_DIR/lesen.json` (fichero nuevo; no toca otros). Con cuenta, cada intento se guarda **una vez** (id de intento): reenviar o refrescar devuelve lo guardado.
+- Progreso: el resultado entra como actividad `game: 'lesen'` (`ProgressLog.activity`). Por eso `GAMES_OK` en `server/progress.ts` incluye `lesen` (ampliación; los demás juegos no cambian). Teacher OS la muestra en la ficha del alumno (Aktivitäten) y «Mi espacio» en las últimas actividades.
+- /examenes: el bloque 3 («Próximamente A2/B1») pasa a ser el Leseverstehen; los «Próximamente» se renumeran 4 y 5. Hörverstehen y el simulacro A1–A2 no cambian.
+- Prueba de navegador: `tests/lesen-browser.mjs` (servidor propio con DATA_DIR temporal).

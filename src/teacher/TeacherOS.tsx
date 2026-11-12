@@ -441,7 +441,7 @@ function StudentDetail({ id }: { id: string }) {
           {d.grammar.length ? <div className="tos-table-wrap"><table className="tos-table"><thead><tr><th>Tema</th><th>n</th><th>Precisión</th><th>Por dificultad</th></tr></thead><tbody>{d.grammar.map((g) => <tr key={g.topic}><td><b>{g.name}</b></td><td>{g.n}</td><td>{g.n < d.minN ? <>{pct(g.accuracy)} <small className="dim">(datos insuficientes)</small></> : pct(g.accuracy)}</td><td><DiffStack byDiff={g.byDiff} /></td></tr>)}</tbody></table></div> : <Empty title="Sin respuestas todavía" />}
         </Card>}
         {tab === 'aktivitaeten' && <Card title="Historial de juegos y ejercicios">
-          {d.activities.length ? <ul className="tos-list">{d.activities.map((a) => <li key={a.at}><div className="tos-row"><b>{GAMES[a.game] ?? a.game} {a.level ?? ''}</b><span className="tos-pill">{a.correct}/{a.total}</span></div><small>{new Date(a.at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}{a.room && !a.room.startsWith('P') ? ` · sala ${a.room}` : ''} · {a.points} pts</small></li>)}</ul> : <Empty title="Aún no ha completado actividades" />}
+          {d.activities.length ? <ul className="tos-list">{d.activities.map((a) => <li key={a.at}><div className="tos-row"><b>{a.game === 'lesen' ? 'Leseverstehen' : GAMES[a.game] ?? a.game} {a.level ?? ''}</b><span className="tos-pill">{a.correct}/{a.total}</span></div><small>{new Date(a.at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}{a.room && !a.room.startsWith('P') ? ` · sala ${a.room}` : ''} · {a.points} pts</small></li>)}</ul> : <Empty title="Aún no ha completado actividades" />}
         </Card>}
         {tab === 'notizen' && <div className="tos-cols">
           <Card title="Lehrernotizen (privadas)">

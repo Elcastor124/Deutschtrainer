@@ -184,7 +184,7 @@ export function StudentHome() {
         <section className="libre-card sh-wide" aria-label="Actividades recientes">
           <h2>Actividades recientes</h2>
           {s.activities.length ? <ul className="sh-acts">{s.activities.slice(0, 6).map((a) => (
-            <li key={a.at}><i aria-hidden="true">{GAME_ICON[a.game] ?? '·'}</i><b>{GAMES.find((g) => g.id === a.game)?.name ?? a.game}</b><span>{a.level ?? 'mixto'}</span><span className="sh-score">{a.correct}/{a.total}</span><small>{new Date(a.at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</small></li>
+            <li key={a.at}><i aria-hidden="true">{GAME_ICON[a.game] ?? '·'}</i><b>{(a.game as string) === 'lesen' ? 'Leseverstehen' : GAMES.find((g) => g.id === a.game)?.name ?? a.game}</b><span>{a.level ?? 'mixto'}</span><span className="sh-score">{a.correct}/{a.total}</span><small>{new Date(a.at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</small></li>
           ))}</ul> : <p className="sh-empty">Todavía no has completado ninguna actividad. Una práctica de 8 preguntas o más cuenta como la primera.</p>}
         </section>
       </div>

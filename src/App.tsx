@@ -25,6 +25,7 @@ import { Mission } from './views/Mission.tsx';
 import { ExamHub } from './views/ExamHub.tsx';
 import { RoadSolo } from './views/RoadSolo.tsx';
 import { Horen } from './views/Horen.tsx';
+import { Lesen } from './views/Lesen.tsx';
 import { Games } from './views/Games.tsx';
 import { HomeworkNotice } from './components/HomeworkNotice.tsx';
 import { KlausSkins } from './views/KlausSkins.tsx';
@@ -69,6 +70,7 @@ export function App() {
   else if (/^\/juegos\/?$/.test(path)) screen = <Games />;
   else if (/^\/examenes\/a1-a2\/?$/.test(path)) screen = <RoadSolo />;
   else if (/^\/examenes\/horen-001\/?$/.test(path)) screen = <Horen />;
+  else if (/^\/examenes\/lesen-001\/?$/.test(path)) screen = <Lesen />;
   else if (/^\/libre\/?$/.test(path)) screen = <Libre />;
   else if (/^\/cuenta\/?$/.test(path)) screen = <Account />;
   else if (/^\/registro\/?$/.test(path)) screen = <RegisterPage />;

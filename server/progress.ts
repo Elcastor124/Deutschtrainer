@@ -81,7 +81,7 @@ export const POINTS = { correct: 10, attempt: 2, dailyBonus: 5, streakBonus: 10,
  */
 export const FREEPLAY = { dailyCap: 200, minQuestions: 8, minAccuracy: 0.4, rewardedPerDay: 3, levelPoints: { A1: 4, A2: 6, B1: 10 } as Record<string, number> } as const;
 export const isAccountProfile = (id: string) => id.startsWith('acc_');
-const GAMES_OK = ['blackcard', 'jenga', 'boxing'] as const;
+const GAMES_OK = ['blackcard', 'jenga', 'boxing', 'lesen'] as const;
 export const RETENTION_DAYS = 180;
 const MAX_EVENTS = 200_000;
 const KINDS: readonly ProgressKind[] = ['answer', 'session', 'game'];

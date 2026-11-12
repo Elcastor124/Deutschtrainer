@@ -18,6 +18,7 @@ import { Store, type Profile } from './store.ts';
 import { createBoxingHandler } from './boxing.ts';
 import { createRoadHandler } from './road.ts';
 import { createHorenHandler } from './horen.ts';
+import { createLesenHandler } from './lesen.ts';
 import { createProgressHandler, isAccountProfile, madridDay, recordEvent } from './progress.ts';
 import { AccountStore } from './accounts.ts';
 import { STUDENT_COOKIE, readCookie } from './cookies.ts';
@@ -399,7 +400,7 @@ const tablon = createTablon({
   hasActivity: (id) => progressHandler.log.events.some((e) => e.profile === id) || klausAi.active(id),
 });
 const courseProgress = createCourseProgress({ accounts, store: new CourseProgressStore(DATA_DIR) });
-const forgetAccount = (id: string) => { courseProgress.forget(id); delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); klausAi.forget(id); tablon.forget(id); freeAccess.forget(id); plusBilling.forget(id); referrals.forget(id); };
+const forgetAccount = (id: string) => { courseProgress.forget(id); lesenHandler.forget(id); delete store.data.profiles[id]; store.saveSoon(); teacherData.forget(id); learningStore.forget(id); klausAi.forget(id); tablon.forget(id); freeAccess.forget(id); plusBilling.forget(id); referrals.forget(id); };
 playApi.setOnRemoved(forgetAccount);
 const teacherOs = createTeacherOs({
   accounts, guard, log: () => progressHandler.log, bank, data: teacherData, publicDir: join(ROOT, 'public'), onRemoved: forgetAccount, learning: (id) => learning.history(id),
@@ -427,6 +428,12 @@ const teacherOs = createTeacherOs({
 });
 const roadHandler = createRoadHandler({ dataDir: DATA_DIR, guard });
 const horenHandler = createHorenHandler({ dataDir: DATA_DIR, guard });
+// Leseverstehen 001: el resultado se guarda una vez por intento y entra en el progreso como actividad completada.
+const lesenHandler = createLesenHandler({
+  dataDir: DATA_DIR, guard,
+  accountOf: (req) => { const w = identify(accounts, req); return w.kind === 'account' ? w.account.id : null; },
+  onResult: (id, r) => { if (isAccountProfile(id)) progressHandler.log.activity(id, { game: 'lesen', level: 'A2', total: r.total, correct: r.correct, ...(r.room ? { room: r.room } : {}) }); },
+});
 const boxingHandler = createBoxingHandler({
   dataDir: DATA_DIR, guard, identify: (req) => identify(accounts, req),
   progress: {
@@ -534,6 +541,7 @@ function serve(req: IncomingMessage, res: ServerResponse) {
   if (progressHandler(req, res)) return;
   if (roadHandler(req, res)) return;
   if (horenHandler(req, res)) return;
+  if (lesenHandler(req, res)) return;
   if (learning(req, res)) return;
   if (boxingHandler(req, res)) return;
   const url = new URL(req.url ?? '/', 'http://x');
@@ -687,7 +695,7 @@ function sweepRooms(at = Date.now()) {
     delete store.data.rooms[code];
     removed++;
   }
-  removed += roadHandler.sweep(at) + horenHandler.sweep(at) + boxingHandler.sweep(at);
+  removed += roadHandler.sweep(at) + horenHandler.sweep(at) + lesenHandler.sweep(at) + boxingHandler.sweep(at);
   guard.sweep();
   if (removed) { store.saveSoon(); console.log(`[ttl] ${removed} sala(s) caducada(s) eliminada(s)`); }
 }

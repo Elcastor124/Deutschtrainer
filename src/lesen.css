@@ -1,0 +1,63 @@
+/* Leseverstehen 001 — reutiliza horen.css (hv-*). Aquí solo lo propio de la lectura: texto a la izquierda, preguntas a la derecha. */
+.lv-teil-meta { margin-left: auto; font-family: var(--dt-mono); font-size: .7rem; color: var(--dt-paper-3); letter-spacing: .08em; }
+.lv-layout { grid-template-columns: minmax(0, 1fr) 280px; }
+.lv-main { min-width: 0; }
+.lv-steps button { align-items: center; }
+.lv-tab-name { font-weight: 600; font-size: .86rem; }
+.lv-stage { display: grid; gap: 18px; min-width: 0; }
+.lv-part-head h2 { text-transform: none; }
+
+.lv-split { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+/* El texto queda fijo y con su propio scroll: se lee mientras se contestan las preguntas. */
+.lv-text { position: sticky; top: calc(var(--dt-nav-height, 64px) + 14px); max-height: calc(100vh - var(--dt-nav-height, 64px) - 32px); overflow: auto; overscroll-behavior: contain;
+  padding: 22px 24px; border-radius: 20px; background: var(--dt-paper, #f2f1ee); color: #141414; border: 1px solid var(--dt-hair-2);
+  font-size: 1.04rem; line-height: 1.62; scrollbar-width: thin; }
+.lv-text:focus-visible { outline: 2px solid var(--dt-red); outline-offset: 3px; }
+.lv-text-title { margin: 0 0 12px; font-size: 1.25rem; line-height: 1.2; color: #0a0a0a; }
+.lv-text h4 { margin: 18px 0 6px; font-size: .95rem; letter-spacing: .04em; color: #0a0a0a; }
+.lv-text p { margin: 0 0 10px; color: #1c1c1c; }
+.lv-meta { margin: 0 0 14px; padding: 10px 12px; border-radius: 12px; background: #e4e2dc; display: grid; gap: 2px; font-size: .92rem; }
+.lv-meta div { display: flex; gap: 8px; }
+.lv-meta dt { font-weight: 700; min-width: 64px; }
+.lv-meta dd { margin: 0; }
+.lv-table-wrap { overflow-x: auto; margin: 4px 0 12px; }
+.lv-table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.lv-table th, .lv-table td { padding: 7px 10px; text-align: left; border-bottom: 1px solid #cfccc4; white-space: nowrap; }
+.lv-table thead th { font-family: var(--dt-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: #5a5a5a; border-bottom: 2px solid #141414; }
+.lv-table tbody th { font-weight: 700; }
+.lv-ad { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid #cfccc4; background: #fbfaf7; }
+.lv-ad header { display: flex; gap: 10px; align-items: baseline; margin-bottom: 4px; font-weight: 700; color: #0a0a0a; }
+.lv-ad header .hv-dot { color: var(--dt-red); font-size: 1.3rem; min-width: 1em; }
+.lv-ad p { margin: 0 0 2px; font-size: .96rem; }
+.lv-text .lv-ad:last-child, .lv-text p:last-child { margin-bottom: 0; }
+
+.lv-answer { display: grid; gap: 14px; min-width: 0; }
+.lv-select { display: block; }
+.lv-select select { width: 100%; max-width: 340px; font-size: 1rem; min-height: 44px; }
+.lv-clock { margin: 4px 0 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.lv-clock b { font-size: 1.3rem; color: var(--dt-paper); font-variant-numeric: tabular-nums; }
+.lv-clock.over b { color: var(--dt-red); }
+.lv-total b { font-variant-numeric: tabular-nums; }
+.lv-repasar ul { margin: 6px 0 0; padding-left: 18px; color: var(--dt-paper-2); font-size: .9rem; }
+.lv-room { display: grid; gap: 18px; }
+.lv-hud { position: static; }
+.lv-room-clock small { font-size: .8rem; margin-left: 4px; }
+.hv-grid li.lv-ok b { color: #4fd27a; }
+.hv-grid li.lv-ko b { color: var(--dt-red); }
+.lv-page .hv-grid { grid-template-columns: repeat(5, 1fr); }
+.lv-page .hv-evidence blockquote { font-style: normal; }
+
+@media (max-width: 1180px) { .lv-layout { grid-template-columns: minmax(0, 1fr); } .lv-layout .hv-side { position: static; } }
+@media (max-width: 860px) {
+  .lv-split { grid-template-columns: 1fr; }
+  /* Móvil / Chromebook estrecho: el texto va arriba con altura limitada y su propio scroll; las preguntas debajo. */
+  .lv-text { position: static; max-height: 52vh; padding: 18px; font-size: 1rem; }
+  .lv-tab-name { display: none; }
+  .lv-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .lv-steps button { justify-content: center; padding: 8px 4px; gap: 6px; }
+}
+@media (max-width: 520px) {
+  .lv-table { font-size: .86rem; }
+  .lv-table th, .lv-table td { padding: 6px 5px; white-space: normal; }
+  .lv-table thead th { font-size: .62rem; letter-spacing: .04em; }
+}

@@ -6,8 +6,9 @@ import '../road-solo.css';
 export const EXAMS = [
   { n: 1, level: 'A1 / A2', title: 'Die erste Prüfung', href: '/examenes/a1-a2', room: '/road-to-b1/level-1', parts: ['Lesen 30', 'Hören 10', 'Diktat 10'], min: 105, ready: true, meta: '' },
   { n: 2, level: 'A1+ / A2', title: 'Hörverstehen 001', href: '/examenes/horen-001?modo=practica', room: '/examenes/horen-001', parts: ['Hören 30', '5 Teile', 'Jeder Text 2×'], min: 60, ready: true, meta: '60 min · 30 puntos · nota sobre 20 · estilo DSD I' },
-  { n: 3, level: 'A2 / B1', title: 'Próximamente', href: '', room: '', parts: ['Lesen', 'Hören', 'Schreiben'], min: 0, ready: false, meta: '' },
-  { n: 4, level: 'B1', title: 'Próximamente', href: '', room: '', parts: ['Lesen', 'Hören', 'Schreiben', 'Sprechen'], min: 0, ready: false, meta: '' },
+  { n: 3, level: 'A1 / A2', title: 'Leseverstehen — Alltag und Kommunikation', href: '/examenes/lesen-001?modo=practica', room: '/examenes/lesen-001', parts: ['Lesen 25', '5 Teile', '25 Aufgaben'], min: 45, ready: true, meta: '45 min · 25 puntos · corrección al terminar' },
+  { n: 4, level: 'A2 / B1', title: 'Próximamente', href: '', room: '', parts: ['Lesen', 'Hören', 'Schreiben'], min: 0, ready: false, meta: '' },
+  { n: 5, level: 'B1', title: 'Próximamente', href: '', room: '', parts: ['Lesen', 'Hören', 'Schreiben', 'Sprechen'], min: 0, ready: false, meta: '' },
 ];
 const go = (path: string) => (e: { preventDefault: () => void }) => { e.preventDefault(); navigate(path); };
 
