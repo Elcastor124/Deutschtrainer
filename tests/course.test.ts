@@ -11,8 +11,10 @@ const catalog = JSON.parse(readFileSync(resolve(import.meta.dirname, '../public/
 
 describe('Ruta del curso', () => {
   it('sigue el orden pedagógico fijo y termina en Road to B1', () => {
-    expect(COURSE.map((u) => u.id)).toEqual(['bruecke-a1', 'bank', 'nebensaetze-perfekt', 'krankenhaus', 'unterwegs', 'akkusativ', 'sprache-in-bewegung', 'road-to-b1']);
-    expect(COURSE.map((u) => u.n)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(COURSE.map((u) => u.id)).toEqual(['bruecke-a1', 'bank', 'nebensaetze-perfekt', 'krankenhaus', 'unterwegs', 'akkusativ', 'sprache-in-bewegung', 'drei-regeln', 'road-to-b1']);
+    // «Drei Regeln, ein Satz» (Lektion 8) se añade ANTES del simulacro y después de las Lektionen existentes: las 1–7 no cambian de número
+    // (el plan Free guarda qué Lektionen abrió cada cuenta por número). Expectativa anterior: 8 unidades y el simulacro era la 8.
+    expect(COURSE.map((u) => u.n)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
   });
 
   it('cubre todas las presentaciones del catálogo y solo enlaza PDFs que existen', () => {
@@ -83,6 +85,6 @@ describe('Progreso del curso', () => {
 
   it('ordena presentaciones según el curso (remaster justo tras Krankenhaus)', () => {
     const ids = catalog.map((c) => c.id).sort((a, b) => courseOrder(a) - courseOrder(b));
-    expect(ids).toEqual(['mission-01', 'bruecke-a1', 'bank', 'nebensaetze-perfekt', 'zusammenfassung-thema-1', 'krankenhaus', 'krankenhaus-remaster', 'unterwegs', 'akkusativ', 'sprache-in-bewegung']);
+    expect(ids).toEqual(['mission-01', 'bruecke-a1', 'bank', 'nebensaetze-perfekt', 'zusammenfassung-thema-1', 'krankenhaus', 'krankenhaus-remaster', 'unterwegs', 'akkusativ', 'sprache-in-bewegung', 'drei-regeln']);
   });
 });

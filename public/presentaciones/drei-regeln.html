@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Drei Regeln, ein Satz · Mein Alltag auf Deutsch</title>
+<link rel="stylesheet" href="/design-tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--card:var(--dt-ink-2);--card2:var(--dt-ink-3);--ink:var(--dt-paper);--dim:var(--dt-muted);--line:var(--dt-hair-2);--red:var(--dt-red);--ok:var(--dt-ok);--gold:var(--dt-gold);
+  --sans:'Space Grotesk',var(--dt-display),system-ui,sans-serif;--mono:'JetBrains Mono',var(--dt-mono),ui-monospace,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background-color:var(--dt-ink-0);color:var(--ink);font-family:var(--sans);font-size:clamp(15px,.9vw + 9px,22px);line-height:1.4;
+  background-image:radial-gradient(var(--dt-hair) 1px,transparent 1px);background-size:26px 26px}
+button,input,select,textarea{font:inherit;color:inherit}
+b{font-weight:700}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ── Marco: barra superior, bloques, progreso ── */
+#top{position:fixed;top:0;left:0;right:0;height:52px;z-index:20;display:flex;align-items:center;gap:14px;padding:0 var(--dt-pad);background:linear-gradient(var(--dt-ink-0),rgba(7,7,7,.85));border-bottom:1px solid var(--dt-hair)}
+#brand{font:700 .7em var(--mono);letter-spacing:.16em;text-transform:uppercase;white-space:nowrap}
+#brand i{color:var(--red);font-style:normal}
+#blocks{display:flex;gap:6px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+#blocks button{background:transparent;border:1px solid var(--dt-hair);border-radius:999px;padding:.25em .8em;font:600 .72em var(--mono);color:var(--dim);cursor:pointer;white-space:nowrap;min-height:30px}
+#blocks button.on{border-color:var(--red);color:var(--ink);background:color-mix(in srgb,var(--red) 14%,transparent)}
+#blocks small{display:none;margin-left:.5em;opacity:.8}
+body.times #blocks small{display:inline}
+#num{font:700 .8em var(--mono);color:var(--dim);white-space:nowrap}
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);z-index:21;transition:width .35s var(--dt-ease)}
+#nav{position:fixed;bottom:10px;right:var(--dt-pad);z-index:20;display:flex;gap:8px;align-items:center}
+#nav button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--dt-ink-1);cursor:pointer;font-size:1.1em}
+#nav button:hover{border-color:var(--red)}
+#hint{position:fixed;bottom:14px;left:var(--dt-pad);z-index:20;font:500 .62em var(--mono);color:var(--dim);letter-spacing:.04em;max-width:60vw}
+#notes{position:fixed;left:var(--dt-pad);right:var(--dt-pad);bottom:56px;z-index:22;background:var(--dt-ink-1);border:1px solid var(--red);border-radius:var(--dt-r-md);padding:.8em 1.1em;font-size:.82em;display:none}
+#notes.on{display:block}
+#notes b{font-family:var(--mono);color:var(--red)}
+
+/* ── Diapositivas ── */
+section.slide{position:absolute;inset:0;padding:70px var(--dt-pad) 70px;overflow-y:auto;overflow-x:hidden;opacity:0;visibility:hidden;transform:translateY(12px);transition:opacity .3s,transform .3s var(--dt-ease),visibility 0s .3s}
+section.slide.on{opacity:1;visibility:visible;transform:none;transition-delay:0s}
+.sl{max-width:1180px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;justify-content:center;gap:1.4vh}
+.eyebrow{font:700 .7em var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--red)}
+h2{font-size:clamp(1.7rem,1.1rem + 2.4vw,3.2rem);line-height:1.04;letter-spacing:-.02em;font-weight:700}
+h2 em{font-style:normal;color:var(--red)}
+.lead{color:var(--dt-paper-2);max-width:62ch}
+.lead b{color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--dt-r-md);padding:1em 1.2em}
+.mono{font-family:var(--mono)}
+.dim{color:var(--dim)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,2vw,28px);align-items:start}
+@media(max-width:860px){.cols{grid-template-columns:1fr}#hint{display:none}}
+@media(max-width:1560px){#brand{display:none}}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{background:var(--red);color:var(--dt-ink-0);border:1px solid var(--red);border-radius:12px;padding:.5em 1.1em;font-weight:700;cursor:pointer;min-height:44px;transition:transform .15s var(--dt-ease),background .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--red)}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+a.btn{display:inline-flex;align-items:center;text-decoration:none}
+
+/* ── Tokens de frase (con FLIP) ── */
+.stage{display:flex;flex-wrap:wrap;gap:.55em;align-items:flex-end;min-height:4.2em;padding:.4em 0}
+.tk{display:inline-flex;align-items:center;position:relative;margin-top:1.5em;padding:.4em .8em;border:1px solid var(--line);border-radius:12px;background:var(--card2);font-weight:600;font-size:1.15em;white-space:nowrap}
+.tk[data-b]::before{content:attr(data-b);position:absolute;top:-1.55em;left:2px;font:700 .55em var(--mono);color:var(--dim);letter-spacing:.08em}
+.tk.mod{border-color:var(--red);color:var(--red);background:color-mix(in srgb,var(--red) 12%,transparent)}
+.tk.fin{border-color:var(--red);color:var(--red)}
+.tk.pre{background:var(--ink);color:var(--dt-ink-0);border-color:var(--ink)}
+.tk.pos{border-color:var(--ok);color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,transparent)}
+.tk.inf{border-style:dashed;border-color:var(--ink)}
+.tk.dim{opacity:.38}
+.tk.joined{margin-left:-.55em}
+.tk.pre.joined{margin-left:0;border-radius:12px 0 0 12px}
+.tk.joined:not(.pre){border-radius:0 12px 12px 0;border-left:0}
+.tk.lit{box-shadow:0 0 0 3px var(--dt-red-glow)}
+button.tk{cursor:pointer;font-family:inherit}
+.caption{min-height:3em;color:var(--dt-paper-2);max-width:70ch}
+.caption b{color:var(--ink)}
+
+/* ── Quiz ── */
+.quiz{display:flex;flex-direction:column;gap:.7em}
+.qhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pips{display:flex;gap:6px}
+.pip{width:30px;height:10px;border-radius:5px;border:0;background:var(--dt-hair-2);cursor:pointer;padding:0}
+.pip.ok{background:var(--ok)}.pip.no{background:var(--red)}.pip.cur{outline:2px solid var(--ink);outline-offset:2px}
+.qcount{font:700 .75em var(--mono);color:var(--dim)}
+.qbody{min-height:7.5em;display:flex;flex-direction:column;gap:.8em}
+.qt{font-size:1.25em;font-weight:600;line-height:1.5}
+.qt.sent{font-size:1.4em}
+.qt mark{background:color-mix(in srgb,var(--red) 28%,transparent);color:var(--ink);border-radius:4px;padding:0 .2em}
+input.gap{background:var(--dt-ink-0);border:2px solid var(--line);border-radius:10px;padding:.2em .5em;font-weight:700;text-align:center;min-width:5em;max-width:100%}
+input.gap.wide{width:min(100%,30em);text-align:left}
+input.gap:focus{border-color:var(--ink);outline:none}
+input.gap.ok{border-color:var(--ok);color:var(--ok)}input.gap.no{border-color:var(--red);color:var(--red)}
+.opts{display:flex;gap:10px;flex-wrap:wrap}
+.opt{background:var(--card2);border:2px solid var(--line);border-radius:12px;padding:.5em 1.1em;font-weight:700;cursor:pointer;min-height:44px;font-size:1.05em}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt.ok{border-color:var(--ok);color:var(--ok)}.opt.no{border-color:var(--red);color:var(--red)}
+.blank{display:inline-block;min-width:3.2em;border-bottom:3px solid var(--ink);text-align:center;margin:0 .15em}
+.blank.ok{color:var(--ok);border-color:var(--ok)}.blank.no{color:var(--red);border-color:var(--red)}
+.qfb{min-height:3.2em;font-size:.95em;padding:.1em 0}
+.qfb.good{color:var(--ok)}.qfb.bad{color:#ff8e89}
+.qfb b{color:inherit}.qfb span{color:var(--dt-paper-2)}
+.qnav{display:flex;gap:8px;flex-wrap:wrap}
+.line{display:flex;gap:.5em;flex-wrap:wrap;min-height:3.2em;padding:.5em;border:2px dashed var(--line);border-radius:12px;align-items:center}
+.pool{display:flex;gap:.5em;flex-wrap:wrap}
+.chip{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:.35em .8em;font-weight:600;cursor:pointer;min-height:40px}
+.chip:hover{border-color:var(--ink)}
+.chip.ok{border-color:var(--ok);color:var(--ok)}.chip.no{border-color:var(--red);color:var(--red)}
+.machine{display:flex;gap:.6em;flex-wrap:wrap;align-items:flex-end}
+.slotw{display:flex;flex-direction:column;gap:.3em}
+.slotw small{font:700 .55em var(--mono);color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+.slotw .box,.slotw select{background:var(--card2);border:2px solid var(--line);border-radius:12px;padding:.4em .8em;font-weight:700;min-height:44px;font-size:1.1em}
+.slotw select.ok{border-color:var(--ok)}.slotw select.no{border-color:var(--red)}
+.slotw .box.inf{border-style:dashed}
+
+/* ── Piezas de cada diapositiva ── */
+.persons{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:860px){.persons{grid-template-columns:repeat(2,1fr)}}
+.pc{display:flex;flex-direction:column;align-items:center;gap:.15em;padding:.7em .4em;border:1px solid var(--line);border-radius:var(--dt-r-md);background:var(--card);transition:border-color .2s,transform .2s var(--dt-ease)}
+.pc .pr{font:600 .8em var(--mono);color:var(--dim)}
+.pc .po{font-size:1.7em;line-height:1}
+.pc.hl{border-color:var(--red);transform:translateY(-3px);background:color-mix(in srgb,var(--red) 10%,var(--card))}
+.pc.hl .po{color:var(--red)}
+.ask{display:flex;gap:12px;align-items:flex-start;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:var(--dt-r-md);padding:.8em 1em;cursor:pointer;width:100%;margin-bottom:8px}
+.ask:hover{border-color:var(--ink)}
+.av{flex:none;width:2.4em;height:2.4em;border-radius:50%;background:var(--card2);border:1px solid var(--line);display:grid;place-items:center;font:700 .8em var(--mono)}
+.ask .a{display:none;color:var(--ok);font-weight:600;margin-top:.2em}
+.ask.on .a{display:block}
+.ask b.k{color:var(--red)}
+.tag{display:inline-block;border:1px solid var(--line);border-radius:6px;padding:0 .4em;font:600 .7em var(--mono);color:var(--dim);margin-left:.4em}
+.ar{display:flex;align-items:baseline;gap:.8em;padding:.45em 0;border-bottom:1px solid var(--dt-hair)}
+.ar .g{width:5.2em;font:600 .72em var(--mono);color:var(--dim)}
+.ar .w{font-size:1.35em;font-weight:600}
+.suf{display:inline-block;max-width:0;overflow:hidden;vertical-align:bottom;opacity:0;color:var(--red);transition:max-width .5s var(--dt-ease),opacity .4s}
+.akk .suf{max-width:1.4em;opacity:1}
+.same{font:600 .5em var(--mono);color:var(--dim);opacity:0;margin-left:.6em;transition:opacity .4s}
+.akk .same{opacity:1}
+.mcards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media(max-width:1000px){.mcards{grid-template-columns:repeat(2,1fr)}}
+.mc{background:var(--card);border:1px solid var(--line);border-radius:var(--dt-r-md);padding:.9em;display:flex;flex-direction:column;gap:.5em;cursor:pointer;text-align:left;transition:border-color .2s,transform .25s var(--dt-ease)}
+.mc:hover,.mc.on{border-color:var(--red);transform:translateY(-3px)}
+.mc svg{width:2.4em;height:2.4em;stroke:var(--red);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.mc h3{font-size:1.35em}
+.mc .fn{font-size:.82em;color:var(--dt-paper-2)}
+.mc .exs{font-weight:600;font-size:.95em;border-top:1px solid var(--dt-hair);padding-top:.5em}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tabs button{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:.45em 1.1em;font-weight:700;cursor:pointer;min-height:44px}
+.tabs button[aria-selected=true]{background:var(--red);border-color:var(--red);color:var(--dt-ink-0)}
+table.cj{border-collapse:separate;border-spacing:0 6px;width:100%;max-width:34em}
+table.cj td{padding:.45em .9em;background:var(--card);font-size:1.3em;font-weight:600}
+table.cj td:first-child{color:var(--dim);font:600 .8em var(--mono);border-radius:10px 0 0 10px;width:8em}
+table.cj td:last-child{border-radius:0 10px 10px 0}
+table.cj tr.hl td{background:color-mix(in srgb,var(--red) 16%,var(--card));color:var(--ink)}
+table.cj tr.hl td:last-child{color:var(--red)}
+.rule{border-left:4px solid var(--red);background:var(--card);padding:.8em 1.1em;border-radius:0 var(--dt-r-md) var(--dt-r-md) 0}
+.rule b{color:var(--red)}
+.exs-list{list-style:none;display:flex;flex-direction:column;gap:.35em}
+.exs-list li{font-weight:600;font-size:1.1em}
+.exs-list li::before{content:"→ ";color:var(--red)}
+.vchips{display:flex;gap:8px;flex-wrap:wrap}
+.legend{display:flex;gap:8px;flex-wrap:wrap}
+.legend span{font:700 .68em var(--mono);padding:.2em .7em;border-radius:99px;border:1px solid var(--line)}
+.srow{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:.7em 0;border-bottom:1px solid var(--dt-hair)}
+@media(max-width:860px){.srow{grid-template-columns:1fr}}
+.rvwrap{display:flex;flex-direction:column;gap:12px}
+.rvcard{background:var(--card);border:1px solid var(--line);border-radius:var(--dt-r-md);padding:.9em 1.1em;display:flex;flex-direction:column;gap:.5em}
+.rvcard .es{font-size:1.25em;font-weight:600}
+.rvcard textarea{background:var(--dt-ink-0);border:1px solid var(--line);border-radius:10px;padding:.4em .7em;resize:vertical;min-height:2.6em;width:100%}
+.rvbox{display:none;border-left:4px solid var(--ok);padding:.2em .8em;font-weight:700;font-size:1.15em;color:var(--ok)}
+.rvbox.hint{border-color:var(--gold);color:var(--gold)}
+.rvbox.on{display:block;animation:rise .35s var(--dt-ease)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.xq{display:flex;flex-direction:column;gap:.5em}
+.xq .topic{font:700 .62em var(--mono);color:var(--red);letter-spacing:.12em;text-transform:uppercase}
+.xmark{font:700 .85em var(--mono)}
+.xmark.ok{color:var(--ok)}.xmark.no{color:var(--red)}
+.score{font-size:clamp(2.4rem,1.6rem+3vw,4.6rem);font-weight:700;line-height:1}
+.score small{font-size:.35em;color:var(--dim);margin-left:.3em}
+.rcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:860px){.rcards{grid-template-columns:1fr}}
+.rcards .card h3{font-size:1.05em;margin-bottom:.4em}
+.rcards .card h3 span{color:var(--red);font-family:var(--mono);margin-right:.4em}
+.rcards p{font-size:.88em;color:var(--dt-paper-2)}
+.rcards .ex{margin-top:.5em;font-weight:700;font-size:.95em;color:var(--ink)}
+#kl{width:110px;height:110px;flex:none}
+.gold{color:var(--gold)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="top"><span id="brand">Deutschtrainer <i>·</i> Drei Regeln, ein Satz</span><div id="blocks" role="navigation" aria-label="Blöcke"></div><span id="num">1 / 20</span></div>
+<main id="deck" aria-live="off"></main>
+<div id="notes" role="note"></div>
+<div id="hint">← → Folien · Leertaste: nächster Schritt · H Lösungen verbergen · T Zeiten · N Notizen · F Vollbild · L Prüfung auflösen</div>
+<div id="nav"><button type="button" id="prev" aria-label="Vorherige Folie">←</button><button type="button" id="next" aria-label="Nächste Folie">→</button></div>
+<div id="bar"></div>
+
+<script id="deck-data" type="application/json">
+{
+"blocks":[
+ {"id":"poss","name":"Possessivartikel","from":0,"min":10},
+ {"id":"modal","name":"Modalverben","from":10,"min":23},
+ {"id":"trenn","name":"Trennbare Verben","from":33,"min":22},
+ {"id":"challenge","name":"Die große Challenge","from":55,"min":15},
+ {"id":"pruefung","name":"Mini-Prüfung","from":70,"min":5}
+],
+"persons":[["ich","mein"],["du","dein"],["er","sein"],["sie (Sg.)","ihr"],["wir","unser"],["ihr","euer"],["sie (Pl.)","ihr"],["Sie","Ihr"]],
+"asks":[
+ {"av":"A","q":"Das ist Anna. Ist das ihr Buch?","a":"Ja, das ist ihr Buch.","who":"sie (Sg.)"},
+ {"av":"P","q":"Das ist Paul. Ist das sein Handy?","a":"Ja, das ist sein Handy.","who":"er"},
+ {"av":"B+M","q":"Das sind Ben und Mia. Ist das ihr Hund?","a":"Ja, das ist ihr Hund.","who":"sie (Pl.)"},
+ {"av":"Hr.","q":"Herr Weber, ist das Ihr Auto?","a":"Ja, das ist mein Auto.","who":"Sie"}
+],
+"akkRows":[
+ {"g":"der · m.","poss":"mein","n":"Bruder","suf":"en","base":"mein","gen":"m","num":"sg"},
+ {"g":"die · f.","poss":"meine","n":"Schwester","suf":"","base":"mein","gen":"f","num":"sg"},
+ {"g":"das · n.","poss":"mein","n":"Auto","suf":"","base":"mein","gen":"n","num":"sg"},
+ {"g":"die · Pl.","poss":"meine","n":"Freunde","suf":"","base":"mein","gen":"f","num":"pl"}
+],
+"modals":{
+ "können":{"es":"capacidad o posibilidad","f":["kann","kannst","kann","können","könnt","können"],"ex":"Ich kann schwimmen.","vow":"a → ö: kann / können"},
+ "müssen":{"es":"obligación o necesidad","f":["muss","musst","muss","müssen","müsst","müssen"],"ex":"Ich muss lernen.","vow":"u → ü: muss / müssen"},
+ "wollen":{"es":"intención o deseo firme","f":["will","willst","will","wollen","wollt","wollen"],"ex":"Ich will nach Hause gehen.","vow":"i → o: will / wollen"},
+ "dürfen":{"es":"permiso","f":["darf","darfst","darf","dürfen","dürft","dürfen"],"ex":"Darf ich hier sitzen?","vow":"a → ü: darf / dürfen"},
+ "möchten":{"es":"deseo expresado con cortesía","f":["möchte","möchtest","möchte","möchten","möchtet","möchten"],"ex":"Ich möchte Wasser trinken.","vow":"forma regular (Konjunktiv II de mögen)"}
+},
+"pron":["ich","du","er/sie/es","wir","ihr","sie/Sie"],
+"ex":{
+ "p2":[
+  {"t":"Ich sehe ___ Bruder. (mein)","a":["meinen"],"sol":"Ich sehe meinen Bruder.","pos":{"b":"mein","g":"m","n":"sg","c":"akk"},"ex":"Bruder es masculino y está en Akkusativ: mein → meinen."},
+  {"t":"Sie besucht ___ Mutter. (ihr)","a":["ihre"],"sol":"Sie besucht ihre Mutter.","pos":{"b":"ihr","g":"f","n":"sg","c":"akk"},"ex":"Mutter es femenino: ihr → ihre (igual en Nominativ y Akkusativ)."},
+  {"t":"Wir kaufen ___ Auto. (unser)","a":["unser"],"sol":"Wir kaufen unser Auto.","pos":{"b":"unser","g":"n","n":"sg","c":"akk"},"ex":"Auto es neutro: sin terminación."},
+  {"t":"Er ruft ___ Freund an. (sein)","a":["seinen"],"sol":"Er ruft seinen Freund an.","pos":{"b":"sein","g":"m","n":"sg","c":"akk"},"ex":"Freund es masculino singular en Akkusativ: sein → seinen."},
+  {"t":"Du findest ___ Bücher. (dein)","a":["deine"],"sol":"Du findest deine Bücher.","pos":{"b":"dein","g":"f","n":"pl","c":"akk"},"ex":"Plural: dein → deine."}
+ ],
+ "p3":[
+  {"t":"Das ist Lisa. Das ist ___ Tasche.","o":["ihr","ihre","ihren","sein"],"a":["ihre"],"sol":"Das ist ihre Tasche.","pos":{"b":"ihr","g":"f","n":"sg","c":"nom"},"ex":"Lisa = sie → ihr; Tasche es femenino → ihre."},
+  {"t":"Ich besuche ___ Vater.","o":["mein","meine","meinen","meinem"],"a":["meinen"],"sol":"Ich besuche meinen Vater.","pos":{"b":"mein","g":"m","n":"sg","c":"akk"},"ex":"Vater: masculino, Akkusativ → meinen."},
+  {"t":"Wir sehen ___ Freunde.","o":["unser","unsere","unseren","unserem"],"a":["unsere"],"sol":"Wir sehen unsere Freunde.","pos":{"b":"unser","g":"f","n":"pl","c":"akk"},"ex":"Plural: unser → unsere."},
+  {"t":"Paul liest ___ Buch.","o":["sein","seine","seinen","ihr"],"a":["sein"],"sol":"Paul liest sein Buch.","pos":{"b":"sein","g":"n","n":"sg","c":"akk"},"ex":"Paul = er → sein; Buch es neutro: sin terminación."},
+  {"t":"Du rufst ___ Schwester an.","o":["dein","deine","deinen","deinem"],"a":["deine"],"sol":"Du rufst deine Schwester an.","pos":{"b":"dein","g":"f","n":"sg","c":"akk"},"ex":"Schwester es femenino: dein → deine."}
+ ],
+ "m7":[
+  {"t":"Ich habe morgen eine Prüfung und keine Wahl: Ich ___ lernen.","o":["kann","muss","will","darf","möchte"],"a":["muss"],"sol":"Ich muss lernen.","verb":"müssen","person":0,"ex":"Obligación (no hay elección) → müssen."},
+  {"t":"Ich habe die Fähigkeit, gut zu schwimmen. Ich ___ gut schwimmen.","o":["kann","muss","will","darf","möchte"],"a":["kann"],"sol":"Ich kann gut schwimmen.","verb":"können","person":0,"ex":"Capacidad → können."},
+  {"t":"Der Lehrer erlaubt uns, früher zu gehen. Wir ___ früher gehen.","o":["können","müssen","wollen","dürfen","möchten"],"a":["dürfen"],"sol":"Wir dürfen früher gehen.","verb":"dürfen","person":3,"ex":"Permiso (erlaubt) → dürfen."},
+  {"t":"Ich habe den festen Plan, nach Berlin zu fahren. Ich ___ nach Berlin fahren.","o":["kann","muss","will","darf","möchte"],"a":["will"],"sol":"Ich will nach Berlin fahren.","verb":"wollen","person":0,"ex":"Intención firme → wollen."},
+  {"t":"Im Café, höflich bestellen: Ich ___ einen Tee, bitte.","o":["kann","muss","will","darf","möchte"],"a":["möchte"],"sol":"Ich möchte einen Tee, bitte.","verb":"möchten","person":0,"ex":"Deseo cortés → möchten."}
+ ],
+ "m8":[
+  {"p":"Ordena las palabras (el modal en posición 2, el infinitivo al final).","tok":[{"t":"heute"},{"t":"ich"},{"t":"muss","r":"fin"},{"t":"lernen","r":"end"}],"sol":"Ich muss heute lernen. · Heute muss ich lernen.","endName":"El infinitivo"},
+  {"p":"Ordena las palabras.","tok":[{"t":"Fußball"},{"t":"spielen","r":"end"},{"t":"wir"},{"t":"können","r":"fin"}],"sol":"Wir können Fußball spielen. · Fußball können wir spielen.","endName":"El infinitivo"},
+  {"p":"Ordena las palabras.","tok":[{"t":"morgen"},{"t":"sie"},{"t":"möchte","r":"fin"},{"t":"einkaufen","r":"end"}],"sol":"Sie möchte morgen einkaufen. · Morgen möchte sie einkaufen.","endName":"El infinitivo"}
+ ],
+ "m9":[
+  {"es":"Tengo que estudiar alemán.","de":"Ich muss Deutsch lernen."},
+  {"es":"¿Puedo sentarme aquí?","de":"Darf ich hier sitzen?"},
+  {"es":"Queremos comprar un libro.","de":"Wir wollen ein Buch kaufen."}
+ ],
+ "t12":[
+  {"t":"Ich stehe um acht Uhr ___.","a":["auf"],"sol":"Ich stehe um acht Uhr auf.","full":"Ich stehe um acht Uhr auf.","verb":"aufstehen","ex":"aufstehen → «stehe … auf»: el prefijo va al final."},
+  {"t":"Wir kaufen morgen ___.","a":["ein"],"sol":"Wir kaufen morgen ein.","full":"Wir kaufen morgen ein.","verb":"einkaufen","ex":"einkaufen → «kaufen … ein»."},
+  {"t":"Er ruft seine Mutter ___.","a":["an"],"sol":"Er ruft seine Mutter an.","full":"Er ruft seine Mutter an.","verb":"anrufen","ex":"anrufen → «ruft … an»."},
+  {"t":"Sie sieht am Abend ___.","a":["fern"],"sol":"Sie sieht am Abend fern.","full":"Sie sieht am Abend fern.","verb":"fernsehen","ex":"fernsehen → «sieht … fern»."},
+  {"t":"Kommst du morgen ___?","a":["mit"],"sol":"Kommst du morgen mit?","full":"Kommst du morgen mit?","verb":"mitkommen","ex":"mitkommen → «Kommst du … mit?» (también en preguntas, el prefijo al final)."}
+ ],
+ "t13":[
+  {"p":"Ordena: el verbo conjugado en posición 2 y el prefijo al final.","tok":[{"t":"ich"},{"t":"meinen Freund"},{"t":"an","r":"end"},{"t":"rufe","r":"fin"}],"sol":"Ich rufe meinen Freund an. · Meinen Freund rufe ich an.","endName":"El prefijo"},
+  {"p":"Ordena.","tok":[{"t":"wir"},{"t":"am Samstag"},{"t":"ein","r":"end"},{"t":"kaufen","r":"fin"}],"sol":"Wir kaufen am Samstag ein. · Am Samstag kaufen wir ein.","endName":"El prefijo"},
+  {"p":"Ordena.","tok":[{"t":"sie"},{"t":"jeden Morgen"},{"t":"auf","r":"end"},{"t":"steht","r":"fin"}],"sol":"Sie steht jeden Morgen auf. · Jeden Morgen steht sie auf.","endName":"El prefijo"}
+ ],
+ "c16":[
+  {"subj":"ich","mod":"müssen","a":"muss","pos":"mein","g":"m","n":"Bruder","inf":"anrufen","ansPos":"meinen","sol":"Ich muss meinen Bruder anrufen.","person":0,"ex":"müssen con ich → muss; Bruder (m., Akkusativ) → meinen; anrufen unido y al final."},
+  {"subj":"sie","mod":"möchten","a":"möchte","pos":"ihr","g":"f","n":"Mutter","inf":"anrufen","ansPos":"ihre","sol":"Sie möchte ihre Mutter anrufen.","person":2,"ex":"möchten con sie (singular) → möchte; Mutter (f.) → ihre."},
+  {"subj":"wir","mod":"wollen","a":"wollen","pos":"unser","g":"pl","n":"Freunde","inf":"anrufen","ansPos":"unsere","sol":"Wir wollen unsere Freunde anrufen.","person":3,"ex":"wollen con wir → wollen; Freunde (Plural) → unsere."}
+ ],
+ "c17":[
+  {"t":"Ich muss meinen Bruder anrufe.","m":"Ich muss meinen Bruder [anrufe].","ok":false,"fix":["Ich muss meinen Bruder anrufen."],"ex":"Después de un modal, el verbo va en infinitivo completo: anrufen (no «anrufe»)."},
+  {"t":"Er kann seine Mutter ruft an.","m":"Er kann seine Mutter [ruft an].","ok":false,"fix":["Er kann seine Mutter anrufen."],"ex":"Con un modal el verbo principal NO se conjuga ni se separa: anrufen, junto y al final."},
+  {"t":"Wir wollen unser Freunde anrufen.","m":"Wir wollen [unser] Freunde anrufen.","ok":false,"fix":["Wir wollen unsere Freunde anrufen."],"ex":"Freunde es plural: unser → unsere."},
+  {"t":"Sie möchte ihren Vater anrufen.","m":"Sie möchte ihren Vater anrufen.","ok":true,"fix":[],"ex":"Correcta: möchte (sie), ihren Vater (masculino, Akkusativ) y anrufen al final."}
+ ]
+},
+"verbs":[
+ {"inf":"aufstehen","pre":"auf","stem":"stehen","s":["Ich","stehe","um sieben Uhr","auf"],"s11":["Ich","stehe","früh","auf"],"fin":"stehe"},
+ {"inf":"einkaufen","pre":"ein","stem":"kaufen","s":["Wir","kaufen","heute","ein"],"s11":["Wir","kaufen","heute","ein"],"fin":"kaufen"},
+ {"inf":"anrufen","pre":"an","stem":"rufen","s":["Ich","rufe","meinen Bruder","an"],"s11":["Er","ruft","seinen Bruder","an"],"fin":"rufe"},
+ {"inf":"fernsehen","pre":"fern","stem":"sehen","s":["Du","siehst","abends","fern"],"s11":["Sie","sieht","abends","fern"],"fin":"siehst"},
+ {"inf":"mitkommen","pre":"mit","stem":"kommen","s":["Ich","komme","heute","mit"],"s11":["Ich","komme","gleich","mit"],"fin":"komme"}
+],
+"combo":[
+ {"s":"Ich kann heute einkaufen."},{"s":"Sie möchte ihre Mutter anrufen."},{"s":"Wir müssen früh aufstehen."}
+],
+"alltag":[
+ {"es":"Necesitas llamar a tu madre.","de":"Ich muss meine Mutter anrufen."},
+ {"es":"Quieres ir de compras con tu amigo.","de":"Ich möchte mit meinem Freund einkaufen gehen.","hint":"Pista: mit + Dativ → mit meinem Freund (der → dem, mein → meinem)."},
+ {"es":"Puedes llamar a tu hermano mañana.","de":"Ich kann morgen meinen Bruder anrufen."}
+],
+"exam":[
+ {"k":"Possessivartikel","t":"Ich sehe ___ Bruder. (mein)","a":[["meinen"]],"sol":"meinen"},
+ {"k":"Modalverben","t":"Du ___ heute lernen. (müssen)","a":[["musst"]],"sol":"musst"},
+ {"k":"Trennbare Verben","t":"Ich ___ jeden Morgen um sieben Uhr ___. (aufstehen)","a":[["stehe"],["auf"]],"sol":"stehe / auf"},
+ {"k":"Kombination","t":"Ordne und passe an: sie / wollen / ihr Bruder / anrufen","any":["Sie will ihren Bruder anrufen","Ihren Bruder will sie anrufen"],"sol":"Sie will ihren Bruder anrufen."}
+],
+"notes":[
+ "Repaso rápido, no expliques: muestra la tabla y pregunta oralmente con las tarjetas (clic = respuesta). 3–4 min.",
+ "Solo la regla del -en en masculino Akkusativ. Pulsa «Akkusativ» (Espacio) y deja que hagan los 5 huecos solos. 4 min.",
+ "Ronda individual. Si fallan «unsere Freunde», vuelve a la fila del plural. Cierra con la frase puente a los modales. 2–3 min.",
+ "Presenta los cinco significados con sus ejemplos. Aclara que möchten es Konjunktiv II de mögen, pero se estudia por su función. 4 min.",
+ "Selecciona cada verbo. Insiste: ich y er/sie/es tienen la misma forma. 4 min.",
+ "Espacio avanza el paso a paso: el modal en posición 2 y el infinitivo viaja al final. 5 min.",
+ "Cinco situaciones; cada una tiene un contexto inequívoco. 4 min.",
+ "Ordenar con clic o teclado (Tab + Enter). Aceptan las dos variantes válidas. 3 min.",
+ "Que escriban primero; después Espacio revela las soluciones de una en una (H las oculta). 3 min.",
+ "Separación animada de aufstehen. Espacio avanza; los chips cambian de verbo. 5 min.",
+ "Toca el prefijo para verlo volver a unirse al infinitivo. 5 min.",
+ "Cinco huecos; sirven los chips como ayuda. 4 min.",
+ "Ordenar frases; cuenta el verbo en 2.ª posición y el prefijo al final. 4 min.",
+ "La diapositiva clave: con un modal, el separable vuelve a infinitivo y se une. Espacio paso a paso. 4–5 min.",
+ "Las tres reglas en una frase. Espacio ilumina cada palabra. 3 min.",
+ "Satzmaschine: eligen forma del modal y terminación del posesivo. No se muestra la solución antes del intento. 5 min.",
+ "Fehlerdetektiv: ¿correcta o incorrecta? Hay una frase correcta a propósito. 4 min.",
+ "Producción libre por parejas. Espacio revela una solución; la pista del Dativ es opcional. 3 min.",
+ "Examen individual. Los alumnos entregan; las soluciones no se ven hasta que pulses L. 5 min.",
+ "Resumen, resultados de la Mini-Prüfung (tras L) y repetir lo fallado."
+]
+}
+</script>
+
+<script>
+'use strict';
+const D=JSON.parse(document.getElementById('deck-data').textContent);
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fold=s=>String(s).toLowerCase().normalize('NFC').replace(/[.!?¿¡,;:]/g,'').replace(/\s+/g,' ').trim().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss');
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const REDUCE=()=>matchMedia('(prefers-reduced-motion:reduce)').matches;
+const KEY='dt:drei-regeln:v1';
+let ST;try{ST=JSON.parse(sessionStorage.getItem(KEY)||'null')}catch(e){ST=null}
+if(!ST||ST.v!==1)ST={v:1,res:{},exam:{ans:null,sub:false,rev:false}};
+const save=()=>{try{sessionStorage.setItem(KEY,JSON.stringify(ST))}catch(e){}};
+const QZ=[];   // instancias de quiz (para «repetir lo fallado»)
+
+/* ── Escenario de fichas con FLIP ── */
+function Stage(host){
+  return{set(tokens){
+    const old=new Map($$(':scope>[data-k]',host).map(n=>[n.dataset.k,n]));
+    const first=new Map([...old].map(([k,n])=>[k,n.getBoundingClientRect()]));
+    const keep=new Set(tokens.map(t=>t.k));
+    old.forEach((n,k)=>{if(!keep.has(k))n.remove()});
+    const fresh=[];
+    tokens.forEach((t,idx)=>{
+      let n=old.get(t.k);
+      if(!n){n=document.createElement(t.btn?'button':'span');if(t.btn)n.type='button';n.dataset.k=t.k;fresh.push(n)}
+      n.className='tk '+(t.c||'');
+      n.textContent=t.t;
+      if(t.b)n.dataset.b=t.b;else delete n.dataset.b;
+      if(t.click)n.onclick=t.click;
+      host.appendChild(n);
+    });
+    if(REDUCE())return;
+    tokens.forEach(t=>{
+      const n=$(`:scope>[data-k="${t.k}"]`,host),f=first.get(t.k);
+      if(f){const l=n.getBoundingClientRect(),dx=f.left-l.left,dy=f.top-l.top;
+        if(dx||dy)n.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'none'}],{duration:520,easing:'cubic-bezier(.22,1,.36,1)'})}
+      else n.animate([{opacity:0,transform:'translateY(16px) scale(.94)'},{opacity:1,transform:'none'}],{duration:420,easing:'cubic-bezier(.22,1,.36,1)'});
+    });
+  }};
+}
+/* Pasos de una animación: devuelve {step(), reset(), cur} */
+function Steps(n,apply,after){let cur=0;apply(0);return{get cur(){return cur},max:n-1,
+  step(){if(cur>=n-1)return false;cur++;apply(cur);after&&after(cur);return true},
+  reset(){cur=0;apply(0)},to(i){cur=i;apply(i)}}}
+
+/* ── Quiz genérico (un ejercicio cada vez, un resultado por ejercicio) ── */
+function feedback(it,ok,hint){
+  // Solución mostrada: la oración completa (huecos/ordenar/máquina), la corrección (detective) o la propia frase si ya era correcta.
+  const sol=it.sol||(it.fix&&it.fix[0])||(it.ok?it.t:'')||(it.a&&it.a[0])||'';
+  if(ok)return `<b>✓ Richtig.</b> <span>${esc(sol)}${it.ex?' · '+esc(it.ex):''}</span>`;
+  return `<b>✗ Noch nicht.</b> <span>${hint?esc(hint)+' ':''}Lösung: <b>${esc(sol)}</b>${it.ex?' · '+esc(it.ex):''}</span>`;
+}
+function quiz(host,prefix,items,bodies,opt={}){
+  let cur=0;host.classList.add('quiz');
+  host.innerHTML='<div class="qhead"><div class="pips"></div><span class="qcount" aria-live="polite"></span></div><div class="qbody card"></div><div class="qfb" aria-live="polite"></div><div class="qnav"><button type="button" class="btn ghost" data-a="prev">← Zurück</button><button type="button" class="btn" data-a="next">Weiter →</button><button type="button" class="btn ghost" data-a="redo" hidden>Fehler wiederholen</button></div>';
+  const q=s=>$(s,host),idOf=i=>prefix+'-'+i,R=i=>ST.res[idOf(i)];
+  const score=()=>items.filter((_,i)=>R(i)&&R(i).ok).length,answered=()=>items.filter((_,i)=>R(i)).length;
+  function paint(){
+    q('.pips').innerHTML=items.map((_,i)=>`<button type="button" class="pip${R(i)?(R(i).ok?' ok':' no'):''}${i===cur?' cur':''}" data-i="${i}" aria-label="Aufgabe ${i+1}${R(i)?(R(i).ok?' richtig':' falsch'):''}"></button>`).join('');
+    q('.qcount').textContent=`${answered()} / ${items.length}`+(answered()===items.length?` · ${score()} richtig`:'');
+    q('[data-a=redo]').hidden=!(answered()===items.length&&score()<items.length);
+    q('[data-a=prev]').disabled=cur===0;q('[data-a=next]').disabled=cur===items.length-1;
+  }
+  function show(i){
+    cur=i;const it=items[i],prev=R(i),body=q('.qbody'),fb=q('.qfb');body.innerHTML='';fb.innerHTML='';fb.className='qfb';
+    const api={prev,done(ok,v,o={}){
+      if(!o.restored){ST.res[idOf(i)]={ok,v};save()}
+      fb.className='qfb '+(ok?'good':'bad');fb.innerHTML=feedback(it,ok,o.hint)+(o.extra?`<br><span>${o.extra}</span>`:'');paint();
+      if(answered()===items.length&&opt.onFinish)opt.onFinish(score(),items.length);
+    }};
+    bodies[it.type||opt.type](it,body,api);paint();
+  }
+  host.addEventListener('click',e=>{
+    const p=e.target.closest('.pip');if(p){show(+p.dataset.i);return}
+    const a=e.target.closest('[data-a]');if(!a)return;
+    if(a.dataset.a==='prev'&&cur>0)show(cur-1);
+    if(a.dataset.a==='next'&&cur<items.length-1)show(cur+1);
+    if(a.dataset.a==='redo'){items.forEach((_,i)=>{if(R(i)&&!R(i).ok)delete ST.res[idOf(i)]});save();show(items.findIndex((_,i)=>!R(i)))}
+  });
+  const inst={prefix,items,show,host,
+    failed:()=>items.map((_,i)=>i).filter(i=>R(i)&&!R(i).ok),
+    reset(i){delete ST.res[idOf(i)]},refresh(){const f=items.findIndex((_,i)=>!R(i));show(f<0?0:f)}};
+  QZ.push(inst);
+  const f=items.findIndex((_,i)=>!R(i));show(f<0?0:f);
+  return inst;
+}
+const lockInput=(inp,ck)=>{inp.disabled=true;if(ck)ck.hidden=true};
+const BODIES={
+  gap(it,el,api){
+    const [a,b]=it.t.split('___');
+    el.innerHTML=`<p class="qt">${esc(a)}<input class="gap" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Lücke ausfüllen" size="${Math.max(6,it.a[0].length+2)}">${esc(b||'')}</p><div class="row"><button type="button" class="btn" data-ck>Prüfen</button></div>`;
+    const inp=$('input',el),ck=$('[data-ck]',el);
+    if(api.prev){inp.value=api.prev.v;lockInput(inp,ck);inp.classList.add(api.prev.ok?'ok':'no');api.done(api.prev.ok,api.prev.v,{restored:true});return}
+    const go=()=>{const v=inp.value.trim();if(!v){inp.focus();return}const ok=it.a.some(x=>fold(x)===fold(v));lockInput(inp,ck);inp.classList.add(ok?'ok':'no');api.done(ok,v)};
+    ck.onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()};
+  },
+  mc(it,el,api){
+    const [a,b]=it.t.split('___');
+    el.innerHTML=`<p class="qt">${esc(a)}<span class="blank">&nbsp;</span>${esc(b||'')}</p><div class="opts">${it.o.map(o=>`<button type="button" class="opt" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
+    const blank=$('.blank',el),opts=$$('.opt',el);
+    const mark=(v,ok,restored)=>{opts.forEach(x=>{x.disabled=true;if(x.dataset.o===it.a[0])x.classList.add('ok')});
+      const c=opts.find(x=>x.dataset.o===v);if(!ok&&c)c.classList.add('no');blank.textContent=v;blank.classList.add(ok?'ok':'no');api.done(ok,v,{restored})};
+    if(api.prev){mark(api.prev.v,api.prev.ok,true);return}
+    opts.forEach(o=>o.onclick=()=>mark(o.dataset.o,o.dataset.o===it.a[0],false));
+  },
+  order(it,el,api){
+    el.innerHTML=`<p class="dim">${esc(it.p||'')}</p><div class="line" aria-label="Dein Satz"></div><div class="pool" aria-label="Wörter"></div><div class="row"><button type="button" class="btn" data-ck disabled>Prüfen</button><button type="button" class="btn ghost" data-rs>Neu</button></div>`;
+    const line=$('.line',el),pool=$('.pool',el),ck=$('[data-ck]',el),rs=$('[data-rs]',el);let placed=[],locked=false,okState=null;
+    const valid=ix=>ix.length===it.tok.length&&it.tok[ix[1]].r==='fin'&&it.tok[ix[ix.length-1]].r==='end';
+    const draw=()=>{
+      line.innerHTML=placed.map(i=>`<button type="button" class="chip${locked?(okState?' ok':' no'):''}" data-p="${i}"${locked?' disabled':''}>${esc(it.tok[i].t)}</button>`).join('')||'<span class="dim">Toca las palabras en el orden correcto</span>';
+      pool.innerHTML=it.tok.map((t,i)=>placed.includes(i)?'':`<button type="button" class="chip" data-i="${i}"${locked?' disabled':''}>${esc(t.t)}</button>`).join('');
+      ck.disabled=locked||placed.length!==it.tok.length;rs.disabled=locked;
+    };
+    const finish=(restored)=>{locked=true;okState=valid(placed);ck.hidden=true;rs.hidden=true;draw();
+      const sentence=cap(placed.map(i=>it.tok[i].t).join(' '))+'.';
+      let hint='';if(!okState)hint=it.tok[placed[1]].r!=='fin'?'El verbo conjugado va en la posición 2.':`${it.endName||'El infinitivo'} va al final.`;
+      api.done(okState,placed.slice(),{restored,hint,extra:'Dein Satz: '+esc(sentence)})};
+    el.addEventListener('click',e=>{
+      const c=e.target.closest('.chip');if(!c||locked)return;
+      if(c.dataset.i!==undefined)placed.push(+c.dataset.i);else placed=placed.filter(i=>i!==+c.dataset.p);draw();
+    });
+    ck.onclick=()=>finish(false);rs.onclick=()=>{placed=[];draw()};
+    if(api.prev){placed=api.prev.v.slice();finish(true);return}
+    draw();
+  },
+  machine(it,el,api){
+    const forms=[...new Set(D.modals[it.mod].f)],ends=['','e','en','em'].map(e=>it.pos+e);
+    const opt=(arr)=>'<option value="">—</option>'+arr.map(x=>`<option>${esc(x)}</option>`).join('');
+    el.innerHTML=`<p class="dim">Baue den Satz: conjuga el modal y elige la terminación del posesivo.</p><div class="machine"><div class="slotw"><small>1 · Subjekt</small><span class="box">${cap(esc(it.subj))}</span></div><div class="slotw"><small>2 · ${esc(it.mod)} konjugiert</small><select data-m aria-label="Modalverb konjugiert">${opt(forms)}</select></div><div class="slotw"><small>Possessiv (${esc(it.pos)}…)</small><select data-p aria-label="Possessivartikel">${opt(ends)}</select></div><div class="slotw"><small>Nomen</small><span class="box">${esc(it.n)}</span></div><div class="slotw"><small>Ende · Infinitiv</small><span class="box inf">${esc(it.inf)}</span></div></div><div class="row"><button type="button" class="btn" data-ck disabled>Prüfen</button></div>`;
+    const sm=$('[data-m]',el),sp=$('[data-p]',el),ck=$('[data-ck]',el);
+    const upd=()=>{ck.disabled=!(sm.value&&sp.value)};sm.onchange=sp.onchange=upd;
+    const finish=(v,restored)=>{const mo=v.m===it.a,po=v.p===it.ansPos;sm.value=v.m;sp.value=v.p;sm.disabled=sp.disabled=true;ck.hidden=true;
+      sm.classList.add(mo?'ok':'no');sp.classList.add(po?'ok':'no');
+      const hint=mo&&po?'':(!mo&&!po?'Revisa la conjugación y la terminación.':!mo?'La forma del modal no concuerda con el sujeto.':'La terminación del posesivo no es la del Akkusativ.');
+      api.done(mo&&po,v,{restored,hint})};
+    if(api.prev){finish(api.prev.v,true);return}
+    ck.onclick=()=>finish({m:sm.value,p:sp.value},false);
+  },
+  detect(it,el,api){
+    el.innerHTML=`<p class="qt sent">${esc(it.t)}</p><div class="row"><button type="button" class="btn ghost" data-v="ok">Richtig</button><button type="button" class="btn ghost" data-v="bad">Falsch</button></div><div class="row" data-fix hidden><input class="gap wide" type="text" autocomplete="off" spellcheck="false" aria-label="Korrektur"><button type="button" class="btn" data-ck>Prüfen</button></div>`;
+    const fix=$('[data-fix]',el),inp=$('input',el),sent=$('.qt',el);
+    const end=(v,fixed,restored)=>{
+      $$('[data-v]',el).forEach(b=>b.disabled=true);fix.hidden=true;
+      const ok=v==='ok'?it.ok===true:(it.ok===false&&it.fix.some(x=>fold(x)===fold(fixed||'')));
+      sent.innerHTML=it.m.replace(/\[(.+?)\]/g,'<mark>$1</mark>').replace(/^(?!.*<mark>)(.*)$/,'$1');
+      api.done(ok,{v,fixed},{restored,hint:v==='bad'&&it.ok===false&&!ok?'Marcaste bien que había error, pero la corrección no es exacta.':(v==='ok'&&!it.ok?'Esta frase sí tiene un error.':(v==='bad'&&it.ok?'Esta frase es correcta.':''))})};
+    if(api.prev){inp.value=api.prev.v.fixed||'';end(api.prev.v.v,api.prev.v.fixed,true);return}
+    $('[data-v=ok]',el).onclick=()=>end('ok');
+    $('[data-v=bad]',el).onclick=()=>{if(it.ok){end('bad')}else{fix.hidden=false;inp.focus()}};
+    const go=()=>{if(inp.value.trim())end('bad',inp.value.trim())};$('[data-ck]',el).onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()};
+  }
+};
+
+/* ── Posesivos: terminaciones (referencia usada también en los tests) ── */
+function revealList(host,items){
+  host.className+=' rvwrap';
+  host.innerHTML=items.map((it,i)=>`<div class="rvcard"><div class="es">${i+1}. ${esc(it.es)}</div><textarea rows="1" placeholder="Escribe tu frase en alemán…" aria-label="Tu frase ${i+1}"></textarea><div class="row"><button type="button" class="btn ghost" data-t="${i}">Lösung zeigen / verbergen</button>${it.hint?`<button type="button" class="btn ghost" data-h="${i}">Hinweis</button>`:''}</div>${it.hint?`<div class="rvbox hint" data-hb="${i}">${esc(it.hint)}</div>`:''}<div class="rvbox" data-sb="${i}">${esc(it.de)}</div></div>`).join('');
+  host.addEventListener('click',e=>{
+    const t=e.target.closest('[data-t]'),h=e.target.closest('[data-h]');
+    if(t)$(`[data-sb="${t.dataset.t}"]`,host).classList.toggle('on');
+    if(h)$(`[data-hb="${h.dataset.h}"]`,host).classList.toggle('on');
+  });
+}
+
+/* ── Diapositivas ── */
+const SL=[];
+const slide=(block,title,html,init,note)=>SL.push({block,title,html,init,note});
+const PRACTICE='/practica?temas=possessiv,modal,trennbar,satzbau';
+
+// 1
+slide('poss','Wem gehört das?',`
+ <p class="lead">Cada persona tiene su posesivo. <b>Toca una pregunta</b> y respóndela en voz alta antes de ver la respuesta.</p>
+ <div class="cols"><div><div class="persons" id="pp"></div><p class="dim mono" style="margin-top:.6em;font-size:.8em">es → sein</p></div><div id="as"></div></div>`,
+ el=>{
+  $('#pp',el).innerHTML=D.persons.map(([p,o],i)=>`<div class="pc" data-w="${esc(p)}"><span class="pr">${esc(p)}</span><b class="po">${esc(o)}</b></div>`).join('');
+  $('#as',el).innerHTML=D.asks.map((a,i)=>`<button type="button" class="ask" data-i="${i}"><span class="av">${esc(a.av)}</span><span><span class="q">${esc(a.q)}</span><span class="a">${esc(a.a)}</span></span></button>`).join('');
+  $('#as',el).onclick=e=>{const b=e.target.closest('.ask');if(!b)return;
+    $$('.ask',el).forEach(x=>x!==b&&x.classList.remove('on'));b.classList.toggle('on');
+    $$('.pc',el).forEach(c=>c.classList.remove('hl'));
+    if(b.classList.contains('on'))$(`.pc[data-w="${D.asks[+b.dataset.i].who}"]`,el).classList.add('hl')};
+ });
+// 2
+slide('poss','Possessivartikel <em>im Akkusativ</em>',`
+ <div class="cols"><div><div id="ar" class="card"></div><div class="row" style="margin:.7em 0"><button type="button" class="btn" id="akk">Akkusativ →</button></div>
+ <div class="rule">En <b>Akkusativ masculino singular</b> añadimos <b>-en</b> al posesivo. Femenino, neutro y plural no cambian.</div></div><div id="q2"></div></div>`,
+ el=>{
+  const ar=$('#ar',el);
+  ar.innerHTML=D.akkRows.map(r=>`<div class="ar"><span class="g">${esc(r.g)}</span><span class="w">${esc(r.poss)}<span class="suf">${esc(r.suf)}</span> ${esc(r.n)}${r.suf?'':'<em class="same">sin cambio</em>'}</span></div>`).join('');
+  const btn=$('#akk',el),tog=()=>{const on=ar.classList.toggle('akk');btn.textContent=on?'← Nominativ':'Akkusativ →'};btn.onclick=tog;
+  el.step=()=>{if(!ar.classList.contains('akk')){tog();return true}return false};
+  quiz($('#q2',el),'p2',D.ex.p2,BODIES,{type:'gap'});
+ },0);
+// 3
+slide('poss','Schnellrunde!',`<p class="lead">Cinco preguntas rápidas. <b>Cada uno por su cuenta.</b></p><div id="q3"></div><div id="bridge" class="rule" hidden>Posesivos listos. Ahora: <b>¿qué quieres, puedes o tienes que hacer?</b> → los verbos modales.</div>`,
+ el=>{quiz($('#q3',el),'p3',D.ex.p3,BODIES,{type:'mc',onFinish:()=>{$('#bridge',el).hidden=false}})});
+// 4
+const ICONS={
+ 'können':'<path d="M3 17c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2"/><path d="M3 21c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2"/><circle cx="16" cy="7" r="2"/><path d="M5 12l5-3 5 3"/>',
+ 'müssen':'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M8 4v13"/>',
+ 'wollen':'<path d="M4 12l8-7 8 7"/><path d="M6 11v9h12v-9"/><path d="M10 20v-5h4v5"/>',
+ 'dürfen':'<circle cx="12" cy="12" r="9"/><path d="M7.5 12.5l3 3 6-7"/>',
+ 'möchten':'<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h2a2 2 0 0 1 0 5h-2"/><path d="M8 4v2M11 4v2"/>'
+};
+slide('modal','Was <em>kannst</em> du machen?',`
+ <p class="lead">Cinco verbos modales, cinco ideas. Toca una tarjeta: <b>¿qué dirías tú?</b></p><div class="mcards" id="mc"></div>
+ <div class="rule"><b>möchten</b> es, formalmente, el Konjunktiv II de <i>mögen</i>. En este nivel lo estudiamos por su función práctica: pedir y desear con cortesía.</div>`,
+ el=>{
+  $('#mc',el).innerHTML=Object.entries(D.modals).map(([v,m])=>`<button type="button" class="mc"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[v]}</svg><h3>${esc(v)}</h3><span class="fn">${esc(m.es)}</span><span class="exs">${esc(m.ex)}</span></button>`).join('');
+  $('#mc',el).onclick=e=>{const c=e.target.closest('.mc');if(c){$$('.mc',el).forEach(x=>x.classList.toggle('on',x===c))}};
+ });
+// 5
+slide('modal','Die <em>Konjugation</em>',`<div class="tabs" role="tablist" id="tb"></div><div class="cols"><table class="cj" id="cj"></table><div><div class="rule" id="rl"></div></div></div>`,
+ el=>{
+  const verbs=Object.keys(D.modals);let sel=0;
+  const draw=()=>{
+    $('#tb',el).innerHTML=verbs.map((v,i)=>`<button type="button" role="tab" aria-selected="${i===sel}" data-i="${i}">${esc(v)}</button>`).join('');
+    const m=D.modals[verbs[sel]];
+    $('#cj',el).innerHTML=D.pron.map((p,i)=>`<tr${i===0||i===2?' class="hl"':''}><td>${esc(p)}</td><td>${esc(m.f[i])}</td></tr>`).join('');
+    $('#rl',el).innerHTML=`<b>${esc(verbs[sel])}</b> · ${esc(m.es)}<br><br><b>ich</b> y <b>er/sie/es</b>: la misma forma (<b>${esc(m.f[0])}</b>), sin -e ni -t.<br>${esc(m.vow)}`;
+  };
+  $('#tb',el).onclick=e=>{const b=e.target.closest('button');if(b){sel=+b.dataset.i;draw()}};
+  el.step=()=>{sel=(sel+1)%verbs.length;draw();return sel!==0};
+  draw();
+ });
+// 6
+slide('modal','Der <em>Modalverb-Satz</em>',`<p class="lead">Sujeto + <b>modal conjugado</b> + complementos + <b>infinitivo al final</b>.</p><div class="stage" id="st" aria-live="polite"></div><p class="caption" id="cp"></p><div class="row"><button type="button" class="btn" id="go">Schritt →</button><button type="button" class="btn ghost" id="rs">↺</button></div>`,
+ el=>{
+  const stage=Stage($('#st',el)),cp=$('#cp',el);
+  const T=(k,t,c,b)=>({k,t,c,b});
+  const steps=[
+   [[T('s','Ich','',1)],'<b>1 · Sujeto</b> en la posición 1.'],
+   [[T('s','Ich','',1),T('m','muss','mod',2)],'<b>2 · El modal conjugado</b> ocupa siempre la posición 2 (ich → muss).'],
+   [[T('s','Ich','',1),T('m','muss','mod',2),T('i','lernen','inf'),T('h','heute'),T('d','Deutsch')],'<b>3 · Complementos y verbo</b>, como en español: «tengo que estudiar hoy alemán».'],
+   [[T('s','Ich','',1),T('m','muss','mod',2),T('h','heute'),T('d','Deutsch'),T('i','lernen','inf','Ende')],'<b>4 · El infinitivo viaja al final</b> de la frase: <b>Ich muss heute Deutsch lernen.</b>'],
+   [[T('h','Heute','',1),T('m','muss','mod',2),T('s','ich'),T('d','Deutsch'),T('i','lernen','inf','Ende')],'<b>5 · Si empiezas por otra cosa</b> (Heute), muss sigue en la posición 2 y el sujeto pasa detrás: <b>Heute muss ich Deutsch lernen.</b>']
+  ];
+  const S=Steps(steps.length,i=>{stage.set(steps[i][0]);cp.innerHTML=steps[i][1]});
+  $('#go',el).onclick=()=>{if(!S.step())S.reset()};$('#rs',el).onclick=()=>S.reset();el.step=()=>S.step();
+ });
+// 7
+slide('modal','Welches <em>Modalverb</em> passt?',`<div id="q7"></div>`,el=>{quiz($('#q7',el),'m7',D.ex.m7,BODIES,{type:'mc'})});
+// 8
+slide('modal','Bring den Satz <em>in Ordnung</em>',`<div id="q8"></div>`,el=>{quiz($('#q8',el),'m8',D.ex.m8,BODIES,{type:'order'})});
+// 9
+slide('modal','Sag es <em>auf Deutsch</em>!',`<p class="lead">Primero, <b>cada uno escribe su frase</b>. Después se revelan las soluciones una a una (Espacio) y se comentan. Sin voz obligatoria.</p><div id="rv9"></div>`,
+ el=>revealList($('#rv9',el),D.ex.m9));
+// 10
+slide('trenn','Ein Verb, <em>zwei Teile</em>!',`<div class="vchips" id="vc"></div><div class="stage" id="st" style="font-size:1.25em" aria-live="polite"></div><p class="caption" id="cp"></p><div class="row"><button type="button" class="btn" id="go">Schritt →</button><button type="button" class="btn ghost" id="rs">↺</button></div>`,
+ el=>{
+  const stage=Stage($('#st',el)),cp=$('#cp',el);let vi=0,S;
+  const mk=()=>{const v=D.verbs[vi];
+   const pre=(c)=>({k:'pre',t:v.pre,c:'pre '+c}),stem=(t,c)=>({k:'st',t,c});
+   const steps=[
+    [[pre('joined'),stem(v.stem,'joined')],`<b>${esc(v.inf)}</b>: un verbo en el diccionario…`],
+    [[pre(''),stem(v.stem,'')],`…pero son <b>dos partes</b>: <b>${esc(v.pre)}</b> + <b>${esc(v.stem)}</b>.`],
+    [[{k:'sub',t:v.s[0],b:1},stem(v.s[1],'fin'),{k:'mid',t:v.s[2]},pre('')].map((t,i)=>i===1?{...t,b:2}:t).map((t,i)=>i===3?{...t,b:'Ende'}:t),`En la frase se separan: el verbo conjugado va en la posición 2 y <b>${esc(v.pre)}</b> se va al final: <b>${esc(v.s.join(' '))}.</b>`]
+   ];
+   S=Steps(steps.length,i=>{stage.set(steps[i][0]);cp.innerHTML=steps[i][1]});};
+  $('#vc',el).innerHTML=D.verbs.map((v,i)=>`<button type="button" class="chip" data-i="${i}">${esc(v.inf)}</button>`).join('');
+  const hl=()=>$$('#vc .chip',el).forEach((c,i)=>c.classList.toggle('ok',i===vi));
+  $('#vc',el).onclick=e=>{const c=e.target.closest('.chip');if(c){vi=+c.dataset.i;$('#st',el).innerHTML='';mk();hl()}};
+  $('#go',el).onclick=()=>{if(!S.step())S.reset()};$('#rs',el).onclick=()=>S.reset();el.step=()=>S.step();
+  mk();hl();
+ });
+// 11
+slide('trenn','Wo steht das <em>Präfix</em>?',`<p class="lead">Toca el <b>prefijo</b> y mira cómo se pega otra vez al infinitivo. Fíjate en la <b>posición 2</b> del verbo conjugado.</p><div id="rows"></div>`,
+ el=>{
+  const rows=$('#rows',el);
+  rows.innerHTML=D.verbs.slice(0,4).map((v,i)=>`<div class="srow"><div class="stage" data-s="${i}"></div><div class="stage" data-j="${i}" style="min-height:3.4em"></div></div>`).join('');
+  D.verbs.slice(0,4).forEach((v,i)=>{
+    const sent=$(`[data-s="${i}"]`,rows),jn=Stage($(`[data-j="${i}"]`,rows));let on=false;
+    const toks=v.s11;
+    sent.innerHTML=toks.map((t,k)=>k===3?`<button type="button" class="tk pre" data-pre aria-label="Präfix ${esc(t)}: zum Infinitiv verbinden">${esc(t)}</button>`:`<span class="tk${k===1?' fin':''}"${k===1?' data-b="2"':''}${k===0?' data-b="1"':''}>${esc(t)}</span>`).join('');
+    const fin=toks[1],pre=toks[3];
+    const run=()=>{on=!on;
+      if(!on){jn.set([]);return}
+      jn.set([{k:'st',t:fin},{k:'pre',t:pre,c:'pre'}]);
+      const end=()=>jn.set([{k:'pre',t:pre,c:'pre joined'},{k:'st',t:v.stem,c:'joined'}]);
+      REDUCE()?end():setTimeout(end,650)};
+    $('[data-pre]',sent).onclick=run;
+  });
+ });
+// 12
+slide('trenn','Ergänze das <em>Präfix</em>',`<div class="vchips" id="bank" aria-label="Präfixe"></div><div id="q12"></div>`,
+ el=>{
+  const inst=quiz($('#q12',el),'t12',D.ex.t12,BODIES,{type:'gap'});
+  $('#bank',el).innerHTML=['auf','ein','an','fern','mit'].map(p=>`<button type="button" class="chip" data-p="${p}">${p}</button>`).join('');
+  $('#bank',el).onclick=e=>{const c=e.target.closest('.chip'),i=$('.gap:not(:disabled)',el);if(c&&i){i.value=c.dataset.p;i.focus()}};
+ });
+// 13
+slide('trenn','Satzbau-<em>Challenge</em>',`<div id="q13"></div>`,el=>{quiz($('#q13',el),'t13',D.ex.t13,BODIES,{type:'order'})});
+// 14
+slide('trenn','Modalverb <em>+</em> Trennbares Verb',`
+ <div class="stage" id="st" style="font-size:1.2em" aria-live="polite"></div><p class="caption" id="cp"></p><div class="row"><button type="button" class="btn" id="go">Schritt →</button><button type="button" class="btn ghost" id="rs">↺</button></div>
+ <div class="cols"><div class="rule">Con un <b>modal conjugado</b>, el verbo separable queda en <b>infinitivo</b> y <b>no se separa</b>.</div><ul class="exs-list" id="cb"></ul></div>`,
+ el=>{
+  const stage=Stage($('#st',el)),cp=$('#cp',el);
+  const t=(k,t,c,b)=>({k,t,c,b});
+  const steps=[
+   [[t('sub','Ich','',1),t('st','stehe','fin',2),t('mid','um sieben Uhr'),t('pre','auf','pre','Ende')],'<b>1</b> · Sin modal, el verbo se <b>divide</b>: stehe … auf.'],
+   [[t('sub','Ich','',1),t('mod','muss','mod',2),t('st','stehe','fin'),t('mid','um sieben Uhr'),t('pre','auf','pre')],'<b>2</b> · Entra <b>müssen</b>: toma la posición 2 y se conjuga (ich muss).'],
+   [[t('sub','Ich','',1),t('mod','muss','mod',2),t('mid','um sieben Uhr'),t('st','stehen','inf'),t('pre','auf','pre')],'<b>3</b> · El verbo principal vuelve al <b>infinitivo</b> (stehe → stehen) y se va al final.'],
+   [[t('sub','Ich','',1),t('mod','muss','mod',2),t('mid','um sieben Uhr'),t('pre','auf','pre joined','Ende'),t('st','stehen','joined')],'<b>4</b> · El prefijo se <b>vuelve a unir</b>: <b>aufstehen</b>, un solo bloque al final.']
+  ];
+  const S=Steps(steps.length,i=>{stage.set(steps[i][0]);cp.innerHTML=steps[i][1]});
+  $('#go',el).onclick=()=>{if(!S.step())S.reset()};$('#rs',el).onclick=()=>S.reset();el.step=()=>S.step();
+  $('#cb',el).innerHTML=D.combo.map(c=>`<li>${esc(c.s)}</li>`).join('');
+ });
+// 15
+slide('challenge','Drei Regeln. <em>Ein Satz.</em>',`
+ <p class="lead">Un <b>posesivo</b>, un <b>modal</b> y un <b>separable</b> en la misma frase. Espacio ilumina cada regla.</p>
+ <div class="stage" id="st" style="font-size:1.5em"></div><p class="caption" id="cp" style="font-size:1.05em"></p>
+ <div class="legend"><span style="color:var(--ok)">Regel 1 · Possessiv</span><span style="color:var(--red)">Regel 2 · Modalverb</span><span>Regel 3 · Trennbares Verb (Infinitiv)</span></div>`,
+ el=>{
+  const stage=Stage($('#st',el)),cp=$('#cp',el);
+  const info=['Una frase, tres reglas. ¿Qué ves en ella?','<b>muss</b> → <b>Modalverb</b>: posición 2 y conjugado con «ich».','<b>meinen</b> → <b>Possessivartikel</b>: Bruder es masculino y está en Akkusativ → mein + <b>-en</b>.','<b>anrufen</b> → <b>infinitivo separable</b>: con un modal no se separa y va unido, al final.'];
+  const S=Steps(4,i=>{
+    stage.set([{k:'a',t:'Ich',b:1},{k:'b',t:'muss',c:i>=1?'mod lit':'',b:2},{k:'c',t:'meinen',c:i>=2?'pos lit':''},{k:'d',t:'Bruder'},{k:'e',t:'anrufen',c:i>=3?'inf lit':'','b':'Ende'}]);
+    cp.innerHTML=info[i]});
+  el.step=()=>S.step();
+ });
+// 16
+slide('challenge','<em>Satzmaschine</em>',`<p class="lead">Elige la forma conjugada y la terminación. <b>La solución completa no aparece antes de tu intento.</b></p><div id="q16"></div>`,
+ el=>{quiz($('#q16',el),'c16',D.ex.c16,BODIES,{type:'machine'})});
+// 17
+slide('challenge','<em>Fehlerdetektiv</em>',`<p class="lead">Cuatro frases. ¿Cuáles tienen un error? <b>Márcalas y corrígelas.</b></p><div id="q17"></div>`,
+ el=>{quiz($('#q17',el),'c17',D.ex.c17,BODIES,{type:'detect'})});
+// 18
+slide('challenge','Alltags<em>situationen</em>',`<p class="lead">Por parejas: <b>¿qué dirías?</b> Después Espacio revela una solución posible (H las oculta).</p><div id="rv18"></div>`,
+ el=>revealList($('#rv18',el),D.alltag));
+// 19 + examen
+const examScore=(q,vals)=>q.any?(q.any.some(x=>fold(x)===fold(vals[0]||''))?1:0):(q.a.every((al,i)=>al.some(x=>fold(x)===fold(vals[i]||'')))?1:0);
+const examTotal=()=>ST.exam.ans?D.exam.reduce((n,q,i)=>n+examScore(q,ST.exam.ans[i]||[]),0):0;
+function examReveal(){
+  if(!ST.exam.sub)examSubmit();
+  ST.exam.rev=true;save();paintExam();paintSummary();
+}
+function examSubmit(){
+  const host=$('#xq');if(!host)return;
+  ST.exam.ans=D.exam.map((_,i)=>$$(`[data-q="${i}"] input`,host).map(x=>x.value.trim()));ST.exam.sub=true;save();paintExam();paintSummary();
+}
+function paintExam(){
+  const host=$('#xq');if(!host)return;
+  D.exam.forEach((q,i)=>{
+    const box=$(`[data-q="${i}"]`,host);if(!box)return;
+    const ins=$$('input',box);
+    if(ST.exam.ans)ins.forEach((x,k)=>{x.value=ST.exam.ans[i][k]||''});
+    ins.forEach(x=>x.disabled=ST.exam.sub);
+    const m=$('.xmark',box);
+    if(ST.exam.rev){const ok=examScore(q,ST.exam.ans[i]||[]);m.className='xmark '+(ok?'ok':'no');m.innerHTML=ok?'✓ 1 / 1':`✗ 0 / 1 · Lösung: ${esc(q.sol)}`}
+    else if(ST.exam.sub){m.className='xmark';m.textContent='Abgegeben'}
+    else m.textContent='';
+  });
+  $('#xsub').hidden=ST.exam.sub;
+  $('#xst').innerHTML=ST.exam.rev?`<b class="gold">Prüfung ausgewertet: ${examTotal()} / ${D.exam.length}</b>`:ST.exam.sub?'<b>Gespeichert.</b> Las soluciones las muestra el profesor al terminar (tecla <span class="mono">L</span>).':'Un punto por pregunta. Sin soluciones hasta que el profesor cierre la prueba.';
+}
+slide('pruefung','Abschluss<em>prüfung</em>',`<div id="xq" class="cols"></div><div class="row"><button type="button" class="btn" id="xsub">Abgeben</button><span class="caption" id="xst"></span></div>`,
+ el=>{
+  $('#xq',el).innerHTML=D.exam.map((q,i)=>{
+    const parts=q.t.split('___');let h='';
+    if(q.any)h=`<p class="qt">${esc(q.t)}</p><input class="gap wide" type="text" autocomplete="off" spellcheck="false" aria-label="Antwort ${i+1}">`;
+    else h=`<p class="qt">${parts.map((p,k)=>esc(p)+(k<parts.length-1?`<input class="gap" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Lücke ${k+1}" size="7">`:'')).join('')}</p>`;
+    return `<div class="card xq" data-q="${i}"><span class="topic">${i+1} · ${esc(q.k)}</span>${h}<span class="xmark"></span></div>`}).join('');
+  $('#xsub',el).onclick=examSubmit;paintExam();
+ });
+// 20
+function paintSummary(){
+  const host=$('#sum');if(!host)return;
+  const mini=ST.exam.rev?`<div class="score gold">${examTotal()}<small>/ ${D.exam.length}</small></div><div class="row">${D.exam.map((q,i)=>{const ok=examScore(q,ST.exam.ans[i]||[]);return `<span class="xmark ${ok?'ok':'no'}">${i+1} ${ok?'✓':'✗'}</span>`}).join('')}</div>`
+   :ST.exam.sub?'<p class="dim">Prüfung abgegeben. El profesor la corrige con la tecla <span class="mono">L</span>.</p>':'<p class="dim">Aún no has hecho la Mini-Prüfung (diapositiva 19).</p>';
+  host.innerHTML=mini;
+  const all=QZ.flatMap(z=>z.items.map((_,i)=>({z,i,r:ST.res[z.prefix+'-'+i]}))),done=all.filter(x=>x.r),bad=all.filter(x=>x.r&&!x.r.ok);
+  $('#ssum').textContent=`Ejercicios: ${done.filter(x=>x.r.ok).length} / ${done.length} correctos${bad.length?` · ${bad.length} para repetir`:''}`;
+  $('#rep').hidden=!bad.length;$('#rep').textContent=`Repetir los ${bad.length} ejercicios fallados`;
+  $('#again').hidden=!ST.exam.sub;
+  const k=window.__klaus;if(k&&k.c){try{k.c.setState(ST.exam.rev?(examTotal()>=3?'celebrating':'motivating'):'idle')}catch(e){}}
+  $('#kmsg').textContent=ST.exam.rev?(examTotal()>=3?'¡Stark! Ya sabes explicar muss, meinen y anrufen.':'Repasa lo fallado y vuelve a intentarlo: tú puedes.'):'Cuando termine la prueba, Klaus te dirá cómo vas.';
+}
+slide('pruefung','Was haben wir <em>gelernt</em>?',`
+ <div class="rcards"><div class="card"><h3><span>1</span>Possessivartikel</h3><p>Se adaptan al <b>género, número y caso</b>. Masculino singular en Akkusativ: <b>-en</b>.</p><p class="ex">Ich sehe meinen Bruder.</p></div>
+ <div class="card"><h3><span>2</span>Modalverben</h3><p>El modal conjugado ocupa la <b>posición 2</b> y el <b>infinitivo</b> va al final.</p><p class="ex">Ich muss heute lernen.</p></div>
+ <div class="card"><h3><span>3</span>Trennbare Verben</h3><p>Se separan si están conjugados en una oración principal; <b>unidos en infinitivo</b> tras un modal.</p><p class="ex">Ich muss meinen Bruder anrufen.</p></div></div>
+ <div class="cols"><div class="card"><p class="eyebrow">Mini-Prüfung</p><div id="sum"></div><p class="caption" id="ssum" style="margin-top:.5em"></p>
+ <div class="row"><button type="button" class="btn" id="rep" hidden></button><button type="button" class="btn ghost" id="again" hidden>Prüfung wiederholen</button></div></div>
+ <div class="card row" style="flex-wrap:nowrap"><canvas id="kl" width="220" height="220" aria-hidden="true"></canvas><div><p class="eyebrow">Klaus</p><p id="kmsg" class="lead"></p><p style="margin-top:.5em"><a class="btn ghost" href="${PRACTICE}">Practicar estos temas</a></p></div></div></div>`,
+ el=>{
+  $('#rep',el).onclick=()=>{
+    const z=QZ.find(x=>x.failed().length);if(!z)return;
+    QZ.forEach(x=>{x.failed().forEach(i=>x.reset(i))});save();
+    QZ.forEach(x=>x.refresh());
+    go(SL.findIndex(s=>s.el.contains(z.host)));paintSummary();
+  };
+  $('#again',el).onclick=()=>{ST.exam={ans:null,sub:false,rev:false};save();$$('#xq input').forEach(x=>{x.value='';x.disabled=false});paintExam();paintSummary();go(18)};
+ });
+
+/* ── Montaje, navegación y teclado ── */
+const deck=$('#deck');let cur=0;
+SL.forEach((s,i)=>{
+  const el=document.createElement('section');el.className='slide';el.id='s'+(i+1);
+  const b=D.blocks.find(x=>x.id===s.block);
+  el.innerHTML=`<div class="sl"><div class="eyebrow">${String(i+1).padStart(2,'0')} · ${esc(b.name)}</div><h2>${s.title}</h2>${s.html}</div>`;
+  deck.appendChild(el);s.el=el;s.init&&s.init(el);
+});
+$('#blocks').innerHTML=D.blocks.map(b=>`<button type="button" data-b="${b.id}">${esc(b.name)}<small>${b.from}–${b.from+b.min} min</small></button>`).join('');
+function klaus(){
+  if(window.__klaus)return;window.__klaus={c:null};
+  const s=document.createElement('script');s.src='/klaus/klaus-renderer.js';
+  s.onload=()=>{try{const sk=localStorage.getItem('dt:klaus-skin');const cv=$('#kl');
+    window.__klaus.c=window.KlausWeb.create(cv,{skin:sk&&window.KlausWeb.skinExists(sk)?sk:'default',state:'idle'});paintSummary()}catch(e){$('#kl').style.display='none'}};
+  s.onerror=()=>{$('#kl').style.display='none'};document.head.appendChild(s);
+}
+function go(n){
+  if(n<0||n>=SL.length)return;
+  SL[cur].el.classList.remove('on');cur=n;const s=SL[cur];s.el.classList.add('on');s.el.scrollTop=0;
+  $('#num').textContent=`${cur+1} / ${SL.length}`;$('#bar').style.width=((cur+1)/SL.length*100)+'%';
+  $$('#blocks button').forEach(b=>b.classList.toggle('on',b.dataset.b===s.block));
+  const b=D.blocks.find(x=>x.id===s.block);
+  $('#notes').innerHTML=`<b>Min ${b.from}–${b.from+b.min} · ${esc(b.name)}</b> &nbsp;·&nbsp; ${esc(D.notes[cur]||'')}`;
+  try{history.replaceState(null,'','#'+(cur+1))}catch(e){}
+  if(s.el.id==='s20'){klaus();paintSummary()}
+  if(s.el.id==='s19')paintExam();
+}
+function space(){
+  const s=SL[cur];if(s.el.step&&s.el.step())return;
+  const rv=$('.rvbox:not(.on):not(.hint)',s.el);if(rv){rv.classList.add('on');return}
+  go(cur+1);
+}
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const t=e.target,typing=/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
+  if(typing){if(e.key==='Escape')t.blur();return}
+  const k=e.key,onCtl=t.closest&&t.closest('button,a');
+  if(k==='ArrowRight'||k==='PageDown'){e.preventDefault();go(cur+1)}
+  else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();go(cur-1)}
+  else if(k===' '||k==='Enter'){if(onCtl)return;e.preventDefault();space()}
+  else if(k==='Home'){go(0)}else if(k==='End'){go(SL.length-1)}
+  else if(k==='t'||k==='T')document.body.classList.toggle('times');
+  else if(k==='n'||k==='N')$('#notes').classList.toggle('on');
+  else if(k==='h'||k==='H')$$('.rvbox.on',SL[cur].el).forEach(x=>x.classList.remove('on'));
+  else if(k==='l'||k==='L'){if(cur>=18)examReveal()}
+  else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}
+});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&e.detail>0&&!b.closest('#nav'))b.blur()});
+$('#prev').onclick=()=>go(cur-1);$('#next').onclick=()=>go(cur+1);
+$('#blocks').onclick=e=>{const b=e.target.closest('button');if(b)go(SL.findIndex(s=>s.block===b.dataset.b))};
+const h0=parseInt((location.hash||'').slice(1),10);go(h0>=1&&h0<=SL.length?h0-1:0);
+window.addEventListener('hashchange',()=>{const n=parseInt(location.hash.slice(1),10);if(n>=1&&n<=SL.length&&n-1!==cur)go(n-1)});
+</script>
+</body>
+</html>

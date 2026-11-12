@@ -154,5 +154,22 @@
     "level": "A1–A2",
     "source": "deutsch-trainer-120.html",
     "sha256": "f5612efa16684547fedac306680d719e16f171ecb4ebab9a11fce2323e3a8d64"
+  },
+  {
+    "id": "drei-regeln",
+    "unit": 8,
+    "title": "Drei Regeln, ein Satz",
+    "description": "Possessivartikel, Modalverben und trennbare Verben.",
+    "file": "/presentaciones/drei-regeln.html",
+    "topics": [
+      "Possessivartikel",
+      "Modalverben",
+      "Trennbare Verben",
+      "Satzbau"
+    ],
+    "level": "A1–A2",
+    "minutes": 75,
+    "source": "drei-regeln.html (escrita en el repositorio)",
+    "sha256": "fdf0a39ba8c9a38ce63dad056134d7a6983e1d43f29b5b4dd46363df397991f3"
   }
 ]

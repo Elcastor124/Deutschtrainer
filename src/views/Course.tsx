@@ -161,7 +161,7 @@ function Banner({ unit, y, done }: { unit: CourseUnit; y: number; done: Readonly
     <header className={`cp-banner s-${st}${unit.exam ? ' is-exam' : ''}`} id={unit.id} style={{ top: y }}>
       <span className="cp-banner-n dotnum" aria-hidden="true">{unit.exam ? 'B1' : String(unit.n).padStart(2, '0')}</span>
       <div className="cp-banner-t">
-        <p className="dt-eyebrow">{unit.exam ? 'Final' : `Lektion ${unit.n}`} · {unit.level} <span className={`dt-status s-${st}`}>{STATUS_LABEL[st]}</span></p>
+        <p className="dt-eyebrow">{unit.exam ? 'Final' : `Lektion ${unit.n}`} · {unit.level}{unit.minutes ? ` · ${unit.minutes} min` : ''} <span className={`dt-status s-${st}`}>{STATUS_LABEL[st]}</span></p>
         <h2>{unit.title}</h2>
         <p className="cp-de" lang="de">«{unit.de}»</p>
       </div>
@@ -224,11 +224,11 @@ function UnitCard({ unit, done }: { unit: CourseUnit; done: ReadonlySet<string> 
   const practice = unit.steps.find((s) => s.kind === 'practicar');
   return (
     <section className="cp-card cp-unit" aria-labelledby="cp-unit-t">
-      <p className="dt-eyebrow">{unit.exam ? 'Final' : `Lektion ${unit.n}`} · {unit.level} · {p.done}/{p.total}</p>
+      <p className="dt-eyebrow">{unit.exam ? 'Final' : `Lektion ${unit.n}`} · {unit.level}{unit.minutes ? ` · ${unit.minutes} min` : ''} · {p.done}/{p.total}</p>
       <h2 id="cp-unit-t">{unit.title}</h2>
       <p className="cp-sum">{unit.summary}</p>
       <ul className="cp-topics" aria-label="Temas">{unit.topics.map((t) => <li key={t}><b lang="de">{TOPICS[t].de}</b><span>{TOPICS[t].es}</span></li>)}</ul>
-      {practice && <a className="dt-btn dt-btn-ghost sm" href={practice.primary.href} onClick={followLearningLink}><span className="dt-btn-label">Practicar esta Lektion →</span></a>}
+      {practice && <a className="dt-btn dt-btn-ghost sm" href={practice.primary.href} onClick={followLearningLink}><span className="dt-btn-label">{unit.practiceLabel ?? 'Practicar esta Lektion'} →</span></a>}
     </section>
   );
 }
